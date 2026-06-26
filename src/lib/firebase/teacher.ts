@@ -16,73 +16,77 @@ import type { TeacherNote, UserProfile } from '@/types'
 
 const USERS = 'users'
 
-// Find teacher UID from a studio code, then link the student to that teacher
-export async function joinStudioByCode(studentId: string, code: string): Promise<boolean> {
-  const upperCode = code.toUpperCase()
-  console.log('[Studio] Student', studentId, 'joining with code', upperCode)
-
-  // Find teacher by studioCode in Firestore
-  let teacherId: string | null = null
+// Look up a teacher's UID given their studioCode.
+export async function getTeacherByStudioCode(code: string): Promise<string | null> {
   try {
     const q = query(
       collection(db, USERS),
-      where('studioCode', '==', upperCode),
+      where('studioCode', '==', code.toUpperCase()),
       where('role', '==', 'teacher')
     )
     const snap = await getDocs(q)
     if (!snap.empty) {
-      teacherId = snap.docs[0].id
-      console.log('[Studio] Found teacher in Firestore:', teacherId)
-    } else {
-      console.warn('[Studio] No teacher found with studioCode', upperCode)
+      console.log('[Teacher] Found teacher for code', code, '→', snap.docs[0].id)
+      return snap.docs[0].id
     }
+    console.warn('[Teacher] No teacher found for code:', code)
+    return null
   } catch (e) {
-    console.warn('[Studio] Firestore query failed:', e)
+    console.warn('[Teacher] getTeacherByStudioCode error:', e)
+    return null
   }
-
-  if (!teacherId) return false
-
-  // Write teacherId to student's Firestore doc
-  console.log('[Studio] Writing teacherId', teacherId, 'to student doc', studentId)
-  try {
-    await setDoc(doc(db, USERS, studentId), { teacherId }, { merge: true })
-    console.log('[Studio] Student linked to teacher ✓')
-  } catch (e) {
-    console.warn('[Studio] Failed to write teacherId:', e)
-    return false
-  }
-
-  // Keep localStorage in sync
-  const cached = localStorage.getItem(`maestro_profile_${studentId}`)
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached)
-      localStorage.setItem(`maestro_profile_${studentId}`, JSON.stringify({ ...parsed, teacherId }))
-    } catch { /* ignore */ }
-  }
-
-  return true
 }
 
-export async function getStudentsForTeacher(teacherId: string): Promise<UserProfile[]> {
-  const q = query(collection(db, USERS), where('teacherId', '==', teacherId))
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)
-}
-
+// Primary relationship field is teacherId.
+// Query: WHERE role == 'student' AND teacherId == currentTeacherUid
 export function subscribeStudents(
   teacherId: string,
   callback: (students: UserProfile[]) => void
 ): Unsubscribe {
-  console.log('[Teacher] Subscribing to students for teacher:', teacherId)
-  const q = query(collection(db, USERS), where('teacherId', '==', teacherId))
-  return onSnapshot(q, (snap) => {
-    const students = snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)
-    console.log('[Teacher] Students snapshot:', students.length, 'student(s)')
-    callback(students)
-  }, (err) => {
-    console.error('[Teacher] subscribeStudents error:', err)
-  })
+  console.log('[TeacherDashboard] teacher uid:', teacherId)
+  console.log('[TeacherDashboard] query used: WHERE role==student AND teacherId==', teacherId)
+
+  const q = query(
+    collection(db, USERS),
+    where('role', '==', 'student'),
+    where('teacherId', '==', teacherId)
+  )
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log('[TeacherDashboard] snapshot size:', snap.size)
+      const students = snap.docs.map((d) => {
+        const data = d.data()
+        console.log('[TeacherDashboard] student doc:', d.id, data)
+        return { uid: d.id, ...data } as UserProfile
+      })
+      console.log('[TeacherDashboard] student docs returned:', students.length)
+      callback(students)
+    },
+    (err) => {
+      console.error('[TeacherDashboard] subscribeStudents error:', err)
+      // Firestore index errors include a link to create the index — check the console
+    }
+  )
+}
+
+// Debug only: find any docs with this studioCode regardless of role
+export async function debugFindByStudioCode(studioCode: string): Promise<void> {
+  try {
+    const q = query(collection(db, USERS), where('studioCode', '==', studioCode))
+    const snap = await getDocs(q)
+    console.log('[TeacherDashboard] all docs with studioCode', studioCode, ':', snap.size)
+    snap.docs.forEach((d) => console.log('[TeacherDashboard]  ↳', d.id, d.data()))
+  } catch (e) {
+    console.warn('[TeacherDashboard] debugFindByStudioCode error:', e)
+  }
+}
+
+export async function getStudentsForTeacher(teacherId: string): Promise<UserProfile[]> {
+  const q = query(collection(db, USERS), where('teacherId', '==', teacherId), where('role', '==', 'student'))
+  const snap = await getDocs(q)
+  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)
 }
 
 export async function removeStudentFromStudio(studentId: string): Promise<void> {
