@@ -64,16 +64,16 @@ export default function SettingsPage() {
       setJoinError('Code too short — check with your teacher.')
       return
     }
-    const updated = { ...(profile ?? { uid, email: user?.email ?? '', role: 'student' as const, displayName: '', createdAt: new Date().toISOString() }), teacherStudioCode: code }
-    setProfile(updated)
-    localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
-    // Write full profile to Firestore so teacher can see this student
-    const { setDoc, doc } = await import('firebase/firestore')
-    const { db } = await import('@/lib/firebase/config')
-    const { uid: _uid, ...rest } = updated as Record<string, unknown>
-    void _uid
-    setDoc(doc(db, 'users', uid), { ...rest, teacherStudioCode: code }, { merge: true }).catch(() => {})
-    setJoinSuccess(true)
+    console.log('[Settings] Student', uid, 'joining studio with code', code)
+    const ok = await joinStudioByCode(uid, code)
+    if (ok) {
+      const updated = { ...(profile ?? { uid, email: user?.email ?? '', role: 'student' as const, displayName: '', createdAt: new Date().toISOString() }) }
+      setProfile(updated)
+      localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
+      setJoinSuccess(true)
+    } else {
+      setJoinError('Studio code not found. Make sure your teacher has logged in at least once, then try again.')
+    }
   }
 
   return (
@@ -112,7 +112,7 @@ export default function SettingsPage() {
         <Card className="p-6">
           <p className="text-sm font-semibold text-slate-300 mb-1">Join a Studio</p>
           <p className="text-xs text-slate-500 mb-4">Enter your teacher's studio code to connect your account.</p>
-          {(profile?.teacherId || (profile as Record<string, unknown>)?.teacherStudioCode) ? (
+          {profile?.teacherId ? (
             <div className="flex items-center gap-2 text-sm text-emerald-400">
               <span>✓</span> Linked to a studio
             </div>

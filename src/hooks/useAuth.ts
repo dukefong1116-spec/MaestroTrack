@@ -18,26 +18,42 @@ export function useAuthInit() {
     const unsub = onAuthChange(async (user) => {
       setUser(user)
       if (user) {
-        // Try Firestore, fall back to localStorage cache
+        console.log('[Auth] User logged in:', user.uid)
+
+        // 1. Try to load profile from Firestore
         let profile = null
         try {
-          profile = await withTimeout(getUserProfile(user.uid), 4000)
+          profile = await withTimeout(getUserProfile(user.uid), 5000)
+          if (profile) console.log('[Auth] Profile loaded from Firestore:', profile)
         } catch { /* ignore */ }
+
+        // 2. Fall back to localStorage cache
         if (!profile) {
           const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
           if (cached) {
-            try {
-              profile = JSON.parse(cached)
-              // Profile was only in localStorage — sync it to Firestore now that we're connected
-              const { uid, ...profileData } = profile as Record<string, unknown>
-              void uid
-              setDoc(doc(db, 'users', user.uid), profileData, { merge: true }).catch(() => {})
-            } catch { /* ignore */ }
+            try { profile = JSON.parse(cached) } catch { /* ignore */ }
+            if (profile) console.log('[Auth] Profile loaded from localStorage cache:', profile)
           }
         }
-        if (profile) localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(profile))
+
+        // 3. Sync profile to Firestore (covers both: profile from cache, and new logins)
+        if (profile) {
+          const { uid: _uid, ...profileData } = profile as Record<string, unknown>
+          void _uid
+          console.log('[Auth] Syncing profile to Firestore users/', user.uid)
+          setDoc(doc(db, 'users', user.uid), profileData, { merge: true })
+            .then(() => console.log('[Auth] Profile synced to Firestore ✓'))
+            .catch((e) => console.warn('[Auth] Profile sync failed:', e))
+
+          // Keep localStorage fresh
+          localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(profile))
+        } else {
+          console.warn('[Auth] No profile found for user', user.uid)
+        }
+
         setProfile(profile)
       } else {
+        console.log('[Auth] User logged out')
         setProfile(null)
       }
       setLoading(false)
