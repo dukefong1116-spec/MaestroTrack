@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
-import { updateUserProfile, joinStudioByCode } from '@/lib/firebase/teacher'
+import { updateUserProfile } from '@/lib/firebase/teacher'
 import { getTheme, INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { useAuthStore } from '@/stores/authStore'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -29,6 +30,7 @@ export default function SettingsPage() {
   const [studioCode, setStudioCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState(false)
+  const [joining, setJoining] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -46,8 +48,11 @@ export default function SettingsPage() {
     if (!uid) return
     setSaving(true)
     try {
-      updateUserProfile(uid, { ...data, updatedAt: new Date().toISOString() })
-      const updated = { ...(profile ?? { uid, email: user?.email ?? '', role: 'student', displayName: data.displayName, createdAt: new Date().toISOString() }), ...data }
+      await updateUserProfile(uid, data)
+      const updated = {
+        ...(profile ?? { uid, email: user?.email ?? '', role: 'student', createdAt: new Date().toISOString() }),
+        ...data,
+      }
       setProfile(updated)
       localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
     } finally {
@@ -58,21 +63,53 @@ export default function SettingsPage() {
   async function handleJoinStudio() {
     const uid = profile?.uid ?? user?.uid
     if (!uid || !studioCode.trim()) return
+
     setJoinError('')
+    setJoining(true)
     const code = studioCode.trim().toUpperCase()
-    if (code.length < 4) {
-      setJoinError('Code too short — check with your teacher.')
-      return
-    }
-    console.log('[Settings] Student', uid, 'joining studio with code', code)
-    const ok = await joinStudioByCode(uid, code)
-    if (ok) {
-      const updated = { ...(profile ?? { uid, email: user?.email ?? '', role: 'student' as const, displayName: '', createdAt: new Date().toISOString() }) }
-      setProfile(updated)
+
+    console.log('[JoinStudio] clicked')
+    console.log('[JoinStudio] student uid:', uid)
+    console.log('[JoinStudio] entered studio code:', code)
+
+    try {
+      // Write full student profile to Firestore including role and studioCode.
+      // role: 'student' is required — the teacher dashboard queries WHERE role == 'student'
+      const profileData: Record<string, unknown> = {
+        email: user?.email ?? '',
+        role: 'student',
+        displayName: profile?.displayName ?? '',
+        studioCode: code,
+        createdAt: profile?.createdAt ?? new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      // Carry over any existing profile fields (instrument, experienceLevel, etc.)
+      if (profile) {
+        const { uid: _u, ...rest } = profile as Record<string, unknown>
+        void _u
+        Object.assign(profileData, rest, { studioCode: code, updatedAt: profileData.updatedAt })
+      }
+
+      console.log('[JoinStudio] writing to Firestore users/', uid, profileData)
+      await setDoc(doc(db, 'users', uid), profileData, { merge: true })
+      console.log('[JoinStudio] Firestore write success')
+
+      // Read back to confirm what was written
+      const snap = await getDoc(doc(db, 'users', uid))
+      console.log('[JoinStudio] student doc after update:', snap.data())
+
+      // Update local state
+      const updated = { uid, ...profileData }
+      setProfile(updated as never)
       localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
+
       setJoinSuccess(true)
-    } else {
-      setJoinError('Studio code not found. Make sure your teacher has logged in at least once, then try again.')
+      console.log('[JoinStudio] success')
+    } catch (e) {
+      console.error('[JoinStudio] failed:', e)
+      setJoinError('Could not join studio. Check your internet connection and try again.')
+    } finally {
+      setJoining(false)
     }
   }
 
@@ -112,22 +149,22 @@ export default function SettingsPage() {
         <Card className="p-6">
           <p className="text-sm font-semibold text-slate-300 mb-1">Join a Studio</p>
           <p className="text-xs text-slate-500 mb-4">Enter your teacher's studio code to connect your account.</p>
-          {profile?.teacherId ? (
+          {(profile?.studioCode || joinSuccess) ? (
             <div className="flex items-center gap-2 text-sm text-emerald-400">
-              <span>✓</span> Linked to a studio
+              <span>✓</span> Linked to studio {profile?.studioCode ?? studioCode}
             </div>
-          ) : joinSuccess ? (
-            <div className="text-emerald-400 text-sm">Successfully joined the studio!</div>
           ) : (
-            <div className="flex gap-3">
-              <Input
-                placeholder="Enter studio code (e.g. ABC123)"
-                value={studioCode}
-                onChange={(e) => setStudioCode(e.target.value.toUpperCase())}
-                error={joinError}
-                className="max-w-[200px]"
-              />
-              <Button onClick={handleJoinStudio}>Join</Button>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="Enter studio code (e.g. ABC123)"
+                  value={studioCode}
+                  onChange={(e) => setStudioCode(e.target.value.toUpperCase())}
+                  className="max-w-[200px]"
+                />
+                <Button onClick={handleJoinStudio} loading={joining}>Join</Button>
+              </div>
+              {joinError && <p className="text-red-400 text-sm">{joinError}</p>}
             </div>
           )}
         </Card>
