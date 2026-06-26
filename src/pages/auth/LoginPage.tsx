@@ -5,6 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { signIn } from '@/lib/firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '@/lib/firebase/config'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
@@ -14,6 +16,13 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ])
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const [error, setError] = useState('')
@@ -22,25 +31,53 @@ export default function LoginPage() {
   async function onSubmit(data: FormData) {
     setError('')
     try {
+      console.log('[Login] Signing in:', data.email)
       const user = await signIn(data.email, data.password)
+      console.log('[Login] Auth success, uid:', user.uid)
+
+      // Determine role — try Firestore with timeout, fall back to localStorage
       let role = localStorage.getItem(`maestro_role_${user.uid}`) ?? 'student'
       try {
         const { getUserProfile } = await import('@/lib/firebase/auth')
-        const profile = await getUserProfile(user.uid)
+        console.log('[Login] Fetching Firestore profile...')
+        const profile = await withTimeout(getUserProfile(user.uid), 5000)
         if (profile?.role) {
           role = profile.role
+          console.log('[Login] Got role from Firestore:', role)
           localStorage.setItem(`maestro_role_${user.uid}`, role)
+        } else {
+          console.log('[Login] No Firestore profile — using cached role:', role)
+
+          // No Firestore doc yet — write the cached profile now
+          const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached)
+              const { uid: _uid, ...profileData } = parsed
+              void _uid
+              console.log('[Login] Writing cached profile to Firestore...')
+              await setDoc(doc(db, 'users', user.uid), profileData, { merge: true })
+              console.log('[Login] Profile written to Firestore ✓')
+            } catch (syncErr) {
+              console.warn('[Login] Profile sync failed:', syncErr)
+            }
+          }
         }
-      } catch {
-        // Firestore may be slow — use cached role
+      } catch (profileErr) {
+        console.warn('[Login] Profile fetch error (using cached role):', profileErr)
       }
+
+      console.log('[Login] Navigating to:', role === 'teacher' ? '/teacher' : '/student')
       navigate(role === 'teacher' ? '/teacher' : '/student')
     } catch (e: unknown) {
+      console.error('[Login] Sign-in error:', e)
       const err = e as { code?: string }
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         setError('Invalid email or password.')
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please wait a moment and try again.')
       } else {
-        setError('Something went wrong. Please try again.')
+        setError(`Sign-in failed: ${err.code ?? 'unknown error'}`)
       }
     }
   }
