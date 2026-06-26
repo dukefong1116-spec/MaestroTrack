@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from 'firebase/firestore'
+import { initializeFirestore, getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -16,19 +16,14 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
 
-// Enable offline persistence — writes succeed immediately from local cache
-// and sync to the server once connectivity is restored.
-if (!getApps().length || getApps().length === 1) {
-  try {
-    initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-      experimentalForceLongPolling: true,
-    })
-  } catch {
-    // Already initialized (HMR) — fall through to getFirestore
-  }
+// No offline persistence — writes go directly to Firestore server.
+// experimentalForceLongPolling works around WebSocket issues on some networks.
+try {
+  initializeFirestore(app, { experimentalForceLongPolling: true })
+} catch {
+  // Already initialized (HMR hot reload) — safe to ignore
 }
-export const db = getFirestore(app)
 
+export const db = getFirestore(app)
 export const storage = getStorage(app)
 export default app

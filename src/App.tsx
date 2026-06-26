@@ -30,7 +30,10 @@ import TeacherSettingsPage from '@/pages/teacher/TeacherSettingsPage'
 function DataProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth()
   useStudentData(profile?.role === 'student' ? profile?.uid : undefined)
-  useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
+  useTeacherData(
+    profile?.role === 'teacher' ? profile?.uid : undefined,
+    profile?.role === 'teacher' ? profile?.studioCode : undefined
+  )
   return <>{children}</>
 }
 

@@ -37,50 +37,75 @@ export async function getTeacherByStudioCode(code: string): Promise<string | nul
   }
 }
 
-// Primary relationship field is teacherId.
-// Query: WHERE role == 'student' AND teacherId == currentTeacherUid
+// Subscribe to students for a teacher.
+// Runs TWO parallel queries and merges results (deduped by uid):
+//   1. WHERE role==student AND teacherId==teacherUid  (primary)
+//   2. WHERE role==student AND studioCode==studioCode (fallback for students who joined before teacherId was written)
+// This makes the dashboard resilient even if a student's doc is missing teacherId.
 export function subscribeStudents(
   teacherId: string,
+  studioCode: string | undefined,
   callback: (students: UserProfile[]) => void
 ): Unsubscribe {
   console.log('[TeacherDashboard] teacher uid:', teacherId)
-  console.log('[TeacherDashboard] query used: WHERE role==student AND teacherId==', teacherId)
+  console.log('[TeacherDashboard] studioCode:', studioCode)
 
-  const q = query(
+  const seen = new Map<string, UserProfile>()
+  let snapshotCount = 0
+
+  function merge(docs: UserProfile[], source: string) {
+    docs.forEach((d) => seen.set(d.uid, d))
+    const all = Array.from(seen.values())
+    console.log(`[TeacherDashboard] merge from ${source}: total unique students = ${all.length}`)
+    callback(all)
+  }
+
+  // Query 1: by teacherId
+  console.log('[TeacherDashboard] Q1: WHERE role==student AND teacherId==', teacherId)
+  const q1 = query(
     collection(db, USERS),
     where('role', '==', 'student'),
     where('teacherId', '==', teacherId)
   )
-
-  return onSnapshot(
-    q,
+  const unsub1 = onSnapshot(
+    q1,
     (snap) => {
-      console.log('[TeacherDashboard] snapshot size:', snap.size)
-      const students = snap.docs.map((d) => {
-        const data = d.data()
-        console.log('[TeacherDashboard] student doc:', d.id, data)
-        return { uid: d.id, ...data } as UserProfile
-      })
-      console.log('[TeacherDashboard] student docs returned:', students.length)
-      callback(students)
+      snapshotCount++
+      console.log(`[TeacherDashboard] Q1 snapshot (${snapshotCount}): ${snap.size} docs`)
+      snap.docs.forEach((d) => console.log('[TeacherDashboard] Q1 doc:', d.id, d.data()))
+      merge(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile), 'teacherId')
     },
     (err) => {
-      console.error('[TeacherDashboard] subscribeStudents error:', err)
-      // Firestore index errors include a link to create the index — check the console
+      console.error('[TeacherDashboard] Q1 error:', err.message)
+      // If this is an index error, the message contains a URL — open it to create the index
     }
   )
-}
 
-// Debug only: find any docs with this studioCode regardless of role
-export async function debugFindByStudioCode(studioCode: string): Promise<void> {
-  try {
-    const q = query(collection(db, USERS), where('studioCode', '==', studioCode))
-    const snap = await getDocs(q)
-    console.log('[TeacherDashboard] all docs with studioCode', studioCode, ':', snap.size)
-    snap.docs.forEach((d) => console.log('[TeacherDashboard]  ↳', d.id, d.data()))
-  } catch (e) {
-    console.warn('[TeacherDashboard] debugFindByStudioCode error:', e)
+  // Query 2: by studioCode (fallback)
+  if (!studioCode) {
+    console.log('[TeacherDashboard] No studioCode — skipping Q2 fallback')
+    return unsub1
   }
+
+  console.log('[TeacherDashboard] Q2: WHERE role==student AND studioCode==', studioCode)
+  const q2 = query(
+    collection(db, USERS),
+    where('role', '==', 'student'),
+    where('studioCode', '==', studioCode)
+  )
+  const unsub2 = onSnapshot(
+    q2,
+    (snap) => {
+      console.log(`[TeacherDashboard] Q2 snapshot: ${snap.size} docs`)
+      snap.docs.forEach((d) => console.log('[TeacherDashboard] Q2 doc:', d.id, d.data()))
+      merge(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as UserProfile), 'studioCode')
+    },
+    (err) => {
+      console.error('[TeacherDashboard] Q2 error:', err.message)
+    }
+  )
+
+  return () => { unsub1(); unsub2() }
 }
 
 export async function getStudentsForTeacher(teacherId: string): Promise<UserProfile[]> {
@@ -130,6 +155,5 @@ export function subscribeTeacherNotes(
 }
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
-  console.log('[Profile] Updating profile for', uid)
   await setDoc(doc(db, USERS, uid), { ...data, updatedAt: new Date().toISOString() }, { merge: true })
 }
