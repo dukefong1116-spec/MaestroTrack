@@ -26,15 +26,13 @@ export default function LoginPage() {
       const profile = await getUserProfile(user.uid)
       console.log('[Login] Firestore profile role:', profile?.role)
 
-      if (!profile) {
-        setError('Account profile not found in database. Please sign up again or contact support.')
+      // Prefer Firestore role; fall back to localStorage if doc doesn't exist yet
+      const role = profile?.role ?? localStorage.getItem(`maestro_role_${user.uid}`)
+      if (!role) {
+        setError('Account profile not found. Please sign up again.')
         return
       }
-      if (!profile.role) {
-        setError('Account role is missing. Please contact support.')
-        return
-      }
-      navigate(profile.role === 'teacher' ? '/teacher' : '/student')
+      navigate(role === 'teacher' ? '/teacher' : '/student')
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
