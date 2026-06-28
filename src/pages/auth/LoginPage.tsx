@@ -23,20 +23,7 @@ export default function LoginPage() {
     setError('')
     try {
       const user = await signIn(data.email, data.password)
-      let firestoreRole: string | null = null
-      try {
-        const profile = await getUserProfile(user.uid)
-        firestoreRole = profile?.role ?? null
-        console.log('[Login] Firestore profile role:', firestoreRole)
-      } catch {
-        // Firestore offline — fall back to localStorage
-      }
-
-      const role = firestoreRole ?? localStorage.getItem(`maestro_role_${user.uid}`)
-      if (!role) {
-        setError('Account profile not found. Please sign up again.')
-        return
-      }
+      const role = localStorage.getItem(`maestro_role_${user.uid}`) ?? 'student'
       navigate(role === 'teacher' ? '/teacher' : '/student')
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
