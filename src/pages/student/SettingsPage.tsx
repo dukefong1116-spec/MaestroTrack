@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -24,55 +24,6 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-// Repair a student profile that is missing role, studioCode, or teacherId.
-// Returns the patched profile and whether any repair was needed.
-async function repairStudentProfile(
-  uid: string,
-  profile: UserProfile
-): Promise<{ profile: UserProfile; repaired: boolean; log: string[] }> {
-  const log: string[] = []
-  const patches: Partial<UserProfile & { updatedAt: string }> = {}
-
-  log.push(`[ProfileRepair] uid: ${uid}`)
-  log.push(`[ProfileRepair] current role: ${profile.role ?? 'MISSING'}`)
-  log.push(`[ProfileRepair] current studioCode: ${profile.studioCode ?? 'MISSING'}`)
-  log.push(`[ProfileRepair] current teacherId: ${profile.teacherId ?? 'MISSING'}`)
-
-  // Must have role: 'student'
-  if (profile.role !== 'student') {
-    log.push('[ProfileRepair] repairing role → student')
-    patches.role = 'student'
-  }
-
-  // If studioCode present but teacherId missing, look up the teacher
-  if (profile.studioCode && !profile.teacherId) {
-    log.push(`[ProfileRepair] studioCode present (${profile.studioCode}) but teacherId missing — looking up teacher`)
-    const teacherId = await getTeacherByStudioCode(profile.studioCode)
-    if (teacherId) {
-      log.push(`[ProfileRepair] found teacherId: ${teacherId}`)
-      patches.teacherId = teacherId
-    } else {
-      log.push('[ProfileRepair] teacher lookup returned null — studioCode may not exist in Firestore yet')
-    }
-  }
-
-  if (Object.keys(patches).length === 0) {
-    log.push('[ProfileRepair] no repairs needed')
-    return { profile, repaired: false, log }
-  }
-
-  patches.updatedAt = new Date().toISOString()
-  log.push('[ProfileRepair] writing repairs to Firestore:', JSON.stringify(patches))
-  await setDoc(doc(db, 'users', uid), patches, { merge: true })
-
-  // Read back to confirm
-  const snap = await getDoc(doc(db, 'users', uid))
-  log.push('[ProfileRepair] repaired profile after write:', JSON.stringify(snap.data()))
-
-  const repairedProfile: UserProfile = { ...profile, ...patches }
-  return { profile: repairedProfile, repaired: true, log }
-}
-
 export default function SettingsPage() {
   const { profile, user } = useAuth()
   const { setProfile } = useAuthStore()
@@ -95,76 +46,22 @@ export default function SettingsPage() {
     }
   })
 
-  // On mount: log profile debug info and auto-repair if needed
-  useEffect(() => {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid || !profile) return
-
-    const lsKey = `maestro_profile_${uid}`
-    const lsRaw = localStorage.getItem(lsKey)
-    let lsProfile: unknown = null
-    try { lsProfile = lsRaw ? JSON.parse(lsRaw) : null } catch { /* ignore */ }
-
-    console.log('[Settings] current uid:', uid)
-    console.log('[Settings] Firestore/state profile:', profile)
-    console.log('[Settings] localStorage profile:', lsProfile)
-    console.log('[Settings] role:', profile.role ?? 'MISSING')
-    console.log('[Settings] studioCode:', profile.studioCode ?? 'none')
-    console.log('[Settings] teacherId:', profile.teacherId ?? 'none')
-
-    const needsRepair =
-      profile.role !== 'student' ||
-      (!!profile.studioCode && !profile.teacherId)
-
-    console.log('[Settings] repair needed?', needsRepair)
-
-    if (needsRepair) {
-      repairStudentProfile(uid, profile).then(({ profile: repaired, repaired: didRepair, log }) => {
-        log.forEach((l) => console.log(l))
-        if (didRepair) {
-          setProfile(repaired)
-          localStorage.setItem(lsKey, JSON.stringify(repaired))
-          console.log('[ProfileRepair] local state updated with repaired profile')
-        }
-      }).catch((e) => console.error('[ProfileRepair] repair failed:', e))
-    }
-  // Only run once on mount when profile first becomes available
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!profile?.uid])
-
   async function handleResync() {
     const uid = profile?.uid ?? user?.uid
     if (!uid) return
     setResyncing(true)
     setResyncMsg('')
     try {
-      console.log('[Resync] Reading profile from Firestore...')
-      const firestoreProfile = await getUserProfile(uid)
-      console.log('[Resync] Firestore profile:', firestoreProfile)
-
-      // Start from Firestore doc, or fall back to current state
-      let base: UserProfile = firestoreProfile ?? profile!
-      // Always ensure role is set
-      if (!base.role) {
-        const cachedRole = localStorage.getItem(`maestro_role_${uid}`)
-        if (cachedRole === 'student' || cachedRole === 'teacher') base = { ...base, role: cachedRole }
+      const fresh = await getUserProfile(uid)
+      if (fresh) {
+        setProfile(fresh)
+        localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(fresh))
+        setResyncMsg(`role=${fresh.role ?? 'missing'}, studioCode=${fresh.studioCode ?? 'none'}, teacherId=${fresh.teacherId ?? 'none'}`)
+      } else {
+        setResyncMsg('No profile found in Firestore.')
       }
-
-      const { profile: repaired, repaired: didRepair, log } = await repairStudentProfile(uid, base)
-      log.forEach((l) => console.log(l))
-
-      setProfile(repaired)
-      localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(repaired))
-
-      const msg = didRepair
-        ? `Repaired: role=${repaired.role}, studioCode=${repaired.studioCode ?? 'none'}, teacherId=${repaired.teacherId ?? 'none'}`
-        : `Profile OK: role=${repaired.role}, studioCode=${repaired.studioCode ?? 'none'}, teacherId=${repaired.teacherId ?? 'none'}`
-      setResyncMsg(msg)
-      console.log('[Resync] done:', msg)
     } catch (e) {
-      const msg = `Resync failed: ${String(e)}`
-      setResyncMsg(msg)
-      console.error('[Resync] error:', e)
+      setResyncMsg(`Error: ${String(e)}`)
     } finally {
       setResyncing(false)
     }
@@ -196,65 +93,43 @@ export default function SettingsPage() {
     setJoining(true)
     const code = studioCode.trim().toUpperCase()
 
-    console.log('[JoinStudio] clicked')
-    console.log('[JoinStudio] student uid:', uid)
-    console.log('[JoinStudio] entered studio code:', code)
-
     try {
-      // Look up the teacher UID by their studioCode
-      console.log('[JoinStudio] looking up teacher by studioCode:', code)
+      // 1. Find teacher UID by studioCode
       const teacherId = await getTeacherByStudioCode(code)
-      console.log('[JoinStudio] teacherId found:', teacherId ?? 'null')
-
       if (!teacherId) {
-        setJoinError('Studio code not found. Ask your teacher to check their code.')
-        setJoining(false)
+        setJoinError('Studio code not found. Check the code and try again.')
         return
       }
 
-      // Write complete student profile to Firestore.
-      // Both teacherId AND studioCode are stored.
-      // role: 'student' is required for the teacher dashboard query.
+      // 2. Write student relationship fields to Firestore
       const now = new Date().toISOString()
-      const profileData: Record<string, unknown> = {
-        email: user?.email ?? '',
+      const patch: Record<string, unknown> = {
         role: 'student',
-        displayName: profile?.displayName ?? '',
         studioCode: code,
         teacherId,
-        createdAt: profile?.createdAt ?? now,
         updatedAt: now,
       }
-      // Keep existing profile fields (instrument, experienceLevel, etc.)
-      if (profile) {
-        const { uid: _u, ...rest } = profile as Record<string, unknown>
-        void _u
-        Object.assign(profileData, rest, {
-          studioCode: code,
-          teacherId,
-          role: 'student',
-          updatedAt: now,
-        })
+      await setDoc(doc(db, 'users', uid), patch, { merge: true })
+
+      // 3. Read back and validate all three fields are present
+      const snap = await getDoc(doc(db, 'users', uid))
+      const written = snap.data()
+      console.log('[JoinStudio] read-back student doc:', written)
+
+      if (!written?.role || !written?.teacherId || !written?.studioCode) {
+        setJoinError('Join succeeded but profile is incomplete. Please try again.')
+        return
       }
 
-      console.log('[JoinStudio] writing to Firestore users/', uid, profileData)
-      await setDoc(doc(db, 'users', uid), profileData, { merge: true })
-      console.log('[JoinStudio] Firestore write success')
-
-      // Read back to confirm
-      const snap = await getDoc(doc(db, 'users', uid))
-      console.log('[JoinStudio] student doc after update:', snap.data())
-
-      // Update local state and localStorage
-      const updated = { uid, ...profileData } as UserProfile
+      // 4. Update local state
+      const updated: UserProfile = { ...(profile as UserProfile), ...patch, uid }
       setProfile(updated)
       localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
 
       setJoinSuccess(true)
-      console.log('[JoinStudio] success — student linked to teacher', teacherId)
     } catch (e) {
       console.error('[JoinStudio] failed:', e)
-      setJoinError('Could not join studio. Check your internet connection and try again.')
+      setJoinError(`Could not join studio: ${String(e)}`)
     } finally {
       setJoining(false)
     }
@@ -301,17 +176,9 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <span>✓</span> Linked to studio {profile?.studioCode ?? studioCode}
               </div>
-              {profile?.teacherId && (
-                <p className="text-xs text-slate-500">Teacher ID: {profile.teacherId}</p>
-              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {profile?.studioCode && !profile?.teacherId && (
-                <p className="text-xs text-amber-400">
-                  Studio code saved ({profile.studioCode}) but teacher link is incomplete. Click "Repair Studio Link" below.
-                </p>
-              )}
               <div className="flex gap-3">
                 <Input
                   placeholder="Enter studio code (e.g. ABC123)"
@@ -326,18 +193,15 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        {/* Resync / Repair */}
+        {/* Resync */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-1">Repair Studio Link</p>
-          <p className="text-xs text-slate-500 mb-4">
-            If your studio link isn't showing correctly, this will re-read your profile from the server
-            and fix any missing fields.
-          </p>
+          <p className="text-sm font-semibold text-slate-300 mb-1">Reload Profile</p>
+          <p className="text-xs text-slate-500 mb-4">Re-reads your profile from the database.</p>
           <Button variant="outline" size="sm" onClick={handleResync} loading={resyncing}>
-            Resync Profile
+            Reload from Database
           </Button>
           {resyncMsg && (
-            <p className={`mt-3 text-xs font-mono ${resyncMsg.startsWith('Resync failed') ? 'text-red-400' : 'text-emerald-400'}`}>
+            <p className={`mt-3 text-xs font-mono ${resyncMsg.startsWith('Error') || resyncMsg.includes('missing') || resyncMsg.includes('No profile') ? 'text-red-400' : 'text-emerald-400'}`}>
               {resyncMsg}
             </p>
           )}
@@ -354,7 +218,7 @@ export default function SettingsPage() {
             <div className="flex justify-between text-slate-400">
               <span>Role</span>
               <span className={`capitalize ${profile?.role ? 'text-white' : 'text-red-400'}`}>
-                {profile?.role ?? 'missing — click Resync Profile'}
+                {profile?.role ?? '—'}
               </span>
             </div>
             <div className="flex justify-between text-slate-400">

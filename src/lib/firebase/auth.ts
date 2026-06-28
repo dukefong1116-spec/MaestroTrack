@@ -51,8 +51,9 @@ export async function signUp(
 
   try {
     await setDoc(doc(db, 'users', credential.user.uid), profile)
-  } catch {
-    // Firestore write failed — account still created, profile cached locally
+  } catch (e) {
+    console.error('[Signup] Firestore profile write failed:', e)
+    throw new Error('Account created but profile could not be saved to the database. Please try signing in — if that fails, contact support.')
   }
   return credential.user
 }
