@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { signIn, getUserProfile } from '@/lib/firebase/auth'
+import { signIn } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
