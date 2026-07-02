@@ -49,8 +49,9 @@ export default function SignupPage() {
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
       navigate('/student')
     } catch (e: unknown) {
-      const err = e as { code?: string }
-      setError(err.code === 'auth/email-already-in-use' ? 'Email already in use.' : 'Sign up failed.')
+      const err = e as { code?: string; message?: string }
+      if (err.code === 'auth/email-already-in-use') setError('Email already in use.')
+      else setError(err.message ?? 'Sign up failed.')
     }
   }
 
@@ -61,8 +62,9 @@ export default function SignupPage() {
       localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
       navigate('/teacher')
     } catch (e: unknown) {
-      const err = e as { code?: string }
-      setError(err.code === 'auth/email-already-in-use' ? 'Email already in use.' : 'Sign up failed.')
+      const err = e as { code?: string; message?: string }
+      if (err.code === 'auth/email-already-in-use') setError('Email already in use.')
+      else setError(err.message ?? 'Sign up failed.')
     }
   }
 

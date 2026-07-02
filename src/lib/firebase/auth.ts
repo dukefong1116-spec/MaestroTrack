@@ -49,8 +49,9 @@ export async function signUp(
   // Cache profile locally so the app works even if Firestore is offline
   localStorage.setItem(`maestro_profile_${credential.user.uid}`, JSON.stringify({ uid: credential.user.uid, ...profile }))
 
+  const cleanProfile = Object.fromEntries(Object.entries(profile).filter(([, v]) => v !== undefined))
   try {
-    await setDoc(doc(db, 'users', credential.user.uid), profile)
+    await setDoc(doc(db, 'users', credential.user.uid), cleanProfile)
   } catch (e) {
     console.error('[Signup] Firestore profile write failed:', e)
     throw new Error('Account created but profile could not be saved to the database. Please try signing in — if that fails, contact support.')

@@ -18,7 +18,7 @@ function StudentRow({ student, sessions, onClick }: { student: UserProfile; sess
     <Card hover className="p-4 flex items-center justify-between gap-4" onClick={onClick}>
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-9 h-9 rounded-full bg-indigo-600/30 flex items-center justify-center text-sm font-bold text-indigo-300 shrink-0">
-          {student.displayName.charAt(0).toUpperCase()}
+          {(student.displayName ?? student.email ?? '?').charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
           <p className="font-semibold text-white text-sm truncate">{student.displayName}</p>

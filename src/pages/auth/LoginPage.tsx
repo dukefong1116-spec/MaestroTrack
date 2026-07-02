@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { signIn } from '@/lib/firebase/auth'
+import { signIn, getUserProfile } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
@@ -23,7 +23,22 @@ export default function LoginPage() {
     setError('')
     try {
       const user = await signIn(data.email, data.password)
-      const role = localStorage.getItem(`maestro_role_${user.uid}`) ?? 'student'
+      let role: string | null = null
+      // Always try Firestore first so stale localStorage can't override the real role
+      try {
+        const profile = await getUserProfile(user.uid)
+        role = profile?.role ?? null
+      } catch { /* offline — fall through */ }
+      // Fall back to cached profile blob, then role key
+      if (!role) {
+        try {
+          const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
+          if (cached) role = JSON.parse(cached)?.role ?? null
+        } catch { /* ignore */ }
+      }
+      if (!role) role = localStorage.getItem(`maestro_role_${user.uid}`)
+      role = role ?? 'student'
+      localStorage.setItem(`maestro_role_${user.uid}`, role)
       navigate(role === 'teacher' ? '/teacher' : '/student')
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
