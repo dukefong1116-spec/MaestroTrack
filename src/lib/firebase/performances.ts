@@ -6,7 +6,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   getDocs,
   onSnapshot,
   type Unsubscribe,
@@ -20,8 +19,8 @@ export async function addPerformance(
   userId: string,
   data: Omit<Performance, 'id' | 'userId'>
 ): Promise<string> {
-  addDoc(collection(db, COL), { ...data, userId }).catch(() => {})
-  return crypto.randomUUID()
+  const ref = await addDoc(collection(db, COL), { ...data, userId })
+  return ref.id
 }
 
 export async function updatePerformance(id: string, data: Partial<Performance>): Promise<void> {
@@ -36,8 +35,11 @@ export function subscribePerformances(
   userId: string,
   callback: (performances: Performance[]) => void
 ): Unsubscribe {
-  const q = query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'asc'))
+  const q = query(collection(db, COL), where('userId', '==', userId))
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Performance))
+    const sorted = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Performance)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    callback(sorted)
   })
 }

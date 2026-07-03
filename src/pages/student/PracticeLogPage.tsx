@@ -61,15 +61,18 @@ export default function PracticeLogPage() {
     // Optimistically add to local store so it shows immediately
     addSession({ id, userId: uid, createdAt: new Date().toISOString(), ...data } as never)
 
-    // Update piece stats if pieceName is given
+    // Update piece stats if a piece was selected
     if (data.pieceName) {
-      const piece = pieces.find((p) => p.title.toLowerCase() === data.pieceName!.toLowerCase())
+      const piece = pieces.find((p) => p.id === data.pieceName)
       if (piece) {
         const newConfidenceHistory = [...(piece.confidenceHistory ?? []), { date: data.date, value: data.confidenceRating }]
+        const avgConfidence = newConfidenceHistory.reduce((sum, h) => sum + h.value, 0) / newConfidenceHistory.length
+        const completionPercentage = Math.min(100, Math.round(avgConfidence * 10))
         updatePiece(piece.id, {
           totalMinutes: piece.totalMinutes + data.durationMinutes,
           sessionCount: piece.sessionCount + 1,
           confidenceHistory: newConfidenceHistory,
+          completionPercentage,
           updatedAt: new Date().toISOString(),
         }).catch(() => {})
       }
@@ -130,9 +133,10 @@ export default function PracticeLogPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <Badge variant={categoryColors[session.category] as 'info'} size="sm">{session.category}</Badge>
-                          {session.pieceName && (
-                            <span className="text-xs text-slate-300 font-medium">"{session.pieceName}"</span>
-                          )}
+                          {session.pieceName && (() => {
+                            const pieceTitle = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
+                            return <span className="text-xs text-slate-300 font-medium">"{pieceTitle}"</span>
+                          })()}
                         </div>
                         <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
                           <span className="flex items-center gap-1"><Clock size={12} />{session.durationMinutes} min</span>
@@ -168,7 +172,14 @@ export default function PracticeLogPage() {
             error={errors.category?.message}
             {...register('category')}
           />
-          <Input label="Piece Name (optional)" placeholder="Beethoven Sonata No. 14" {...register('pieceName')} />
+          <Select
+            label="Piece (optional)"
+            options={[
+              { value: '', label: '— None —' },
+              ...pieces.filter((p) => p.status === 'active').map((p) => ({ value: p.id, label: p.title })),
+            ]}
+            {...register('pieceName')}
+          />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-300">Difficulty (1–5)</label>

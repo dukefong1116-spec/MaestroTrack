@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Flame, Target, Clock, Music, Trophy, Zap } from 'lucide-react'
+import { Flame, Target, Clock, Music, Trophy, Zap, ClipboardList, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, getDailyData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
+import { subscribeStudentAssignments, updateAssignmentStatus } from '@/lib/firebase/assignments'
 import StatCard from '@/components/common/StatCard'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
@@ -12,7 +13,7 @@ import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import Badge from '@/components/ui/Badge'
 import { format, parseISO, differenceInDays } from 'date-fns'
-import type { InstrumentType } from '@/types'
+import type { InstrumentType, Assignment } from '@/types'
 
 export default function StudentDashboard() {
   const { profile } = useAuth()
@@ -32,6 +33,13 @@ export default function StudentDashboard() {
     .slice(0, 3)
 
   const activePieces = pieces.filter((p) => p.status === 'active').slice(0, 4)
+
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  useEffect(() => {
+    if (!profile?.uid) return
+    return subscribeStudentAssignments(profile.uid, setAssignments)
+  }, [profile?.uid])
+  const activeAssignments = assignments.filter((a) => a.status === 'active')
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -168,6 +176,42 @@ export default function StudentDashboard() {
                 </Card>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Assignments from teacher */}
+      {activeAssignments.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <ClipboardList size={14} /> This Week's Assignments
+          </p>
+          <div className="space-y-2">
+            {activeAssignments.map((a) => (
+              <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="p-4 flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-white text-sm">{a.title}</p>
+                    {a.description && <p className="text-xs text-slate-400 mt-0.5">{a.description}</p>}
+                    {a.dueDate && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Due {format(parseISO(a.dueDate), 'MMM d')}
+                        {differenceInDays(parseISO(a.dueDate), new Date()) <= 2 && (
+                          <span className="text-amber-400 ml-1">· Due soon</span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => updateAssignmentStatus(a.id, 'completed')}
+                    className="text-slate-500 hover:text-emerald-400 transition-colors shrink-0"
+                    title="Mark complete"
+                  >
+                    <CheckCircle2 size={20} />
+                  </button>
+                </Card>
+              </motion.div>
+            ))}
           </div>
         </div>
       )}

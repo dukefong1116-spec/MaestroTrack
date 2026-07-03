@@ -5,7 +5,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
@@ -60,8 +59,11 @@ export function subscribeRecordings(
   userId: string,
   callback: (recordings: Recording[]) => void
 ): Unsubscribe {
-  const q = query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'desc'))
+  const q = query(collection(db, COL), where('userId', '==', userId))
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Recording))
+    const sorted = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as Recording)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    callback(sorted)
   })
 }

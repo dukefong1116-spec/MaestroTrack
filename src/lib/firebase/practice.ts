@@ -6,7 +6,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   getDocs,
   onSnapshot,
   type Unsubscribe,
@@ -25,9 +24,8 @@ export async function addPracticeSession(
   for (const [k, v] of Object.entries(data)) {
     if (v !== undefined && v !== '') clean[k] = v
   }
-  // Fire the write without waiting — if Firestore is offline it queues locally
-  addDoc(collection(db, COL), clean).catch(() => {})
-  return crypto.randomUUID()
+  const ref = await addDoc(collection(db, COL), clean)
+  return ref.id
 }
 
 export async function updatePracticeSession(
@@ -42,18 +40,23 @@ export async function deletePracticeSession(id: string): Promise<void> {
 }
 
 export async function getPracticeSessions(userId: string): Promise<PracticeSession[]> {
-  const q = query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'desc'))
+  const q = query(collection(db, COL), where('userId', '==', userId))
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)
+    .sort((a, b) => b.date.localeCompare(a.date))
 }
 
 export function subscribePracticeSessions(
   userId: string,
   callback: (sessions: PracticeSession[]) => void
 ): Unsubscribe {
-  const q = query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'desc'))
+  const q = query(collection(db, COL), where('userId', '==', userId))
   return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as PracticeSession))
+    const sorted = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    callback(sorted)
   })
 }
 

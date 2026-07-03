@@ -1,23 +1,25 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Trash2, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, MessageSquare, ClipboardList } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { getPracticeSessions } from '@/lib/firebase/practice'
 import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/firebase/teacher'
+import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
+import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import StatCard from '@/components/common/StatCard'
-import type { PracticeSession, TeacherNote, InstrumentType } from '@/types'
+import type { PracticeSession, TeacherNote, Assignment, InstrumentType } from '@/types'
 
 export default function StudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>()
@@ -27,6 +29,11 @@ export default function StudentDetailPage() {
   const [notes, setNotes] = useState<TeacherNote[]>([])
   const [newNote, setNewNote] = useState('')
   const [saving, setSaving] = useState(false)
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [assignTitle, setAssignTitle] = useState('')
+  const [assignDesc, setAssignDesc] = useState('')
+  const [assignDue, setAssignDue] = useState('')
+  const [assigning, setAssigning] = useState(false)
 
   const student = students.find((s) => s.uid === studentId)
   const sessions: PracticeSession[] = studentSessions[studentId ?? ''] ?? []
@@ -36,13 +43,33 @@ export default function StudentDetailPage() {
     if (!studentId) return
     getPracticeSessions(studentId).then((s) => setStudentSessions(studentId, s))
     const unsub = subscribeTeacherNotes(studentId, setNotes)
-    return unsub
-  }, [studentId, setStudentSessions])
+    const unsubA = profile?.uid
+      ? subscribeTeacherStudentAssignments(profile.uid, studentId, setAssignments)
+      : undefined
+    return () => { unsub(); unsubA?.() }
+  }, [studentId, setStudentSessions, profile?.uid])
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, student?.weeklyGoalMinutes ?? 300), [sessions, student])
   const dailyData = useMemo(() => getDailyData(sessions, 14), [sessions])
   const categoryData = useMemo(() => getCategoryData(sessions), [sessions])
   const heatmap = useMemo(() => getHeatmapData(sessions), [sessions])
+
+  async function handleAssign() {
+    if (!profile || !studentId || !assignTitle.trim()) return
+    setAssigning(true)
+    try {
+      await createAssignment(profile.uid, studentId, {
+        title: assignTitle.trim(),
+        description: assignDesc.trim() || undefined,
+        dueDate: assignDue || undefined,
+      })
+      setAssignTitle('')
+      setAssignDesc('')
+      setAssignDue('')
+    } finally {
+      setAssigning(false)
+    }
+  }
 
   async function addNote() {
     if (!profile || !studentId || !newNote.trim()) return
@@ -99,6 +126,71 @@ export default function StudentDetailPage() {
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Practice Heatmap</p>
         <PracticeHeatmap data={heatmap} color={theme.primary} />
       </Card>
+
+      {/* Assignments */}
+      <div className="mb-8">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <ClipboardList size={14} /> Assignments
+        </p>
+        <Card className="p-5 mb-4">
+          <div className="space-y-3">
+            <Input
+              placeholder="Assignment title (e.g. Practice Hanon No. 1)"
+              value={assignTitle}
+              onChange={(e) => setAssignTitle(e.target.value)}
+            />
+            <Textarea
+              placeholder="Description or notes (optional)"
+              value={assignDesc}
+              onChange={(e) => setAssignDesc(e.target.value)}
+              rows={2}
+            />
+            <div className="flex items-center gap-3">
+              <Input
+                type="date"
+                value={assignDue}
+                onChange={(e) => setAssignDue(e.target.value)}
+                className="max-w-[180px]"
+              />
+              <Button size="sm" onClick={handleAssign} loading={assigning} disabled={!assignTitle.trim()}>
+                <Plus size={14} /> Assign
+              </Button>
+            </div>
+          </div>
+        </Card>
+        <div className="space-y-2">
+          {assignments
+            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+            .map((a) => (
+              <motion.div key={a.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="p-4 flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-slate-500' : 'text-white'}`}>
+                        {a.title}
+                      </p>
+                      <Badge variant={a.status === 'completed' ? 'success' : 'info'} size="sm">
+                        {a.status}
+                      </Badge>
+                    </div>
+                    {a.description && <p className="text-xs text-slate-400 mt-1">{a.description}</p>}
+                    <p className="text-xs text-slate-500 mt-1">
+                      Assigned {format(parseISO(a.createdAt), 'MMM d')}
+                      {a.dueDate ? ` · Due ${format(parseISO(a.dueDate), 'MMM d')}` : ''}
+                      {a.completedAt ? ` · Completed ${format(parseISO(a.completedAt), 'MMM d')}` : ''}
+                    </p>
+                  </div>
+                  <button onClick={() => deleteAssignment(a.id)} className="text-slate-600 hover:text-red-400 transition-colors shrink-0">
+                    <Trash2 size={14} />
+                  </button>
+                </Card>
+              </motion.div>
+            ))}
+          {assignments.length === 0 && (
+            <p className="text-sm text-slate-500 text-center py-4">No assignments yet.</p>
+          )}
+        </div>
+      </div>
 
       {/* Teacher notes */}
       <div>

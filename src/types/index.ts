@@ -138,6 +138,21 @@ export interface Reminder {
   createdAt: string
 }
 
+export interface Assignment {
+  id: string
+  teacherId: string
+  studentId: string
+  title: string
+  description?: string
+  dueDate?: string
+  category?: PracticeCategory
+  targetMinutes?: number
+  status: 'active' | 'completed' | 'dismissed'
+  completedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface StudioInvite {
   code: string
   teacherId: string

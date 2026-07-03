@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Plus, BookOpen, Archive, Star, ChevronRight } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPiece, updatePiece, deletePiece } from '@/lib/firebase/pieces'
@@ -139,6 +139,15 @@ export default function PiecesPage() {
                     ))}
                   </div>
                 </div>
+                {piece.targetDate && (() => {
+                  const daysLeft = differenceInDays(parseISO(piece.targetDate!), new Date())
+                  return (
+                    <p className={`text-xs mt-1 ${daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-400' : 'text-slate-500'}`}>
+                      🎯 Target: {format(parseISO(piece.targetDate!), 'MMM d')}
+                      {daysLeft >= 0 ? ` · ${daysLeft}d left` : ' · Overdue'}
+                    </p>
+                  )
+                })()}
 
                 <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
                   {piece.status === 'active' && (
