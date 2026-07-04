@@ -15,9 +15,15 @@ interface PracticeState {
   addSession: (session: PracticeSession) => void
   addPiece: (piece: Piece) => void
   addPerformance: (performance: Performance) => void
+  // Timer
+  timerRunning: boolean
+  timerStartedAt: number | null
+  startTimer: () => void
+  stopTimer: () => number  // returns elapsed seconds
+  resetTimer: () => void
 }
 
-export const usePracticeStore = create<PracticeState>((set) => ({
+export const usePracticeStore = create<PracticeState>((set, get) => ({
   sessions: [],
   pieces: [],
   performances: [],
@@ -31,4 +37,15 @@ export const usePracticeStore = create<PracticeState>((set) => ({
   addSession: (session) => set((s) => ({ sessions: [session, ...s.sessions] })),
   addPiece: (piece) => set((s) => ({ pieces: [piece, ...s.pieces] })),
   addPerformance: (performance) => set((s) => ({ performances: [performance, ...s.performances] })),
+  // Timer
+  timerRunning: false,
+  timerStartedAt: null,
+  startTimer: () => set({ timerRunning: true, timerStartedAt: Date.now() }),
+  stopTimer: () => {
+    const { timerStartedAt } = get()
+    const elapsed = timerStartedAt ? Math.floor((Date.now() - timerStartedAt) / 1000) : 0
+    set({ timerRunning: false, timerStartedAt: null })
+    return elapsed
+  },
+  resetTimer: () => set({ timerRunning: false, timerStartedAt: null }),
 }))

@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Plus, Trash2, Clock, Music2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Trash2, Clock, Music2, Play, Square } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -36,14 +36,34 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+function useTimerDisplay(running: boolean, startedAt: number | null) {
+  const [, forceRender] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (running && startedAt) {
+      intervalRef.current = setInterval(() => forceRender((n) => n + 1), 1000)
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [running, startedAt])
+
+  const totalSeconds = running && startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
 export default function PracticeLogPage() {
   const { profile, user } = useAuth()
-  const { sessions, pieces, addSession } = usePracticeStore()
+  const { sessions, pieces, addSession, timerRunning, timerStartedAt, startTimer, stopTimer, resetTimer } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const timerDisplay = useTimerDisplay(timerRunning, timerStartedAt)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
@@ -52,6 +72,14 @@ export default function PracticeLogPage() {
       confidenceRating: 7,
     }
   })
+
+  function handleStopTimer() {
+    const elapsed = stopTimer()
+    const minutes = Math.max(1, Math.round(elapsed / 60))
+    setValue('durationMinutes', minutes)
+    setValue('date', format(new Date(), 'yyyy-MM-dd'))
+    setOpen(true)
+  }
 
   async function onSubmit(data: FormData) {
     const uid = profile?.uid ?? user?.uid
@@ -79,6 +107,7 @@ export default function PracticeLogPage() {
     }
 
     reset()
+    resetTimer()
     setOpen(false)
   }
 
@@ -107,8 +136,58 @@ export default function PracticeLogPage() {
       <PageHeader
         title="Practice Log"
         subtitle="Every session counts. Track your musical journey."
-        actions={<Button onClick={() => setOpen(true)} size="md"><Plus size={16} /> Log Session</Button>}
+        actions={
+          !timerRunning
+            ? <Button onClick={() => setOpen(true)} size="md"><Plus size={16} /> Log Session</Button>
+            : null
+        }
       />
+
+      {/* Timer */}
+      <AnimatePresence>
+        {timerRunning ? (
+          <motion.div
+            key="running"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mb-6 rounded-2xl p-6 flex items-center justify-between gap-6"
+            style={{ background: `linear-gradient(135deg, ${theme.primary}25, ${theme.secondary}10)`, border: `1px solid ${theme.primary}40` }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="relative w-3 h-3">
+                <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: theme.primary }} />
+                <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: theme.primary }} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Session in progress</p>
+                <p className="text-4xl font-mono font-bold text-white tracking-widest">{timerDisplay}</p>
+              </div>
+            </div>
+            <Button onClick={handleStopTimer} size="lg" style={{ backgroundColor: theme.primary }}>
+              <Square size={16} /> Stop & Log
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="idle"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mb-6"
+          >
+            <Card className="p-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold text-white">Ready to practice?</p>
+                <p className="text-sm text-slate-400">Start the timer and it will auto-fill your session duration.</p>
+              </div>
+              <Button onClick={startTimer} size="md" style={{ backgroundColor: theme.primary }}>
+                <Play size={16} /> Start Timer
+              </Button>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {sessions.length === 0 ? (
         <EmptyState
@@ -161,7 +240,7 @@ export default function PracticeLogPage() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Log Practice Session">
+      <Modal open={open} onClose={() => { setOpen(false); resetTimer() }} title="Log Practice Session">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Date" type="date" error={errors.date?.message} {...register('date')} />
           <Input label="Duration (minutes)" type="number" placeholder="30" error={errors.durationMinutes?.message} {...register('durationMinutes')} />

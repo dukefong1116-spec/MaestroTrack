@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Music2, BookOpen, Mic, Target, Trophy, Bell, Brain,
-  Users, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight
+  Users, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight, CalendarDays
 } from 'lucide-react'
 import { useState } from 'react'
 import { logOut } from '@/lib/firebase/auth'
@@ -25,6 +25,7 @@ const studentNav = [
 const teacherNav = [
   { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/teacher/students', icon: Users, label: 'My Students' },
+  { to: '/teacher/schedule', icon: CalendarDays, label: 'Schedule' },
   { to: '/teacher/research', icon: BarChart3, label: 'Research' },
 ]
 

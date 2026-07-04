@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Flame, Target, Clock, Music, Trophy, Zap, ClipboardList, CheckCircle2 } from 'lucide-react'
+import { Flame, Target, Clock, Music, Trophy, Zap, ClipboardList, CheckCircle2, CalendarClock } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, getDailyData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import { subscribeStudentAssignments, updateAssignmentStatus } from '@/lib/firebase/assignments'
+import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import StatCard from '@/components/common/StatCard'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
@@ -13,7 +14,24 @@ import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import Badge from '@/components/ui/Badge'
 import { format, parseISO, differenceInDays } from 'date-fns'
-import type { InstrumentType, Assignment } from '@/types'
+import type { InstrumentType, Assignment, LessonSlot } from '@/types'
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function formatTime(time: string) {
+  const [h, m] = time.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+function getNextLessonText(slot: LessonSlot): string {
+  const today = new Date().getDay()
+  let daysUntil = (slot.dayOfWeek - today + 7) % 7
+  if (daysUntil === 0) daysUntil = 7 // next week if today
+  if (daysUntil === 0) return `Today at ${formatTime(slot.startTime)}`
+  if (daysUntil === 1) return `Tomorrow at ${formatTime(slot.startTime)}`
+  return `${DAYS[slot.dayOfWeek]} at ${formatTime(slot.startTime)}`
+}
 
 export default function StudentDashboard() {
   const { profile } = useAuth()
@@ -40,6 +58,20 @@ export default function StudentDashboard() {
     return subscribeStudentAssignments(profile.uid, setAssignments)
   }, [profile?.uid])
   const activeAssignments = assignments.filter((a) => a.status === 'active')
+
+  const [lessonSlots, setLessonSlots] = useState<LessonSlot[]>([])
+  useEffect(() => {
+    if (!profile?.uid) return
+    return subscribeStudentSchedule(profile.uid, setLessonSlots)
+  }, [profile?.uid])
+  const nextLesson = lessonSlots.length > 0
+    ? lessonSlots.slice().sort((a, b) => {
+        const today = new Date().getDay()
+        const da = (a.dayOfWeek - today + 7) % 7 || 7
+        const db = (b.dayOfWeek - today + 7) % 7 || 7
+        return da - db
+      })[0]
+    : null
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -69,6 +101,24 @@ export default function StudentDashboard() {
           )}
         </div>
       </motion.div>
+
+      {/* Next lesson */}
+      {nextLesson && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="p-4 flex items-center gap-4">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+              <CalendarClock size={18} className="text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 font-medium">Next Lesson</p>
+              <p className="text-white font-semibold">{getNextLessonText(nextLesson)}</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="text-xs text-slate-500">{nextLesson.durationMinutes} min</p>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

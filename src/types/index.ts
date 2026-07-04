@@ -138,6 +138,18 @@ export interface Reminder {
   createdAt: string
 }
 
+export interface LessonSlot {
+  id: string
+  teacherId: string
+  studentId: string
+  studentName: string
+  dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
+  startTime: string
+  durationMinutes: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Assignment {
   id: string
   teacherId: string
