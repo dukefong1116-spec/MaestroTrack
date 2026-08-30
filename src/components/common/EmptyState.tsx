@@ -14,8 +14,8 @@ export default function EmptyState({ icon, title, description, action }: EmptySt
       {icon && (
         <div className="text-5xl mb-4 opacity-50">{icon}</div>
       )}
-      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-      <p className="text-sm text-slate-400 max-w-sm mb-6">{description}</p>
+      <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
+      <p className="text-sm text-slate-500 max-w-sm mb-6">{description}</p>
       {action && (
         <Button onClick={action.onClick}>{action.label}</Button>
       )}

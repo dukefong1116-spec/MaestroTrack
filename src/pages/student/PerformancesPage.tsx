@@ -83,7 +83,7 @@ export default function PerformancesPage() {
         <div className="space-y-8">
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Upcoming</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Upcoming</p>
               <div className="space-y-3">
                 {upcoming.map((perf, i) => {
                   const daysLeft = differenceInDays(parseISO(perf.date), new Date())
@@ -98,8 +98,8 @@ export default function PerformancesPage() {
                                 {daysLeft === 0 ? 'Today!' : `${daysLeft} days away`}
                               </Badge>
                             </div>
-                            <p className="font-bold text-white text-lg">{perf.eventName}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
+                            <p className="font-bold text-slate-900 text-lg">{perf.eventName}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 flex-wrap">
                               <span className="flex items-center gap-1"><Calendar size={12} />{format(parseISO(perf.date), 'MMMM d, yyyy')}</span>
                               {perf.location && <span className="flex items-center gap-1"><MapPin size={12} />{perf.location}</span>}
                             </div>
@@ -110,7 +110,7 @@ export default function PerformancesPage() {
                         </div>
 
                         <div className="mt-4">
-                          <div className="flex justify-between text-xs text-slate-400 mb-2">
+                          <div className="flex justify-between text-xs text-slate-500 mb-2">
                             <span>Preparation Progress</span>
                             <span>{perf.preparationPercentage}%</span>
                           </div>
@@ -119,17 +119,17 @@ export default function PerformancesPage() {
                               <div className="h-full rounded-full transition-all" style={{ width: `${perf.preparationPercentage}%`, backgroundColor: theme.primary }} />
                             </div>
                             <div className="flex gap-1">
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) })} className="text-slate-400 hover:text-white">
+                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) })} className="text-slate-500 hover:text-slate-900">
                                 <ChevronUp size={14} />
                               </button>
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) })} className="text-slate-400 hover:text-white">
+                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) })} className="text-slate-500 hover:text-slate-900">
                                 <ChevronDown size={14} />
                               </button>
                             </div>
                           </div>
                         </div>
 
-                        {perf.notes && <p className="text-xs text-slate-400 mt-3 italic">"{perf.notes}"</p>}
+                        {perf.notes && <p className="text-xs text-slate-500 mt-3 italic">"{perf.notes}"</p>}
                       </Card>
                     </motion.div>
                   )
@@ -140,7 +140,7 @@ export default function PerformancesPage() {
 
           {past.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Past</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Past</p>
               <div className="space-y-2">
                 {past.map((perf) => (
                   <Card key={perf.id} className="p-4 opacity-70">
@@ -148,8 +148,8 @@ export default function PerformancesPage() {
                       <div className="flex items-center gap-3 min-w-0">
                         <Badge variant={typeColors[perf.type]}>{perf.type}</Badge>
                         <div className="min-w-0">
-                          <p className="font-semibold text-white text-sm truncate">{perf.eventName}</p>
-                          <p className="text-xs text-slate-400">{format(parseISO(perf.date), 'MMM d, yyyy')}</p>
+                          <p className="font-semibold text-slate-900 text-sm truncate">{perf.eventName}</p>
+                          <p className="text-xs text-slate-500">{format(parseISO(perf.date), 'MMM d, yyyy')}</p>
                         </div>
                       </div>
                       <button onClick={() => deletePerformance(perf.id)} className="text-slate-600 hover:text-red-400 transition-colors shrink-0">

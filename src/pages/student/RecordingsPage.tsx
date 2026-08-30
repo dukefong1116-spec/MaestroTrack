@@ -102,16 +102,16 @@ export default function RecordingsPage() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => togglePlay(rec)}
-                          className="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center shrink-0 transition-colors"
+                          className="w-10 h-10 rounded-full bg-sky-500 hover:bg-sky-400 flex items-center justify-center shrink-0 transition-colors"
                         >
-                          {playingId === rec.id ? <Pause size={16} className="text-white" /> : <Play size={16} className="text-white ml-0.5" />}
+                          {playingId === rec.id ? <Pause size={16} className="text-slate-900" /> : <Play size={16} className="text-slate-900 ml-0.5" />}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-white truncate">{rec.pieceName}</p>
-                          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <p className="font-semibold text-slate-900 truncate">{rec.pieceName}</p>
+                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                             <Calendar size={10} /> {format(parseISO(rec.date), 'MMMM d, yyyy')}
                           </p>
-                          {rec.notes && <p className="text-xs text-slate-400 mt-1 italic">"{rec.notes}"</p>}
+                          {rec.notes && <p className="text-xs text-slate-500 mt-1 italic">"{rec.notes}"</p>}
                         </div>
                         <button onClick={() => handleDelete(rec)} className="text-slate-600 hover:text-red-400 transition-colors">
                           <Trash2 size={14} />
@@ -137,15 +137,15 @@ export default function RecordingsPage() {
               type="file"
               accept="audio/*"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 file:cursor-pointer"
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-500 file:text-slate-900 hover:file:bg-sky-500 file:cursor-pointer"
             />
           </div>
           {uploading && (
             <div>
               <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+                <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
               </div>
-              <p className="text-xs text-slate-400 mt-1">{Math.round(uploadProgress)}% uploaded</p>
+              <p className="text-xs text-slate-500 mt-1">{Math.round(uploadProgress)}% uploaded</p>
             </div>
           )}
           <div className="flex gap-3 pt-2">

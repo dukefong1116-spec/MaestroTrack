@@ -32,9 +32,9 @@ export default function InsightsPage() {
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl p-6 mb-8" style={{ background: `linear-gradient(135deg, ${theme.primary}20, #1e1b4b)`, border: `1px solid ${theme.primary}20` }}>
         <Brain className="absolute right-6 top-6 opacity-10" size={80} style={{ color: theme.primary }} />
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">AI Practice Intelligence</p>
-        <p className="text-white text-lg font-semibold mb-1">Your practice is {summary.consistencyScore >= 70 ? 'excellent' : summary.consistencyScore >= 40 ? 'developing well' : 'just getting started'}.</p>
-        <p className="text-slate-400 text-sm">Based on {sessions.length} sessions and {Math.round(sessions.reduce((s, p) => s + p.durationMinutes, 0) / 60)} total hours of practice.</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">AI Practice Intelligence</p>
+        <p className="text-slate-900 text-lg font-semibold mb-1">Your practice is {summary.consistencyScore >= 70 ? 'excellent' : summary.consistencyScore >= 40 ? 'developing well' : 'just getting started'}.</p>
+        <p className="text-slate-500 text-sm">Based on {sessions.length} sessions and {Math.round(sessions.reduce((s, p) => s + p.durationMinutes, 0) / 60)} total hours of practice.</p>
         <p className="text-xs text-slate-500 mt-3">Insights are computed from your real practice data. Connect an OpenAI API key in settings to enable GPT-powered coaching.</p>
       </div>
 
@@ -50,8 +50,8 @@ export default function InsightsPage() {
                     <Icon size={14} />
                     <span className="text-xs font-semibold capitalize">{insight.type}</span>
                   </div>
-                  <p className="font-semibold text-white">{insight.title}</p>
-                  <p className="text-sm text-slate-400">{insight.description}</p>
+                  <p className="font-semibold text-slate-900">{insight.title}</p>
+                  <p className="text-sm text-slate-500">{insight.description}</p>
                 </Card>
               </motion.div>
             )
@@ -60,18 +60,18 @@ export default function InsightsPage() {
       ) : (
         <Card className="p-8 text-center mb-8">
           <Brain className="mx-auto text-slate-600 mb-3" size={36} />
-          <p className="text-slate-400">Log more practice sessions to generate personalized insights.</p>
+          <p className="text-slate-500">Log more practice sessions to generate personalized insights.</p>
         </Card>
       )}
 
       {/* Trend + Category */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Weekly Practice Trend</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Weekly Practice Trend</p>
           <TrendLineChart data={weeklyTrend} color={theme.primary} />
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Practice Distribution</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Practice Distribution</p>
           <CategoryPieChart data={categories} />
         </Card>
       </div>

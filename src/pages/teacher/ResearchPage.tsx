@@ -74,7 +74,7 @@ export default function ResearchPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {/* By instrument */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
             Average Practice by Instrument
           </p>
           <div className="space-y-3">
@@ -99,7 +99,7 @@ export default function ResearchPage() {
 
         {/* By level */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
             Practice by Experience Level
           </p>
           <div className="space-y-4">
@@ -109,9 +109,9 @@ export default function ResearchPage() {
                 <div key={level} className="flex items-center gap-4">
                   <div className="w-24 text-sm text-slate-300 capitalize shrink-0">{level}</div>
                   <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
+                    <div className="h-full rounded-full bg-sky-500" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
                   </div>
-                  <div className="text-xs text-slate-400 shrink-0">{avgMin}m avg</div>
+                  <div className="text-xs text-slate-500 shrink-0">{avgMin}m avg</div>
                 </div>
               )
             })}
@@ -121,7 +121,7 @@ export default function ResearchPage() {
       </div>
 
       <Card className="p-5">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
           Studio-wide Category Distribution
         </p>
         <CategoryPieChart data={categoryData} />

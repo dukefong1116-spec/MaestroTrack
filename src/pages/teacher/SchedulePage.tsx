@@ -45,8 +45,8 @@ function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg shrink-0">{emoji}</span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{slot.studentName}</p>
-            <p className="text-xs text-slate-400">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
+            <p className="text-sm font-semibold text-slate-900 truncate">{slot.studentName}</p>
+            <p className="text-xs text-slate-500">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
           </div>
         </div>
         <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors shrink-0">
@@ -128,9 +128,9 @@ export default function SchedulePage() {
 
             return (
               <div key={day}>
-                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-indigo-400 border-indigo-500/40' : 'text-slate-400 border-slate-800'}`}>
+                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-sky-500 border-sky-300' : 'text-slate-500 border-slate-200'}`}>
                   {DAYS_SHORT[day]}
-                  {isToday && <span className="ml-1 text-indigo-400">·</span>}
+                  {isToday && <span className="ml-1 text-sky-500">·</span>}
                 </div>
                 <div className="space-y-2">
                   {daySlots.length === 0 ? (

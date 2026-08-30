@@ -69,39 +69,39 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/30 via-slate-950 to-purple-950/20 pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-slate-50 to-amber-50/30 pointer-events-none" />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🎵</div>
-          <h1 className="text-3xl font-bold text-white">Join MaestroTrack</h1>
-          <p className="text-slate-400 mt-2">Your musical journey starts here</p>
+          <h1 className="text-3xl font-bold text-slate-900">Join MaestroTrack</h1>
+          <p className="text-slate-500 mt-2">Your musical journey starts here</p>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-8 backdrop-blur-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg shadow-slate-100">
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{error}</div>
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>
           )}
 
           <AnimatePresence mode="wait">
             {step === 'role' && (
               <motion.div key="role" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h2 className="text-xl font-semibold text-white mb-6">I am a…</h2>
+                <h2 className="text-xl font-semibold text-slate-900 mb-6">I am a…</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {(['student', 'teacher'] as UserRole[]).map((r) => (
                     <button
                       key={r}
                       onClick={() => { setRole(r); setStep('info') }}
-                      className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-700 hover:border-indigo-500 transition-all duration-200 hover:bg-indigo-500/10"
+                      className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-200 hover:border-sky-400 transition-all duration-200 hover:bg-sky-50"
                     >
                       <span className="text-4xl">{r === 'student' ? '🎓' : '👩‍🏫'}</span>
-                      <span className="font-semibold text-white capitalize">{r}</span>
+                      <span className="font-semibold text-slate-900 capitalize">{r}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-center text-sm text-slate-400 mt-6">
+                <p className="text-center text-sm text-slate-500 mt-6">
                   Already have an account?{' '}
-                  <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Sign In</Link>
+                  <Link to="/login" className="text-sky-500 hover:text-sky-600 font-medium">Sign In</Link>
                 </p>
               </motion.div>
             )}
@@ -109,8 +109,8 @@ export default function SignupPage() {
             {step === 'info' && role === 'student' && (
               <motion.div key="student" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('role')} className="text-slate-400 hover:text-white text-sm">← Back</button>
-                  <h2 className="text-xl font-semibold text-white">Student Profile</h2>
+                  <button onClick={() => setStep('role')} className="text-slate-500 hover:text-slate-900 text-sm">← Back</button>
+                  <h2 className="text-xl font-semibold text-slate-900">Student Profile</h2>
                 </div>
                 <form onSubmit={studentForm.handleSubmit(onStudentSubmit)} className="space-y-4">
                   <Input label="Full Name" placeholder="Jane Smith" error={studentForm.formState.errors.displayName?.message} {...studentForm.register('displayName')} />
@@ -144,8 +144,8 @@ export default function SignupPage() {
             {step === 'info' && role === 'teacher' && (
               <motion.div key="teacher" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('role')} className="text-slate-400 hover:text-white text-sm">← Back</button>
-                  <h2 className="text-xl font-semibold text-white">Teacher Profile</h2>
+                  <button onClick={() => setStep('role')} className="text-slate-500 hover:text-slate-900 text-sm">← Back</button>
+                  <h2 className="text-xl font-semibold text-slate-900">Teacher Profile</h2>
                 </div>
                 <form onSubmit={teacherForm.handleSubmit(onTeacherSubmit)} className="space-y-4">
                   <Input label="Full Name" placeholder="Dr. Sarah Chen" error={teacherForm.formState.errors.displayName?.message} {...teacherForm.register('displayName')} />

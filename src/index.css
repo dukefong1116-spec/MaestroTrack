@@ -6,9 +6,10 @@
 
 body {
   margin: 0;
-  background-color: #020617;
+  background-color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: #0f172a;
 }
 
 #root {
@@ -24,11 +25,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
 /* Remove input number spinners */
@@ -43,6 +44,6 @@ input[type="number"] {
 
 /* Select styling */
 select option {
-  background: #1e293b;
-  color: #fff;
+  background: #ffffff;
+  color: #0f172a;
 }

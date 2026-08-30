@@ -17,25 +17,25 @@ function StudentRow({ student, sessions, onClick }: { student: UserProfile; sess
   return (
     <Card hover className="p-4 flex items-center justify-between gap-4" onClick={onClick}>
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 rounded-full bg-indigo-600/30 flex items-center justify-center text-sm font-bold text-indigo-300 shrink-0">
+        <div className="w-9 h-9 rounded-full bg-sky-100 flex items-center justify-center text-sm font-bold text-sky-600 shrink-0">
           {(student.displayName ?? student.email ?? '?').charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
-          <p className="font-semibold text-white text-sm truncate">{student.displayName}</p>
-          <p className="text-xs text-slate-400">{student.instrument ?? 'Unknown'} · {student.experienceLevel ?? '—'}</p>
+          <p className="font-semibold text-slate-900 text-sm truncate">{student.displayName}</p>
+          <p className="text-xs text-slate-500">{student.instrument ?? 'Unknown'} · {student.experienceLevel ?? '—'}</p>
         </div>
       </div>
-      <div className="flex items-center gap-6 text-xs text-slate-400 shrink-0">
+      <div className="flex items-center gap-6 text-xs text-slate-500 shrink-0">
         <div className="text-center hidden sm:block">
-          <p className="text-white font-semibold">{sessions.totalMinutesThisWeek}</p>
+          <p className="text-slate-900 font-semibold">{sessions.totalMinutesThisWeek}</p>
           <p>min/wk</p>
         </div>
         <div className="text-center hidden sm:block">
-          <p className="text-white font-semibold">{sessions.consistencyScore}%</p>
+          <p className="text-slate-900 font-semibold">{sessions.consistencyScore}%</p>
           <p>consistency</p>
         </div>
         <div className="text-center hidden sm:block">
-          <p className="text-white font-semibold">{sessions.weeklyGoalPercentage}%</p>
+          <p className="text-slate-900 font-semibold">{sessions.weeklyGoalPercentage}%</p>
           <p>goal</p>
         </div>
         <Badge variant={sessions.currentStreak >= 7 ? 'success' : sessions.currentStreak >= 3 ? 'warning' : 'default'} size="sm">
@@ -83,10 +83,10 @@ export default function TeacherDashboard() {
       {/* Studio code */}
       <Card className="p-4 mb-6 flex items-center justify-between">
         <div>
-          <p className="text-xs text-slate-400">Studio Code</p>
-          <p className="text-2xl font-mono font-bold text-white tracking-widest">{profile?.studioCode ?? '—'}</p>
+          <p className="text-xs text-slate-500">Studio Code</p>
+          <p className="text-2xl font-mono font-bold text-slate-900 tracking-widest">{profile?.studioCode ?? '—'}</p>
         </div>
-        <button onClick={copyCode} className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+        <button onClick={copyCode} className="flex items-center gap-2 text-sm text-sky-500 hover:text-sky-600 transition-colors">
           <Copy size={14} /> Copy
         </button>
       </Card>
@@ -108,7 +108,7 @@ export default function TeacherDashboard() {
         />
       ) : (
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Students</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Students</p>
           <div className="space-y-2">
             {students.map((student, i) => (
               <motion.div key={student.uid} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

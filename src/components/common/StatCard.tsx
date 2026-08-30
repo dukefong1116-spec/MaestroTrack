@@ -34,7 +34,7 @@ export default function StatCard({
     >
       <Card className={cn('p-5 space-y-3', className)}>
         <div className="flex items-start justify-between">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{label}</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{label}</p>
           {icon && (
             <div className="p-2 rounded-lg" style={{ backgroundColor: `${accent}20` }}>
               <div style={{ color: accent }}>{icon}</div>
@@ -42,11 +42,11 @@ export default function StatCard({
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-white tabular-nums">{value}</p>
-          {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+          <p className="text-3xl font-bold text-slate-900 tabular-nums">{value}</p>
+          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
         </div>
         {trend && (
-          <div className={cn('text-xs font-medium flex items-center gap-1', trend.value >= 0 ? 'text-emerald-400' : 'text-red-400')}>
+          <div className={cn('text-xs font-medium flex items-center gap-1', trend.value >= 0 ? 'text-emerald-600' : 'text-red-500')}>
             {trend.value >= 0 ? '↑' : '↓'} {Math.abs(trend.value)}% {trend.label}
           </div>
         )}

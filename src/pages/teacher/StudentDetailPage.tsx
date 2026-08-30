@@ -83,12 +83,12 @@ export default function StudentDetailPage() {
   }
 
   if (!student) return (
-    <div className="flex items-center justify-center h-64 text-slate-400">Student not found</div>
+    <div className="flex items-center justify-center h-64 text-slate-500">Student not found</div>
   )
 
   return (
     <div>
-      <button onClick={() => navigate('/teacher/students')} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-6 transition-colors">
+      <button onClick={() => navigate('/teacher/students')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 text-sm mb-6 transition-colors">
         <ArrowLeft size={16} /> Back to Students
       </button>
 
@@ -97,8 +97,8 @@ export default function StudentDetailPage() {
           {theme.emoji}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">{student.displayName}</h1>
-          <p className="text-slate-400 text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
+          <h1 className="text-2xl font-bold text-slate-900">{student.displayName}</h1>
+          <p className="text-slate-500 text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
         </div>
       </div>
 
@@ -113,23 +113,23 @@ export default function StudentDetailPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Last 14 Days</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Last 14 Days</p>
           <PracticeBarChart data={dailyData} color={theme.primary} />
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Category Distribution</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Category Distribution</p>
           <CategoryPieChart data={categoryData} />
         </Card>
       </div>
 
       <Card className="p-5 mb-8">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Practice Heatmap</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Practice Heatmap</p>
         <PracticeHeatmap data={heatmap} color={theme.primary} />
       </Card>
 
       {/* Assignments */}
       <div className="mb-8">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
           <ClipboardList size={14} /> Assignments
         </p>
         <Card className="p-5 mb-4">
@@ -166,14 +166,14 @@ export default function StudentDetailPage() {
                 <Card className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-slate-500' : 'text-white'}`}>
+                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                         {a.title}
                       </p>
                       <Badge variant={a.status === 'completed' ? 'success' : 'info'} size="sm">
                         {a.status}
                       </Badge>
                     </div>
-                    {a.description && <p className="text-xs text-slate-400 mt-1">{a.description}</p>}
+                    {a.description && <p className="text-xs text-slate-500 mt-1">{a.description}</p>}
                     <p className="text-xs text-slate-500 mt-1">
                       Assigned {format(parseISO(a.createdAt), 'MMM d')}
                       {a.dueDate ? ` · Due ${format(parseISO(a.dueDate), 'MMM d')}` : ''}
@@ -194,7 +194,7 @@ export default function StudentDetailPage() {
 
       {/* Teacher notes */}
       <div>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
           <MessageSquare size={14} /> Teacher Notes
         </p>
         <Card className="p-5 mb-4">

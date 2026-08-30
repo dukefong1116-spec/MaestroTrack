@@ -49,8 +49,8 @@ export default function AnalyticsPage() {
           { label: 'Consistency Score', value: `${consistency}%` },
         ].map((kpi, i) => (
           <Card key={i} className="p-4 text-center space-y-1">
-            <p className="text-2xl font-bold text-white">{kpi.value}</p>
-            <p className="text-xs text-slate-400">{kpi.label}</p>
+            <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
+            <p className="text-xs text-slate-500">{kpi.label}</p>
           </Card>
         ))}
       </div>
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {charts.map((chart, i) => (
           <Card key={i} className="p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">{chart.title}</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">{chart.title}</p>
             {chart.component}
           </Card>
         ))}
@@ -68,11 +68,11 @@ export default function AnalyticsPage() {
       {/* Category distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Practice Category Distribution</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Practice Category Distribution</p>
           <CategoryPieChart data={categoryData} />
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Category Breakdown</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Category Breakdown</p>
           <div className="space-y-3 mt-2">
             {categoryData.sort((a, b) => b.minutes - a.minutes).map((cat, i) => (
               <div key={i}>
@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
 
       {/* Heatmap */}
       <Card className="p-5">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Full Year Practice Heatmap</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Full Year Practice Heatmap</p>
         <PracticeHeatmap data={heatmap} color={theme.primary} />
       </Card>
     </div>

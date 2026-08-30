@@ -24,12 +24,10 @@ export default function LoginPage() {
     try {
       const user = await signIn(data.email, data.password)
       let role: string | null = null
-      // Always try Firestore first so stale localStorage can't override the real role
       try {
         const profile = await getUserProfile(user.uid)
         role = profile?.role ?? null
       } catch { /* offline — fall through */ }
-      // Fall back to cached profile blob, then role key
       if (!role) {
         try {
           const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
@@ -53,8 +51,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/30 via-slate-950 to-purple-950/20 pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-slate-50 to-amber-50/30 pointer-events-none" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -62,15 +60,15 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🎹</div>
-          <h1 className="text-3xl font-bold text-white">MaestroTrack</h1>
-          <p className="text-slate-400 mt-2">The practice intelligence platform for musicians</p>
+          <h1 className="text-3xl font-bold text-slate-900">MaestroTrack</h1>
+          <p className="text-slate-500 mt-2">The practice intelligence platform for musicians</p>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-8 backdrop-blur-sm">
-          <h2 className="text-xl font-semibold text-white mb-6">Welcome back</h2>
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg shadow-slate-100">
+          <h2 className="text-xl font-semibold text-slate-900 mb-6">Welcome back</h2>
 
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -79,7 +77,7 @@ export default function LoginPage() {
             <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              <Link to="/forgot-password" className="text-xs text-sky-500 hover:text-sky-600 transition-colors">
                 Forgot password?
               </Link>
             </div>
@@ -88,9 +86,9 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-slate-400 mt-6">
+          <p className="text-center text-sm text-slate-500 mt-6">
             New here?{' '}
-            <Link to="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+            <Link to="/signup" className="text-sky-500 hover:text-sky-600 font-medium transition-colors">
               Create an account
             </Link>
           </p>

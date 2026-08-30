@@ -68,7 +68,7 @@ export default function TeacherSettingsPage() {
           <p className="text-sm font-semibold text-slate-300 mb-1">Studio Code</p>
           <p className="text-xs text-slate-500 mb-4">Share this code with students to invite them to your studio.</p>
           <div className="flex items-center gap-3">
-            <div className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 font-mono text-2xl font-bold text-white tracking-widest">
+            <div className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 font-mono text-2xl font-bold text-slate-900 tracking-widest">
               {profile?.studioCode ?? '—'}
             </div>
             <Button size="sm" variant="outline" onClick={copyCode}>
@@ -80,13 +80,13 @@ export default function TeacherSettingsPage() {
         <Card className="p-6">
           <p className="text-sm font-semibold text-slate-300 mb-4">Account</p>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Email</span>
-              <span className="text-white">{user?.email}</span>
+              <span className="text-slate-900">{user?.email}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Role</span>
-              <span className="text-white capitalize">{profile?.role}</span>
+              <span className="text-slate-900 capitalize">{profile?.role}</span>
             </div>
           </div>
         </Card>

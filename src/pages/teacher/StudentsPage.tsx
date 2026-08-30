@@ -66,12 +66,12 @@ export default function StudentsPage() {
                 <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-600/20 flex items-center justify-center text-xl">
+                      <div className="w-10 h-10 rounded-full bg-sky-500/20 flex items-center justify-center text-xl">
                         {instrTheme?.emoji ?? '🎵'}
                       </div>
                       <div>
-                        <p className="font-semibold text-white">{student.displayName}</p>
-                        <p className="text-xs text-slate-400 capitalize">{student.instrument ?? 'Unknown'}</p>
+                        <p className="font-semibold text-slate-900">{student.displayName}</p>
+                        <p className="text-xs text-slate-500 capitalize">{student.instrument ?? 'Unknown'}</p>
                       </div>
                     </div>
                     <button
@@ -84,26 +84,26 @@ export default function StudentsPage() {
 
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="bg-slate-800/60 rounded-lg p-2">
-                      <p className="text-sm font-bold text-white">{summary.currentStreak}d</p>
+                      <p className="text-sm font-bold text-slate-900">{summary.currentStreak}d</p>
                       <p className="text-xs text-slate-500">Streak</p>
                     </div>
                     <div className="bg-slate-800/60 rounded-lg p-2">
-                      <p className="text-sm font-bold text-white">{summary.weeklyGoalPercentage}%</p>
+                      <p className="text-sm font-bold text-slate-900">{summary.weeklyGoalPercentage}%</p>
                       <p className="text-xs text-slate-500">Goal</p>
                     </div>
                     <div className="bg-slate-800/60 rounded-lg p-2">
-                      <p className="text-sm font-bold text-white">{summary.consistencyScore}%</p>
+                      <p className="text-sm font-bold text-slate-900">{summary.consistencyScore}%</p>
                       <p className="text-xs text-slate-500">Consist.</p>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <div className="flex justify-between text-xs text-slate-500 mb-1">
                       <span>Weekly goal</span>
                       <span>{summary.totalMinutesThisWeek}/{student.weeklyGoalMinutes ?? 300} min</span>
                     </div>
                     <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, summary.weeklyGoalPercentage)}%` }} />
+                      <div className="h-full bg-sky-500 rounded-full" style={{ width: `${Math.min(100, summary.weeklyGoalPercentage)}%` }} />
                     </div>
                   </div>
 

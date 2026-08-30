@@ -211,23 +211,23 @@ export default function SettingsPage() {
         <Card className="p-6">
           <p className="text-sm font-semibold text-slate-300 mb-4">Account</p>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Email</span>
-              <span className="text-white">{user?.email}</span>
+              <span className="text-slate-900">{user?.email}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Role</span>
-              <span className={`capitalize ${profile?.role ? 'text-white' : 'text-red-400'}`}>
+              <span className={`capitalize ${profile?.role ? 'text-slate-900' : 'text-red-400'}`}>
                 {profile?.role ?? '—'}
               </span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Studio Code</span>
-              <span className="text-white">{profile?.studioCode ?? '—'}</span>
+              <span className="text-slate-900">{profile?.studioCode ?? '—'}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-slate-500">
               <span>Member Since</span>
-              <span className="text-white">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
+              <span className="text-slate-900">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
             </div>
           </div>
         </Card>

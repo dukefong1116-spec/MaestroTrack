@@ -86,8 +86,8 @@ export default function StudentDashboard() {
         style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.secondary}10)`, border: `1px solid ${theme.primary}30` }}
       >
         <div className="absolute top-4 right-6 text-7xl opacity-20 select-none">{theme.emoji}</div>
-        <p className="text-slate-400 text-sm font-medium mb-1">{greeting}</p>
-        <h1 className="text-3xl font-bold text-white mb-2">{profile?.displayName ?? 'Musician'} 👋</h1>
+        <p className="text-slate-500 text-sm font-medium mb-1">{greeting}</p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{profile?.displayName ?? 'Musician'} 👋</h1>
         <div className="flex items-center gap-4 flex-wrap">
           <Badge variant="purple" size="md">
             <span style={{ color: theme.secondary }}>{theme.emoji}</span>
@@ -106,12 +106,12 @@ export default function StudentDashboard() {
       {nextLesson && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="p-4 flex items-center gap-4">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-              <CalendarClock size={18} className="text-indigo-400" />
+            <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
+              <CalendarClock size={18} className="text-sky-500" />
             </div>
             <div>
-              <p className="text-xs text-slate-400 font-medium">Next Lesson</p>
-              <p className="text-white font-semibold">{getNextLessonText(nextLesson)}</p>
+              <p className="text-xs text-slate-500 font-medium">Next Lesson</p>
+              <p className="text-slate-900 font-semibold">{getNextLessonText(nextLesson)}</p>
             </div>
             <div className="ml-auto text-right">
               <p className="text-xs text-slate-500">{nextLesson.durationMinutes} min</p>
@@ -163,21 +163,21 @@ export default function StudentDashboard() {
       {/* Weekly goal ring + bar chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-6 flex flex-col items-center justify-center gap-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest self-start">Weekly Goal</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest self-start">Weekly Goal</p>
           <ProgressRing percentage={summary.weeklyGoalPercentage} size={120} strokeWidth={10} color={theme.primary}>
             <div className="text-center">
-              <p className="text-2xl font-bold text-white">{summary.weeklyGoalPercentage}%</p>
+              <p className="text-2xl font-bold text-slate-900">{summary.weeklyGoalPercentage}%</p>
               <p className="text-xs text-slate-500">complete</p>
             </div>
           </ProgressRing>
           <div className="text-center">
-            <p className="text-sm text-white font-medium">{summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min</p>
-            <p className="text-xs text-slate-400">{(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0 ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go` : '🎉 Goal reached!'}</p>
+            <p className="text-sm text-slate-900 font-medium">{summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min</p>
+            <p className="text-xs text-slate-500">{(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0 ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go` : '🎉 Goal reached!'}</p>
           </div>
         </Card>
 
         <Card className="lg:col-span-2 p-5">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Last 14 Days</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Last 14 Days</p>
           <PracticeBarChart data={dailyData} color={theme.primary} />
         </Card>
       </div>
@@ -185,15 +185,15 @@ export default function StudentDashboard() {
       {/* Active Pieces */}
       {activePieces.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Music size={14} /> Active Pieces
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {activePieces.map((piece, i) => (
               <motion.div key={piece.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }}>
                 <Card className="p-4" hover>
-                  <p className="font-semibold text-white text-sm truncate">{piece.title}</p>
-                  {piece.composer && <p className="text-xs text-slate-400 truncate">{piece.composer}</p>}
+                  <p className="font-semibold text-slate-900 text-sm truncate">{piece.title}</p>
+                  {piece.composer && <p className="text-xs text-slate-500 truncate">{piece.composer}</p>}
                   <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${piece.completionPercentage}%`, backgroundColor: theme.primary }} />
                   </div>
@@ -208,7 +208,7 @@ export default function StudentDashboard() {
       {/* Upcoming performances */}
       {upcomingPerformances.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Trophy size={14} /> Upcoming Performances
           </p>
           <div className="space-y-2">
@@ -217,8 +217,8 @@ export default function StudentDashboard() {
               return (
                 <Card key={perf.id} className="p-4 flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-semibold text-white text-sm">{perf.eventName}</p>
-                    <p className="text-xs text-slate-400">{format(parseISO(perf.date), 'MMMM d, yyyy')} · {perf.location}</p>
+                    <p className="font-semibold text-slate-900 text-sm">{perf.eventName}</p>
+                    <p className="text-xs text-slate-500">{format(parseISO(perf.date), 'MMMM d, yyyy')} · {perf.location}</p>
                   </div>
                   <Badge variant={daysLeft <= 7 ? 'danger' : daysLeft <= 30 ? 'warning' : 'info'} size="md">
                     {daysLeft === 0 ? 'Today!' : `${daysLeft}d away`}
@@ -233,7 +233,7 @@ export default function StudentDashboard() {
       {/* Assignments from teacher */}
       {activeAssignments.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
             <ClipboardList size={14} /> This Week's Assignments
           </p>
           <div className="space-y-2">
@@ -241,8 +241,8 @@ export default function StudentDashboard() {
               <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="p-4 flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white text-sm">{a.title}</p>
-                    {a.description && <p className="text-xs text-slate-400 mt-0.5">{a.description}</p>}
+                    <p className="font-semibold text-slate-900 text-sm">{a.title}</p>
+                    {a.description && <p className="text-xs text-slate-500 mt-0.5">{a.description}</p>}
                     {a.dueDate && (
                       <p className="text-xs text-slate-500 mt-1">
                         Due {format(parseISO(a.dueDate), 'MMM d')}
@@ -268,7 +268,7 @@ export default function StudentDashboard() {
 
       {/* Heatmap */}
       <Card className="p-5">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Practice Activity — Last Year</p>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Practice Activity — Last Year</p>
         <PracticeHeatmap data={heatmapData} color={theme.primary} />
       </Card>
     </div>

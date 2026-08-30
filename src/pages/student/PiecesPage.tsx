@@ -92,7 +92,7 @@ export default function PiecesPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-white' : 'text-slate-400 hover:text-white bg-transparent'}`}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900 bg-transparent'}`}
             style={filter === f ? { backgroundColor: theme.primary } : undefined}
           >
             {f} ({pieces.filter((p) => p.status === f).length})
@@ -114,14 +114,14 @@ export default function PiecesPage() {
               <Card className="p-5 space-y-4" hover onClick={() => setSelected(piece)}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-white truncate">{piece.title}</p>
-                    {piece.composer && <p className="text-xs text-slate-400">{piece.composer}</p>}
+                    <p className="font-semibold text-slate-900 truncate">{piece.title}</p>
+                    {piece.composer && <p className="text-xs text-slate-500">{piece.composer}</p>}
                   </div>
                   <Badge variant={statusColors[piece.status]}>{piece.status}</Badge>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs text-slate-500 mb-1">
                     <span>Completion</span>
                     <span>{piece.completionPercentage}%</span>
                   </div>
@@ -130,7 +130,7 @@ export default function PiecesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>{piece.totalMinutes} min total</span>
                   <span>{piece.sessionCount} sessions</span>
                   <div className="flex">
@@ -169,7 +169,7 @@ export default function PiecesPage() {
           <Input label="Composer (optional)" placeholder="Ludwig van Beethoven" {...register('composer')} />
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-300">Difficulty (1–5)</label>
-            <input type="range" min={1} max={5} step={1} className="w-full accent-indigo-500" {...register('difficulty')} />
+            <input type="range" min={1} max={5} step={1} className="w-full accent-sky-500" {...register('difficulty')} />
           </div>
           <Input label="Target Date (optional)" type="date" {...register('targetDate')} />
           <Textarea label="Notes (optional)" placeholder="Goals for this piece..." {...register('notes')} />
@@ -184,15 +184,15 @@ export default function PiecesPage() {
       {selected && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.title} size="md">
           <div className="space-y-4">
-            {selected.composer && <p className="text-slate-400 text-sm">{selected.composer}</p>}
+            {selected.composer && <p className="text-slate-500 text-sm">{selected.composer}</p>}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-800/60 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-white">{selected.totalMinutes}</p>
-                <p className="text-xs text-slate-400">Total Minutes</p>
+                <p className="text-2xl font-bold text-slate-900">{selected.totalMinutes}</p>
+                <p className="text-xs text-slate-500">Total Minutes</p>
               </div>
               <div className="bg-slate-800/60 rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-white">{selected.sessionCount}</p>
-                <p className="text-xs text-slate-400">Sessions</p>
+                <p className="text-2xl font-bold text-slate-900">{selected.sessionCount}</p>
+                <p className="text-xs text-slate-500">Sessions</p>
               </div>
             </div>
             <div>
@@ -214,7 +214,7 @@ export default function PiecesPage() {
                 </div>
               </div>
             )}
-            {selected.notes && <p className="text-sm text-slate-400 italic">"{selected.notes}"</p>}
+            {selected.notes && <p className="text-sm text-slate-500 italic">"{selected.notes}"</p>}
             <div className="flex gap-2">
               {selected.status === 'active' && (
                 <Button size="sm" onClick={() => { handleMaster(selected); setSelected(null) }} className="flex-1">
