@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils/cn'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -8,25 +8,38 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }, ref) => {
-    const base = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95'
+  ({ variant = 'primary', size = 'md', loading, className, children, disabled, style, ...props }, ref) => {
+    const base = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#EDEAE4] disabled:opacity-50 disabled:cursor-not-allowed active:scale-95'
     const variants = {
-      primary: 'bg-sky-500 hover:bg-sky-400 text-white focus:ring-sky-400 shadow-md shadow-sky-200',
-      secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 focus:ring-slate-300',
-      ghost: 'hover:bg-slate-100 text-slate-500 hover:text-slate-900 focus:ring-slate-300',
+      primary: 'text-white shadow-md',
+      secondary: 'bg-[#E5E2DB] hover:bg-[#DEDAD2] text-[#22201C] focus:ring-[#DEDAD2]',
+      ghost: 'hover:bg-[#E5E2DB] text-[#6B6860] hover:text-[#22201C] focus:ring-[#DEDAD2]',
       danger: 'bg-red-500 hover:bg-red-400 text-white focus:ring-red-400',
-      outline: 'border border-slate-300 hover:border-slate-400 text-slate-600 hover:text-slate-900 focus:ring-slate-300',
+      outline: 'border border-[#DEDAD2] hover:border-[#E8503A] text-[#6B6860] hover:text-[#22201C] focus:ring-[#E8503A]',
     }
     const sizes = {
       sm: 'px-3 py-1.5 text-sm gap-1.5',
       md: 'px-4 py-2 text-sm gap-2',
       lg: 'px-6 py-3 text-base gap-2',
     }
+
+    const primaryStyle: CSSProperties = variant === 'primary' ? {
+      background: '#E8503A',
+      boxShadow: '0 4px 12px rgba(232,80,58,.25)',
+    } : {}
+
     return (
       <button
         ref={ref}
         className={cn(base, variants[variant], sizes[size], className)}
         disabled={disabled || loading}
+        style={{ ...primaryStyle, ...style }}
+        onMouseEnter={variant === 'primary' ? (e) => {
+          if (!disabled && !loading) (e.currentTarget as HTMLElement).style.background = '#D44430'
+        } : undefined}
+        onMouseLeave={variant === 'primary' ? (e) => {
+          if (!disabled && !loading) (e.currentTarget as HTMLElement).style.background = '#E8503A'
+        } : undefined}
         {...props}
       >
         {loading && (

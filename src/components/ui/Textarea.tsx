@@ -12,17 +12,23 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-slate-700">{label}</label>
+          <label htmlFor={inputId} className="text-sm font-medium" style={{ color: '#3D3A35' }}>{label}</label>
         )}
         <textarea
           ref={ref}
           id={inputId}
           rows={3}
           className={cn(
-            'w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 placeholder:text-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition-all resize-none',
+            'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all resize-none',
             error && 'border-red-400 focus:ring-red-400',
             className
           )}
+          style={{
+            background: '#F8F6F2',
+            border: `1px solid ${error ? '#F87171' : '#DEDAD2'}`,
+            color: '#22201C',
+            '--tw-ring-color': '#E8503A',
+          } as React.CSSProperties}
           {...props}
         />
         {error && <p className="text-xs text-red-500">{error}</p>}

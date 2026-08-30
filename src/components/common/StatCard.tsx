@@ -20,7 +20,7 @@ export default function StatCard({
   value,
   subtitle,
   icon,
-  accent = '#6366f1',
+  accent = '#E8503A',
   trend,
   children,
   className,
@@ -34,16 +34,16 @@ export default function StatCard({
     >
       <Card className={cn('p-5 space-y-3', className)}>
         <div className="flex items-start justify-between">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{label}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#A09C95' }}>{label}</p>
           {icon && (
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${accent}20` }}>
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${accent}18` }}>
               <div style={{ color: accent }}>{icon}</div>
             </div>
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-3xl font-bold text-slate-900 tabular-nums">{value}</p>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          <p className="text-3xl font-bold tabular-nums" style={{ color: '#22201C' }}>{value}</p>
+          {subtitle && <p className="text-xs" style={{ color: '#6B6860' }}>{subtitle}</p>}
         </div>
         {trend && (
           <div className={cn('text-xs font-medium flex items-center gap-1', trend.value >= 0 ? 'text-emerald-600' : 'text-red-500')}>

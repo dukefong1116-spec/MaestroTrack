@@ -69,39 +69,42 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-slate-50 to-amber-50/30 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#EDEAE4' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 40% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🎵</div>
-          <h1 className="text-3xl font-bold text-slate-900">Join MaestroTrack</h1>
-          <p className="text-slate-500 mt-2">Your musical journey starts here</p>
+          <h1 className="text-3xl font-bold" style={{ color: '#22201C' }}>Join MaestroTrack</h1>
+          <p className="mt-2" style={{ color: '#6B6860' }}>Your musical journey starts here</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg shadow-slate-100">
+        <div className="rounded-2xl p-8" style={{ background: '#F8F6F2', border: '1px solid #DEDAD2', boxShadow: '0 8px 32px -8px rgba(34,32,28,.12)' }}>
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>
+            <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>{error}</div>
           )}
 
           <AnimatePresence mode="wait">
             {step === 'role' && (
               <motion.div key="role" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h2 className="text-xl font-semibold text-slate-900 mb-6">I am a…</h2>
+                <h2 className="text-xl font-semibold mb-6" style={{ color: '#22201C' }}>I am a…</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {(['student', 'teacher'] as UserRole[]).map((r) => (
                     <button
                       key={r}
                       onClick={() => { setRole(r); setStep('info') }}
-                      className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-slate-200 hover:border-sky-400 transition-all duration-200 hover:bg-sky-50"
+                      className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200"
+                      style={{ borderColor: '#DEDAD2', color: '#22201C' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#E8503A'; (e.currentTarget as HTMLElement).style.background = '#FEF0EE' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#DEDAD2'; (e.currentTarget as HTMLElement).style.background = '' }}
                     >
                       <span className="text-4xl">{r === 'student' ? '🎓' : '👩‍🏫'}</span>
-                      <span className="font-semibold text-slate-900 capitalize">{r}</span>
+                      <span className="font-semibold capitalize">{r}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-center text-sm text-slate-500 mt-6">
+                <p className="text-center text-sm mt-6" style={{ color: '#6B6860' }}>
                   Already have an account?{' '}
-                  <Link to="/login" className="text-sky-500 hover:text-sky-600 font-medium">Sign In</Link>
+                  <Link to="/login" className="font-medium" style={{ color: '#E8503A' }}>Sign In</Link>
                 </p>
               </motion.div>
             )}
@@ -109,8 +112,8 @@ export default function SignupPage() {
             {step === 'info' && role === 'student' && (
               <motion.div key="student" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('role')} className="text-slate-500 hover:text-slate-900 text-sm">← Back</button>
-                  <h2 className="text-xl font-semibold text-slate-900">Student Profile</h2>
+                  <button onClick={() => setStep('role')} className="text-sm" style={{ color: '#6B6860' }}>← Back</button>
+                  <h2 className="text-xl font-semibold" style={{ color: '#22201C' }}>Student Profile</h2>
                 </div>
                 <form onSubmit={studentForm.handleSubmit(onStudentSubmit)} className="space-y-4">
                   <Input label="Full Name" placeholder="Jane Smith" error={studentForm.formState.errors.displayName?.message} {...studentForm.register('displayName')} />
@@ -144,8 +147,8 @@ export default function SignupPage() {
             {step === 'info' && role === 'teacher' && (
               <motion.div key="teacher" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="flex items-center gap-2 mb-6">
-                  <button onClick={() => setStep('role')} className="text-slate-500 hover:text-slate-900 text-sm">← Back</button>
-                  <h2 className="text-xl font-semibold text-slate-900">Teacher Profile</h2>
+                  <button onClick={() => setStep('role')} className="text-sm" style={{ color: '#6B6860' }}>← Back</button>
+                  <h2 className="text-xl font-semibold" style={{ color: '#22201C' }}>Teacher Profile</h2>
                 </div>
                 <form onSubmit={teacherForm.handleSubmit(onTeacherSubmit)} className="space-y-4">
                   <Input label="Full Name" placeholder="Dr. Sarah Chen" error={teacherForm.formState.errors.displayName?.message} {...teacherForm.register('displayName')} />

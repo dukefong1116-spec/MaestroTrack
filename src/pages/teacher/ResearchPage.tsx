@@ -74,7 +74,7 @@ export default function ResearchPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {/* By instrument */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
             Average Practice by Instrument
           </p>
           <div className="space-y-3">
@@ -83,23 +83,23 @@ export default function ResearchPage() {
               const theme = getTheme(inst.toLowerCase() as InstrumentType)
               return (
                 <div key={inst}>
-                  <div className="flex justify-between text-xs text-slate-300 mb-1">
+                  <div className="flex justify-between text-xs text-[#A09C95] mb-1">
                     <span>{INSTRUMENT_THEMES[inst.toLowerCase() as InstrumentType]?.emoji ?? '🎵'} {inst}</span>
                     <span>{avgMin} min avg · {data.count} students</span>
                   </div>
-                  <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%`, backgroundColor: theme.primary }} />
                   </div>
                 </div>
               )
             })}
-            {byInstrument.length === 0 && <p className="text-slate-500 text-sm">No data yet.</p>}
+            {byInstrument.length === 0 && <p className="text-[#6B6860] text-sm">No data yet.</p>}
           </div>
         </Card>
 
         {/* By level */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
             Practice by Experience Level
           </p>
           <div className="space-y-4">
@@ -107,21 +107,21 @@ export default function ResearchPage() {
               const avgMin = data.count > 0 ? Math.round(data.totalMinutes / data.count) : 0
               return (
                 <div key={level} className="flex items-center gap-4">
-                  <div className="w-24 text-sm text-slate-300 capitalize shrink-0">{level}</div>
-                  <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-sky-500" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
+                  <div className="w-24 text-sm text-[#A09C95] capitalize shrink-0">{level}</div>
+                  <div className="flex-1 h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-[#E8503A]" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
                   </div>
-                  <div className="text-xs text-slate-500 shrink-0">{avgMin}m avg</div>
+                  <div className="text-xs text-[#6B6860] shrink-0">{avgMin}m avg</div>
                 </div>
               )
             })}
-            {byLevel.length === 0 && <p className="text-slate-500 text-sm">No data yet.</p>}
+            {byLevel.length === 0 && <p className="text-[#6B6860] text-sm">No data yet.</p>}
           </div>
         </Card>
       </div>
 
       <Card className="p-5">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">
+        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
           Studio-wide Category Distribution
         </p>
         <CategoryPieChart data={categoryData} />

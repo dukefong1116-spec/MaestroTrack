@@ -92,8 +92,8 @@ export default function RecordingsPage() {
           {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([month, recs]) => (
             <div key={month}>
               <div className="flex items-center gap-3 mb-4">
-                <p className="text-sm font-semibold text-slate-300">{format(parseISO(`${month}-01`), 'MMMM yyyy')}</p>
-                <div className="flex-1 h-px bg-slate-800" />
+                <p className="text-sm font-semibold text-[#A09C95]">{format(parseISO(`${month}-01`), 'MMMM yyyy')}</p>
+                <div className="flex-1 h-px bg-[#E5E2DB]" />
               </div>
               <div className="space-y-3">
                 {recs.map((rec, i) => (
@@ -102,18 +102,18 @@ export default function RecordingsPage() {
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => togglePlay(rec)}
-                          className="w-10 h-10 rounded-full bg-sky-500 hover:bg-sky-400 flex items-center justify-center shrink-0 transition-colors"
+                          className="w-10 h-10 rounded-full bg-[#E8503A] hover:bg-[#D44430] flex items-center justify-center shrink-0 transition-colors"
                         >
-                          {playingId === rec.id ? <Pause size={16} className="text-slate-900" /> : <Play size={16} className="text-slate-900 ml-0.5" />}
+                          {playingId === rec.id ? <Pause size={16} className="text-[#22201C]" /> : <Play size={16} className="text-[#22201C] ml-0.5" />}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{rec.pieceName}</p>
-                          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                          <p className="font-semibold text-[#22201C] truncate">{rec.pieceName}</p>
+                          <p className="text-xs text-[#6B6860] flex items-center gap-1 mt-0.5">
                             <Calendar size={10} /> {format(parseISO(rec.date), 'MMMM d, yyyy')}
                           </p>
-                          {rec.notes && <p className="text-xs text-slate-500 mt-1 italic">"{rec.notes}"</p>}
+                          {rec.notes && <p className="text-xs text-[#6B6860] mt-1 italic">"{rec.notes}"</p>}
                         </div>
-                        <button onClick={() => handleDelete(rec)} className="text-slate-600 hover:text-red-400 transition-colors">
+                        <button onClick={() => handleDelete(rec)} className="text-[#6B6860] hover:text-red-400 transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -132,20 +132,20 @@ export default function RecordingsPage() {
           <Input label="Date" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
           <Textarea label="Notes (optional)" placeholder="Context about this recording..." value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-2">Audio File</label>
+            <label className="text-sm font-medium text-[#A09C95] block mb-2">Audio File</label>
             <input
               type="file"
               accept="audio/*"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-500 file:text-slate-900 hover:file:bg-sky-500 file:cursor-pointer"
+              className="w-full text-sm text-[#6B6860] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#E8503A] file:text-[#22201C] hover:file:bg-[#E8503A] file:cursor-pointer"
             />
           </div>
           {uploading && (
             <div>
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+              <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
+                <div className="h-full bg-[#E8503A] rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
               </div>
-              <p className="text-xs text-slate-500 mt-1">{Math.round(uploadProgress)}% uploaded</p>
+              <p className="text-xs text-[#6B6860] mt-1">{Math.round(uploadProgress)}% uploaded</p>
             </div>
           )}
           <div className="flex gap-3 pt-2">

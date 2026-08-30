@@ -41,15 +41,15 @@ function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-      <div className="bg-slate-800/80 border border-slate-700/50 rounded-xl p-3 flex items-center justify-between gap-2">
+      <div className="bg-[#F8F6F2] border border-[#DEDAD2] rounded-xl p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg shrink-0">{emoji}</span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">{slot.studentName}</p>
-            <p className="text-xs text-slate-500">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
+            <p className="text-sm font-semibold text-[#22201C] truncate">{slot.studentName}</p>
+            <p className="text-xs text-[#6B6860]">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
           </div>
         </div>
-        <button onClick={onDelete} className="text-slate-600 hover:text-red-400 transition-colors shrink-0">
+        <button onClick={onDelete} className="text-[#6B6860] hover:text-red-400 transition-colors shrink-0">
           <Trash2 size={13} />
         </button>
       </div>
@@ -128,13 +128,13 @@ export default function SchedulePage() {
 
             return (
               <div key={day}>
-                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-sky-500 border-sky-300' : 'text-slate-500 border-slate-200'}`}>
+                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-[#E8503A] border-[#FDDDD9]' : 'text-[#6B6860] border-[#DEDAD2]'}`}>
                   {DAYS_SHORT[day]}
-                  {isToday && <span className="ml-1 text-sky-500">·</span>}
+                  {isToday && <span className="ml-1 text-[#E8503A]">·</span>}
                 </div>
                 <div className="space-y-2">
                   {daySlots.length === 0 ? (
-                    <p className="text-xs text-slate-700 text-center py-3">—</p>
+                    <p className="text-xs text-[#3D3A35] text-center py-3">—</p>
                   ) : (
                     daySlots.map((slot) => (
                       <SlotCard

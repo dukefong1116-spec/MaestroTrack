@@ -27,7 +27,8 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ background: 'rgba(34,32,28,.35)' }}
             onClick={onClose}
           />
           <motion.div
@@ -35,11 +36,22 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', duration: 0.3 }}
-            className={`relative w-full ${widths[size]} bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-200 overflow-hidden`}
+            className={`relative w-full ${widths[size]} rounded-2xl overflow-hidden`}
+            style={{
+              background: '#F8F6F2',
+              border: '1px solid #DEDAD2',
+              boxShadow: '0 24px 64px -12px rgba(34,32,28,.22)',
+            }}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100">
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E8E4DC' }}>
+              <h2 className="text-lg font-semibold" style={{ color: '#22201C' }}>{title}</h2>
+              <button
+                onClick={onClose}
+                className="transition-colors p-1 rounded-lg"
+                style={{ color: '#A09C95' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#22201C')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#A09C95')}
+              >
                 <X size={18} />
               </button>
             </div>

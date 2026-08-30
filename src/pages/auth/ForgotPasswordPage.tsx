@@ -27,30 +27,30 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#EDEAE4' }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🔑</div>
-          <h1 className="text-2xl font-bold text-slate-900">Reset Password</h1>
-          <p className="text-slate-500 mt-2">We'll send a reset link to your email</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#22201C' }}>Reset Password</h1>
+          <p className="mt-2" style={{ color: '#6B6860' }}>We'll send a reset link to your email</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg shadow-slate-100">
+        <div className="rounded-2xl p-8" style={{ background: '#F8F6F2', border: '1px solid #DEDAD2', boxShadow: '0 8px 32px -8px rgba(34,32,28,.12)' }}>
           {sent ? (
             <div className="text-center space-y-4">
               <div className="text-4xl">📧</div>
-              <p className="text-slate-900 font-semibold">Check your inbox!</p>
-              <p className="text-slate-500 text-sm">Password reset email sent.</p>
-              <Link to="/login" className="text-sky-500 hover:text-sky-600 text-sm font-medium">Back to Sign In</Link>
+              <p className="font-semibold" style={{ color: '#22201C' }}>Check your inbox!</p>
+              <p className="text-sm" style={{ color: '#6B6860' }}>Password reset email sent.</p>
+              <Link to="/login" className="text-sm font-medium" style={{ color: '#E8503A' }}>Back to Sign In</Link>
             </div>
           ) : (
             <>
-              {error && <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>}
+              {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>{error}</div>}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
                 <Button type="submit" className="w-full" loading={isSubmitting}>Send Reset Link</Button>
               </form>
-              <p className="text-center text-sm text-slate-500 mt-6">
-                <Link to="/login" className="text-sky-500 hover:text-sky-600 font-medium">Back to Sign In</Link>
+              <p className="text-center text-sm mt-6">
+                <Link to="/login" className="font-medium" style={{ color: '#E8503A' }}>Back to Sign In</Link>
               </p>
             </>
           )}

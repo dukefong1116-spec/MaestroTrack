@@ -160,8 +160,8 @@ export default function PracticeLogPage() {
                 <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: theme.primary }} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-0.5">Session in progress</p>
-                <p className="text-4xl font-mono font-bold text-slate-900 tracking-widest">{timerDisplay}</p>
+                <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-0.5">Session in progress</p>
+                <p className="text-4xl font-mono font-bold text-[#22201C] tracking-widest">{timerDisplay}</p>
               </div>
             </div>
             <Button onClick={handleStopTimer} size="lg" style={{ backgroundColor: theme.primary }}>
@@ -178,8 +178,8 @@ export default function PracticeLogPage() {
           >
             <Card className="p-5 flex items-center justify-between gap-4">
               <div>
-                <p className="font-semibold text-slate-900">Ready to practice?</p>
-                <p className="text-sm text-slate-500">Start the timer and it will auto-fill your session duration.</p>
+                <p className="font-semibold text-[#22201C]">Ready to practice?</p>
+                <p className="text-sm text-[#6B6860]">Start the timer and it will auto-fill your session duration.</p>
               </div>
               <Button onClick={startTimer} size="md" style={{ backgroundColor: theme.primary }}>
                 <Play size={16} /> Start Timer
@@ -201,9 +201,9 @@ export default function PracticeLogPage() {
           {grouped.map(([date, daySessions]) => (
             <motion.div key={date} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               <div className="flex items-center gap-3 mb-3">
-                <p className="text-sm font-semibold text-slate-300">{format(parseISO(date), 'EEEE, MMMM d')}</p>
-                <div className="flex-1 h-px bg-slate-800" />
-                <p className="text-xs text-slate-500">{daySessions.reduce((s, x) => s + x.durationMinutes, 0)} min</p>
+                <p className="text-sm font-semibold text-[#3D3A35]">{format(parseISO(date), 'EEEE, MMMM d')}</p>
+                <div className="flex-1 h-px bg-[#DEDAD2]" />
+                <p className="text-xs text-[#6B6860]">{daySessions.reduce((s, x) => s + x.durationMinutes, 0)} min</p>
               </div>
               <div className="space-y-2">
                 {daySessions.map((session) => (
@@ -214,20 +214,20 @@ export default function PracticeLogPage() {
                           <Badge variant={categoryColors[session.category] as 'info'} size="sm">{session.category}</Badge>
                           {session.pieceName && (() => {
                             const pieceTitle = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
-                            return <span className="text-xs text-slate-300 font-medium">"{pieceTitle}"</span>
+                            return <span className="text-xs text-[#6B6860] font-medium">"{pieceTitle}"</span>
                           })()}
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-slate-500 mt-2">
+                        <div className="flex items-center gap-4 text-xs text-[#6B6860] mt-2">
                           <span className="flex items-center gap-1"><Clock size={12} />{session.durationMinutes} min</span>
                           <span>Difficulty: {session.difficultyRating}/5</span>
                           <span>Confidence: {session.confidenceRating}/10</span>
                         </div>
-                        {session.notes && <p className="text-xs text-slate-500 mt-2 italic">"{session.notes}"</p>}
+                        {session.notes && <p className="text-xs text-[#6B6860] mt-2 italic">"{session.notes}"</p>}
                       </div>
                       <button
                         onClick={() => handleDelete(session.id)}
                         disabled={deleting === session.id}
-                        className="text-slate-600 hover:text-red-400 transition-colors p-1 shrink-0"
+                        className="text-[#6B6860] hover:text-red-400 transition-colors p-1 shrink-0"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -261,12 +261,12 @@ export default function PracticeLogPage() {
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-300">Difficulty (1–5)</label>
-              <input type="range" min={1} max={5} step={1} className="w-full accent-sky-500" {...register('difficultyRating')} />
+              <label className="text-sm font-medium text-[#A09C95]">Difficulty (1–5)</label>
+              <input type="range" min={1} max={5} step={1} className="w-full accent-[#E8503A]" {...register('difficultyRating')} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-300">Confidence (1–10)</label>
-              <input type="range" min={1} max={10} step={1} className="w-full accent-sky-500" {...register('confidenceRating')} />
+              <label className="text-sm font-medium text-[#A09C95]">Confidence (1–10)</label>
+              <input type="range" min={1} max={10} step={1} className="w-full accent-[#E8503A]" {...register('confidenceRating')} />
             </div>
           </div>
           <Textarea label="Notes (optional)" placeholder="What went well? What needs work?" {...register('notes')} />

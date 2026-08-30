@@ -142,7 +142,7 @@ export default function SettingsPage() {
       <div className="space-y-6 max-w-2xl">
         {/* Profile */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-4">Profile</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-4">Profile</p>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input label="Display Name" error={errors.displayName?.message} {...register('displayName')} />
             <Select
@@ -169,8 +169,8 @@ export default function SettingsPage() {
 
         {/* Studio */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-1">Join a Studio</p>
-          <p className="text-xs text-slate-500 mb-4">Enter your teacher's studio code to connect your account.</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-1">Join a Studio</p>
+          <p className="text-xs text-[#6B6860] mb-4">Enter your teacher's studio code to connect your account.</p>
           {(profile?.studioCode && profile?.teacherId) || joinSuccess ? (
             <div className="text-sm text-emerald-400 space-y-1">
               <div className="flex items-center gap-2">
@@ -195,8 +195,8 @@ export default function SettingsPage() {
 
         {/* Resync */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-1">Reload Profile</p>
-          <p className="text-xs text-slate-500 mb-4">Re-reads your profile from the database.</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-1">Reload Profile</p>
+          <p className="text-xs text-[#6B6860] mb-4">Re-reads your profile from the database.</p>
           <Button variant="outline" size="sm" onClick={handleResync} loading={resyncing}>
             Reload from Database
           </Button>
@@ -209,25 +209,25 @@ export default function SettingsPage() {
 
         {/* Account info */}
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-4">Account</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-4">Account</p>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Email</span>
-              <span className="text-slate-900">{user?.email}</span>
+              <span className="text-[#22201C]">{user?.email}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Role</span>
-              <span className={`capitalize ${profile?.role ? 'text-slate-900' : 'text-red-400'}`}>
+              <span className={`capitalize ${profile?.role ? 'text-[#22201C]' : 'text-red-400'}`}>
                 {profile?.role ?? '—'}
               </span>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Studio Code</span>
-              <span className="text-slate-900">{profile?.studioCode ?? '—'}</span>
+              <span className="text-[#22201C]">{profile?.studioCode ?? '—'}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Member Since</span>
-              <span className="text-slate-900">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
+              <span className="text-[#22201C]">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
             </div>
           </div>
         </Card>

@@ -51,8 +51,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-slate-50 to-amber-50/30 pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#EDEAE4' }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 60% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -60,15 +60,15 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🎹</div>
-          <h1 className="text-3xl font-bold text-slate-900">MaestroTrack</h1>
-          <p className="text-slate-500 mt-2">The practice intelligence platform for musicians</p>
+          <h1 className="text-3xl font-bold" style={{ color: '#22201C' }}>MaestroTrack</h1>
+          <p className="mt-2" style={{ color: '#6B6860' }}>The practice intelligence platform for musicians</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-lg shadow-slate-100">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6">Welcome back</h2>
+        <div className="rounded-2xl p-8" style={{ background: '#F8F6F2', border: '1px solid #DEDAD2', boxShadow: '0 8px 32px -8px rgba(34,32,28,.12)' }}>
+          <h2 className="text-xl font-semibold mb-6" style={{ color: '#22201C' }}>Welcome back</h2>
 
           {error && (
-            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
               {error}
             </div>
           )}
@@ -77,7 +77,7 @@ export default function LoginPage() {
             <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-xs text-sky-500 hover:text-sky-600 transition-colors">
+              <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: '#E8503A' }}>
                 Forgot password?
               </Link>
             </div>
@@ -86,9 +86,9 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
+          <p className="text-center text-sm mt-6" style={{ color: '#6B6860' }}>
             New here?{' '}
-            <Link to="/signup" className="text-sky-500 hover:text-sky-600 font-medium transition-colors">
+            <Link to="/signup" className="font-medium transition-colors" style={{ color: '#E8503A' }}>
               Create an account
             </Link>
           </p>

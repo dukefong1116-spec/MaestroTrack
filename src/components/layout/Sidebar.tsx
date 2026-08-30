@@ -47,17 +47,18 @@ export default function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 68 : 240 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="relative flex flex-col bg-white border-r border-slate-200 h-screen shrink-0 overflow-hidden"
+      className="relative flex flex-col h-screen shrink-0 overflow-hidden"
+      style={{ background: '#22201C', borderRight: '1px solid #33302C' }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-200">
+      <div className="flex items-center gap-3 px-4 py-5" style={{ borderBottom: '1px solid #33302C' }}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}>
           {theme.emoji}
         </div>
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <p className="font-bold text-slate-900 text-sm leading-tight">MaestroTrack</p>
-            <p className="text-xs text-slate-400">{profile?.displayName}</p>
+            <p className="font-bold text-sm leading-tight" style={{ color: '#F5F0EB' }}>MaestroTrack</p>
+            <p className="text-xs" style={{ color: '#A09C95' }}>{profile?.displayName}</p>
           </motion.div>
         )}
       </div>
@@ -71,11 +72,13 @@ export default function Sidebar() {
             end={end}
             className={({ isActive }) => cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
-              isActive
-                ? 'text-white shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+              isActive ? 'text-white shadow-sm' : 'hover:bg-white/10'
             )}
-            style={({ isActive }) => isActive ? { backgroundColor: '#0ea5e9', color: '#ffffff' } : undefined}
+            style={({ isActive }) =>
+              isActive
+                ? { backgroundColor: '#E8503A', color: '#ffffff' }
+                : { color: '#A09C95' }
+            }
           >
             <Icon size={18} className="shrink-0" />
             {!collapsed && <span>{label}</span>}
@@ -84,20 +87,28 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-2 pb-4 space-y-0.5 border-t border-slate-200 pt-3">
+      <div className="px-2 pb-4 space-y-0.5 pt-3" style={{ borderTop: '1px solid #33302C' }}>
         <NavLink
           to={role === 'teacher' ? '/teacher/settings' : '/student/settings'}
           className={({ isActive }) => cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
-            isActive ? 'text-white bg-sky-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+            isActive ? 'text-white shadow-sm' : 'hover:bg-white/10'
           )}
+          style={({ isActive }) =>
+            isActive
+              ? { backgroundColor: '#E8503A', color: '#ffffff' }
+              : { color: '#A09C95' }
+          }
         >
           <Settings size={18} className="shrink-0" />
           {!collapsed && <span>Settings</span>}
         </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 hover:bg-red-500/20"
+          style={{ color: '#A09C95' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#F87171')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#A09C95')}
         >
           <LogOut size={18} className="shrink-0" />
           {!collapsed && <span>Log Out</span>}
@@ -107,7 +118,10 @@ export default function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed((c) => !c)}
-        className="absolute -right-3 top-[72px] bg-white border border-slate-200 rounded-full p-0.5 text-slate-400 hover:text-slate-700 z-10 shadow-sm"
+        className="absolute -right-3 top-[72px] rounded-full p-0.5 z-10 shadow-md transition-colors"
+        style={{ background: '#33302C', border: '1px solid #44403A', color: '#A09C95' }}
+        onMouseEnter={e => (e.currentTarget.style.color = '#F5F0EB')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#A09C95')}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

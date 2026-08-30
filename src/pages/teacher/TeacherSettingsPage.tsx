@@ -56,7 +56,7 @@ export default function TeacherSettingsPage() {
 
       <div className="space-y-6 max-w-2xl">
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-4">Profile & Studio</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-4">Profile & Studio</p>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input label="Your Name" error={errors.displayName?.message} {...register('displayName')} />
             <Input label="Studio Name" placeholder="Chen Music Studio" error={errors.studioName?.message} {...register('studioName')} />
@@ -65,10 +65,10 @@ export default function TeacherSettingsPage() {
         </Card>
 
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-1">Studio Code</p>
-          <p className="text-xs text-slate-500 mb-4">Share this code with students to invite them to your studio.</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-1">Studio Code</p>
+          <p className="text-xs text-[#6B6860] mb-4">Share this code with students to invite them to your studio.</p>
           <div className="flex items-center gap-3">
-            <div className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 font-mono text-2xl font-bold text-slate-900 tracking-widest">
+            <div className="flex-1 bg-[#E5E2DB] border border-[#DEDAD2] rounded-xl px-4 py-3 font-mono text-2xl font-bold text-[#22201C] tracking-widest">
               {profile?.studioCode ?? '—'}
             </div>
             <Button size="sm" variant="outline" onClick={copyCode}>
@@ -78,15 +78,15 @@ export default function TeacherSettingsPage() {
         </Card>
 
         <Card className="p-6">
-          <p className="text-sm font-semibold text-slate-300 mb-4">Account</p>
+          <p className="text-sm font-semibold text-[#A09C95] mb-4">Account</p>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Email</span>
-              <span className="text-slate-900">{user?.email}</span>
+              <span className="text-[#22201C]">{user?.email}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
+            <div className="flex justify-between text-[#6B6860]">
               <span>Role</span>
-              <span className="text-slate-900 capitalize">{profile?.role}</span>
+              <span className="text-[#22201C] capitalize">{profile?.role}</span>
             </div>
           </div>
         </Card>

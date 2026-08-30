@@ -66,14 +66,14 @@ export default function RemindersPage() {
       <Card className="p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="font-semibold text-slate-900">Daily Practice Reminder</p>
-            <p className="text-sm text-slate-500 mt-0.5">Get notified to practice every day at your chosen time</p>
+            <p className="font-semibold text-[#22201C]">Daily Practice Reminder</p>
+            <p className="text-sm text-[#6B6860] mt-0.5">Get notified to practice every day at your chosen time</p>
           </div>
           <button
             onClick={() => setEnabled((e) => !e)}
-            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-sky-500' : 'bg-slate-200'}`}
+            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-[#E8503A]' : 'bg-[#DEDAD2]'}`}
           >
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'}`} />
+            <div className={`absolute top-1 w-4 h-4 bg-[#F8F6F2] rounded-full shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'}`} />
           </button>
         </div>
 
@@ -86,7 +86,7 @@ export default function RemindersPage() {
               onChange={(e) => setTime(e.target.value)}
               className="max-w-[200px]"
             />
-            <p className="text-xs text-slate-500">Browser notifications must be enabled. MaestroTrack will remind you at {time} daily.</p>
+            <p className="text-xs text-[#6B6860]">Browser notifications must be enabled. MaestroTrack will remind you at {time} daily.</p>
           </motion.div>
         )}
 
@@ -95,11 +95,11 @@ export default function RemindersPage() {
 
       {/* Smart reminders */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Smart Reminders</p>
+        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Smart Reminders</p>
         {smartReminders.length === 0 ? (
           <Card className="p-8 text-center">
-            <BellOff className="mx-auto text-slate-600 mb-3" size={32} />
-            <p className="text-slate-500 text-sm">All caught up! No urgent reminders right now.</p>
+            <BellOff className="mx-auto text-[#6B6860] mb-3" size={32} />
+            <p className="text-[#6B6860] text-sm">All caught up! No urgent reminders right now.</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -109,7 +109,7 @@ export default function RemindersPage() {
                   <div className={`p-2.5 rounded-xl shrink-0 ${r.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : r.type === 'warning' ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'}`}>
                     {r.icon}
                   </div>
-                  <p className="text-sm text-slate-300 flex-1">{r.text}</p>
+                  <p className="text-sm text-[#A09C95] flex-1">{r.text}</p>
                   <Badge variant={r.type === 'success' ? 'success' : r.type === 'warning' ? 'warning' : 'info'} size="sm">
                     {r.type}
                   </Badge>

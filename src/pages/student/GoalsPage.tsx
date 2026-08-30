@@ -87,7 +87,7 @@ export default function GoalsPage() {
       {editGoals && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
           <Card className="p-5 mb-6 space-y-4">
-            <p className="text-sm font-semibold text-slate-900">Weekly Practice Goal</p>
+            <p className="text-sm font-semibold text-[#22201C]">Weekly Practice Goal</p>
             <div className="flex items-center gap-4">
               <Input
                 type="number"
@@ -103,17 +103,17 @@ export default function GoalsPage() {
       )}
 
       {/* Progress rings */}
-      <div className="flex items-center justify-around py-8 bg-slate-50 rounded-2xl border border-slate-200 mb-8">
+      <div className="flex items-center justify-around py-8 bg-[#EDEAE4] rounded-2xl border border-[#DEDAD2] mb-8">
         {rings.map((ring, i) => (
           <motion.div key={ring.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} className="flex flex-col items-center gap-3">
             <ProgressRing percentage={ring.pct} size={ring.size} strokeWidth={ring.size === 130 ? 12 : 9} color={theme.primary}>
               <div className="text-center">
-                <p className="text-base font-bold text-slate-900">{ring.pct}%</p>
+                <p className="text-base font-bold text-[#22201C]">{ring.pct}%</p>
               </div>
             </ProgressRing>
             <div className="text-center">
-              <p className="text-sm font-semibold text-slate-900">{ring.label}</p>
-              <p className="text-xs text-slate-500">{ring.value}/{ring.goal} min</p>
+              <p className="text-sm font-semibold text-[#22201C]">{ring.label}</p>
+              <p className="text-xs text-[#6B6860]">{ring.value}/{ring.goal} min</p>
             </div>
           </motion.div>
         ))}
@@ -123,24 +123,24 @@ export default function GoalsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Card className="p-5 text-center space-y-2">
           <Zap className="mx-auto text-amber-400" size={28} />
-          <p className="text-3xl font-bold text-slate-900">{streak}</p>
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Current Streak</p>
+          <p className="text-3xl font-bold text-[#22201C]">{streak}</p>
+          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Current Streak</p>
         </Card>
         <Card className="p-5 text-center space-y-2">
-          <Star className="mx-auto text-sky-500" size={28} />
-          <p className="text-3xl font-bold text-slate-900">{summary.longestStreak}</p>
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Longest Streak</p>
+          <Star className="mx-auto text-[#E8503A]" size={28} />
+          <p className="text-3xl font-bold text-[#22201C]">{summary.longestStreak}</p>
+          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Longest Streak</p>
         </Card>
         <Card className="p-5 text-center space-y-2">
           <Trophy className="mx-auto text-emerald-400" size={28} />
-          <p className="text-3xl font-bold text-slate-900">{earnedBadges.length}</p>
-          <p className="text-xs text-slate-500 uppercase tracking-wide">Badges Earned</p>
+          <p className="text-3xl font-bold text-[#22201C]">{earnedBadges.length}</p>
+          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Badges Earned</p>
         </Card>
       </div>
 
       {/* Badges */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-4">Achievement Badges</p>
+        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Achievement Badges</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {BADGES.map((badge, i) => {
             const earned = badge.condition(sessions.length, streak, maxSession, totalMinutes)
@@ -151,8 +151,8 @@ export default function GoalsPage() {
                     <span className="text-3xl">{badge.icon}</span>
                     {earned && <CheckCircle2 size={16} className="text-emerald-400" />}
                   </div>
-                  <p className="font-semibold text-slate-900 text-sm">{badge.label}</p>
-                  <p className="text-xs text-slate-500">{badge.description}</p>
+                  <p className="font-semibold text-[#22201C] text-sm">{badge.label}</p>
+                  <p className="text-xs text-[#6B6860]">{badge.description}</p>
                 </Card>
               </motion.div>
             )
