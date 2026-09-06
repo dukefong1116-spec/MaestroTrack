@@ -7,12 +7,12 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { removeStudentFromStudio } from '@/lib/firebase/teacher'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import PageHeader from '@/components/common/PageHeader'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/common/EmptyState'
-import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import type { UserProfile, InstrumentType } from '@/types'
 
 export default function StudentsPage() {
@@ -59,15 +59,14 @@ export default function StudentsPage() {
           {filtered.map((student, i) => {
             const sessions = studentSessions[student.uid] ?? []
             const summary = getAnalyticsSummary(sessions, student.weeklyGoalMinutes ?? 300)
-            const instrTheme = student.instrument ? INSTRUMENT_THEMES[student.instrument as InstrumentType] : null
 
             return (
               <motion.div key={student.uid} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#E8503A]/20 flex items-center justify-center text-xl">
-                        {instrTheme?.emoji ?? '🎵'}
+                      <div className="w-10 h-10 rounded-full bg-[#E8503A]/15 flex items-center justify-center" style={{ color: '#E8503A' }}>
+                        <InstrumentIcon instrument={student.instrument as InstrumentType | undefined} size={19} />
                       </div>
                       <div>
                         <p className="font-semibold text-[#22201C]">{student.displayName}</p>

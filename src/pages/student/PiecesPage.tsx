@@ -3,7 +3,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Plus, BookOpen, Archive, Star, ChevronRight } from 'lucide-react'
+import { Plus, BookOpen, Archive, Star, ChevronRight , Crosshair} from 'lucide-react'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -143,7 +143,7 @@ export default function PiecesPage() {
                   const daysLeft = differenceInDays(parseISO(piece.targetDate!), new Date())
                   return (
                     <p className={`text-xs mt-1 ${daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-400' : 'text-[#6B6860]'}`}>
-                      🎯 Target: {format(parseISO(piece.targetDate!), 'MMM d')}
+                      <Crosshair size={11} className="inline mr-1 -mt-px" />Target: {format(parseISO(piece.targetDate!), 'MMM d')}
                       {daysLeft >= 0 ? ` · ${daysLeft}d left` : ' · Overdue'}
                     </p>
                   )

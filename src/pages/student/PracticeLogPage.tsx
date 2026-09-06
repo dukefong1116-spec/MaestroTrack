@@ -19,7 +19,10 @@ import Textarea from '@/components/ui/Textarea'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/common/EmptyState'
-import type { PracticeCategory, InstrumentType } from '@/types'
+import SessionCelebration from '@/components/celebration/SessionCelebration'
+import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
+import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
+import type { PracticeCategory, InstrumentType, PracticeSession } from '@/types'
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation'
@@ -61,6 +64,8 @@ export default function PracticeLogPage() {
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [open, setOpen] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [reward, setReward] = useState<SessionReward | null>(null)
+  const [saveError, setSaveError] = useState('')
   const timerDisplay = useTimerDisplay(timerRunning, timerStartedAt)
 
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -82,12 +87,30 @@ export default function PracticeLogPage() {
   }
 
   async function onSubmit(data: FormData) {
+    // Must run synchronously, before any await — Safari only treats
+    // AudioContext.resume() as gesture-authorized inside this call frame.
+    primeAudioContext()
+
     const uid = profile?.uid ?? user?.uid
     if (!uid) return
-    const id = await addPracticeSession(uid, data)
+
+    // Snapshot the streak inputs before addSession mutates the store —
+    // the reward needs to compare before and after.
+    const sessionsBefore = sessions
+
+    let id: string
+    try {
+      setSaveError('')
+      id = await addPracticeSession(uid, data)
+    } catch {
+      setSaveError('Could not save the session. Check your connection and try again.')
+      return
+    }
+
+    const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...data } as PracticeSession
 
     // Optimistically add to local store so it shows immediately
-    addSession({ id, userId: uid, createdAt: new Date().toISOString(), ...data } as never)
+    addSession(newSession as never)
 
     // Update piece stats if a piece was selected
     if (data.pieceName) {
@@ -106,9 +129,22 @@ export default function PracticeLogPage() {
       }
     }
 
+    // Celebrate. Sound must fire from inside this gesture chain or the
+    // browser blocks the audio context.
+    const dailyGoal = Math.round((profile?.weeklyGoalMinutes ?? 300) / 7)
+    const earned = computeSessionReward({
+      sessionsBefore,
+      newSession,
+      dailyGoalMinutes: dailyGoal,
+    })
+    if (earned.streakState !== 'backdated') {
+      playSessionChime(profile?.instrument as InstrumentType | undefined, earned.minutes)
+    }
+
     reset()
     resetTimer()
     setOpen(false)
+    setReward(earned)
   }
 
   async function handleDelete(id: string) {
@@ -240,8 +276,20 @@ export default function PracticeLogPage() {
         </div>
       )}
 
-      <Modal open={open} onClose={() => { setOpen(false); resetTimer() }} title="Log Practice Session">
+      <SessionCelebration
+        reward={reward}
+        instrument={profile?.instrument as InstrumentType | undefined}
+        accent={{ primary: theme.primary, secondary: theme.secondary }}
+        onDismiss={() => setReward(null)}
+      />
+
+      <Modal open={open} onClose={() => { setOpen(false); setSaveError(''); resetTimer() }} title="Log Practice Session">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {saveError && (
+            <div className="px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
+              {saveError}
+            </div>
+          )}
           <Input label="Date" type="date" error={errors.date?.message} {...register('date')} />
           <Input label="Duration (minutes)" type="number" placeholder="30" error={errors.durationMinutes?.message} {...register('durationMinutes')} />
           <Select

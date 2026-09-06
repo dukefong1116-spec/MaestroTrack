@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { logOut } from '@/lib/firebase/auth'
 import { useAuth } from '@/hooks/useAuth'
 import { getTheme } from '@/lib/utils/instruments'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 
@@ -53,7 +54,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5" style={{ borderBottom: '1px solid #33302C' }}>
         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }}>
-          {theme.emoji}
+          <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={19} />
         </div>
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

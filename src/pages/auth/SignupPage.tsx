@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { signUp } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
+import { GraduationCap, Presentation } from 'lucide-react'
+import { NoteGlyph } from '@/components/icons/InstrumentIcon'
 import Button from '@/components/ui/Button'
 import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import type { UserRole, InstrumentType } from '@/types'
@@ -73,7 +75,7 @@ export default function SignupPage() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 40% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🎵</div>
+          <div className="mb-4 flex justify-center" style={{ color: '#E8503A' }}><NoteGlyph size={52} /></div>
           <h1 className="text-3xl font-bold" style={{ color: '#22201C' }}>Join MaestroTrack</h1>
           <p className="mt-2" style={{ color: '#6B6860' }}>Your musical journey starts here</p>
         </div>
@@ -97,7 +99,7 @@ export default function SignupPage() {
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#E8503A'; (e.currentTarget as HTMLElement).style.background = '#FEF0EE' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#DEDAD2'; (e.currentTarget as HTMLElement).style.background = '' }}
                     >
-                      <span className="text-4xl">{r === 'student' ? '🎓' : '👩‍🏫'}</span>
+                      <span>{r === 'student' ? <GraduationCap size={38} strokeWidth={1.5} /> : <Presentation size={38} strokeWidth={1.5} />}</span>
                       <span className="font-semibold capitalize">{r}</span>
                     </button>
                   ))}
@@ -121,7 +123,7 @@ export default function SignupPage() {
                   <Input label="Password" type="password" placeholder="••••••••" error={studentForm.formState.errors.password?.message} {...studentForm.register('password')} />
                   <Select
                     label="Instrument"
-                    options={INSTRUMENT_LIST.map((i) => ({ value: i, label: `${INSTRUMENT_THEMES[i].emoji} ${INSTRUMENT_THEMES[i].label}` }))}
+                    options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
                     placeholder="Select your instrument"
                     error={studentForm.formState.errors.instrument?.message}
                     {...studentForm.register('instrument')}

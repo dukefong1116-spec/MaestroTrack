@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { signIn, getUserProfile } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
+import { PianoGlyph } from '@/components/icons/InstrumentIcon'
 import Button from '@/components/ui/Button'
 
 const schema = z.object({
@@ -59,7 +60,7 @@ export default function LoginPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="text-5xl mb-4">🎹</div>
+          <div className="mb-4 flex justify-center" style={{ color: '#E8503A' }}><PianoGlyph size={52} /></div>
           <h1 className="text-3xl font-bold" style={{ color: '#22201C' }}>MaestroTrack</h1>
           <p className="mt-2" style={{ color: '#6B6860' }}>The practice intelligence platform for musicians</p>
         </div>

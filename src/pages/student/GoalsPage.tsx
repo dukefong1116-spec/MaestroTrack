@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Target, Trophy, Zap, Star, CheckCircle2 } from 'lucide-react'
+import { Target, Trophy, Zap, Star, CheckCircle2, Music4, Swords, Award, Footprints, Crosshair, Clock } from 'lucide-react'
 import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -17,12 +17,12 @@ import { useState } from 'react'
 import type { InstrumentType } from '@/types'
 
 const BADGES = [
-  { id: 'first_session', label: 'First Note', icon: '🎵', description: 'Logged your first practice session', condition: (sessions: number) => sessions >= 1 },
-  { id: 'week_warrior', label: 'Week Warrior', icon: '⚔️', description: 'Practiced every day for a week', condition: (_s: number, streak: number) => streak >= 7 },
-  { id: 'century', label: 'Century Club', icon: '💯', description: 'Logged 100 practice sessions', condition: (sessions: number) => sessions >= 100 },
-  { id: 'marathon', label: 'Marathon', icon: '🏃', description: 'Practiced for 60+ minutes in one session', condition: (_s: number, _st: number, maxSession: number) => maxSession >= 60 },
-  { id: 'consistency', label: 'Iron Discipline', icon: '🎯', description: '30-day streak', condition: (_s: number, streak: number) => streak >= 30 },
-  { id: 'ten_hours', label: '10 Hours Strong', icon: '⏰', description: 'Accumulated 600 minutes of practice', condition: (_s: number, _st: number, _m: number, totalMinutes: number) => totalMinutes >= 600 },
+  { id: 'first_session', label: 'First Note', icon: Music4, description: 'Logged your first practice session', condition: (sessions: number) => sessions >= 1 },
+  { id: 'week_warrior', label: 'Week Warrior', icon: Swords, description: 'Practiced every day for a week', condition: (_s: number, streak: number) => streak >= 7 },
+  { id: 'century', label: 'Century Club', icon: Award, description: 'Logged 100 practice sessions', condition: (sessions: number) => sessions >= 100 },
+  { id: 'marathon', label: 'Marathon', icon: Footprints, description: 'Practiced for 60+ minutes in one session', condition: (_s: number, _st: number, maxSession: number) => maxSession >= 60 },
+  { id: 'consistency', label: 'Iron Discipline', icon: Crosshair, description: '30-day streak', condition: (_s: number, streak: number) => streak >= 30 },
+  { id: 'ten_hours', label: '10 Hours Strong', icon: Clock, description: 'Accumulated 600 minutes of practice', condition: (_s: number, _st: number, _m: number, totalMinutes: number) => totalMinutes >= 600 },
 ]
 
 export default function GoalsPage() {
@@ -148,7 +148,7 @@ export default function GoalsPage() {
               <motion.div key={badge.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <Card className={`p-4 space-y-2 transition-all ${earned ? '' : 'opacity-40 grayscale'}`}>
                   <div className="flex items-start justify-between">
-                    <span className="text-3xl">{badge.icon}</span>
+                    <badge.icon size={26} strokeWidth={1.6} style={{ color: earned ? '#E8503A' : '#A09C95' }} />
                     {earned && <CheckCircle2 size={16} className="text-emerald-400" />}
                   </div>
                   <p className="font-semibold text-[#22201C] text-sm">{badge.label}</p>

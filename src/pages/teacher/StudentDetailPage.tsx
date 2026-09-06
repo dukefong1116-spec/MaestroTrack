@@ -10,6 +10,7 @@ import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/
 import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
@@ -94,7 +95,7 @@ export default function StudentDetailPage() {
 
       <div className="flex items-center gap-4 mb-8">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: `linear-gradient(135deg, ${theme.primary}40, ${theme.secondary}20)` }}>
-          {theme.emoji}
+          <InstrumentIcon instrument={student?.instrument as InstrumentType | undefined} size={26} style={{ color: theme.primary }} />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-[#22201C]">{student.displayName}</h1>

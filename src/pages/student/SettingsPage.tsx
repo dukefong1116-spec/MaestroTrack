@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -147,7 +148,7 @@ export default function SettingsPage() {
             <Input label="Display Name" error={errors.displayName?.message} {...register('displayName')} />
             <Select
               label="Instrument"
-              options={INSTRUMENT_LIST.map((i) => ({ value: i, label: `${INSTRUMENT_THEMES[i].emoji} ${INSTRUMENT_THEMES[i].label}` }))}
+              options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
               error={errors.instrument?.message}
               {...register('instrument')}
             />
@@ -174,7 +175,7 @@ export default function SettingsPage() {
           {(profile?.studioCode && profile?.teacherId) || joinSuccess ? (
             <div className="text-sm text-emerald-400 space-y-1">
               <div className="flex items-center gap-2">
-                <span>✓</span> Linked to studio {profile?.studioCode ?? studioCode}
+                <Check size={13} /> Linked to studio {profile?.studioCode ?? studioCode}
               </div>
             </div>
           ) : (

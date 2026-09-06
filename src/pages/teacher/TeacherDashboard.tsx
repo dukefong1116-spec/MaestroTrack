@@ -4,7 +4,8 @@ import { Users, Copy, TrendingUp, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
+import { getAnalyticsSummary } from '@/lib/utils/analytics'
+import StreakFlame from '@/components/icons/StreakFlame'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
@@ -13,7 +14,6 @@ import EmptyState from '@/components/common/EmptyState'
 import type { UserProfile } from '@/types'
 
 function StudentRow({ student, sessions, onClick }: { student: UserProfile; sessions: ReturnType<typeof getAnalyticsSummary>; onClick: () => void }) {
-  const { current: streak } = computeStreak([])
   return (
     <Card hover className="p-4 flex items-center justify-between gap-4" onClick={onClick}>
       <div className="flex items-center gap-3 min-w-0">
@@ -39,7 +39,7 @@ function StudentRow({ student, sessions, onClick }: { student: UserProfile; sess
           <p>goal</p>
         </div>
         <Badge variant={sessions.currentStreak >= 7 ? 'success' : sessions.currentStreak >= 3 ? 'warning' : 'default'} size="sm">
-          🔥 {sessions.currentStreak}d
+          <StreakFlame streak={sessions.currentStreak} size={15} /> {sessions.currentStreak}d
         </Badge>
       </div>
     </Card>

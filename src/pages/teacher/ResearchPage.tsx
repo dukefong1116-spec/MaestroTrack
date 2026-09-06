@@ -4,6 +4,7 @@ import { BarChart3, Users, Music, TrendingUp } from 'lucide-react'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { getCategoryData, computeConsistencyScore } from '@/lib/utils/analytics'
 import { getTheme, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/common/StatCard'
@@ -61,7 +62,7 @@ export default function ResearchPage() {
       />
 
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-400 text-xs mb-6">
-        📊 This dashboard shows anonymized aggregate data. No individual student can be identified from these metrics.
+        <BarChart3 size={13} className="inline mr-1.5 -mt-px" />This dashboard shows anonymized aggregate data. No individual student can be identified from these metrics.
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -84,7 +85,7 @@ export default function ResearchPage() {
               return (
                 <div key={inst}>
                   <div className="flex justify-between text-xs text-[#A09C95] mb-1">
-                    <span>{INSTRUMENT_THEMES[inst.toLowerCase() as InstrumentType]?.emoji ?? '🎵'} {inst}</span>
+                    <span className="flex items-center gap-1.5"><InstrumentIcon instrument={inst.toLowerCase() as InstrumentType} size={13} />{inst}</span>
                     <span>{avgMin} min avg · {data.count} students</span>
                   </div>
                   <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">

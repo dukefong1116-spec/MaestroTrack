@@ -7,7 +7,6 @@ export interface InstrumentTheme {
   bg: string
   darkBg: string
   gradient: string
-  emoji: string
   label: string
   description: string
 }
@@ -20,7 +19,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-indigo-950 to-slate-950',
     darkBg: 'bg-indigo-950/30',
     gradient: 'from-indigo-500 to-purple-600',
-    emoji: '🎹',
     label: 'Piano',
     description: 'Keys & Harmony',
   },
@@ -31,7 +29,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-amber-950 to-stone-950',
     darkBg: 'bg-amber-950/30',
     gradient: 'from-amber-600 to-orange-700',
-    emoji: '🎻',
     label: 'Violin',
     description: 'Strings & Song',
   },
@@ -42,7 +39,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-orange-950 to-amber-950',
     darkBg: 'bg-orange-950/30',
     gradient: 'from-orange-600 to-red-700',
-    emoji: '🎻',
     label: 'Viola',
     description: 'Rich Tones',
   },
@@ -53,7 +49,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-red-950 to-stone-950',
     darkBg: 'bg-red-950/30',
     gradient: 'from-red-700 to-rose-800',
-    emoji: '🎻',
     label: 'Cello',
     description: 'Deep Resonance',
   },
@@ -64,7 +59,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-cyan-950 to-teal-950',
     darkBg: 'bg-cyan-950/30',
     gradient: 'from-cyan-500 to-teal-600',
-    emoji: '🎵',
     label: 'Flute',
     description: 'Air & Grace',
   },
@@ -75,7 +69,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-emerald-950 to-teal-950',
     darkBg: 'bg-emerald-950/30',
     gradient: 'from-emerald-600 to-green-700',
-    emoji: '🎷',
     label: 'Clarinet',
     description: 'Woodwind Magic',
   },
@@ -86,7 +79,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-yellow-950 to-amber-950',
     darkBg: 'bg-yellow-950/30',
     gradient: 'from-yellow-500 to-amber-600',
-    emoji: '🎷',
     label: 'Saxophone',
     description: 'Jazz Soul',
   },
@@ -97,7 +89,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-yellow-950 to-orange-950',
     darkBg: 'bg-yellow-950/30',
     gradient: 'from-yellow-600 to-orange-600',
-    emoji: '🎺',
     label: 'Trumpet',
     description: 'Brass Power',
   },
@@ -108,7 +99,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-orange-950 to-stone-950',
     darkBg: 'bg-orange-950/30',
     gradient: 'from-orange-700 to-amber-700',
-    emoji: '🎺',
     label: 'Trombone',
     description: 'Slide & Sound',
   },
@@ -119,7 +109,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-slate-950 to-indigo-950',
     darkBg: 'bg-slate-950/30',
     gradient: 'from-slate-600 to-indigo-700',
-    emoji: '🥁',
     label: 'Percussion',
     description: 'Rhythm & Drive',
   },
@@ -130,7 +119,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-pink-950 to-rose-950',
     darkBg: 'bg-pink-950/30',
     gradient: 'from-pink-600 to-rose-600',
-    emoji: '🎤',
     label: 'Voice',
     description: 'The Human Instrument',
   },
@@ -141,7 +129,6 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     bg: 'from-green-950 to-emerald-950',
     darkBg: 'bg-green-950/30',
     gradient: 'from-green-600 to-teal-600',
-    emoji: '🎸',
     label: 'Guitar',
     description: 'Strings & Rhythm',
   },

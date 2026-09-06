@@ -12,6 +12,8 @@ import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
 import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import StreakFlame from '@/components/icons/StreakFlame'
 import Badge from '@/components/ui/Badge'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
@@ -85,18 +87,18 @@ export default function StudentDashboard() {
         className="relative overflow-hidden rounded-2xl p-8"
         style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.secondary}10)`, border: `1px solid ${theme.primary}30` }}
       >
-        <div className="absolute top-4 right-6 text-7xl opacity-20 select-none">{theme.emoji}</div>
+        <div className="absolute top-2 right-5 opacity-[0.13] select-none pointer-events-none" style={{ color: theme.primary }}><InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={104} strokeWidth={1.2} /></div>
         <p className="text-[#6B6860] text-sm font-medium mb-1">{greeting}</p>
-        <h1 className="text-3xl font-bold text-[#22201C] mb-2">{profile?.displayName ?? 'Musician'} 👋</h1>
+        <h1 className="text-3xl font-bold text-[#22201C] mb-2">{profile?.displayName ?? 'Musician'}</h1>
         <div className="flex items-center gap-4 flex-wrap">
           <Badge variant="purple" size="md">
-            <span style={{ color: theme.secondary }}>{theme.emoji}</span>
+            <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={13} style={{ color: theme.secondary }} />
             {theme.label}
           </Badge>
           <Badge variant="info" size="md">{profile?.experienceLevel ?? 'Student'}</Badge>
           {summary.currentStreak > 0 && (
             <Badge variant="warning" size="md">
-              🔥 {summary.currentStreak}-day streak
+              <StreakFlame streak={summary.currentStreak} size={14} /> {summary.currentStreak}-day streak
             </Badge>
           )}
         </div>
@@ -172,7 +174,7 @@ export default function StudentDashboard() {
           </ProgressRing>
           <div className="text-center">
             <p className="text-sm text-[#22201C] font-medium">{summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min</p>
-            <p className="text-xs text-[#6B6860]">{(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0 ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go` : '🎉 Goal reached!'}</p>
+            <p className="text-xs text-[#6B6860]">{(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0 ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go` : 'Goal reached'}</p>
           </div>
         </Card>
 

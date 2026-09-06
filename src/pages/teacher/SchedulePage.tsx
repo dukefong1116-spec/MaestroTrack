@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Plus, Trash2, Calendar } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { createLessonSlot, deleteLessonSlot } from '@/lib/firebase/schedule'
-import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -37,13 +37,13 @@ function formatTime(time: string) {
 function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }) {
   const { students } = useTeacherStore()
   const student = students.find((s) => s.uid === slot.studentId)
-  const emoji = student?.instrument ? INSTRUMENT_THEMES[student.instrument as InstrumentType]?.emoji : '🎵'
+  const inst = student?.instrument as InstrumentType | undefined
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
       <div className="bg-[#F8F6F2] border border-[#DEDAD2] rounded-xl p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-lg shrink-0">{emoji}</span>
+          <span className="shrink-0" style={{ color: '#6B6860' }}><InstrumentIcon instrument={inst} size={17} /></span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[#22201C] truncate">{slot.studentName}</p>
             <p className="text-xs text-[#6B6860]">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
@@ -63,7 +63,7 @@ export default function SchedulePage() {
   const [open, setOpen] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: { dayOfWeek: 1, durationMinutes: 60 },
   })
 
