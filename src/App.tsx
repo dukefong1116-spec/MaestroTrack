@@ -12,8 +12,8 @@ import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 
 import StudentDashboard from '@/pages/student/StudentDashboard'
 import PracticeLogPage from '@/pages/student/PracticeLogPage'
+import SessionPage from '@/pages/student/SessionPage'
 import PiecesPage from '@/pages/student/PiecesPage'
-import RecordingsPage from '@/pages/student/RecordingsPage'
 import GoalsPage from '@/pages/student/GoalsPage'
 import PerformancesPage from '@/pages/student/PerformancesPage'
 import InsightsPage from '@/pages/student/InsightsPage'
@@ -44,6 +44,19 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
+      {/*
+        Full-screen practice session. Deliberately a sibling of /student
+        rather than a child, so it renders outside AppLayout and takes over
+        the whole screen with no sidebar.
+      */}
+      <Route path="/student/session" element={
+        <ProtectedRoute role="student">
+          <DataProvider>
+            <SessionPage />
+          </DataProvider>
+        </ProtectedRoute>
+      } />
+
       <Route path="/student" element={
         <ProtectedRoute role="student">
           <DataProvider>
@@ -54,7 +67,6 @@ function AppRoutes() {
         <Route index element={<StudentDashboard />} />
         <Route path="practice" element={<PracticeLogPage />} />
         <Route path="pieces" element={<PiecesPage />} />
-        <Route path="recordings" element={<RecordingsPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="performances" element={<PerformancesPage />} />
         <Route path="insights" element={<InsightsPage />} />

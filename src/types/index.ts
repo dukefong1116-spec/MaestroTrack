@@ -93,6 +93,8 @@ export interface Recording {
   notes?: string
   duration?: number
   createdAt: string
+  /** Set when the clip was captured inside a practice session. */
+  sessionId?: string
 }
 
 export interface Goal {

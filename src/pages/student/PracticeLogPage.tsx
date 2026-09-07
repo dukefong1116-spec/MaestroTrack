@@ -1,31 +1,29 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Clock, Music2, Play, Square } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Trash2, ChevronRight } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession, deletePracticeSession } from '@/lib/firebase/practice'
 import { updatePiece } from '@/lib/firebase/pieces'
-import { getTheme } from '@/lib/utils/instruments'
-import PageHeader from '@/components/common/PageHeader'
-import Card from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
+import { computeStreak } from '@/lib/utils/analytics'
+import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
+import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
+import SessionCelebration from '@/components/celebration/SessionCelebration'
+import Sticker from '@/components/stickers/Sticker'
+import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
-import Modal from '@/components/ui/Modal'
-import Badge from '@/components/ui/Badge'
-import EmptyState from '@/components/common/EmptyState'
-import SessionCelebration from '@/components/celebration/SessionCelebration'
-import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
-import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
-import type { PracticeCategory, InstrumentType, PracticeSession } from '@/types'
+import Button from '@/components/ui/Button'
+import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
 
 const CATEGORIES: PracticeCategory[] = [
-  'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation'
+  'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
 ]
 
 const schema = z.object({
@@ -39,63 +37,166 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-function useTimerDisplay(running: boolean, startedAt: number | null) {
-  const [, forceRender] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+const surface: React.CSSProperties = {
+  background: 'var(--clay-surface)',
+  borderRadius: 'var(--clay-r-md)',
+  boxShadow: 'var(--clay-raised)',
+}
 
-  useEffect(() => {
-    if (running && startedAt) {
-      intervalRef.current = setInterval(() => forceRender((n) => n + 1), 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [running, startedAt])
+/**
+ * The metronome glyph is a triangle — at 22px it reads as a warning sign,
+ * so it's reserved for the large Start Session button where it's legible.
+ */
+const CATEGORY_STICKER: Record<PracticeCategory, 'note' | 'pencil' | 'clock'> = {
+  Scales: 'note',
+  Technique: 'clock',
+  'Sight Reading': 'pencil',
+  Repertoire: 'note',
+  Memorization: 'clock',
+  'Ear Training': 'note',
+  Improvisation: 'note',
+}
 
-  const totalSeconds = running && startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+/** Read-only view of one logged session: its data, notes and any takes. */
+function SessionDetailSheet({
+  session, pieces, recordings, deleting, onDelete, onClose,
+}: {
+  session: PracticeSession | null
+  pieces: Piece[]
+  recordings: Recording[]
+  deleting: boolean
+  onDelete: () => void
+  onClose: () => void
+}) {
+  if (!session) return null
+  const title = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
+
+  const stats = [
+    { label: 'Duration', value: `${session.durationMinutes} min` },
+    { label: 'Difficulty', value: `${session.difficultyRating}/5` },
+    { label: 'Confidence', value: `${session.confidenceRating}/10` },
+  ]
+
+  return (
+    <Modal open onClose={onClose} title={format(parseISO(session.date), 'EEEE, MMM d')}>
+      <div style={{ fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}>
+
+        <div className="mb-4 flex items-center gap-3">
+          <Sticker name={CATEGORY_STICKER[session.category] ?? 'note'} size={26} tone="accent" />
+          <div className="min-w-0">
+            <p className="truncate text-[16px] font-semibold">{title || session.category}</p>
+            <p className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{session.category}</p>
+          </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-3 gap-2.5">
+          {stats.map((s) => (
+            <div key={s.label} className="px-3 py-2.5 text-center" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+              <p className="text-[15px] font-semibold tabular-nums">{s.value}</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* notes, in the same hand as the session's thoughts pad */}
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+          Notes
+        </p>
+        <div
+          className="mb-5 px-3.5 py-3"
+          style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)', minHeight: 62 }}
+        >
+          {session.notes ? (
+            <p style={{ fontFamily: 'var(--clay-hand)', fontSize: 19, lineHeight: '26px' }}>{session.notes}</p>
+          ) : (
+            <p className="text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>Nothing written down for this one.</p>
+          )}
+        </div>
+
+        {/* takes captured during the session */}
+        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+          Recordings {recordings.length > 0 && <span>({recordings.length})</span>}
+        </p>
+        {recordings.length === 0 ? (
+          <p className="mb-5 text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>
+            No takes recorded during this session.
+          </p>
+        ) : (
+          <div className="mb-5 space-y-2.5">
+            {recordings.map((r) => (
+              <div key={r.id} className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+                <div className="mb-2 flex items-center gap-2">
+                  <Sticker name="mic" size={16} tone="accent" />
+                  <span className="truncate text-[12.5px] font-semibold">{r.pieceName}</span>
+                  {r.duration != null && (
+                    <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
+                      {String(Math.floor(r.duration / 60)).padStart(2, '0')}:{String(r.duration % 60).padStart(2, '0')}
+                    </span>
+                  )}
+                </div>
+                <audio src={r.audioUrl} controls preload="none" className="w-full" style={{ height: 34 }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Button variant="secondary" onClick={onDelete} loading={deleting} className="w-full">
+          <Trash2 size={15} /> Delete session
+        </Button>
+      </div>
+    </Modal>
+  )
 }
 
 export default function PracticeLogPage() {
+  const navigate = useNavigate()
   const { profile, user } = useAuth()
-  const { sessions, pieces, addSession, timerRunning, timerStartedAt, startTimer, stopTimer, resetTimer } = usePracticeStore()
-  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
+  const { sessions, pieces, recordings, addSession, timerRunning, resetTimer } = usePracticeStore()
+
   const [open, setOpen] = useState(false)
+  const [detail, setDetail] = useState<PracticeSession | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [reward, setReward] = useState<SessionReward | null>(null)
   const [saveError, setSaveError] = useState('')
-  const timerDisplay = useTimerDisplay(timerRunning, timerStartedAt)
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
       date: format(new Date(), 'yyyy-MM-dd'),
       durationMinutes: 30,
       difficultyRating: 3,
       confidenceRating: 7,
-    }
+    },
   })
 
-  function handleStopTimer() {
-    const elapsed = stopTimer()
-    const minutes = Math.max(1, Math.round(elapsed / 60))
-    setValue('durationMinutes', minutes)
-    setValue('date', format(new Date(), 'yyyy-MM-dd'))
-    setOpen(true)
-  }
+  const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
+
+  /** Mon-first array of the last 7 days, flagged where practice happened. */
+  const week = useMemo(() => {
+    const days = new Set(sessions.map((s) => s.date.substring(0, 10)))
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - (6 - i))
+      const key = format(d, 'yyyy-MM-dd')
+      return { key, label: format(d, 'EEEEE'), done: days.has(key) }
+    })
+  }, [sessions])
+
+  const grouped = useMemo(() => {
+    const map: Record<string, typeof sessions> = {}
+    for (const s of sessions) {
+      const key = s.date.substring(0, 10)
+      if (!map[key]) map[key] = []
+      map[key].push(s)
+    }
+    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a))
+  }, [sessions])
 
   async function onSubmit(data: FormData) {
-    // Must run synchronously, before any await — Safari only treats
-    // AudioContext.resume() as gesture-authorized inside this call frame.
     primeAudioContext()
 
     const uid = profile?.uid ?? user?.uid
     if (!uid) return
-
-    // Snapshot the streak inputs before addSession mutates the store —
-    // the reward needs to compare before and after.
     const sessionsBefore = sessions
 
     let id: string
@@ -108,34 +209,27 @@ export default function PracticeLogPage() {
     }
 
     const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...data } as PracticeSession
-
-    // Optimistically add to local store so it shows immediately
     addSession(newSession as never)
 
-    // Update piece stats if a piece was selected
     if (data.pieceName) {
       const piece = pieces.find((p) => p.id === data.pieceName)
       if (piece) {
-        const newConfidenceHistory = [...(piece.confidenceHistory ?? []), { date: data.date, value: data.confidenceRating }]
-        const avgConfidence = newConfidenceHistory.reduce((sum, h) => sum + h.value, 0) / newConfidenceHistory.length
-        const completionPercentage = Math.min(100, Math.round(avgConfidence * 10))
+        const history = [...(piece.confidenceHistory ?? []), { date: data.date, value: data.confidenceRating }]
+        const avg = history.reduce((sum, h) => sum + h.value, 0) / history.length
         updatePiece(piece.id, {
           totalMinutes: piece.totalMinutes + data.durationMinutes,
           sessionCount: piece.sessionCount + 1,
-          confidenceHistory: newConfidenceHistory,
-          completionPercentage,
+          confidenceHistory: history,
+          completionPercentage: Math.min(100, Math.round(avg * 10)),
           updatedAt: new Date().toISOString(),
         }).catch(() => {})
       }
     }
 
-    // Celebrate. Sound must fire from inside this gesture chain or the
-    // browser blocks the audio context.
-    const dailyGoal = Math.round((profile?.weeklyGoalMinutes ?? 300) / 7)
     const earned = computeSessionReward({
       sessionsBefore,
       newSession,
-      dailyGoalMinutes: dailyGoal,
+      dailyGoalMinutes: Math.round((profile?.weeklyGoalMinutes ?? 300) / 7),
     })
     if (earned.streakState !== 'backdated') {
       playSessionChime(profile?.instrument as InstrumentType | undefined, earned.minutes)
@@ -152,141 +246,212 @@ export default function PracticeLogPage() {
     try { await deletePracticeSession(id) } finally { setDeleting(null) }
   }
 
-  const grouped = useMemo(() => {
-    const map: Record<string, typeof sessions> = {}
-    for (const s of sessions) {
-      const key = s.date.substring(0, 10)
-      if (!map[key]) map[key] = []
-      map[key].push(s)
-    }
-    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a))
-  }, [sessions])
-
-  const categoryColors: Record<PracticeCategory, string> = {
-    Scales: 'info', Technique: 'purple', 'Sight Reading': 'success',
-    Repertoire: 'warning', Memorization: 'danger', 'Ear Training': 'info', Improvisation: 'success',
-  } as Record<PracticeCategory, 'info' | 'purple' | 'success' | 'warning' | 'danger'>
-
   return (
-    <div>
-      <PageHeader
-        title="Practice Log"
-        subtitle="Every session counts. Track your musical journey."
-        actions={
-          !timerRunning
-            ? <Button onClick={() => setOpen(true)} size="md"><Plus size={16} /> Log Session</Button>
-            : null
-        }
-      />
+    <div
+      className="-mx-6 -my-8 min-h-screen px-5 pb-12 pt-7"
+      style={{ background: 'var(--clay-bg)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
+    >
+      <div className="mx-auto w-full max-w-md">
 
-      {/* Timer */}
-      <AnimatePresence>
-        {timerRunning ? (
-          <motion.div
-            key="running"
-            initial={{ opacity: 0, y: -8 }}
+        {/* heading */}
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+          <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
+          <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+            {format(new Date(), 'EEEE')} · let's get after it
+          </p>
+        </motion.div>
+
+        {/* session in progress */}
+        {timerRunning && (
+          <motion.button
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mb-6 rounded-2xl p-6 flex items-center justify-between gap-6"
-            style={{ background: `linear-gradient(135deg, ${theme.primary}25, ${theme.secondary}10)`, border: `1px solid ${theme.primary}40` }}
+            onClick={() => navigate('/student/session')}
+            className="mb-4 flex w-full items-center gap-3 px-4 py-3.5 text-left"
+            style={{
+              borderRadius: 'var(--clay-r-md)',
+              background: 'var(--clay-accent)',
+              boxShadow: 'var(--clay-accent-shadow)',
+              color: 'var(--clay-on-accent)',
+            }}
           >
-            <div className="flex items-center gap-4">
-              <div className="relative w-3 h-3">
-                <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: theme.primary }} />
-                <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: theme.primary }} />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-0.5">Session in progress</p>
-                <p className="text-4xl font-mono font-bold text-[#22201C] tracking-widest">{timerDisplay}</p>
-              </div>
-            </div>
-            <Button onClick={handleStopTimer} size="lg" style={{ backgroundColor: theme.primary }}>
-              <Square size={16} /> Stop & Log
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mb-6"
-          >
-            <Card className="p-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold text-[#22201C]">Ready to practice?</p>
-                <p className="text-sm text-[#6B6860]">Start the timer and it will auto-fill your session duration.</p>
-              </div>
-              <Button onClick={startTimer} size="md" style={{ backgroundColor: theme.primary }}>
-                <Play size={16} /> Start Timer
-              </Button>
-            </Card>
-          </motion.div>
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+            </span>
+            <span className="text-[13px] font-semibold">Session in progress</span>
+            <span className="ml-auto text-[13px] font-semibold opacity-90">Resume →</span>
+          </motion.button>
         )}
-      </AnimatePresence>
 
-      {sessions.length === 0 ? (
-        <EmptyState
-          icon={<Music2 size={40} />}
-          title="No practice sessions yet"
-          description="Start logging your practice to track progress and build momentum."
-          action={{ label: 'Log Your First Session', onClick: () => setOpen(true) }}
-        />
-      ) : (
-        <div className="space-y-6">
-          {grouped.map(([date, daySessions]) => (
-            <motion.div key={date} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex items-center gap-3 mb-3">
-                <p className="text-sm font-semibold text-[#3D3A35]">{format(parseISO(date), 'EEEE, MMMM d')}</p>
-                <div className="flex-1 h-px bg-[#DEDAD2]" />
-                <p className="text-xs text-[#6B6860]">{daySessions.reduce((s, x) => s + x.durationMinutes, 0)} min</p>
-              </div>
-              <div className="space-y-2">
-                {daySessions.map((session) => (
-                  <Card key={session.id} className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <Badge variant={categoryColors[session.category] as 'info'} size="sm">{session.category}</Badge>
-                          {session.pieceName && (() => {
-                            const pieceTitle = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
-                            return <span className="text-xs text-[#6B6860] font-medium">"{pieceTitle}"</span>
-                          })()}
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-[#6B6860] mt-2">
-                          <span className="flex items-center gap-1"><Clock size={12} />{session.durationMinutes} min</span>
-                          <span>Difficulty: {session.difficultyRating}/5</span>
-                          <span>Confidence: {session.confidenceRating}/10</span>
-                        </div>
-                        {session.notes && <p className="text-xs text-[#6B6860] mt-2 italic">"{session.notes}"</p>}
-                      </div>
-                      <button
-                        onClick={() => handleDelete(session.id)}
-                        disabled={deleting === session.id}
-                        className="text-[#6B6860] hover:text-red-400 transition-colors p-1 shrink-0"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </motion.div>
-          ))}
+        {/* streak */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04 }}
+          className="mb-5 flex items-center gap-3 px-4 py-3.5"
+          style={{ ...surface, background: 'var(--clay-accent-soft)', boxShadow: 'none' }}
+        >
+          <Sticker name="flame" size={24} tone="accent" />
+          <div className="min-w-0">
+            <p className="text-[17px] font-semibold leading-none" style={{ color: 'var(--clay-accent-ink)' }}>
+              {streak} {streak === 1 ? 'day' : 'days'}
+            </p>
+            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
+              {streak > 0 ? 'keep it lit' : 'start one today'}
+            </p>
+          </div>
+          <div className="ml-auto flex gap-1.5">
+            {week.map((d) => (
+              <span
+                key={d.key}
+                title={d.key}
+                className="block rounded-full"
+                style={{
+                  width: 9, height: 9,
+                  background: d.done ? 'var(--clay-accent)' : 'rgba(58,48,84,.14)',
+                }}
+              />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* the two chunks */}
+        <div className="mb-7 grid grid-cols-2 gap-3.5">
+          <motion.button
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, type: 'spring', stiffness: 300, damping: 22 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => navigate('/student/session')}
+            className="flex flex-col items-center px-3 pb-4 pt-5 text-center"
+            style={{
+              borderRadius: 'var(--clay-r-lg)',
+              background: 'var(--clay-accent)',
+              boxShadow: 'var(--clay-accent-shadow)',
+              color: 'var(--clay-on-accent)',
+            }}
+          >
+            <Sticker name="metro" size={40} tone="onAccent" />
+            <span className="mt-2.5 text-[16px] font-semibold leading-tight">Start<br />Session</span>
+            <span className="mt-1.5 text-[10.5px] leading-snug opacity-90">
+              timer · metronome<br />tuner · record
+            </span>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14, type: 'spring', stiffness: 300, damping: 22 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => setOpen(true)}
+            className="flex flex-col items-center px-3 pb-4 pt-5 text-center"
+            style={{ ...surface, borderRadius: 'var(--clay-r-lg)' }}
+          >
+            <Sticker name="pencil" size={40} tone="accent" />
+            <span className="mt-2.5 text-[16px] font-semibold leading-tight">Log It<br />Manually</span>
+            <span className="mt-1.5 text-[10.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
+              already<br />practiced?
+            </span>
+          </motion.button>
         </div>
-      )}
+
+        {/* history */}
+        {grouped.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <Sticker name="note" size={46} tone="accent" className="mx-auto mb-3" />
+            <p className="text-[15px] font-semibold">No sessions yet</p>
+            <p className="mt-1 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
+              Hit Start Session and the clock does the rest.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {grouped.map(([date, day], gi) => (
+              <motion.div
+                key={date}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18 + gi * 0.04 }}
+              >
+                <div className="mb-2.5 flex items-baseline gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[.1em]" style={{ color: 'var(--clay-dim)' }}>
+                    {format(parseISO(date), 'EEE, MMM d')}
+                  </p>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--clay-faint)' }}>
+                    {day.reduce((s, x) => s + x.durationMinutes, 0)} min
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {day.map((s) => {
+                    const title = pieces.find((p) => p.id === s.pieceName)?.title ?? s.pieceName
+                    const clipCount = recordings.filter((r) => r.sessionId === s.id).length
+                    return (
+                      <motion.button
+                        key={s.id}
+                        onClick={() => setDetail(s)}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex w-full items-center gap-3 px-3.5 py-3 text-left"
+                        style={surface}
+                      >
+                        <Sticker name={CATEGORY_STICKER[s.category] ?? 'note'} size={22} tone="accent" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13.5px] font-semibold">{title || s.category}</p>
+                          <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
+                            {s.category}
+                            {clipCount > 0 && (
+                              <span className="inline-flex items-center gap-1">
+                                · <Sticker name="mic" size={11} tone="accent" /> {clipCount}
+                              </span>
+                            )}
+                            {s.notes && <span className="truncate">· {s.notes}</span>}
+                          </p>
+                        </div>
+                        <span
+                          className="shrink-0 px-2.5 py-1 text-[11px] font-semibold"
+                          style={{
+                            borderRadius: 999,
+                            background: 'var(--clay-accent-soft)',
+                            color: 'var(--clay-accent-ink)',
+                          }}
+                        >
+                          {s.durationMinutes}m
+                        </span>
+                        <ChevronRight size={15} style={{ color: 'var(--clay-faint)' }} className="shrink-0" />
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <SessionDetailSheet
+        session={detail}
+        pieces={pieces}
+        recordings={recordings.filter((r) => detail && r.sessionId === detail.id)}
+        deleting={deleting === detail?.id}
+        onDelete={async () => {
+          if (!detail) return
+          await handleDelete(detail.id)
+          setDetail(null)
+        }}
+        onClose={() => setDetail(null)}
+      />
 
       <SessionCelebration
         reward={reward}
         instrument={profile?.instrument as InstrumentType | undefined}
-        accent={{ primary: theme.primary, secondary: theme.secondary }}
         onDismiss={() => setReward(null)}
       />
 
-      <Modal open={open} onClose={() => { setOpen(false); setSaveError(''); resetTimer() }} title="Log Practice Session">
+      <Modal open={open} onClose={() => { setOpen(false); setSaveError('') }} title="Log Practice Session">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {saveError && (
-            <div className="px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
+            <div className="rounded-xl px-4 py-3 text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
               {saveError}
             </div>
           )}
@@ -320,7 +485,7 @@ export default function PracticeLogPage() {
           <Textarea label="Notes (optional)" placeholder="What went well? What needs work?" {...register('notes')} />
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1" loading={isSubmitting} style={{ backgroundColor: theme.primary }}>Save Session</Button>
+            <Button type="submit" className="flex-1" loading={isSubmitting}>Save Session</Button>
           </div>
         </form>
       </Modal>

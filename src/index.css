@@ -1,4 +1,52 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap');
+
+/* ─────────────────────────────────────────────────────────────
+   SOFT CLAY design tokens.
+
+   Purely additive: nothing outside the Practice + Session pages
+   references these yet, so the rest of the app is untouched.
+   When the app-wide rollout happens, this block is the only
+   place colours need to change.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* ground */
+  --clay-bg: #F1ECF8;
+  --clay-bg-deep: #E7E0F3;
+  --clay-surface: #FFFFFF;
+
+  /* ink */
+  --clay-ink: #3A3054;
+  --clay-dim: #8B82A3;
+  --clay-faint: #B6AFC9;
+  --clay-line: #E4DEF0;
+
+  /* accent */
+  --clay-accent: #FF7A5C;
+  --clay-accent-hover: #F26243;
+  --clay-accent-soft: #FFEDE7;
+  --clay-accent-ink: #E05539;
+  --clay-on-accent: #FFFFFF;
+
+  /* supporting */
+  --clay-mint: #6BCB9B;
+  --clay-butter: #FFC85C;
+  --clay-danger: #FF5C6E;
+
+  /* form */
+  --clay-r-lg: 26px;
+  --clay-r-md: 20px;
+  --clay-r-sm: 14px;
+
+  /* the signature: puffy drop + inner top highlight */
+  --clay-raised: 0 6px 16px -6px rgba(58, 48, 84, .22), inset 0 2px 0 rgba(255, 255, 255, .9);
+  --clay-accent-shadow: 0 10px 22px -6px rgba(255, 122, 92, .45), inset 0 2px 0 rgba(255, 255, 255, .45);
+  --clay-deep: 0 14px 30px -10px rgba(58, 48, 84, .3), inset 0 3px 0 rgba(255, 255, 255, .9);
+
+  /* type */
+  --clay-font: 'Fredoka', system-ui, sans-serif;
+  --clay-hand: 'Caveat', cursive;
+}
 
 * {
   box-sizing: border-box;

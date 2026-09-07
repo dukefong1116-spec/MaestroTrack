@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Music2, BookOpen, Mic, Target, Trophy, Bell, Brain,
+  LayoutDashboard, Music2, BookOpen, Target, Trophy, Bell, Brain,
   Users, BarChart3, Settings, LogOut, ChevronLeft, ChevronRight, CalendarDays
 } from 'lucide-react'
 import { useState } from 'react'
@@ -16,7 +16,6 @@ const studentNav = [
   { to: '/student', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/student/practice', icon: Music2, label: 'Practice Log' },
   { to: '/student/pieces', icon: BookOpen, label: 'My Pieces' },
-  { to: '/student/recordings', icon: Mic, label: 'Recordings' },
   { to: '/student/goals', icon: Target, label: 'Goals' },
   { to: '/student/performances', icon: Trophy, label: 'Performances' },
   { to: '/student/insights', icon: Brain, label: 'AI Insights' },
