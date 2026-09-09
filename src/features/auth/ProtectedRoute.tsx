@@ -13,10 +13,15 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--clay-bg)' }}>
         <div className="space-y-3 text-center">
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-slate-400 text-sm">Loading...</p>
+          <div
+            className="w-12 h-12 rounded-full animate-spin mx-auto"
+            style={{ border: '4px solid var(--clay-accent-soft)', borderTopColor: 'var(--clay-accent)' }}
+          />
+          <p className="text-sm font-semibold" style={{ color: 'var(--clay-dim)', fontFamily: 'var(--clay-font)' }}>
+            Loading…
+          </p>
         </div>
       </div>
     )

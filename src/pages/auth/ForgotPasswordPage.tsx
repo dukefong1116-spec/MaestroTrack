@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { resetPassword } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
-import { KeyRound, MailCheck } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import Button from '@/components/ui/Button'
 
 const schema = z.object({ email: z.string().email() })
@@ -28,30 +28,30 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#EDEAE4' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center" style={{ color: '#E8503A' }}><KeyRound size={48} strokeWidth={1.5} /></div>
-          <h1 className="text-2xl font-bold" style={{ color: '#22201C' }}>Reset Password</h1>
-          <p className="mt-2" style={{ color: '#6B6860' }}>We'll send a reset link to your email</p>
+          <div className="mb-4 flex justify-center"><Sticker name="key" size={48} tone="accent" /></div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--clay-ink)' }}>Reset Password</h1>
+          <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>We'll send a reset link to your email</p>
         </div>
-        <div className="rounded-2xl p-8" style={{ background: '#F8F6F2', border: '1px solid #DEDAD2', boxShadow: '0 8px 32px -8px rgba(34,32,28,.12)' }}>
+        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none', boxShadow: 'var(--clay-raised)' }}>
           {sent ? (
             <div className="text-center space-y-4">
-              <div className="flex justify-center" style={{ color: '#2C7A4B' }}><MailCheck size={44} strokeWidth={1.5} /></div>
-              <p className="font-semibold" style={{ color: '#22201C' }}>Check your inbox!</p>
-              <p className="text-sm" style={{ color: '#6B6860' }}>Password reset email sent.</p>
-              <Link to="/login" className="text-sm font-medium" style={{ color: '#E8503A' }}>Back to Sign In</Link>
+              <div className="flex justify-center"><Sticker name="mail" size={44} tone="accent" /></div>
+              <p className="font-semibold" style={{ color: 'var(--clay-ink)' }}>Check your inbox!</p>
+              <p className="text-sm" style={{ color: 'var(--clay-dim)' }}>Password reset email sent.</p>
+              <Link to="/login" className="text-sm font-medium" style={{ color: 'var(--clay-accent)' }}>Back to Sign In</Link>
             </div>
           ) : (
             <>
-              {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>{error}</div>}
+              {error && <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'var(--clay-accent-soft)', border: 'none', color: 'var(--clay-danger)' }}>{error}</div>}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
                 <Button type="submit" className="w-full" loading={isSubmitting}>Send Reset Link</Button>
               </form>
               <p className="text-center text-sm mt-6">
-                <Link to="/login" className="font-medium" style={{ color: '#E8503A' }}>Back to Sign In</Link>
+                <Link to="/login" className="font-medium" style={{ color: 'var(--clay-accent)' }}>Back to Sign In</Link>
               </p>
             </>
           )}

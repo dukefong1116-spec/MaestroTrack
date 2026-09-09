@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, Users, Music, TrendingUp } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { getCategoryData, computeConsistencyScore } from '@/lib/utils/analytics'
 import { getTheme, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
@@ -61,21 +61,21 @@ export default function ResearchPage() {
         subtitle="Anonymous aggregate analytics across your studio. All data anonymized."
       />
 
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-400 text-xs mb-6">
-        <BarChart3 size={13} className="inline mr-1.5 -mt-px" />This dashboard shows anonymized aggregate data. No individual student can be identified from these metrics.
+      <div className="bg-amber-50 rounded-xl px-4 py-3 text-amber-700 text-xs mb-6">
+        <Sticker name="chart" size={13} tone="ink" className="inline mr-1.5 -mt-px" />This dashboard shows anonymized aggregate data. No individual student can be identified from these metrics.
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Students" value={students.length} icon={<Users size={16} />} delay={0} />
-        <StatCard label="Total Sessions" value={allSessions.length} icon={<BarChart3 size={16} />} delay={0.05} />
-        <StatCard label="Total Hours" value={`${Math.round(totalMinutes / 60)}h`} icon={<TrendingUp size={16} />} delay={0.1} />
+        <StatCard label="Total Students" value={students.length} icon={<Sticker name="users" size={16} tone="accent" />} delay={0} />
+        <StatCard label="Total Sessions" value={allSessions.length} icon={<Sticker name="chart" size={16} tone="accent" />} delay={0.05} />
+        <StatCard label="Total Hours" value={`${Math.round(totalMinutes / 60)}h`} icon={<Sticker name="trend" size={16} tone="accent" />} delay={0.1} />
         <StatCard label="Avg Consistency" value={`${avgConsistency}%`} delay={0.15} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {/* By instrument */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">
             Average Practice by Instrument
           </p>
           <div className="space-y-3">
@@ -84,23 +84,23 @@ export default function ResearchPage() {
               const theme = getTheme(inst.toLowerCase() as InstrumentType)
               return (
                 <div key={inst}>
-                  <div className="flex justify-between text-xs text-[#A09C95] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--clay-faint)] mb-1">
                     <span className="flex items-center gap-1.5"><InstrumentIcon instrument={inst.toLowerCase() as InstrumentType} size={13} />{inst}</span>
                     <span>{avgMin} min avg · {data.count} students</span>
                   </div>
-                  <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%`, backgroundColor: theme.primary }} />
                   </div>
                 </div>
               )
             })}
-            {byInstrument.length === 0 && <p className="text-[#6B6860] text-sm">No data yet.</p>}
+            {byInstrument.length === 0 && <p className="text-[var(--clay-dim)] text-sm">No data yet.</p>}
           </div>
         </Card>
 
         {/* By level */}
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">
             Practice by Experience Level
           </p>
           <div className="space-y-4">
@@ -108,21 +108,21 @@ export default function ResearchPage() {
               const avgMin = data.count > 0 ? Math.round(data.totalMinutes / data.count) : 0
               return (
                 <div key={level} className="flex items-center gap-4">
-                  <div className="w-24 text-sm text-[#A09C95] capitalize shrink-0">{level}</div>
-                  <div className="flex-1 h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-[#E8503A]" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
+                  <div className="w-24 text-sm text-[var(--clay-faint)] capitalize shrink-0">{level}</div>
+                  <div className="flex-1 h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-[var(--clay-accent)]" style={{ width: `${Math.min(100, (avgMin / 600) * 100)}%` }} />
                   </div>
-                  <div className="text-xs text-[#6B6860] shrink-0">{avgMin}m avg</div>
+                  <div className="text-xs text-[var(--clay-dim)] shrink-0">{avgMin}m avg</div>
                 </div>
               )
             })}
-            {byLevel.length === 0 && <p className="text-[#6B6860] text-sm">No data yet.</p>}
+            {byLevel.length === 0 && <p className="text-[var(--clay-dim)] text-sm">No data yet.</p>}
           </div>
         </Card>
       </div>
 
       <Card className="p-5">
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">
           Studio-wide Category Distribution
         </p>
         <CategoryPieChart data={categoryData} />

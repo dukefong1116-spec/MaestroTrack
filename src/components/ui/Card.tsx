@@ -9,29 +9,31 @@ interface CardProps {
   style?: React.CSSProperties
 }
 
+/**
+ * Soft Clay surface: no border, a puffy drop shadow and an inner top
+ * highlight that reads as a lit edge. Hover lifts it rather than
+ * recolouring an outline.
+ */
 export default function Card({ children, className, hover, onClick, style }: CardProps) {
   return (
     <div
       onClick={onClick}
       className={cn(
-        'rounded-2xl',
-        hover && 'transition-all duration-200 cursor-pointer hover:-translate-y-0.5',
+        'rounded-[var(--clay-r-md)]',
+        hover && 'transition-transform duration-200 cursor-pointer hover:-translate-y-1',
         onClick && 'cursor-pointer',
         className
       )}
       style={{
-        background: '#F8F6F2',
-        border: '1px solid #DEDAD2',
-        ...(hover ? { ['--hover-border' as string]: '#E8503A' } : {}),
+        background: 'var(--clay-surface)',
+        boxShadow: 'var(--clay-raised)',
         ...style,
       }}
       onMouseEnter={hover ? (e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = '#E8503A'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px -4px rgba(232,80,58,.15)'
+        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--clay-deep)'
       } : undefined}
       onMouseLeave={hover ? (e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = '#DEDAD2'
-        ;(e.currentTarget as HTMLElement).style.boxShadow = ''
+        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--clay-raised)'
       } : undefined}
     >
       {children}

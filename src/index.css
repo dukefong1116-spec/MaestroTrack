@@ -54,10 +54,11 @@
 
 body {
   margin: 0;
-  background-color: #EDEAE4;
+  background-color: var(--clay-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #22201C;
+  color: var(--clay-ink);
+  font-family: var(--clay-font);
 }
 
 #root {
@@ -73,11 +74,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #BFBBB4;
+  background: #CFC7E2;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A09C95;
+  background: var(--clay-faint);
 }
 
 /* Remove input number spinners */
@@ -92,6 +93,11 @@ input[type="number"] {
 
 /* Select styling */
 select option {
-  background: #F8F6F2;
-  color: #22201C;
+  background: var(--clay-surface);
+  color: var(--clay-ink);
+}
+
+/* Range inputs pick up the accent so sliders match the theme */
+input[type="range"] {
+  accent-color: var(--clay-accent);
 }

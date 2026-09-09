@@ -742,7 +742,7 @@ export default function SessionPage() {
         </div>
 
         {saveError && (
-          <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: '#FFE8EA', color: '#C0392B' }}>
+          <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: '#FFE8EA', color: 'var(--clay-danger)' }}>
             {saveError}
           </p>
         )}

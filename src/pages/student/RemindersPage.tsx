@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Bell, BellOff, Clock, Target, Music, Flame } from 'lucide-react'
+import { BellOff } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { format } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -26,11 +27,11 @@ export default function RemindersPage() {
 
     const minsLeft = (profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek
     if (minsLeft > 0 && minsLeft <= 60) {
-      msgs.push({ icon: <Target size={14} />, text: `You are only ${minsLeft} minutes away from reaching your weekly goal!`, type: 'success' })
+      msgs.push({ icon: <Sticker name="target" size={14} tone="accent" />, text: `You are only ${minsLeft} minutes away from reaching your weekly goal!`, type: 'success' })
     }
 
     if (summary.currentStreak > 0) {
-      msgs.push({ icon: <Flame size={14} />, text: `Keep your ${summary.currentStreak}-day streak alive — practice today!`, type: 'warning' })
+      msgs.push({ icon: <Sticker name="flame" size={14} tone="accent" />, text: `Keep your ${summary.currentStreak}-day streak alive — practice today!`, type: 'warning' })
     }
 
     const neglectedPieces = pieces.filter((p) => {
@@ -42,7 +43,7 @@ export default function RemindersPage() {
       return days >= 5
     })
     for (const piece of neglectedPieces.slice(0, 2)) {
-      msgs.push({ icon: <Music size={14} />, text: `You have not practiced "${piece.title}" in 5+ days.`, type: 'info' })
+      msgs.push({ icon: <Sticker name="note" size={14} tone="accent" />, text: `You have not practiced "${piece.title}" in 5+ days.`, type: 'info' })
     }
 
     return msgs
@@ -66,14 +67,14 @@ export default function RemindersPage() {
       <Card className="p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="font-semibold text-[#22201C]">Daily Practice Reminder</p>
-            <p className="text-sm text-[#6B6860] mt-0.5">Get notified to practice every day at your chosen time</p>
+            <p className="font-semibold text-[var(--clay-ink)]">Daily Practice Reminder</p>
+            <p className="text-sm text-[var(--clay-dim)] mt-0.5">Get notified to practice every day at your chosen time</p>
           </div>
           <button
             onClick={() => setEnabled((e) => !e)}
-            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-[#E8503A]' : 'bg-[#DEDAD2]'}`}
+            className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-[var(--clay-accent)]' : 'bg-[var(--clay-line)]'}`}
           >
-            <div className={`absolute top-1 w-4 h-4 bg-[#F8F6F2] rounded-full shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'}`} />
+            <div className={`absolute top-1 w-4 h-4 bg-[var(--clay-surface)] rounded-full shadow transition-transform ${enabled ? 'translate-x-7' : 'translate-x-1'}`} />
           </button>
         </div>
 
@@ -86,7 +87,7 @@ export default function RemindersPage() {
               onChange={(e) => setTime(e.target.value)}
               className="max-w-[200px]"
             />
-            <p className="text-xs text-[#6B6860]">Browser notifications must be enabled. MaestroTrack will remind you at {time} daily.</p>
+            <p className="text-xs text-[var(--clay-dim)]">Browser notifications must be enabled. MaestroTrack will remind you at {time} daily.</p>
           </motion.div>
         )}
 
@@ -95,21 +96,21 @@ export default function RemindersPage() {
 
       {/* Smart reminders */}
       <div>
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Smart Reminders</p>
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Smart Reminders</p>
         {smartReminders.length === 0 ? (
           <Card className="p-8 text-center">
-            <BellOff className="mx-auto text-[#6B6860] mb-3" size={32} />
-            <p className="text-[#6B6860] text-sm">All caught up! No urgent reminders right now.</p>
+            <BellOff className="mx-auto text-[var(--clay-dim)] mb-3" size={32} />
+            <p className="text-[var(--clay-dim)] text-sm">All caught up! No urgent reminders right now.</p>
           </Card>
         ) : (
           <div className="space-y-3">
             {smartReminders.map((r, i) => (
               <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
                 <Card className="p-4 flex items-center gap-4">
-                  <div className={`p-2.5 rounded-xl shrink-0 ${r.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : r.type === 'warning' ? 'bg-amber-500/10 text-amber-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                  <div className={`p-2.5 rounded-xl shrink-0 ${r.type === 'success' ? 'bg-emerald-50 text-emerald-600' : r.type === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
                     {r.icon}
                   </div>
-                  <p className="text-sm text-[#A09C95] flex-1">{r.text}</p>
+                  <p className="text-sm text-[var(--clay-faint)] flex-1">{r.text}</p>
                   <Badge variant={r.type === 'success' ? 'success' : r.type === 'warning' ? 'warning' : 'info'} size="sm">
                     {r.type}
                   </Badge>

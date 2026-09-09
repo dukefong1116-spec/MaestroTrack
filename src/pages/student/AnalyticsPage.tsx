@@ -49,8 +49,8 @@ export default function AnalyticsPage() {
           { label: 'Consistency Score', value: `${consistency}%` },
         ].map((kpi, i) => (
           <Card key={i} className="p-4 text-center space-y-1">
-            <p className="text-2xl font-bold text-[#22201C]">{kpi.value}</p>
-            <p className="text-xs text-[#6B6860]">{kpi.label}</p>
+            <p className="text-2xl font-bold text-[var(--clay-ink)]">{kpi.value}</p>
+            <p className="text-xs text-[var(--clay-dim)]">{kpi.label}</p>
           </Card>
         ))}
       </div>
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         {charts.map((chart, i) => (
           <Card key={i} className="p-5">
-            <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">{chart.title}</p>
+            <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">{chart.title}</p>
             {chart.component}
           </Card>
         ))}
@@ -68,19 +68,19 @@ export default function AnalyticsPage() {
       {/* Category distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Practice Category Distribution</p>
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Practice Category Distribution</p>
           <CategoryPieChart data={categoryData} />
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Category Breakdown</p>
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Category Breakdown</p>
           <div className="space-y-3 mt-2">
             {categoryData.sort((a, b) => b.minutes - a.minutes).map((cat, i) => (
               <div key={i}>
-                <div className="flex justify-between text-xs text-[#A09C95] mb-1">
+                <div className="flex justify-between text-xs text-[var(--clay-faint)] mb-1">
                   <span>{cat.category}</span>
                   <span>{cat.minutes} min ({cat.percentage}%)</span>
                 </div>
-                <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${cat.percentage}%`, backgroundColor: theme.primary }} />
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
 
       {/* Heatmap */}
       <Card className="p-5">
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Full Year Practice Heatmap</p>
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Full Year Practice Heatmap</p>
         <PracticeHeatmap data={heatmap} color={theme.primary} />
       </Card>
     </div>

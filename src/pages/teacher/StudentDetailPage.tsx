@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Trash2, MessageSquare, ClipboardList } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -84,12 +85,12 @@ export default function StudentDetailPage() {
   }
 
   if (!student) return (
-    <div className="flex items-center justify-center h-64 text-[#6B6860]">Student not found</div>
+    <div className="flex items-center justify-center h-64 text-[var(--clay-dim)]">Student not found</div>
   )
 
   return (
     <div>
-      <button onClick={() => navigate('/teacher/students')} className="flex items-center gap-2 text-[#6B6860] hover:text-[#22201C] text-sm mb-6 transition-colors">
+      <button onClick={() => navigate('/teacher/students')} className="flex items-center gap-2 text-[var(--clay-dim)] hover:text-[var(--clay-ink)] text-sm mb-6 transition-colors">
         <ArrowLeft size={16} /> Back to Students
       </button>
 
@@ -98,8 +99,8 @@ export default function StudentDetailPage() {
           <InstrumentIcon instrument={student?.instrument as InstrumentType | undefined} size={26} style={{ color: theme.primary }} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[#22201C]">{student.displayName}</h1>
-          <p className="text-[#6B6860] text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
+          <h1 className="text-2xl font-bold text-[var(--clay-ink)]">{student.displayName}</h1>
+          <p className="text-[var(--clay-dim)] text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
         </div>
       </div>
 
@@ -114,24 +115,24 @@ export default function StudentDetailPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Last 14 Days</p>
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Last 14 Days</p>
           <PracticeBarChart data={dailyData} color={theme.primary} />
         </Card>
         <Card className="p-5">
-          <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Category Distribution</p>
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Category Distribution</p>
           <CategoryPieChart data={categoryData} />
         </Card>
       </div>
 
       <Card className="p-5 mb-8">
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Practice Heatmap</p>
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Practice Heatmap</p>
         <PracticeHeatmap data={heatmap} color={theme.primary} />
       </Card>
 
       {/* Assignments */}
       <div className="mb-8">
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4 flex items-center gap-2">
-          <ClipboardList size={14} /> Assignments
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Sticker name="clipboard" size={14} tone="ink" /> Assignments
         </p>
         <Card className="p-5 mb-4">
           <div className="space-y-3">
@@ -167,36 +168,36 @@ export default function StudentDetailPage() {
                 <Card className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-[#6B6860]' : 'text-[#22201C]'}`}>
+                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-[var(--clay-dim)]' : 'text-[var(--clay-ink)]'}`}>
                         {a.title}
                       </p>
                       <Badge variant={a.status === 'completed' ? 'success' : 'info'} size="sm">
                         {a.status}
                       </Badge>
                     </div>
-                    {a.description && <p className="text-xs text-[#6B6860] mt-1">{a.description}</p>}
-                    <p className="text-xs text-[#6B6860] mt-1">
+                    {a.description && <p className="text-xs text-[var(--clay-dim)] mt-1">{a.description}</p>}
+                    <p className="text-xs text-[var(--clay-dim)] mt-1">
                       Assigned {format(parseISO(a.createdAt), 'MMM d')}
                       {a.dueDate ? ` · Due ${format(parseISO(a.dueDate), 'MMM d')}` : ''}
                       {a.completedAt ? ` · Completed ${format(parseISO(a.completedAt), 'MMM d')}` : ''}
                     </p>
                   </div>
-                  <button onClick={() => deleteAssignment(a.id)} className="text-[#6B6860] hover:text-red-400 transition-colors shrink-0">
+                  <button onClick={() => deleteAssignment(a.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors shrink-0">
                     <Trash2 size={14} />
                   </button>
                 </Card>
               </motion.div>
             ))}
           {assignments.length === 0 && (
-            <p className="text-sm text-[#6B6860] text-center py-4">No assignments yet.</p>
+            <p className="text-sm text-[var(--clay-dim)] text-center py-4">No assignments yet.</p>
           )}
         </div>
       </div>
 
       {/* Teacher notes */}
       <div>
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4 flex items-center gap-2">
-          <MessageSquare size={14} /> Teacher Notes
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Sticker name="message" size={14} tone="ink" /> Teacher Notes
         </p>
         <Card className="p-5 mb-4">
           <Textarea
@@ -216,9 +217,9 @@ export default function StudentDetailPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <p className="text-sm text-slate-200">{note.content}</p>
-                    <p className="text-xs text-[#6B6860] mt-2">{format(parseISO(note.createdAt), 'MMMM d, yyyy · h:mm a')}</p>
+                    <p className="text-xs text-[var(--clay-dim)] mt-2">{format(parseISO(note.createdAt), 'MMMM d, yyyy · h:mm a')}</p>
                   </div>
-                  <button onClick={() => deleteTeacherNote(note.id)} className="text-[#6B6860] hover:text-red-400 transition-colors">
+                  <button onClick={() => deleteTeacherNote(note.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
                     <Trash2 size={14} />
                   </button>
                 </div>

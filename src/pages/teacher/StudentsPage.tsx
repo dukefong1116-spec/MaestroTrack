@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, Users, UserMinus } from 'lucide-react'
+import { UserMinus } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { removeStudentFromStudio } from '@/lib/firebase/teacher'
@@ -50,7 +51,7 @@ export default function StudentsPage() {
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon={<Users size={36} />}
+          icon={<Sticker name="users" size={36} tone="accent" />}
           title={search ? 'No students match your search' : 'No students yet'}
           description={`Studio code: ${profile?.studioCode ?? '—'}`}
         />
@@ -65,44 +66,44 @@ export default function StudentsPage() {
                 <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#E8503A]/15 flex items-center justify-center" style={{ color: '#E8503A' }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--clay-accent) 15%, transparent)', color: 'var(--clay-accent)' }}>
                         <InstrumentIcon instrument={student.instrument as InstrumentType | undefined} size={19} />
                       </div>
                       <div>
-                        <p className="font-semibold text-[#22201C]">{student.displayName}</p>
-                        <p className="text-xs text-[#6B6860] capitalize">{student.instrument ?? 'Unknown'}</p>
+                        <p className="font-semibold text-[var(--clay-ink)]">{student.displayName}</p>
+                        <p className="text-xs text-[var(--clay-dim)] capitalize">{student.instrument ?? 'Unknown'}</p>
                       </div>
                     </div>
                     <button
                       onClick={(e) => handleRemove(e, student)}
-                      className="text-[#6B6860] hover:text-red-400 transition-colors"
+                      className="text-[var(--clay-dim)] hover:text-red-400 transition-colors"
                     >
                       <UserMinus size={14} />
                     </button>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-[#E5E2DB] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[#22201C]">{summary.currentStreak}d</p>
-                      <p className="text-xs text-[#6B6860]">Streak</p>
+                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
+                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.currentStreak}d</p>
+                      <p className="text-xs text-[var(--clay-dim)]">Streak</p>
                     </div>
-                    <div className="bg-[#E5E2DB] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[#22201C]">{summary.weeklyGoalPercentage}%</p>
-                      <p className="text-xs text-[#6B6860]">Goal</p>
+                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
+                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.weeklyGoalPercentage}%</p>
+                      <p className="text-xs text-[var(--clay-dim)]">Goal</p>
                     </div>
-                    <div className="bg-[#E5E2DB] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[#22201C]">{summary.consistencyScore}%</p>
-                      <p className="text-xs text-[#6B6860]">Consist.</p>
+                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
+                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.consistencyScore}%</p>
+                      <p className="text-xs text-[var(--clay-dim)]">Consist.</p>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs text-[#6B6860] mb-1">
+                    <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-1">
                       <span>Weekly goal</span>
                       <span>{summary.totalMinutesThisWeek}/{student.weeklyGoalMinutes ?? 300} min</span>
                     </div>
-                    <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#E8503A] rounded-full" style={{ width: `${Math.min(100, summary.weeklyGoalPercentage)}%` }} />
+                    <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
+                      <div className="h-full bg-[var(--clay-accent)] rounded-full" style={{ width: `${Math.min(100, summary.weeklyGoalPercentage)}%` }} />
                     </div>
                   </div>
 

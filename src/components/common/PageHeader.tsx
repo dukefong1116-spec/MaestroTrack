@@ -15,8 +15,13 @@ export default function PageHeader({ title, subtitle, actions }: PageHeaderProps
       className="flex items-start justify-between gap-4 mb-8"
     >
       <div>
-        <h1 className="text-2xl font-bold leading-tight" style={{ color: '#22201C' }}>{title}</h1>
-        {subtitle && <p className="text-sm mt-1" style={{ color: '#6B6860' }}>{subtitle}</p>}
+        <h1
+          className="text-[26px] font-bold leading-tight"
+          style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
+        >
+          {title}
+        </h1>
+        {subtitle && <p className="text-sm mt-1" style={{ color: 'var(--clay-dim)' }}>{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
     </motion.div>

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Target, Trophy, Zap, Star, CheckCircle2, Music4, Swords, Award, Footprints, Crosshair, Clock } from 'lucide-react'
+import { Target } from 'lucide-react'
+import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -16,13 +17,13 @@ import Input from '@/components/ui/Input'
 import { useState } from 'react'
 import type { InstrumentType } from '@/types'
 
-const BADGES = [
-  { id: 'first_session', label: 'First Note', icon: Music4, description: 'Logged your first practice session', condition: (sessions: number) => sessions >= 1 },
-  { id: 'week_warrior', label: 'Week Warrior', icon: Swords, description: 'Practiced every day for a week', condition: (_s: number, streak: number) => streak >= 7 },
-  { id: 'century', label: 'Century Club', icon: Award, description: 'Logged 100 practice sessions', condition: (sessions: number) => sessions >= 100 },
-  { id: 'marathon', label: 'Marathon', icon: Footprints, description: 'Practiced for 60+ minutes in one session', condition: (_s: number, _st: number, maxSession: number) => maxSession >= 60 },
-  { id: 'consistency', label: 'Iron Discipline', icon: Crosshair, description: '30-day streak', condition: (_s: number, streak: number) => streak >= 30 },
-  { id: 'ten_hours', label: '10 Hours Strong', icon: Clock, description: 'Accumulated 600 minutes of practice', condition: (_s: number, _st: number, _m: number, totalMinutes: number) => totalMinutes >= 600 },
+const BADGES: { id: string; label: string; icon: StickerName; description: string; condition: (sessions: number, streak: number, maxSession: number, totalMinutes: number) => boolean }[] = [
+  { id: 'first_session', label: 'First Note', icon: 'note', description: 'Logged your first practice session', condition: (sessions) => sessions >= 1 },
+  { id: 'week_warrior', label: 'Week Warrior', icon: 'sword', description: 'Practiced every day for a week', condition: (_s, streak) => streak >= 7 },
+  { id: 'century', label: 'Century Club', icon: 'trophy', description: 'Logged 100 practice sessions', condition: (sessions) => sessions >= 100 },
+  { id: 'marathon', label: 'Marathon', icon: 'footprints', description: 'Practiced for 60+ minutes in one session', condition: (_s, _st, maxSession) => maxSession >= 60 },
+  { id: 'consistency', label: 'Iron Discipline', icon: 'target', description: '30-day streak', condition: (_s, streak) => streak >= 30 },
+  { id: 'ten_hours', label: '10 Hours Strong', icon: 'clock', description: 'Accumulated 600 minutes of practice', condition: (_s, _st, _m, totalMinutes) => totalMinutes >= 600 },
 ]
 
 export default function GoalsPage() {
@@ -87,7 +88,7 @@ export default function GoalsPage() {
       {editGoals && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
           <Card className="p-5 mb-6 space-y-4">
-            <p className="text-sm font-semibold text-[#22201C]">Weekly Practice Goal</p>
+            <p className="text-sm font-semibold text-[var(--clay-ink)]">Weekly Practice Goal</p>
             <div className="flex items-center gap-4">
               <Input
                 type="number"
@@ -103,17 +104,17 @@ export default function GoalsPage() {
       )}
 
       {/* Progress rings */}
-      <div className="flex items-center justify-around py-8 bg-[#EDEAE4] rounded-2xl border border-[#DEDAD2] mb-8">
+      <div className="flex items-center justify-around py-8 bg-[var(--clay-bg)] rounded-2xl border border-[var(--clay-line)] mb-8">
         {rings.map((ring, i) => (
           <motion.div key={ring.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} className="flex flex-col items-center gap-3">
             <ProgressRing percentage={ring.pct} size={ring.size} strokeWidth={ring.size === 130 ? 12 : 9} color={theme.primary}>
               <div className="text-center">
-                <p className="text-base font-bold text-[#22201C]">{ring.pct}%</p>
+                <p className="text-base font-bold text-[var(--clay-ink)]">{ring.pct}%</p>
               </div>
             </ProgressRing>
             <div className="text-center">
-              <p className="text-sm font-semibold text-[#22201C]">{ring.label}</p>
-              <p className="text-xs text-[#6B6860]">{ring.value}/{ring.goal} min</p>
+              <p className="text-sm font-semibold text-[var(--clay-ink)]">{ring.label}</p>
+              <p className="text-xs text-[var(--clay-dim)]">{ring.value}/{ring.goal} min</p>
             </div>
           </motion.div>
         ))}
@@ -122,25 +123,25 @@ export default function GoalsPage() {
       {/* Streak */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <Card className="p-5 text-center space-y-2">
-          <Zap className="mx-auto text-amber-400" size={28} />
-          <p className="text-3xl font-bold text-[#22201C]">{streak}</p>
-          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Current Streak</p>
+          <div className="flex justify-center"><Sticker name="bolt" size={28} tone="accent" /></div>
+          <p className="text-3xl font-bold text-[var(--clay-ink)]">{streak}</p>
+          <p className="text-xs text-[var(--clay-dim)] uppercase tracking-wide">Current Streak</p>
         </Card>
         <Card className="p-5 text-center space-y-2">
-          <Star className="mx-auto text-[#E8503A]" size={28} />
-          <p className="text-3xl font-bold text-[#22201C]">{summary.longestStreak}</p>
-          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Longest Streak</p>
+          <div className="flex justify-center"><Sticker name="star" size={28} tone="accent" /></div>
+          <p className="text-3xl font-bold text-[var(--clay-ink)]">{summary.longestStreak}</p>
+          <p className="text-xs text-[var(--clay-dim)] uppercase tracking-wide">Longest Streak</p>
         </Card>
         <Card className="p-5 text-center space-y-2">
-          <Trophy className="mx-auto text-emerald-400" size={28} />
-          <p className="text-3xl font-bold text-[#22201C]">{earnedBadges.length}</p>
-          <p className="text-xs text-[#6B6860] uppercase tracking-wide">Badges Earned</p>
+          <div className="flex justify-center"><Sticker name="trophy" size={28} tone="accent" /></div>
+          <p className="text-3xl font-bold text-[var(--clay-ink)]">{earnedBadges.length}</p>
+          <p className="text-xs text-[var(--clay-dim)] uppercase tracking-wide">Badges Earned</p>
         </Card>
       </div>
 
       {/* Badges */}
       <div>
-        <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Achievement Badges</p>
+        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Achievement Badges</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {BADGES.map((badge, i) => {
             const earned = badge.condition(sessions.length, streak, maxSession, totalMinutes)
@@ -148,11 +149,11 @@ export default function GoalsPage() {
               <motion.div key={badge.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <Card className={`p-4 space-y-2 transition-all ${earned ? '' : 'opacity-40 grayscale'}`}>
                   <div className="flex items-start justify-between">
-                    <badge.icon size={26} strokeWidth={1.6} style={{ color: earned ? '#E8503A' : '#A09C95' }} />
-                    {earned && <CheckCircle2 size={16} className="text-emerald-400" />}
+                    <Sticker name={badge.icon} size={26} tone={earned ? 'accent' : 'ink'} />
+                    {earned && <Sticker name="check" size={16} tone="accent" />}
                   </div>
-                  <p className="font-semibold text-[#22201C] text-sm">{badge.label}</p>
-                  <p className="text-xs text-[#6B6860]">{badge.description}</p>
+                  <p className="font-semibold text-[var(--clay-ink)] text-sm">{badge.label}</p>
+                  <p className="text-xs text-[var(--clay-dim)]">{badge.description}</p>
                 </Card>
               </motion.div>
             )

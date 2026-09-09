@@ -52,7 +52,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#EDEAE4' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 60% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -60,16 +60,16 @@ export default function LoginPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center" style={{ color: '#E8503A' }}><PianoGlyph size={52} /></div>
-          <h1 className="text-3xl font-bold" style={{ color: '#22201C' }}>MaestroTrack</h1>
-          <p className="mt-2" style={{ color: '#6B6860' }}>The practice intelligence platform for musicians</p>
+          <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><PianoGlyph size={52} /></div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>MaestroTrack</h1>
+          <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>The practice intelligence platform for musicians</p>
         </div>
 
-        <div className="rounded-2xl p-8" style={{ background: '#F8F6F2', border: '1px solid #DEDAD2', boxShadow: '0 8px 32px -8px rgba(34,32,28,.12)' }}>
-          <h2 className="text-xl font-semibold mb-6" style={{ color: '#22201C' }}>Welcome back</h2>
+        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none', boxShadow: 'var(--clay-raised)' }}>
+          <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--clay-ink)' }}>Welcome back</h2>
 
           {error && (
-            <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
+            <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'var(--clay-accent-soft)', border: 'none', color: 'var(--clay-danger)' }}>
               {error}
             </div>
           )}
@@ -78,7 +78,7 @@ export default function LoginPage() {
             <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: '#E8503A' }}>
+              <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
                 Forgot password?
               </Link>
             </div>
@@ -87,9 +87,9 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm mt-6" style={{ color: '#6B6860' }}>
+          <p className="text-center text-sm mt-6" style={{ color: 'var(--clay-dim)' }}>
             New here?{' '}
-            <Link to="/signup" className="font-medium transition-colors" style={{ color: '#E8503A' }}>
+            <Link to="/signup" className="font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
               Create an account
             </Link>
           </p>

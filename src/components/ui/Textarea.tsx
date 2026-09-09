@@ -12,26 +12,23 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium" style={{ color: '#3D3A35' }}>{label}</label>
+          <label htmlFor={inputId} className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>{label}</label>
         )}
         <textarea
           ref={ref}
           id={inputId}
           rows={3}
           className={cn(
-            'w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all resize-none',
-            error && 'border-red-400 focus:ring-red-400',
+            'w-full rounded-[var(--clay-r-sm)] px-4 py-2.5 text-sm outline-none transition-shadow resize-none',
+            'shadow-[inset_0_1px_3px_rgba(58,48,84,.08)]',
+            'focus:shadow-[inset_0_0_0_2px_var(--clay-accent)]',
+            error && 'shadow-[inset_0_0_0_2px_var(--clay-danger)]',
             className
           )}
-          style={{
-            background: '#F8F6F2',
-            border: `1px solid ${error ? '#F87171' : '#DEDAD2'}`,
-            color: '#22201C',
-            '--tw-ring-color': '#E8503A',
-          } as React.CSSProperties}
+          style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
           {...props}
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>}
       </div>
     )
   }

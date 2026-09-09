@@ -28,31 +28,34 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 backdrop-blur-sm"
-            style={{ background: 'rgba(34,32,28,.35)' }}
+            style={{ background: 'rgba(58,48,84,.32)' }}
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: 'spring', duration: 0.3 }}
-            className={`relative w-full ${widths[size]} rounded-2xl overflow-hidden`}
+            exit={{ opacity: 0, scale: 0.92, y: 16 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            className={`relative w-full ${widths[size]} overflow-hidden`}
             style={{
-              background: '#F8F6F2',
-              border: '1px solid #DEDAD2',
-              boxShadow: '0 24px 64px -12px rgba(34,32,28,.22)',
+              background: 'var(--clay-surface)',
+              borderRadius: 'var(--clay-r-lg)',
+              boxShadow: 'var(--clay-deep)',
             }}
           >
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E8E4DC' }}>
-              <h2 className="text-lg font-semibold" style={{ color: '#22201C' }}>{title}</h2>
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ boxShadow: 'inset 0 -1px 0 var(--clay-line)' }}
+            >
+              <h2 className="text-lg font-bold" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>
+                {title}
+              </h2>
               <button
                 onClick={onClose}
-                className="transition-colors p-1 rounded-lg"
-                style={{ color: '#A09C95' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#22201C')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#A09C95')}
+                className="rounded-full p-1.5 transition-transform active:scale-90"
+                style={{ color: 'var(--clay-faint)', background: 'var(--clay-bg)' }}
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </div>
             <div className="p-6 overflow-y-auto max-h-[80vh]">{children}</div>

@@ -451,7 +451,7 @@ export default function PracticeLogPage() {
       <Modal open={open} onClose={() => { setOpen(false); setSaveError('') }} title="Log Practice Session">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {saveError && (
-            <div className="rounded-xl px-4 py-3 text-sm" style={{ background: '#FEF0EE', border: '1px solid #FDDDD9', color: '#C0392B' }}>
+            <div className="rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--clay-accent-soft)', border: 'none', color: 'var(--clay-danger)' }}>
               {saveError}
             </div>
           )}
@@ -474,12 +474,12 @@ export default function PracticeLogPage() {
           />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[#A09C95]">Difficulty (1–5)</label>
-              <input type="range" min={1} max={5} step={1} className="w-full accent-[#E8503A]" {...register('difficultyRating')} />
+              <label className="text-sm font-medium text-[var(--clay-faint)]">Difficulty (1–5)</label>
+              <input type="range" min={1} max={5} step={1} className="w-full accent-[var(--clay-accent)]" {...register('difficultyRating')} />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[#A09C95]">Confidence (1–10)</label>
-              <input type="range" min={1} max={10} step={1} className="w-full accent-[#E8503A]" {...register('confidenceRating')} />
+              <label className="text-sm font-medium text-[var(--clay-faint)]">Confidence (1–10)</label>
+              <input type="range" min={1} max={10} step={1} className="w-full accent-[var(--clay-accent)]" {...register('confidenceRating')} />
             </div>
           </div>
           <Textarea label="Notes (optional)" placeholder="What went well? What needs work?" {...register('notes')} />

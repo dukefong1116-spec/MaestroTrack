@@ -82,9 +82,8 @@ export default function SessionCelebration({
         <motion.div
           className="relative w-full max-w-sm rounded-3xl px-8 py-9 text-center"
           style={{
-            background: '#F8F6F2',
-            border: '1px solid #DEDAD2',
-            boxShadow: '0 32px 80px -16px rgba(34,32,28,.35)',
+            background: 'var(--clay-surface)',
+            boxShadow: 'var(--clay-deep)',
           }}
           initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -99,9 +98,9 @@ export default function SessionCelebration({
           <button
             onClick={toggleMute}
             className="absolute right-4 top-4 rounded-lg p-1.5 transition-colors"
-            style={{ color: '#A09C95' }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#22201C')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#A09C95')}
+            style={{ color: 'var(--clay-faint)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--clay-ink)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--clay-faint)')}
             aria-label={muted ? 'Unmute celebration sound' : 'Mute celebration sound'}
           >
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -111,8 +110,8 @@ export default function SessionCelebration({
           <motion.div
             className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
             style={{
-              background: muted_ ? '#E5E2DB' : 'linear-gradient(135deg,#E8503A,#D44430)',
-              color: muted_ ? '#6B6860' : '#FFFFFF',
+              background: muted_ ? 'var(--clay-bg-deep)' : 'linear-gradient(135deg,var(--clay-accent),var(--clay-accent-hover))',
+              color: muted_ ? 'var(--clay-dim)' : '#FFFFFF',
             }}
             initial={reduced ? false : { scale: 0, rotate: -25 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -129,7 +128,7 @@ export default function SessionCelebration({
 
           <motion.h2
             className="text-2xl font-bold"
-            style={{ color: '#22201C', textWrap: 'balance' } as React.CSSProperties}
+            style={{ color: 'var(--clay-ink)', textWrap: 'balance' } as React.CSSProperties}
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.35 }}
@@ -139,7 +138,7 @@ export default function SessionCelebration({
 
           <motion.p
             className="mt-1.5 text-sm"
-            style={{ color: '#6B6860' }}
+            style={{ color: 'var(--clay-dim)' }}
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.38, duration: 0.35 }}
@@ -158,9 +157,9 @@ export default function SessionCelebration({
               to={reward.minutes}
               delay={0.3}
               className="text-5xl font-bold leading-none"
-              style={{ color: '#E8503A' }}
+              style={{ color: 'var(--clay-accent)' }}
             />
-            <span className="text-base font-semibold" style={{ color: '#A09C95' }}>
+            <span className="text-base font-semibold" style={{ color: 'var(--clay-faint)' }}>
               min
             </span>
           </motion.div>
@@ -169,7 +168,7 @@ export default function SessionCelebration({
           {showStreak && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-2.5 rounded-2xl py-3"
-              style={{ background: '#EDEAE4' }}
+              style={{ background: 'var(--clay-bg)' }}
               initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.4 }}
@@ -182,7 +181,7 @@ export default function SessionCelebration({
               >
                 <StreakFlame streak={reward.streakAfter} size={26} still={!!reduced} />
               </motion.span>
-              <span className="text-sm font-semibold" style={{ color: '#22201C' }}>
+              <span className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>
                 {reward.streakAfter} day{reward.streakAfter === 1 ? '' : 's'} in a row
               </span>
             </motion.div>

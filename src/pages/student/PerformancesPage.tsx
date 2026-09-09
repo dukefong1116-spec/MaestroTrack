@@ -3,7 +3,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Plus, Trophy, Calendar, MapPin, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Calendar, MapPin, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -74,7 +75,7 @@ export default function PerformancesPage() {
 
       {performances.length === 0 ? (
         <EmptyState
-          icon={<Trophy size={36} />}
+          icon={<Sticker name="trophy" size={36} tone="accent" />}
           title="No performances yet"
           description="Add upcoming recitals, auditions, or competitions to prepare effectively."
           action={{ label: 'Add Your First Performance', onClick: () => setOpen(true) }}
@@ -83,7 +84,7 @@ export default function PerformancesPage() {
         <div className="space-y-8">
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Upcoming</p>
+              <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Upcoming</p>
               <div className="space-y-3">
                 {upcoming.map((perf, i) => {
                   const daysLeft = differenceInDays(parseISO(perf.date), new Date())
@@ -98,38 +99,38 @@ export default function PerformancesPage() {
                                 {daysLeft === 0 ? 'Today!' : `${daysLeft} days away`}
                               </Badge>
                             </div>
-                            <p className="font-bold text-[#22201C] text-lg">{perf.eventName}</p>
-                            <div className="flex items-center gap-4 mt-2 text-xs text-[#6B6860] flex-wrap">
+                            <p className="font-bold text-[var(--clay-ink)] text-lg">{perf.eventName}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-[var(--clay-dim)] flex-wrap">
                               <span className="flex items-center gap-1"><Calendar size={12} />{format(parseISO(perf.date), 'MMMM d, yyyy')}</span>
                               {perf.location && <span className="flex items-center gap-1"><MapPin size={12} />{perf.location}</span>}
                             </div>
                           </div>
-                          <button onClick={() => deletePerformance(perf.id)} className="text-[#6B6860] hover:text-red-400 transition-colors">
+                          <button onClick={() => deletePerformance(perf.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
                             <Trash2 size={14} />
                           </button>
                         </div>
 
                         <div className="mt-4">
-                          <div className="flex justify-between text-xs text-[#6B6860] mb-2">
+                          <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-2">
                             <span>Preparation Progress</span>
                             <span>{perf.preparationPercentage}%</span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="flex-1 h-2 bg-[#DEDAD2] rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 bg-[var(--clay-line)] rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all" style={{ width: `${perf.preparationPercentage}%`, backgroundColor: theme.primary }} />
                             </div>
                             <div className="flex gap-1">
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) })} className="text-[#6B6860] hover:text-[#22201C]">
+                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) })} className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]">
                                 <ChevronUp size={14} />
                               </button>
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) })} className="text-[#6B6860] hover:text-[#22201C]">
+                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) })} className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]">
                                 <ChevronDown size={14} />
                               </button>
                             </div>
                           </div>
                         </div>
 
-                        {perf.notes && <p className="text-xs text-[#6B6860] mt-3 italic">"{perf.notes}"</p>}
+                        {perf.notes && <p className="text-xs text-[var(--clay-dim)] mt-3 italic">"{perf.notes}"</p>}
                       </Card>
                     </motion.div>
                   )
@@ -140,7 +141,7 @@ export default function PerformancesPage() {
 
           {past.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-[#6B6860] uppercase tracking-widest mb-4">Past</p>
+              <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Past</p>
               <div className="space-y-2">
                 {past.map((perf) => (
                   <Card key={perf.id} className="p-4 opacity-70">
@@ -148,11 +149,11 @@ export default function PerformancesPage() {
                       <div className="flex items-center gap-3 min-w-0">
                         <Badge variant={typeColors[perf.type]}>{perf.type}</Badge>
                         <div className="min-w-0">
-                          <p className="font-semibold text-[#22201C] text-sm truncate">{perf.eventName}</p>
-                          <p className="text-xs text-[#6B6860]">{format(parseISO(perf.date), 'MMM d, yyyy')}</p>
+                          <p className="font-semibold text-[var(--clay-ink)] text-sm truncate">{perf.eventName}</p>
+                          <p className="text-xs text-[var(--clay-dim)]">{format(parseISO(perf.date), 'MMM d, yyyy')}</p>
                         </div>
                       </div>
-                      <button onClick={() => deletePerformance(perf.id)} className="text-[#6B6860] hover:text-red-400 transition-colors shrink-0">
+                      <button onClick={() => deletePerformance(perf.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={14} />
                       </button>
                     </div>

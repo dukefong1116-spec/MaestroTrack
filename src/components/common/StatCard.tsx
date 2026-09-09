@@ -20,7 +20,7 @@ export default function StatCard({
   value,
   subtitle,
   icon,
-  accent = '#E8503A',
+  accent = 'var(--clay-accent)',
   trend,
   children,
   className,
@@ -34,19 +34,22 @@ export default function StatCard({
     >
       <Card className={cn('p-5 space-y-3', className)}>
         <div className="flex items-start justify-between">
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#A09C95' }}>{label}</p>
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>{label}</p>
           {icon && (
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${accent}18` }}>
+            <div className="p-2 rounded-xl" style={{ background: 'color-mix(in srgb, ' + accent + ' 16%, transparent)' }}>
               <div style={{ color: accent }}>{icon}</div>
             </div>
           )}
         </div>
         <div className="space-y-1">
-          <p className="text-3xl font-bold tabular-nums" style={{ color: '#22201C' }}>{value}</p>
-          {subtitle && <p className="text-xs" style={{ color: '#6B6860' }}>{subtitle}</p>}
+          <p className="text-3xl font-bold tabular-nums" style={{ color: 'var(--clay-ink)' }}>{value}</p>
+          {subtitle && <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{subtitle}</p>}
         </div>
         {trend && (
-          <div className={cn('text-xs font-medium flex items-center gap-1', trend.value >= 0 ? 'text-emerald-600' : 'text-red-500')}>
+          <div
+            className="text-xs font-semibold flex items-center gap-1"
+            style={{ color: trend.value >= 0 ? '#2E8B62' : 'var(--clay-danger)' }}
+          >
             {trend.value >= 0 ? '↑' : '↓'} {Math.abs(trend.value)}% {trend.label}
           </div>
         )}

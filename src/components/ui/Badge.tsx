@@ -8,21 +8,29 @@ interface BadgeProps {
   className?: string
 }
 
+/**
+ * Soft pills — tinted fills, no borders. Clay reads as moulded shapes,
+ * and an outline flattens them back into stickers-on-glass.
+ */
+const VARIANTS: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
+  default: { background: 'var(--clay-bg-deep)', color: 'var(--clay-dim)' },
+  success: { background: '#DFF5EA', color: '#2E8B62' },
+  warning: { background: '#FFF1D6', color: '#B37A18' },
+  danger: { background: '#FFE3E7', color: '#D64257' },
+  info: { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' },
+  purple: { background: '#EDE6FB', color: '#7A5AC4' },
+}
+
 export default function Badge({ children, variant = 'default', size = 'sm', className }: BadgeProps) {
-  const variants = {
-    default: 'bg-[#E5E2DB] text-[#6B6860] border-[#DEDAD2]',
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200',
-    danger: 'bg-red-50 text-red-600 border-red-200',
-    info: 'bg-[#FEF0EE] text-[#E8503A] border-[#FDDDD9]',
-    purple: 'bg-purple-50 text-purple-600 border-purple-200',
-  }
   const sizes = {
-    sm: 'text-xs px-2 py-0.5',
-    md: 'text-sm px-3 py-1',
+    sm: 'text-xs px-2.5 py-1',
+    md: 'text-sm px-3.5 py-1.5',
   }
   return (
-    <span className={cn('inline-flex items-center gap-1 font-medium rounded-full border', variants[variant], sizes[size], className)}>
+    <span
+      className={cn('inline-flex items-center gap-1.5 font-semibold rounded-full', sizes[size], className)}
+      style={VARIANTS[variant]}
+    >
       {children}
     </span>
   )

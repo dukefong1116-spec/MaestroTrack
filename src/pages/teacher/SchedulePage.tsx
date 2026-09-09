@@ -3,7 +3,8 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Plus, Trash2, Calendar } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -41,15 +42,15 @@ function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-      <div className="bg-[#F8F6F2] border border-[#DEDAD2] rounded-xl p-3 flex items-center justify-between gap-2">
+      <div className="bg-[var(--clay-surface)] border border-[var(--clay-line)] rounded-xl p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="shrink-0" style={{ color: '#6B6860' }}><InstrumentIcon instrument={inst} size={17} /></span>
+          <span className="shrink-0" style={{ color: 'var(--clay-dim)' }}><InstrumentIcon instrument={inst} size={17} /></span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#22201C] truncate">{slot.studentName}</p>
-            <p className="text-xs text-[#6B6860]">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
+            <p className="text-sm font-semibold text-[var(--clay-ink)] truncate">{slot.studentName}</p>
+            <p className="text-xs text-[var(--clay-dim)]">{formatTime(slot.startTime)} · {slot.durationMinutes}min</p>
           </div>
         </div>
-        <button onClick={onDelete} className="text-[#6B6860] hover:text-red-400 transition-colors shrink-0">
+        <button onClick={onDelete} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors shrink-0">
           <Trash2 size={13} />
         </button>
       </div>
@@ -107,13 +108,13 @@ export default function SchedulePage() {
 
       {students.length === 0 ? (
         <EmptyState
-          icon={<Calendar size={36} />}
+          icon={<Sticker name="calendar" size={36} tone="accent" />}
           title="No students yet"
           description="Add students to your studio before scheduling lessons."
         />
       ) : schedule.length === 0 ? (
         <EmptyState
-          icon={<Calendar size={36} />}
+          icon={<Sticker name="calendar" size={36} tone="accent" />}
           title="No lessons scheduled"
           description="Add your first lesson slot to build your weekly schedule."
           action={{ label: 'Add Lesson', onClick: () => setOpen(true) }}
@@ -128,13 +129,13 @@ export default function SchedulePage() {
 
             return (
               <div key={day}>
-                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-[#E8503A] border-[#FDDDD9]' : 'text-[#6B6860] border-[#DEDAD2]'}`}>
+                <div className={`text-xs font-semibold uppercase tracking-widest mb-2 pb-1.5 border-b ${isToday ? 'text-[var(--clay-accent)] border-[var(--clay-accent-soft)]' : 'text-[var(--clay-dim)] border-[var(--clay-line)]'}`}>
                   {DAYS_SHORT[day]}
-                  {isToday && <span className="ml-1 text-[#E8503A]">·</span>}
+                  {isToday && <span className="ml-1 text-[var(--clay-accent)]">·</span>}
                 </div>
                 <div className="space-y-2">
                   {daySlots.length === 0 ? (
-                    <p className="text-xs text-[#3D3A35] text-center py-3">—</p>
+                    <p className="text-xs text-[var(--clay-ink)] text-center py-3">—</p>
                   ) : (
                     daySlots.map((slot) => (
                       <SlotCard

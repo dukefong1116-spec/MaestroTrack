@@ -4,27 +4,42 @@ interface SkeletonProps {
   className?: string
 }
 
+/** Clay loading placeholder — a soft recessed block, not a dark bar. */
 export default function Skeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('animate-pulse bg-slate-800/80 rounded-xl', className)} />
+    <div
+      className={cn('animate-pulse rounded-xl', className)}
+      style={{ background: 'var(--clay-bg-deep)' }}
+    />
+  )
+}
+
+function shell(children: React.ReactNode) {
+  return (
+    <div
+      className="rounded-[var(--clay-r-md)] p-5 space-y-3"
+      style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+    >
+      {children}
+    </div>
   )
 }
 
 export function StatCardSkeleton() {
-  return (
-    <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 space-y-3">
+  return shell(
+    <>
       <Skeleton className="h-4 w-24" />
       <Skeleton className="h-8 w-16" />
       <Skeleton className="h-3 w-32" />
-    </div>
+    </>
   )
 }
 
 export function ChartSkeleton() {
-  return (
-    <div className="bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 space-y-3">
+  return shell(
+    <>
       <Skeleton className="h-4 w-32" />
       <Skeleton className="h-48 w-full" />
-    </div>
+    </>
   )
 }

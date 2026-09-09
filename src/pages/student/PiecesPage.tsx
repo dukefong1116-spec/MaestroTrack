@@ -3,7 +3,8 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Plus, BookOpen, Archive, Star, ChevronRight , Crosshair} from 'lucide-react'
+import { Plus, Archive, Star, ChevronRight, Crosshair } from 'lucide-react'
+import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -92,7 +93,7 @@ export default function PiecesPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-[#22201C]' : 'text-[#6B6860] hover:text-[#22201C] bg-transparent'}`}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-[var(--clay-ink)]' : 'text-[var(--clay-dim)] hover:text-[var(--clay-ink)] bg-transparent'}`}
             style={filter === f ? { backgroundColor: theme.primary } : undefined}
           >
             {f} ({pieces.filter((p) => p.status === f).length})
@@ -102,7 +103,7 @@ export default function PiecesPage() {
 
       {filtered.length === 0 ? (
         <EmptyState
-          icon={<BookOpen size={36} />}
+          icon={<Sticker name="book" size={36} tone="accent" />}
           title={`No ${filter} pieces`}
           description={filter === 'active' ? 'Add a piece to start tracking your practice.' : `No pieces with ${filter} status yet.`}
           action={filter === 'active' ? { label: 'Add Your First Piece', onClick: () => setOpen(true) } : undefined}
@@ -114,35 +115,35 @@ export default function PiecesPage() {
               <Card className="p-5 space-y-4" hover onClick={() => setSelected(piece)}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-semibold text-[#22201C] truncate">{piece.title}</p>
-                    {piece.composer && <p className="text-xs text-[#6B6860]">{piece.composer}</p>}
+                    <p className="font-semibold text-[var(--clay-ink)] truncate">{piece.title}</p>
+                    {piece.composer && <p className="text-xs text-[var(--clay-dim)]">{piece.composer}</p>}
                   </div>
                   <Badge variant={statusColors[piece.status]}>{piece.status}</Badge>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs text-[#6B6860] mb-1">
+                  <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-1">
                     <span>Completion</span>
                     <span>{piece.completionPercentage}%</span>
                   </div>
-                  <div className="h-1.5 bg-[#DEDAD2] rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{ width: `${piece.completionPercentage}%`, backgroundColor: theme.primary }} />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-[#6B6860]">
+                <div className="flex items-center justify-between text-xs text-[var(--clay-dim)]">
                   <span>{piece.totalMinutes} min total</span>
                   <span>{piece.sessionCount} sessions</span>
                   <div className="flex">
                     {Array.from({ length: 5 }, (_, i) => (
-                      <Star key={i} size={10} className={i < piece.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[#3D3A35]'} />
+                      <Star key={i} size={10} className={i < piece.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[var(--clay-ink)]'} />
                     ))}
                   </div>
                 </div>
                 {piece.targetDate && (() => {
                   const daysLeft = differenceInDays(parseISO(piece.targetDate!), new Date())
                   return (
-                    <p className={`text-xs mt-1 ${daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-400' : 'text-[#6B6860]'}`}>
+                    <p className={`text-xs mt-1 ${daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-400' : 'text-[var(--clay-dim)]'}`}>
                       <Crosshair size={11} className="inline mr-1 -mt-px" />Target: {format(parseISO(piece.targetDate!), 'MMM d')}
                       {daysLeft >= 0 ? ` · ${daysLeft}d left` : ' · Overdue'}
                     </p>
@@ -168,8 +169,8 @@ export default function PiecesPage() {
           <Input label="Piece Title" placeholder="Moonlight Sonata" error={errors.title?.message} {...register('title')} />
           <Input label="Composer (optional)" placeholder="Ludwig van Beethoven" {...register('composer')} />
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[#A09C95]">Difficulty (1–5)</label>
-            <input type="range" min={1} max={5} step={1} className="w-full accent-[#E8503A]" {...register('difficulty')} />
+            <label className="text-sm font-medium text-[var(--clay-faint)]">Difficulty (1–5)</label>
+            <input type="range" min={1} max={5} step={1} className="w-full accent-[var(--clay-accent)]" {...register('difficulty')} />
           </div>
           <Input label="Target Date (optional)" type="date" {...register('targetDate')} />
           <Textarea label="Notes (optional)" placeholder="Goals for this piece..." {...register('notes')} />
@@ -184,29 +185,29 @@ export default function PiecesPage() {
       {selected && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.title} size="md">
           <div className="space-y-4">
-            {selected.composer && <p className="text-[#6B6860] text-sm">{selected.composer}</p>}
+            {selected.composer && <p className="text-[var(--clay-dim)] text-sm">{selected.composer}</p>}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#E5E2DB] rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-[#22201C]">{selected.totalMinutes}</p>
-                <p className="text-xs text-[#6B6860]">Total Minutes</p>
+              <div className="bg-[var(--clay-bg-deep)] rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selected.totalMinutes}</p>
+                <p className="text-xs text-[var(--clay-dim)]">Total Minutes</p>
               </div>
-              <div className="bg-[#E5E2DB] rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-[#22201C]">{selected.sessionCount}</p>
-                <p className="text-xs text-[#6B6860]">Sessions</p>
+              <div className="bg-[var(--clay-bg-deep)] rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selected.sessionCount}</p>
+                <p className="text-xs text-[var(--clay-dim)]">Sessions</p>
               </div>
             </div>
             <div>
-              <div className="flex justify-between text-sm text-[#A09C95] mb-2">
+              <div className="flex justify-between text-sm text-[var(--clay-faint)] mb-2">
                 <span>Completion</span>
                 <span>{selected.completionPercentage}%</span>
               </div>
-              <div className="h-2 bg-[#DEDAD2] rounded-full overflow-hidden">
+              <div className="h-2 bg-[var(--clay-line)] rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${selected.completionPercentage}%`, backgroundColor: theme.primary }} />
               </div>
             </div>
             {selected.confidenceHistory.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-[#A09C95] mb-2">Confidence History</p>
+                <p className="text-sm font-medium text-[var(--clay-faint)] mb-2">Confidence History</p>
                 <div className="flex items-end gap-1 h-16">
                   {selected.confidenceHistory.slice(-20).map((h, i) => (
                     <div key={i} className="flex-1 rounded-t" style={{ height: `${h.value * 10}%`, backgroundColor: theme.primary, opacity: 0.5 + (i / 40) }} title={`${h.date}: ${h.value}/10`} />
@@ -214,7 +215,7 @@ export default function PiecesPage() {
                 </div>
               </div>
             )}
-            {selected.notes && <p className="text-sm text-[#6B6860] italic">"{selected.notes}"</p>}
+            {selected.notes && <p className="text-sm text-[var(--clay-dim)] italic">"{selected.notes}"</p>}
             <div className="flex gap-2">
               {selected.status === 'active' && (
                 <Button size="sm" onClick={() => { handleMaster(selected); setSelected(null) }} className="flex-1">
