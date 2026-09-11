@@ -1,17 +1,16 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { getAnalyticsSummary, getDailyData, getHeatmapData } from '@/lib/utils/analytics'
+import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import { subscribeStudentAssignments, updateAssignmentStatus } from '@/lib/firebase/assignments'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
-import StatCard from '@/components/common/StatCard'
+import NudgeList from '@/components/common/NudgeList'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
-import PracticeBarChart from '@/components/charts/PracticeBarChart'
-import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import StreakFlame from '@/components/icons/StreakFlame'
 import Badge from '@/components/ui/Badge'
@@ -36,23 +35,17 @@ function getNextLessonText(slot: LessonSlot): string {
 }
 
 export default function StudentDashboard() {
+  const navigate = useNavigate()
   const { profile } = useAuth()
-  const { sessions, pieces, performances } = usePracticeStore()
+  const { sessions } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const summary = useMemo(() =>
     getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300),
     [sessions, profile?.weeklyGoalMinutes]
   )
-  const dailyData = useMemo(() => getDailyData(sessions, 14), [sessions])
-  const heatmapData = useMemo(() => getHeatmapData(sessions), [sessions])
 
-  const upcomingPerformances = performances
-    .filter((p) => differenceInDays(parseISO(p.date), new Date()) >= 0)
-    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
-    .slice(0, 3)
 
-  const activePieces = pieces.filter((p) => p.status === 'active').slice(0, 4)
 
   const [assignments, setAssignments] = useState<Assignment[]>([])
   useEffect(() => {
@@ -122,115 +115,49 @@ export default function StudentDashboard() {
         </motion.div>
       )}
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Practice Streak"
-          value={`${summary.currentStreak}d`}
-          subtitle={`Best: ${summary.longestStreak} days`}
-          icon={<Sticker name="flame" size={16} tone="accent" />}
-          accent={theme.primary}
-          delay={0.05}
-        />
-        <StatCard
-          label="This Week"
-          value={`${Math.round(summary.totalMinutesThisWeek / 60 * 10) / 10}h`}
-          subtitle={`Goal: ${Math.round((profile?.weeklyGoalMinutes ?? 300) / 60)}h`}
-          icon={<Sticker name="clock" size={16} tone="accent" />}
-          accent={theme.primary}
-          delay={0.1}
-        >
-          <div className="mt-2 h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${summary.weeklyGoalPercentage}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.secondary})` }} />
-          </div>
-        </StatCard>
-        <StatCard
-          label="This Month"
-          value={`${Math.round(summary.totalMinutesThisMonth / 60)}h`}
-          subtitle="Total practice"
-          icon={<Sticker name="target" size={16} tone="accent" />}
-          accent={theme.primary}
-          delay={0.15}
-        />
-        <StatCard
-          label="Consistency"
-          value={`${summary.consistencyScore}%`}
-          subtitle="Last 30 days"
-          icon={<Sticker name="bolt" size={16} tone="accent" />}
-          accent={theme.primary}
-          delay={0.2}
-        />
-      </div>
+      {/* Timely prompts — previously buried on the Reminders page */}
+      <NudgeList />
 
-      {/* Weekly goal ring + bar chart */}
+      {/* This week + the one action that matters */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-6 flex flex-col items-center justify-center gap-4">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest self-start">Weekly Goal</p>
+          <p className="text-xs font-bold text-[var(--clay-dim)] uppercase tracking-widest self-start">This week</p>
           <ProgressRing percentage={summary.weeklyGoalPercentage} size={120} strokeWidth={10} color={theme.primary}>
             <div className="text-center">
               <p className="text-2xl font-bold text-[var(--clay-ink)]">{summary.weeklyGoalPercentage}%</p>
-              <p className="text-xs text-[var(--clay-dim)]">complete</p>
+              <p className="text-xs text-[var(--clay-dim)]">of your goal</p>
             </div>
           </ProgressRing>
           <div className="text-center">
-            <p className="text-sm text-[var(--clay-ink)] font-medium">{summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min</p>
-            <p className="text-xs text-[var(--clay-dim)]">{(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0 ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go` : 'Goal reached'}</p>
+            <p className="text-sm text-[var(--clay-ink)] font-semibold">{summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min</p>
+            <p className="text-xs text-[var(--clay-dim)]">
+              {(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0
+                ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go`
+                : 'Goal reached'}
+            </p>
           </div>
         </Card>
 
-        <Card className="lg:col-span-2 p-5">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Last 14 Days</p>
-          <PracticeBarChart data={dailyData} color={theme.primary} />
-        </Card>
+        <motion.button
+          onClick={() => navigate('/student/session')}
+          whileTap={{ scale: 0.97 }}
+          className="lg:col-span-2 flex flex-col items-center justify-center gap-3 p-8 text-center"
+          style={{
+            borderRadius: 'var(--clay-r-lg)',
+            background: 'var(--clay-accent)',
+            color: 'var(--clay-on-accent)',
+            boxShadow: 'var(--clay-accent-shadow)',
+          }}
+        >
+          <Sticker name="note" size={44} tone="onAccent" />
+          <span className="text-xl font-bold">
+            {summary.currentStreak > 0 ? 'Keep it going' : 'Start practising'}
+          </span>
+          <span className="text-sm opacity-90">
+            Timer, metronome, tuner and recording — all in one place.
+          </span>
+        </motion.button>
       </div>
-
-      {/* Active Pieces */}
-      {activePieces.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Sticker name="note" size={14} tone="ink" /> Active Pieces
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {activePieces.map((piece, i) => (
-              <motion.div key={piece.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }}>
-                <Card className="p-4" hover>
-                  <p className="font-semibold text-[var(--clay-ink)] text-sm truncate">{piece.title}</p>
-                  {piece.composer && <p className="text-xs text-[var(--clay-dim)] truncate">{piece.composer}</p>}
-                  <div className="mt-3 h-1 bg-[var(--clay-line)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${piece.completionPercentage}%`, backgroundColor: theme.primary }} />
-                  </div>
-                  <p className="text-xs text-[var(--clay-dim)] mt-1">{piece.completionPercentage}% ready · {piece.totalMinutes}min</p>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Upcoming performances */}
-      {upcomingPerformances.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-3 flex items-center gap-2">
-            <Sticker name="trophy" size={14} tone="ink" /> Upcoming Performances
-          </p>
-          <div className="space-y-2">
-            {upcomingPerformances.map((perf) => {
-              const daysLeft = differenceInDays(parseISO(perf.date), new Date())
-              return (
-                <Card key={perf.id} className="p-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-[var(--clay-ink)] text-sm">{perf.eventName}</p>
-                    <p className="text-xs text-[var(--clay-dim)]">{format(parseISO(perf.date), 'MMMM d, yyyy')} · {perf.location}</p>
-                  </div>
-                  <Badge variant={daysLeft <= 7 ? 'danger' : daysLeft <= 30 ? 'warning' : 'info'} size="md">
-                    {daysLeft === 0 ? 'Today!' : `${daysLeft}d away`}
-                  </Badge>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Assignments from teacher */}
       {activeAssignments.length > 0 && (
@@ -268,11 +195,6 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      {/* Heatmap */}
-      <Card className="p-5">
-        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Practice Activity — Last Year</p>
-        <PracticeHeatmap data={heatmapData} color={theme.primary} />
-      </Card>
     </div>
   )
 }

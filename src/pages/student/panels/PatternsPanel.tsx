@@ -4,22 +4,20 @@ import { TrendingUp, AlertTriangle, Info } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { generateInsights, getAnalyticsSummary, getCategoryData } from '@/lib/utils/analytics'
+import { generateInsights, getCategoryData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
-import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import TrendLineChart from '@/components/charts/TrendLineChart'
 import { getWeeklyData } from '@/lib/utils/analytics'
 import type { InstrumentType } from '@/types'
 
-export default function InsightsPage() {
+export default function PatternsPanel() {
   const { profile } = useAuth()
   const { sessions, pieces } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const insights = useMemo(() => generateInsights(sessions, pieces), [sessions, pieces])
-  const summary = useMemo(() => getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300), [sessions, profile])
   const categories = useMemo(() => getCategoryData(sessions), [sessions])
   const weeklyTrend = useMemo(() => getWeeklyData(sessions, 8), [sessions])
 
@@ -28,15 +26,13 @@ export default function InsightsPage() {
 
   return (
     <div>
-      <PageHeader title="AI Insights" subtitle="Intelligent analysis of your practice patterns." />
-
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl p-6 mb-8" style={{ background: `linear-gradient(135deg, ${theme.primary}25, var(--clay-accent-soft))` }}>
-        <div className="absolute right-6 top-6 opacity-10" style={{ color: theme.primary }}><Sticker name="brain" size={80} tone="accent" /></div>
-        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-2">AI Practice Intelligence</p>
-        <p className="text-[var(--clay-ink)] text-lg font-semibold mb-1">Your practice is {summary.consistencyScore >= 70 ? 'excellent' : summary.consistencyScore >= 40 ? 'developing well' : 'just getting started'}.</p>
-        <p className="text-[var(--clay-dim)] text-sm">Based on {sessions.length} sessions and {Math.round(sessions.reduce((s, p) => s + p.durationMinutes, 0) / 60)} total hours of practice.</p>
-        <p className="text-xs text-[var(--clay-dim)] mt-3">Insights are computed from your real practice data. Connect an OpenAI API key in settings to enable GPT-powered coaching.</p>
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+          Patterns
+        </p>
+        <p className="text-xs" style={{ color: 'var(--clay-faint)' }}>
+          from {sessions.length} logged session{sessions.length === 1 ? '' : 's'}
+        </p>
       </div>
 
       {/* Insight cards */}

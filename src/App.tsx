@@ -13,12 +13,8 @@ import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 import StudentDashboard from '@/pages/student/StudentDashboard'
 import PracticeLogPage from '@/pages/student/PracticeLogPage'
 import SessionPage from '@/pages/student/SessionPage'
-import PiecesPage from '@/pages/student/PiecesPage'
-import GoalsPage from '@/pages/student/GoalsPage'
-import PerformancesPage from '@/pages/student/PerformancesPage'
-import InsightsPage from '@/pages/student/InsightsPage'
-import RemindersPage from '@/pages/student/RemindersPage'
-import AnalyticsPage from '@/pages/student/AnalyticsPage'
+import LibraryPage from '@/pages/student/LibraryPage'
+import ProgressPage from '@/pages/student/ProgressPage'
 import SettingsPage from '@/pages/student/SettingsPage'
 
 import TeacherDashboard from '@/pages/teacher/TeacherDashboard'
@@ -66,13 +62,18 @@ function AppRoutes() {
       }>
         <Route index element={<StudentDashboard />} />
         <Route path="practice" element={<PracticeLogPage />} />
-        <Route path="pieces" element={<PiecesPage />} />
-        <Route path="goals" element={<GoalsPage />} />
-        <Route path="performances" element={<PerformancesPage />} />
-        <Route path="insights" element={<InsightsPage />} />
-        <Route path="reminders" element={<RemindersPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="library" element={<LibraryPage />} />
+        <Route path="progress" element={<ProgressPage />} />
         <Route path="settings" element={<SettingsPage />} />
+
+        {/* Retired routes — redirected so existing links and bookmarks
+            keep working after the Library/Progress consolidation. */}
+        <Route path="pieces" element={<Navigate to="/student/library" replace />} />
+        <Route path="performances" element={<Navigate to="/student/library?tab=performances" replace />} />
+        <Route path="goals" element={<Navigate to="/student/progress" replace />} />
+        <Route path="insights" element={<Navigate to="/student/progress" replace />} />
+        <Route path="analytics" element={<Navigate to="/student/progress" replace />} />
+        <Route path="reminders" element={<Navigate to="/student" replace />} />
       </Route>
 
       <Route path="/teacher" element={

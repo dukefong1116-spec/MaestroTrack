@@ -8,7 +8,6 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
-import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Badge from '@/components/ui/Badge'
@@ -26,7 +25,7 @@ const BADGES: { id: string; label: string; icon: StickerName; description: strin
   { id: 'ten_hours', label: '10 Hours Strong', icon: 'clock', description: 'Accumulated 600 minutes of practice', condition: (_s, _st, _m, totalMinutes) => totalMinutes >= 600 },
 ]
 
-export default function GoalsPage() {
+export default function GoalsPanel() {
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
@@ -79,11 +78,14 @@ export default function GoalsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Goals & Achievements"
-        subtitle="Set targets, track progress, earn badges."
-        actions={<Button size="sm" variant="outline" onClick={() => setEditGoals(!editGoals)}><Target size={14} /> {editGoals ? 'Cancel' : 'Edit Goals'}</Button>}
-      />
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+          Your week
+        </p>
+        <Button size="sm" variant="outline" onClick={() => setEditGoals(!editGoals)}>
+          <Target size={14} /> {editGoals ? 'Cancel' : 'Edit goal'}
+        </Button>
+      </div>
 
       {editGoals && (
         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>

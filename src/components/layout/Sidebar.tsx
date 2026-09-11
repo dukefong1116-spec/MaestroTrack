@@ -11,13 +11,10 @@ import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 
 const studentNav: { to: string; icon: StickerName | typeof LayoutDashboard; label: string; end?: boolean }[] = [
-  { to: '/student', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/student/practice', icon: 'metro', label: 'Practice Log' },
-  { to: '/student/pieces', icon: 'book', label: 'My Pieces' },
-  { to: '/student/goals', icon: 'target', label: 'Goals' },
-  { to: '/student/performances', icon: 'trophy', label: 'Performances' },
-  { to: '/student/insights', icon: 'brain', label: 'AI Insights' },
-  { to: '/student/reminders', icon: 'bell', label: 'Reminders' },
+  { to: '/student', icon: LayoutDashboard, label: 'Today', end: true },
+  { to: '/student/practice', icon: 'metro', label: 'Practice' },
+  { to: '/student/library', icon: 'book', label: 'Library' },
+  { to: '/student/progress', icon: 'target', label: 'Progress' },
 ]
 
 const teacherNav: { to: string; icon: StickerName | typeof LayoutDashboard; label: string; end?: boolean }[] = [

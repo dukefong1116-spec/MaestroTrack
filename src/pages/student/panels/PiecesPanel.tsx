@@ -10,7 +10,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPiece, updatePiece, deletePiece } from '@/lib/firebase/pieces'
 import { getTheme } from '@/lib/utils/instruments'
-import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -29,7 +28,7 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-export default function PiecesPage() {
+export default function PiecesPanel() {
   const { profile, user } = useAuth()
   const { pieces, addPiece: addPieceToStore } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
@@ -81,14 +80,8 @@ export default function PiecesPage() {
 
   return (
     <div>
-      <PageHeader
-        title="My Pieces"
-        subtitle="Manage and track every piece in your repertoire."
-        actions={<Button onClick={() => setOpen(true)}><Plus size={16} /> Add Piece</Button>}
-      />
-
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-6">
+      {/* Filter tabs + add, on one row */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {(['active', 'mastered', 'archived'] as const).map((f) => (
           <button
             key={f}
@@ -99,6 +92,7 @@ export default function PiecesPage() {
             {f} ({pieces.filter((p) => p.status === f).length})
           </button>
         ))}
+        <Button className="ml-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
       </div>
 
       {filtered.length === 0 ? (

@@ -10,7 +10,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPerformance, updatePerformance, deletePerformance } from '@/lib/firebase/performances'
 import { getTheme } from '@/lib/utils/instruments'
-import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -36,7 +35,7 @@ const typeColors: Record<PerformanceType, 'warning' | 'danger' | 'info' | 'succe
   Competition: 'warning', Recital: 'success', Audition: 'danger', Jury: 'info', Masterclass: 'purple'
 }
 
-export default function PerformancesPage() {
+export default function PerformancesPanel() {
   const { profile, user } = useAuth()
   const { performances } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
@@ -67,11 +66,9 @@ export default function PerformancesPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Performances"
-        subtitle="Track competitions, recitals, auditions, and more."
-        actions={<Button onClick={() => setOpen(true)}><Plus size={16} /> Add Performance</Button>}
-      />
+      <div className="mb-5 flex items-center justify-end">
+        <Button onClick={() => setOpen(true)}><Plus size={16} /> Add performance</Button>
+      </div>
 
       {performances.length === 0 ? (
         <EmptyState
