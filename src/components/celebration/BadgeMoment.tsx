@@ -1,15 +1,14 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Moment, { usePrefersReducedMotion } from './Moment'
-import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import BadgeArt, { type BadgeArtName } from '@/components/badges/BadgeArt'
 import Confetti from './Confetti'
 import { playBadgeFanfare } from '@/lib/utils/sound'
 
 export interface BadgeAward {
-  id: string
+  id: BadgeArtName
   label: string
   description: string
-  icon: StickerName
 }
 
 /**
@@ -70,11 +69,8 @@ export default function BadgeMoment({
 
           {/* the medallion */}
           <motion.div
-            className="flex h-[108px] w-[108px] items-center justify-center rounded-full"
-            style={{
-              background: 'linear-gradient(150deg,var(--clay-accent),var(--clay-accent-hover))',
-              boxShadow: 'var(--clay-accent-shadow)',
-            }}
+            className="flex h-[112px] w-[112px] items-center justify-center"
+            style={{ filter: 'drop-shadow(0 12px 22px rgba(58,48,84,.22))' }}
             initial={reduced ? { opacity: 0 } : { y: 150, opacity: 0, rotateY: -180, scale: 0.6 }}
             animate={
               reduced
@@ -87,7 +83,7 @@ export default function BadgeMoment({
                 : { duration: 0.8, times: [0, 0.62, 1], ease: [0.22, 1, 0.36, 1], delay: 0.1 }
             }
           >
-            <Sticker name={badge.icon} size={52} tone="onAccent" />
+            <BadgeArt name={badge.id} size={112} />
           </motion.div>
         </div>
 

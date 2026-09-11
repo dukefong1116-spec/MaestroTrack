@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Target } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
+import BadgeArt from '@/components/badges/BadgeArt'
 import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -141,13 +142,24 @@ export default function GoalsPanel() {
             const earned = earnedIds.has(badge.id)
             return (
               <motion.div key={badge.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <Card className={`p-4 space-y-2 transition-all ${earned ? '' : 'opacity-40 grayscale'}`}>
-                  <div className="flex items-start justify-between">
-                    <Sticker name={badge.icon} size={26} tone={earned ? 'accent' : 'ink'} />
-                    {earned && <Sticker name="check" size={16} tone="accent" />}
+                {/* Art-forward: the badge IS the tile. Locked state is drawn,
+                    not filtered, so unlocking reads as colour arriving. */}
+                <Card className="relative p-4 pt-5 text-center">
+                  {earned && (
+                    <Sticker name="check" size={18} tone="accent" className="absolute right-3 top-3" />
+                  )}
+                  <div className="flex justify-center">
+                    <BadgeArt name={badge.id} size={76} locked={!earned} />
                   </div>
-                  <p className="font-semibold text-[var(--clay-ink)] text-sm">{badge.label}</p>
-                  <p className="text-xs text-[var(--clay-dim)]">{badge.description}</p>
+                  <p
+                    className="mt-2.5 text-sm font-semibold"
+                    style={{ color: earned ? 'var(--clay-ink)' : 'var(--clay-dim)' }}
+                  >
+                    {badge.label}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--clay-faint)]">
+                    {badge.description}
+                  </p>
                 </Card>
               </motion.div>
             )

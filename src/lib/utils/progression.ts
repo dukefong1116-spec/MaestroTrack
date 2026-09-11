@@ -1,5 +1,4 @@
 import type { PracticeSession } from '@/types'
-import type { StickerName } from '@/components/stickers/Sticker'
 import { computeStreak } from './analytics'
 
 /**
@@ -81,11 +80,19 @@ export function computeProgression(
  * moment so the two can never describe a badge differently.
  */
 
+/** The domain owns these ids; the artwork conforms to them, not the reverse. */
+export type BadgeId =
+  | 'first_session'
+  | 'week_warrior'
+  | 'century'
+  | 'marathon'
+  | 'consistency'
+  | 'ten_hours'
+
 export interface BadgeDef {
-  id: string
+  id: BadgeId
   label: string
   description: string
-  icon: StickerName
   earned: (ctx: BadgeContext) => boolean
 }
 
@@ -99,12 +106,12 @@ export interface BadgeContext {
 }
 
 export const BADGES: BadgeDef[] = [
-  { id: 'first_session', label: 'First Note', description: 'Logged your first practice session', icon: 'note', earned: (c) => c.sessionCount >= 1 },
-  { id: 'week_warrior', label: 'Week Warrior', description: 'Practised every day for a week', icon: 'sword', earned: (c) => c.longestStreak >= 7 },
-  { id: 'century', label: 'Century Club', description: 'Logged 100 practice sessions', icon: 'trophy', earned: (c) => c.sessionCount >= 100 },
-  { id: 'marathon', label: 'Marathon', description: 'Practised 60+ minutes in one session', icon: 'footprints', earned: (c) => c.longestSessionMinutes >= 60 },
-  { id: 'consistency', label: 'Iron Discipline', description: 'Reached a 30-day streak', icon: 'target', earned: (c) => c.longestStreak >= 30 },
-  { id: 'ten_hours', label: '10 Hours Strong', description: 'Accumulated 600 minutes of practice', icon: 'clock', earned: (c) => c.totalMinutes >= 600 },
+  { id: 'first_session', label: 'First Note', description: 'Logged your first practice session', earned: (c) => c.sessionCount >= 1 },
+  { id: 'week_warrior', label: 'Week Warrior', description: 'Practised every day for a week', earned: (c) => c.longestStreak >= 7 },
+  { id: 'century', label: 'Century Club', description: 'Logged 100 practice sessions', earned: (c) => c.sessionCount >= 100 },
+  { id: 'marathon', label: 'Marathon', description: 'Practised 60+ minutes in one session', earned: (c) => c.longestSessionMinutes >= 60 },
+  { id: 'consistency', label: 'Iron Discipline', description: 'Reached a 30-day streak', earned: (c) => c.longestStreak >= 30 },
+  { id: 'ten_hours', label: '10 Hours Strong', description: 'Accumulated 600 minutes of practice', earned: (c) => c.totalMinutes >= 600 },
 ]
 
 export function buildBadgeContext(

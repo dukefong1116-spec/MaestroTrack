@@ -233,7 +233,6 @@ export default function StudentDashboard() {
           id: game.pendingBadge.id,
           label: game.pendingBadge.label,
           description: game.pendingBadge.description,
-          icon: game.pendingBadge.icon,
         } : null}
         open={!!game.pendingBadge}
         onDismiss={game.dismissBadge}
