@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { format } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -44,9 +45,12 @@ export function usePracticeNudges(limit = 3): Nudge[] {
     }
 
     if (summary.currentStreak > 0) {
-      const practisedToday = sessions.some(
-        (s) => s.date.substring(0, 10) === new Date().toISOString().slice(0, 10)
-      )
+      // Session dates are written in local time (date-fns format), so
+      // 'today' must be too. toISOString() is UTC and rolls over early
+      // for anyone behind it — in PDT the nudge fired every evening even
+      // right after practising.
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const practisedToday = sessions.some((s) => s.date.substring(0, 10) === today)
       if (!practisedToday) {
         out.push({
           id: 'streak-at-risk',

@@ -9,6 +9,10 @@ import { getTheme } from '@/lib/utils/instruments'
 import { subscribeStudentAssignments, updateAssignmentStatus } from '@/lib/firebase/assignments'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import NudgeList from '@/components/common/NudgeList'
+import WeekStrip from '@/components/streak/WeekStrip'
+import BadgeMoment from '@/components/celebration/BadgeMoment'
+import FreezeMoment from '@/components/celebration/FreezeMoment'
+import { useGamification } from '@/hooks/useGamification'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -38,6 +42,7 @@ export default function StudentDashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
+  const game = useGamification()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const summary = useMemo(() =>
@@ -115,13 +120,34 @@ export default function StudentDashboard() {
         </motion.div>
       )}
 
+      {/* The week at a glance — what makes the streak feel losable */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between gap-4 px-5 py-4"
+        style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', boxShadow: 'var(--clay-raised)' }}
+      >
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>Streak</p>
+          <p className="mt-0.5 text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+            {game.streak > 0 ? `${game.streak}-day streak` : 'Start a streak today'}
+            {game.freezesLeft > 0 && (
+              <span style={{ color: 'var(--clay-faint)', fontWeight: 500 }}>
+                {'  ·  '}{game.freezesLeft} freeze{game.freezesLeft === 1 ? '' : 's'}
+              </span>
+            )}
+          </p>
+        </div>
+        <WeekStrip days={game.week} />
+      </motion.div>
+
       {/* Timely prompts — previously buried on the Reminders page */}
       <NudgeList />
 
       {/* This week + the one action that matters */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="p-6 flex flex-col items-center justify-center gap-4">
-          <p className="text-xs font-bold text-[var(--clay-dim)] uppercase tracking-widest self-start">This week</p>
+          <p className="text-xs font-bold text-[var(--clay-dim)] uppercase tracking-widest self-start">Weekly goal</p>
           <ProgressRing percentage={summary.weeklyGoalPercentage} size={120} strokeWidth={10} color={theme.primary}>
             <div className="text-center">
               <p className="text-2xl font-bold text-[var(--clay-ink)]">{summary.weeklyGoalPercentage}%</p>
@@ -195,6 +221,23 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      <FreezeMoment
+        open={!!game.pendingFreeze}
+        streak={game.pendingFreeze?.streak ?? 0}
+        daysFrozen={game.pendingFreeze?.daysFrozen ?? 1}
+        remaining={game.pendingFreeze?.remaining ?? 0}
+        onDismiss={game.dismissFreeze}
+      />
+      <BadgeMoment
+        badge={game.pendingBadge ? {
+          id: game.pendingBadge.id,
+          label: game.pendingBadge.label,
+          description: game.pendingBadge.description,
+          icon: game.pendingBadge.icon,
+        } : null}
+        open={!!game.pendingBadge}
+        onDismiss={game.dismissBadge}
+      />
     </div>
   )
 }

@@ -141,3 +141,137 @@ export function playSessionChime(instrument: InstrumentType | undefined, minutes
     gain.gain.exponentialRampToValueAtTime(0.0001, start + dur)          // release
   })
 }
+
+/* ── Celebration sounds ──────────────────────────────────────────────
+ *
+ * Two more synthesised cues, deliberately opposite in character to each
+ * other and to the warm session chime: the badge fanfare is bright and
+ * rising, the freeze is cold and falling.
+ */
+
+/** Shared envelope helper: an exponential swell and decay on a gain node. */
+function envelope(gain: GainNode, at: number, peak: number, attack: number, dur: number) {
+  gain.gain.setValueAtTime(0.0001, at)
+  gain.gain.exponentialRampToValueAtTime(peak, at + attack)
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+}
+
+/**
+ * Badge unlock — a bright ascending arpeggio resolving on a held major
+ * chord, with a shimmer an octave and a fifth above.
+ */
+export function playBadgeFanfare(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  if (audio.state === 'suspended') audio.resume().catch(() => {})
+
+  const bus = audio.createGain()
+  bus.gain.value = 0.85
+  bus.connect(audio.destination)
+
+  const root = 392.0 // G4
+  const now = audio.currentTime
+
+  // Rising arpeggio: root, major third, fifth, octave.
+  const arp = [0, 4, 7, 12]
+  arp.forEach((steps, i) => {
+    const at = now + i * 0.085
+    const gain = audio.createGain()
+    gain.connect(bus)
+    const osc = audio.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = semitone(root, steps)
+    osc.connect(gain)
+    osc.start(at)
+    osc.stop(at + 0.85)
+    envelope(gain, at, 0.16, 0.008, 0.8)
+  })
+
+  // Held triad underneath, arriving as the arpeggio lands.
+  const chordAt = now + arp.length * 0.085
+  for (const steps of [0, 4, 7]) {
+    const gain = audio.createGain()
+    gain.connect(bus)
+    const osc = audio.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = semitone(root, steps)
+    osc.connect(gain)
+    osc.start(chordAt)
+    osc.stop(chordAt + 1.2)
+    envelope(gain, chordAt, 0.1, 0.02, 1.15)
+  }
+
+  // Shimmer: a high sine with gentle vibrato, an octave + fifth up.
+  const shimmerGain = audio.createGain()
+  shimmerGain.connect(bus)
+  const shimmer = audio.createOscillator()
+  shimmer.type = 'sine'
+  shimmer.frequency.value = semitone(root, 19)
+  const vibrato = audio.createOscillator()
+  const vibratoDepth = audio.createGain()
+  vibrato.frequency.value = 5.5
+  vibratoDepth.gain.value = 6
+  vibrato.connect(vibratoDepth).connect(shimmer.frequency)
+  shimmer.connect(shimmerGain)
+  shimmer.start(chordAt)
+  vibrato.start(chordAt)
+  shimmer.stop(chordAt + 1.2)
+  vibrato.stop(chordAt + 1.2)
+  envelope(shimmerGain, chordAt, 0.05, 0.05, 1.15)
+}
+
+/**
+ * Streak freeze — cold and crystalline. A descending detuned sine cluster
+ * over a filtered noise burst; the noise is what actually reads as
+ * "ice/glass" rather than just a quiet bell.
+ */
+export function playFreezeChime(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  if (audio.state === 'suspended') audio.resume().catch(() => {})
+
+  const bus = audio.createGain()
+  bus.gain.value = 0.9
+  bus.connect(audio.destination)
+
+  const now = audio.currentTime
+
+  // Short burst of highpassed white noise — the "crack" of forming ice.
+  const noiseLen = Math.floor(audio.sampleRate * 0.28)
+  const buffer = audio.createBuffer(1, noiseLen, audio.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < noiseLen; i++) {
+    // Taper so the burst decays rather than cutting off.
+    data[i] = (Math.random() * 2 - 1) * (1 - i / noiseLen)
+  }
+  const noise = audio.createBufferSource()
+  noise.buffer = buffer
+  const hp = audio.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 3200
+  const noiseGain = audio.createGain()
+  noise.connect(hp).connect(noiseGain).connect(bus)
+  envelope(noiseGain, now, 0.12, 0.004, 0.26)
+  noise.start(now)
+
+  // Descending minor third, detuned for shimmer, long tail.
+  const top = 1046.5 // C6
+  const fall = [0, -3]
+  fall.forEach((steps, i) => {
+    const at = now + i * 0.16
+    for (const detune of [-7, 7]) {
+      const gain = audio.createGain()
+      gain.connect(bus)
+      const osc = audio.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = semitone(top, steps)
+      osc.detune.value = detune
+      osc.connect(gain)
+      osc.start(at)
+      osc.stop(at + 1.15)
+      envelope(gain, at, 0.09, 0.01, 1.1)
+    }
+  })
+}

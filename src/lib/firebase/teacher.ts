@@ -9,6 +9,7 @@ import {
   getDocs,
   onSnapshot,
   setDoc,
+  arrayUnion,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
@@ -105,4 +106,30 @@ export function subscribeTeacherNotes(
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
   await setDoc(doc(db, USERS, uid), { ...data, updatedAt: new Date().toISOString() }, { merge: true })
+}
+
+/**
+ * Append-only profile writes.
+ *
+ * These use arrayUnion rather than reading the array and writing it back:
+ * a read-modify-write from two tabs can double-spend a freeze or drop a
+ * badge record. arrayUnion merges server-side and is idempotent, so
+ * re-sending the same value is harmless.
+ */
+export async function recordStreakFreezes(uid: string, dates: string[]): Promise<void> {
+  if (dates.length === 0) return
+  await setDoc(
+    doc(db, USERS, uid),
+    { streakFreezesUsed: arrayUnion(...dates), updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
+}
+
+export async function markBadgesSeen(uid: string, badgeIds: string[]): Promise<void> {
+  if (badgeIds.length === 0) return
+  await setDoc(
+    doc(db, USERS, uid),
+    { badgesSeen: arrayUnion(...badgeIds), updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
 }

@@ -1,33 +1,27 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Target } from 'lucide-react'
-import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import Sticker from '@/components/stickers/Sticker'
 import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
+import { BADGES } from '@/lib/utils/progression'
+import { useGamification } from '@/hooks/useGamification'
 import { getTheme } from '@/lib/utils/instruments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
-import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { useState } from 'react'
 import type { InstrumentType } from '@/types'
 
-const BADGES: { id: string; label: string; icon: StickerName; description: string; condition: (sessions: number, streak: number, maxSession: number, totalMinutes: number) => boolean }[] = [
-  { id: 'first_session', label: 'First Note', icon: 'note', description: 'Logged your first practice session', condition: (sessions) => sessions >= 1 },
-  { id: 'week_warrior', label: 'Week Warrior', icon: 'sword', description: 'Practiced every day for a week', condition: (_s, streak) => streak >= 7 },
-  { id: 'century', label: 'Century Club', icon: 'trophy', description: 'Logged 100 practice sessions', condition: (sessions) => sessions >= 100 },
-  { id: 'marathon', label: 'Marathon', icon: 'footprints', description: 'Practiced for 60+ minutes in one session', condition: (_s, _st, maxSession) => maxSession >= 60 },
-  { id: 'consistency', label: 'Iron Discipline', icon: 'target', description: '30-day streak', condition: (_s, streak) => streak >= 30 },
-  { id: 'ten_hours', label: '10 Hours Strong', icon: 'clock', description: 'Accumulated 600 minutes of practice', condition: (_s, _st, _m, totalMinutes) => totalMinutes >= 600 },
-]
 
 export default function GoalsPanel() {
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
+  const game = useGamification()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [editGoals, setEditGoals] = useState(false)
   const [weeklyGoal, setWeeklyGoal] = useState(profile?.weeklyGoalMinutes ?? 300)
@@ -35,8 +29,6 @@ export default function GoalsPanel() {
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300), [sessions, profile])
   const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
-  const totalMinutes = useMemo(() => sessions.reduce((s, p) => s + p.durationMinutes, 0), [sessions])
-  const maxSession = useMemo(() => sessions.reduce((m, s) => Math.max(m, s.durationMinutes), 0), [sessions])
 
   const weekTotal = useMemo(() => {
     const ws = startOfWeek(new Date())
@@ -68,7 +60,7 @@ export default function GoalsPanel() {
     }
   }
 
-  const earnedBadges = BADGES.filter((b) => b.condition(sessions.length, streak, maxSession, totalMinutes))
+  const earnedIds = new Set(game.badges.map((b) => b.id))
 
   const rings = [
     { label: 'Today', pct: todayPct, value: todayMinutes, goal: dailyGoal, size: 100 },
@@ -136,7 +128,7 @@ export default function GoalsPanel() {
         </Card>
         <Card className="p-5 text-center space-y-2">
           <div className="flex justify-center"><Sticker name="trophy" size={28} tone="accent" /></div>
-          <p className="text-3xl font-bold text-[var(--clay-ink)]">{earnedBadges.length}</p>
+          <p className="text-3xl font-bold text-[var(--clay-ink)]">{earnedIds.size}</p>
           <p className="text-xs text-[var(--clay-dim)] uppercase tracking-wide">Badges Earned</p>
         </Card>
       </div>
@@ -146,7 +138,7 @@ export default function GoalsPanel() {
         <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Achievement Badges</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {BADGES.map((badge, i) => {
-            const earned = badge.condition(sessions.length, streak, maxSession, totalMinutes)
+            const earned = earnedIds.has(badge.id)
             return (
               <motion.div key={badge.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <Card className={`p-4 space-y-2 transition-all ${earned ? '' : 'opacity-40 grayscale'}`}>

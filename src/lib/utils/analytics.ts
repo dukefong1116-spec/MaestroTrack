@@ -80,9 +80,23 @@ export function getHeatmapData(sessions: PracticeSession[], days = 365) {
   return map
 }
 
-export function computeStreak(sessions: PracticeSession[]): { current: number; longest: number } {
+/**
+ * Current and longest run of consecutive practice days.
+ *
+ * `frozenDates` are days with no session that should nonetheless count —
+ * streak freezes the user has spent. A freeze only bridges a gap; it never
+ * starts a streak on its own, so a user with no sessions has no streak
+ * however many freezes they hold.
+ */
+export function computeStreak(
+  sessions: PracticeSession[],
+  frozenDates: Iterable<string> = []
+): { current: number; longest: number } {
   if (sessions.length === 0) return { current: 0, longest: 0 }
-  const uniqueDays = [...new Set(sessions.map((s) => s.date.substring(0, 10)))].sort().reverse()
+
+  const days = new Set(sessions.map((s) => s.date.substring(0, 10)))
+  for (const f of frozenDates) days.add(f.substring(0, 10))
+  const uniqueDays = [...days].sort().reverse()
   let current = 0
   let longest = 0
   let streak = 0

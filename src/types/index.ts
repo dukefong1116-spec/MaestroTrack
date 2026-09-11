@@ -51,6 +51,10 @@ export interface UserProfile {
   reminderEnabled?: boolean
   theme?: 'light' | 'dark'
   avatar?: string
+  /** Dates (yyyy-MM-dd) rescued by a streak freeze. */
+  streakFreezesUsed?: string[]
+  /** Badge ids whose unlock animation has already been shown. */
+  badgesSeen?: string[]
 }
 
 export interface PracticeSession {

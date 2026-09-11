@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import { useGamification } from '@/hooks/useGamification'
 import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 
@@ -42,6 +43,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
+  const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
   const nav = role === 'teacher' ? teacherNav : studentNav
@@ -67,14 +69,37 @@ export default function Sidebar() {
           <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={19} className="text-white" />
         </div>
         {!collapsed && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0">
             <p className="font-bold text-sm leading-tight" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>
               MaestroTrack
             </p>
-            <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{profile?.displayName}</p>
+            <p className="truncate text-xs" style={{ color: 'var(--clay-dim)' }}>{profile?.displayName}</p>
           </motion.div>
         )}
       </div>
+
+      {/* Level + XP — students only; teachers don't practise in-app */}
+      {role !== 'teacher' && !collapsed && (
+        <div className="px-4 pb-4">
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+              Level {game.progression.level}
+            </span>
+            <span className="text-[10px] tabular-nums" style={{ color: 'var(--clay-faint)' }}>
+              {game.progression.xpIntoLevel}/{game.progression.xpForThisLevel}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: 'linear-gradient(90deg,var(--clay-accent),var(--clay-accent-hover))' }}
+              initial={{ width: 0 }}
+              animate={{ width: `${game.progression.percent}%` }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto">
