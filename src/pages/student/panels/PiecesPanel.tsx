@@ -8,6 +8,7 @@ import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
+import { derivePieceStats } from '@/lib/utils/pieces'
 import { addPiece, updatePiece, deletePiece } from '@/lib/firebase/pieces'
 import { getTheme } from '@/lib/utils/instruments'
 import Card from '@/components/ui/Card'
@@ -30,7 +31,7 @@ type FormData = z.infer<typeof schema>
 
 export default function PiecesPanel() {
   const { profile, user } = useAuth()
-  const { pieces, addPiece: addPieceToStore } = usePracticeStore()
+  const { pieces, sessions, addPiece: addPieceToStore } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<'active' | 'archived' | 'mastered'>('active')
@@ -74,6 +75,11 @@ export default function PiecesPanel() {
 
   const filtered = pieces.filter((p) => p.status === filter)
 
+  const selectedStats = useMemo(
+    () => (selected ? derivePieceStats(selected, sessions) : null),
+    [selected, sessions]
+  )
+
   const statusColors: Record<string, 'success' | 'warning' | 'info'> = {
     active: 'info', archived: 'warning', mastered: 'success'
   }
@@ -104,7 +110,9 @@ export default function PiecesPanel() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((piece, i) => (
+          {filtered.map((piece, i) => {
+            const stats = derivePieceStats(piece, sessions)
+            return (
             <motion.div key={piece.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card className="p-5 space-y-4" hover onClick={() => setSelected(piece)}>
                 <div className="flex items-start justify-between gap-2">
@@ -118,16 +126,16 @@ export default function PiecesPanel() {
                 <div>
                   <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-1">
                     <span>Completion</span>
-                    <span>{piece.completionPercentage}%</span>
+                    <span>{stats.completionPercentage}%</span>
                   </div>
                   <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${piece.completionPercentage}%`, backgroundColor: theme.primary }} />
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${stats.completionPercentage}%`, backgroundColor: theme.primary }} />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-[var(--clay-dim)]">
-                  <span>{piece.totalMinutes} min total</span>
-                  <span>{piece.sessionCount} sessions</span>
+                  <span>{stats.totalMinutes} min total</span>
+                  <span>{stats.sessionCount} sessions</span>
                   <div className="flex">
                     {Array.from({ length: 5 }, (_, i) => (
                       <Star key={i} size={10} className={i < piece.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[var(--clay-ink)]'} />
@@ -154,7 +162,8 @@ export default function PiecesPanel() {
                 </div>
               </Card>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -176,34 +185,34 @@ export default function PiecesPanel() {
       </Modal>
 
       {/* Piece detail modal */}
-      {selected && (
+      {selected && selectedStats && (
         <Modal open={!!selected} onClose={() => setSelected(null)} title={selected.title} size="md">
           <div className="space-y-4">
             {selected.composer && <p className="text-[var(--clay-dim)] text-sm">{selected.composer}</p>}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-[var(--clay-bg-deep)] rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selected.totalMinutes}</p>
+                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selectedStats.totalMinutes}</p>
                 <p className="text-xs text-[var(--clay-dim)]">Total Minutes</p>
               </div>
               <div className="bg-[var(--clay-bg-deep)] rounded-xl p-3 text-center">
-                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selected.sessionCount}</p>
+                <p className="text-2xl font-bold text-[var(--clay-ink)]">{selectedStats.sessionCount}</p>
                 <p className="text-xs text-[var(--clay-dim)]">Sessions</p>
               </div>
             </div>
             <div>
               <div className="flex justify-between text-sm text-[var(--clay-faint)] mb-2">
                 <span>Completion</span>
-                <span>{selected.completionPercentage}%</span>
+                <span>{selectedStats.completionPercentage}%</span>
               </div>
               <div className="h-2 bg-[var(--clay-line)] rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${selected.completionPercentage}%`, backgroundColor: theme.primary }} />
+                <div className="h-full rounded-full" style={{ width: `${selectedStats.completionPercentage}%`, backgroundColor: theme.primary }} />
               </div>
             </div>
-            {selected.confidenceHistory.length > 0 && (
+            {selectedStats.confidenceHistory.length > 0 && (
               <div>
                 <p className="text-sm font-medium text-[var(--clay-faint)] mb-2">Confidence History</p>
                 <div className="flex items-end gap-1 h-16">
-                  {selected.confidenceHistory.slice(-20).map((h, i) => (
+                  {selectedStats.confidenceHistory.slice(-20).map((h, i) => (
                     <div key={i} className="flex-1 rounded-t" style={{ height: `${h.value * 10}%`, backgroundColor: theme.primary, opacity: 0.5 + (i / 40) }} title={`${h.date}: ${h.value}/10`} />
                   ))}
                 </div>

@@ -311,16 +311,7 @@ export default function SessionPage() {
     const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...payload } as PracticeSession
     addSession(newSession as never)
 
-    if (pieceId) {
-      const piece = pieces.find((p) => p.id === pieceId)
-      if (piece) {
-        updatePiece(piece.id, {
-          totalMinutes: piece.totalMinutes + minutes,
-          sessionCount: piece.sessionCount + 1,
-          updatedAt: new Date().toISOString(),
-        }).catch(() => {})
-      }
-    }
+    // Piece totals are derived from the session log — nothing to increment.
 
     const remaining = await uploadClips(uid, id, date)
 

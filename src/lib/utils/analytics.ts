@@ -179,7 +179,7 @@ export function getAnalyticsSummary(
   }
 }
 
-export function generateInsights(sessions: PracticeSession[], pieces: { title: string; updatedAt: string }[]) {
+export function generateInsights(sessions: PracticeSession[], pieces: { id: string; title: string; status?: string }[]) {
   const insights: { title: string; description: string; type: 'positive' | 'warning' | 'info' }[] = []
 
   const summary = getAnalyticsSummary(sessions, 300)
@@ -212,10 +212,20 @@ export function generateInsights(sessions: PracticeSession[], pieces: { title: s
     insights.push({ title: `Most productive day: ${bestDay[0]}`, description: `You average ${Math.round(bestDay[1] / 4)} minutes on ${bestDay[0]}s.`, type: 'info' })
   }
 
+  // Neglect is measured from the session log, not the piece's updatedAt.
+  // updatedAt only moves when the piece record itself is edited, so keying
+  // off it flagged pieces you practise daily and missed ones you don't.
   const now = new Date()
-  const neglectedPieces = pieces.filter((p) => differenceInDays(now, parseISO(p.updatedAt)) > 5)
-  if (neglectedPieces.length > 0) {
-    insights.push({ title: `${neglectedPieces[0].title} neglected`, description: `You haven't practiced "${neglectedPieces[0].title}" in over 5 days.`, type: 'warning' })
+  const neglected = pieces.filter((p) => {
+    if (p.status && p.status !== 'active') return false
+    const last = sessions
+      .filter((s) => s.pieceName === p.id)
+      .reduce<string | null>((latest, s) => (latest === null || s.date > latest ? s.date : latest), null)
+    if (last === null) return false // never started isn't neglect
+    return differenceInDays(now, parseISO(last)) > 5
+  })
+  if (neglected.length > 0) {
+    insights.push({ title: `${neglected[0].title} neglected`, description: `You haven't practiced "${neglected[0].title}" in over 5 days.`, type: 'warning' })
   }
 
   return insights

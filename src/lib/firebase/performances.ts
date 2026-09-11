@@ -19,7 +19,11 @@ export async function addPerformance(
   userId: string,
   data: Omit<Performance, 'id' | 'userId'>
 ): Promise<string> {
-  const ref = await addDoc(collection(db, COL), { ...data, userId })
+  const clean: Record<string, unknown> = { userId }
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined && v !== '') clean[k] = v
+  }
+  const ref = await addDoc(collection(db, COL), clean)
   return ref.id
 }
 

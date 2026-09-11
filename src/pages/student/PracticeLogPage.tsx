@@ -211,20 +211,9 @@ export default function PracticeLogPage() {
     const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...data } as PracticeSession
     addSession(newSession as never)
 
-    if (data.pieceName) {
-      const piece = pieces.find((p) => p.id === data.pieceName)
-      if (piece) {
-        const history = [...(piece.confidenceHistory ?? []), { date: data.date, value: data.confidenceRating }]
-        const avg = history.reduce((sum, h) => sum + h.value, 0) / history.length
-        updatePiece(piece.id, {
-          totalMinutes: piece.totalMinutes + data.durationMinutes,
-          sessionCount: piece.sessionCount + 1,
-          confidenceHistory: history,
-          completionPercentage: Math.min(100, Math.round(avg * 10)),
-          updatedAt: new Date().toISOString(),
-        }).catch(() => {})
-      }
-    }
+    // Piece totals are derived from the session log (see derivePieceStats),
+    // so there are no counters to increment here. That's deliberate: the
+    // old increments were never reverted when a session was deleted.
 
     const earned = computeSessionReward({
       sessionsBefore,

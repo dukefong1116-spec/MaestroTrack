@@ -16,7 +16,13 @@ import type { Piece } from '@/types'
 const COL = 'pieces'
 
 export async function addPiece(userId: string, data: Omit<Piece, 'id' | 'userId'>): Promise<string> {
-  const ref = await addDoc(collection(db, COL), { ...data, userId })
+  // Firestore rejects `undefined` outright, which would fail the whole
+  // write when an optional field (composer, targetDate, notes) is blank.
+  const clean: Record<string, unknown> = { userId }
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined && v !== '') clean[k] = v
+  }
+  const ref = await addDoc(collection(db, COL), clean)
   return ref.id
 }
 
