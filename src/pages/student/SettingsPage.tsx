@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
 import { updateUserProfile, getTeacherByStudioCode } from '@/lib/firebase/teacher'
-import { getTheme, INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
+import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { useAuthStore } from '@/stores/authStore'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
@@ -28,7 +28,6 @@ type FormData = z.infer<typeof schema>
 export default function SettingsPage() {
   const { profile, user } = useAuth()
   const { setProfile } = useAuthStore()
-  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [studioCode, setStudioCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState(false)

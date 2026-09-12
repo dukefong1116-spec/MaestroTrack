@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Target } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import BadgeArt from '@/components/badges/BadgeArt'
-import { format, startOfWeek, startOfMonth } from 'date-fns'
+import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
@@ -33,12 +33,12 @@ export default function GoalsPanel() {
 
   const weekTotal = useMemo(() => {
     const ws = startOfWeek(new Date())
-    return sessions.filter((s) => new Date(s.date) >= ws).reduce((a, s) => a + s.durationMinutes, 0)
+    return sessions.filter((s) => parseISO(s.date) >= ws).reduce((a, s) => a + s.durationMinutes, 0)
   }, [sessions])
 
   const monthTotal = useMemo(() => {
     const ms = startOfMonth(new Date())
-    return sessions.filter((s) => new Date(s.date) >= ms).reduce((a, s) => a + s.durationMinutes, 0)
+    return sessions.filter((s) => parseISO(s.date) >= ms).reduce((a, s) => a + s.durationMinutes, 0)
   }, [sessions])
 
   const dailyGoal = Math.round(weeklyGoal / 7)

@@ -77,12 +77,17 @@ export function useGamification(): Gamification {
     if (decision.freeze.length === 0) return
 
     freezeAttempted.current = true
-    const nextUsed = [...frozen, ...decision.freeze]
+    const nextUsed = [...new Set([...frozen, ...decision.freeze])]
 
     recordStreakFreezes(profile.uid, decision.freeze)
       .then(() => {
-        // Reflect locally so the streak reads correctly straight away.
-        setProfile({ ...profile, streakFreezesUsed: nextUsed })
+        // Reflect locally so the streak reads correctly straight away —
+        // against the live profile, not this render's copy.
+        const latest = useAuthStore.getState().profile ?? profile
+        // Union against whatever is live, so this cannot drop dates another
+        // write added in the meantime — mirroring the arrayUnion on the server.
+        const merged = [...new Set([...(latest.streakFreezesUsed ?? []), ...decision.freeze])]
+        setProfile({ ...latest, streakFreezesUsed: merged })
         setPendingFreeze({
           streak: decision.rescuedStreak,
           daysFrozen: decision.freeze.length,
@@ -112,11 +117,21 @@ export function useGamification(): Gamification {
   function dismissBadge() {
     const shown = badgeQueue[0]
     setBadgeQueue((q) => q.slice(1))
-    if (shown && profile?.uid) {
-      markBadgesSeen(profile.uid, [shown.id])
-        .then(() => setProfile({ ...profile, badgesSeen: [...seen, shown.id] }))
-        .catch(() => {})
-    }
+    if (!shown || !profile?.uid) return
+
+    markBadgesSeen(profile.uid, [shown.id])
+      .then(() => {
+        // Read the live profile rather than this render's closure. Dismissing
+        // two badges in quick succession resolved both writes against the
+        // same stale `seen`, so the second overwrote the first locally — and
+        // the queue effect, seeing it unseen again, replayed its celebration.
+        // (arrayUnion meant the server was always right; only the UI lied.)
+        const latest = useAuthStore.getState().profile
+        if (!latest) return
+        if (latest.badgesSeen?.includes(shown.id)) return
+        setProfile({ ...latest, badgesSeen: [...(latest.badgesSeen ?? []), shown.id] })
+      })
+      .catch(() => {})
   }
 
   return {

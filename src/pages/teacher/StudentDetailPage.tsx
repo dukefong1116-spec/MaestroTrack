@@ -23,6 +23,8 @@ import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import StatCard from '@/components/common/StatCard'
 import type { PracticeSession, TeacherNote, Assignment, InstrumentType } from '@/types'
 
+const NO_SESSIONS: PracticeSession[] = []
+
 export default function StudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>()
   const navigate = useNavigate()
@@ -38,7 +40,10 @@ export default function StudentDetailPage() {
   const [assigning, setAssigning] = useState(false)
 
   const student = students.find((s) => s.uid === studentId)
-  const sessions: PracticeSession[] = studentSessions[studentId ?? ''] ?? []
+  // A fresh `[]` literal here is a new identity every render, which defeated
+  // the four useMemos below — every chart recomputed over the full session
+  // history on each keystroke in the assignment form.
+  const sessions: PracticeSession[] = studentSessions[studentId ?? ''] ?? NO_SESSIONS
   const theme = getTheme(student?.instrument as InstrumentType | undefined)
 
   useEffect(() => {

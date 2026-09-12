@@ -1,4 +1,4 @@
-import { format, differenceInDays, parseISO } from 'date-fns'
+import { format, differenceInDays, parseISO, addDays, subDays } from 'date-fns'
 import type { PracticeSession } from '@/types'
 
 /**
@@ -73,7 +73,7 @@ export function decideFreezes(
   // Walk back from yesterday collecting unbroken missed days.
   const gap: string[] = []
   for (let back = 1; back <= MAX_FREEZES + 1; back++) {
-    const day = format(new Date(now.getTime() - back * 86_400_000), 'yyyy-MM-dd')
+    const day = format(subDays(now, back), 'yyyy-MM-dd')
     if (active.has(day)) {
       // Found the last practised day — everything before `gap` is intact.
       if (gap.length === 0) return none // nothing missed; streak is fine
@@ -100,7 +100,7 @@ function countBack(day: string, active: Set<string>): number {
   let cursor = parseISO(day)
   while (active.has(format(cursor, 'yyyy-MM-dd'))) {
     n++
-    cursor = new Date(cursor.getTime() - 86_400_000)
+    cursor = subDays(cursor, 1)
   }
   return n
 }
@@ -124,12 +124,15 @@ export function weekStrip(
   const frozenSet = new Set(frozen)
   const today = toDay(now)
 
-  // Start from Monday of the current week.
+  // Start from Monday of the current week. date-fns day arithmetic, not
+  // ±86_400_000ms: a fixed 24h offset shifts the local clock across a DST
+  // boundary, which repeated or skipped a day in the strip for anyone
+  // opening the app near midnight on changeover week.
   const dow = (now.getDay() + 6) % 7 // 0 = Monday
-  const monday = new Date(now.getTime() - dow * 86_400_000)
+  const monday = subDays(now, dow)
 
   return Array.from({ length: 7 }, (_, i) => {
-    const dt = new Date(monday.getTime() + i * 86_400_000)
+    const dt = addDays(monday, i)
     const date = format(dt, 'yyyy-MM-dd')
     return {
       date,

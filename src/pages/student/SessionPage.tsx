@@ -6,7 +6,6 @@ import { format } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
-import { updatePiece } from '@/lib/firebase/pieces'
 import { uploadRecording } from '@/lib/firebase/recordings'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
@@ -53,6 +52,12 @@ export default function SessionPage() {
   // delayed chime still reflects the real session length.
   const [savedDate, setSavedDate] = useState('')
   const [savedMinutes, setSavedMinutes] = useState(0)
+  // The length is measured once, when Finish is tapped, and held until it
+  // is safely persisted. Previously `finish()` called stopTimer() every
+  // attempt — which also clears timerStartedAt — so if the first save threw,
+  // the retry the error message invites measured 0 elapsed and filed a
+  // 90-minute session as 1 minute.
+  const measuredSecRef = useRef<number | null>(null)
 
   /* ── timer ─────────────────────────────────────────────── */
   const [, forceTick] = useState(0)
@@ -70,7 +75,7 @@ export default function SessionPage() {
 
   const elapsedSec = timerRunning && timerStartedAt
     ? Math.floor((Date.now() - timerStartedAt) / 1000)
-    : 0
+    : (measuredSecRef.current ?? 0)
   const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0')
   const ss = String(elapsedSec % 60).padStart(2, '0')
 
@@ -254,7 +259,10 @@ export default function SessionPage() {
       if (tunerRafRef.current !== null) cancelAnimationFrame(tunerRafRef.current)
       tunerCtxRef.current?.close().catch(() => {})
       streamRef.current?.getTracks().forEach((t) => t.stop())
-      clips.forEach((c) => URL.revokeObjectURL(c.url))
+      // clipsRef, not `clips` — this effect has no deps, so the state
+      // variable here is forever the empty array from the first render
+      // and every clip's object URL leaked.
+      clipsRef.current.forEach((c) => URL.revokeObjectURL(c.url))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -283,8 +291,8 @@ export default function SessionPage() {
     if (recording) await stopRecording()
     stopTuner()
 
-    const elapsed = stopTimer()
-    const minutes = Math.max(1, Math.round(elapsed / 60))
+    if (measuredSecRef.current === null) measuredSecRef.current = stopTimer()
+    const minutes = Math.max(1, Math.round(measuredSecRef.current / 60))
     const sessionsBefore = sessions
     const date = format(new Date(), 'yyyy-MM-dd')
 
@@ -308,6 +316,7 @@ export default function SessionPage() {
       return
     }
 
+    measuredSecRef.current = null // the row exists; the length is safe now
     const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...payload } as PracticeSession
     addSession(newSession as never)
 

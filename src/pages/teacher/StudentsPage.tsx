@@ -12,7 +12,6 @@ import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
 import EmptyState from '@/components/common/EmptyState'
 import type { UserProfile, InstrumentType } from '@/types'
 

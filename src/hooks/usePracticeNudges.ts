@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { format } from 'date-fns'
+import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -71,7 +71,9 @@ export function usePracticeNudges(limit = 3): Nudge[] {
         .filter((s) => s.pieceName === p.id)
         .sort((a, b) => b.date.localeCompare(a.date))[0]
       if (!last) return false // never started — that's not neglect
-      const days = Math.floor((Date.now() - new Date(last.date).getTime()) / 86_400_000)
+      // parseISO + calendar days: new Date('yyyy-MM-dd') is UTC midnight, so
+      // west of UTC the gap read hours too wide and neglect fired early.
+      const days = differenceInCalendarDays(new Date(), parseISO(last.date))
       return days >= 5
     })
 
