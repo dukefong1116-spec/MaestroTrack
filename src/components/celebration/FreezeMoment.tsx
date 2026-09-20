@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import Moment, { usePrefersReducedMotion } from './Moment'
+import Moment from './Moment'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import StreakFlame from '@/components/icons/StreakFlame'
 import { playFreezeChime } from '@/lib/utils/sound'
 

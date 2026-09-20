@@ -44,7 +44,8 @@ export default function SessionPage() {
   const navigate = useNavigate()
   const { profile, user } = useAuth()
   const {
-    pieces, addSession, timerRunning, timerStartedAt, startTimer, stopTimer, resetTimer,
+    pieces, addSession, timerRunning, timerStartedAt, timerAccumulatedSec,
+    startTimer, pauseTimer, stopTimer, resetTimer,
   } = usePracticeStore()
   const sessions = usePracticeStore((s) => s.sessions)
 
@@ -84,13 +85,13 @@ export default function SessionPage() {
 
   // Start automatically on arrival so the page is live the moment it opens.
   useEffect(() => {
-    if (!timerRunning && !timerStartedAt) startTimer()
+    if (!timerRunning && !timerStartedAt && timerAccumulatedSec === 0) startTimer()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const elapsedSec = timerRunning && timerStartedAt
-    ? Math.floor((Date.now() - timerStartedAt) / 1000)
-    : (measuredSecRef.current ?? 0)
+  const elapsedSec = measuredSecRef.current ?? Math.floor(
+    timerAccumulatedSec + (timerRunning && timerStartedAt ? (Date.now() - timerStartedAt) / 1000 : 0)
+  )
   const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0')
   const ss = String(elapsedSec % 60).padStart(2, '0')
 
@@ -282,6 +283,15 @@ export default function SessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Escape backs out of the question, same as "Keep practising".
+  useEffect(() => {
+    if (!askingConfidence) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') cancelFinish() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askingConfidence])
+
   /* ── tool switching ────────────────────────────────────── */
   function pickTool(next: Tool) {
     const closing = tool === next
@@ -303,10 +313,35 @@ export default function SessionPage() {
     primeAudioContext() // synchronous, inside the gesture
     if (!(profile?.uid ?? user?.uid)) return
 
+    // Already answered on a previous attempt that failed to save — asking
+    // the same question twice for one session is worse than not asking.
+    if (answeredRef.current !== null) {
+      void finish(answeredRef.current)
+      return
+    }
+
+    // Everything that makes noise or captures audio stops here, not after
+    // the question — otherwise the mic keeps recording while the player
+    // decides how it went, and that silence lands in the take.
     metroRef.current?.stop()
     setMetroOn(false)
+    if (recording) void stopRecording()
+    stopTuner()
+    setTool(null)
+
     if (measuredSecRef.current === null) measuredSecRef.current = stopTimer()
     setAskingConfidence(true)
+  }
+
+  /** Tapped Finish by mistake — give the session back, clock intact. */
+  function cancelFinish() {
+    setAskingConfidence(false)
+    const banked = measuredSecRef.current
+    measuredSecRef.current = null
+    if (banked !== null) {
+      usePracticeStore.setState({ timerAccumulatedSec: banked })
+      startTimer()
+    }
   }
 
   async function finish(confidenceRating: number) {
@@ -547,7 +582,7 @@ export default function SessionPage() {
           </motion.div>
 
           <motion.button
-            onClick={() => (timerRunning ? stopTimer() : startTimer())}
+            onClick={() => (timerRunning ? pauseTimer() : startTimer())}
             className="relative z-10 mb-5 flex h-[168px] w-[168px] flex-col items-center justify-center rounded-full"
             style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-deep)' }}
             whileTap={{ scale: 0.94 }}
@@ -844,7 +879,11 @@ export default function SessionPage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
           >
-            <div className="absolute inset-0" style={{ background: 'rgba(58,48,84,.45)' }} />
+            <div
+              className="absolute inset-0"
+              style={{ background: 'rgba(58,48,84,.45)' }}
+              onClick={cancelFinish}
+            />
             <motion.div
               className="relative w-full max-w-md px-6 py-7"
               style={{ ...surface, borderRadius: 'var(--clay-r-lg)', boxShadow: 'var(--clay-deep)' }}
@@ -887,13 +926,23 @@ export default function SessionPage() {
                 ))}
               </div>
 
-              <button
-                onClick={() => void finish(7)}
-                className="mx-auto mt-4 block text-[13px] font-semibold"
-                style={{ color: 'var(--clay-faint)' }}
-              >
-                Skip
-              </button>
+              <div className="mt-4 flex items-center justify-center gap-5">
+                <button
+                  onClick={() => void finish(7)}
+                  className="text-[13px] font-semibold"
+                  style={{ color: 'var(--clay-faint)' }}
+                >
+                  Skip
+                </button>
+                <span style={{ color: 'var(--clay-faint)' }}>·</span>
+                <button
+                  onClick={cancelFinish}
+                  className="text-[13px] font-semibold"
+                  style={{ color: 'var(--clay-faint)' }}
+                >
+                  Keep practising
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

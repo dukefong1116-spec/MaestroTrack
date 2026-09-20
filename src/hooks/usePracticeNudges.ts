@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { parseISO, differenceInCalendarDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -35,6 +35,16 @@ export function usePracticeNudges(limit = 3): Nudge[] {
   const { profile } = useAuth()
   const { sessions, pieces } = usePracticeStore()
 
+  // The streak warning counts down to midnight, so it has to age even
+  // when nothing else changes. Without this, a tab left open at 6pm still
+  // read "6 hours left" at 10pm and never escalated to urgent — the one
+  // message whose whole value is being timely was the one going stale.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
   const summary = useMemo(
     () => getAnalyticsSummary(sessions, weeklyGoal),
@@ -61,7 +71,8 @@ export function usePracticeNudges(limit = 3): Nudge[] {
     const risk = streakRisk(
       sessions,
       summary.currentStreak,
-      freezesAvailable(summary.longestStreak, profile?.streakFreezesUsed ?? [])
+      freezesAvailable(summary.longestStreak, profile?.streakFreezesUsed ?? []),
+      now
     )
     if (risk.level !== 'none') {
       out.push({
@@ -87,7 +98,7 @@ export function usePracticeNudges(limit = 3): Nudge[] {
       if (!last) return false // never started — that's not neglect
       // parseISO + calendar days: new Date('yyyy-MM-dd') is UTC midnight, so
       // west of UTC the gap read hours too wide and neglect fired early.
-      const days = differenceInCalendarDays(new Date(), parseISO(last.date))
+      const days = differenceInCalendarDays(now, parseISO(last.date))
       return days >= 5
     })
 
@@ -103,5 +114,5 @@ export function usePracticeNudges(limit = 3): Nudge[] {
 
     // Stable sort: equal priorities keep the order they were built in.
     return out.sort((a, b) => b.priority - a.priority).slice(0, limit)
-  }, [sessions, pieces, summary, weeklyGoal, limit, profile?.streakFreezesUsed])
+  }, [sessions, pieces, summary, weeklyGoal, limit, profile?.streakFreezesUsed, now])
 }

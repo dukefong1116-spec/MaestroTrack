@@ -1,4 +1,4 @@
-import { startOfWeek } from 'date-fns'
+import { startOfWeek, parseISO, format } from 'date-fns'
 import type { PracticeSession } from '@/types'
 import { computeStreak } from './analytics'
 
@@ -201,7 +201,11 @@ function returnDays(sessions: PracticeSession[]): number {
 function variedWeeks(sessions: PracticeSession[]): number {
   const byWeek = new Map<string, Set<string>>()
   for (const s of sessions) {
-    const week = startOfWeek(new Date(`${s.date.substring(0, 10)}T00:00:00`)).toISOString().slice(0, 10)
+    // parseISO + format, never toISOString: the latter converts a local
+    // week boundary to UTC, which shifts it to the previous day west of
+    // Greenwich. It grouped consistently by luck here, but this is the
+    // exact shape of two date bugs this codebase has already paid for.
+    const week = format(startOfWeek(parseISO(s.date.substring(0, 10))), 'yyyy-MM-dd')
     if (!byWeek.has(week)) byWeek.set(week, new Set())
     byWeek.get(week)!.add(s.category)
   }

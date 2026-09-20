@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import Moment, { usePrefersReducedMotion } from './Moment'
+import Moment from './Moment'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import BadgeArt, { type BadgeArtName } from '@/components/badges/BadgeArt'
 import Confetti from './Confetti'
 import { playBadgeFanfare } from '@/lib/utils/sound'

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import Moment, { usePrefersReducedMotion } from './Moment'
+import Moment from './Moment'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import Confetti from './Confetti'
 import Sticker from '@/components/stickers/Sticker'
 import { playMasteryCadence } from '@/lib/utils/sound'

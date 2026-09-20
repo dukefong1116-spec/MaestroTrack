@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { streakHeat } from '@/lib/utils/streakHeat'
 
 /**
  * Streak flame.
@@ -17,12 +18,6 @@ interface StreakFlameProps {
   className?: string
 }
 
-/** Maps a streak length onto a 0..1 heat value with diminishing returns. */
-export function streakHeat(streak: number): number {
-  if (streak <= 0) return 0
-  // 1 day -> .18, 7 -> .55, 30 -> .85, 100+ -> ~1
-  return Math.min(1, Math.log10(streak + 1) / 2.1)
-}
 
 function ramp(heat: number) {
   if (heat === 0) return { outer: '#BFBBB4', mid: '#D8D4CD', core: '#E8E4DC' }

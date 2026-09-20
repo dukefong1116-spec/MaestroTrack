@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Volume2, VolumeX } from 'lucide-react'
 import { isSoundMuted, setSoundMuted } from '@/lib/utils/sound'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 
 interface MomentProps {
   open: boolean
@@ -13,13 +14,6 @@ interface MomentProps {
   autoDismissMs?: number
   /** Hide the mute control (e.g. for a silent moment). */
   hideMute?: boolean
-}
-
-export function usePrefersReducedMotion(): boolean {
-  const [reduced] = useState(
-    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  )
-  return reduced
 }
 
 /**
