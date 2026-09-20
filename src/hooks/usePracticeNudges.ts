@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
-import { format, parseISO, differenceInCalendarDays } from 'date-fns'
+import { parseISO, differenceInCalendarDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
+import { streakRisk, riskCopy } from '@/lib/utils/streakRisk'
+import { freezesAvailable } from '@/lib/utils/streakFreeze'
 import type { StickerName } from '@/components/stickers/Sticker'
 
 export type NudgeTone = 'info' | 'warning' | 'success'
@@ -12,6 +14,14 @@ export interface Nudge {
   sticker: StickerName
   text: string
   tone: NudgeTone
+  /**
+   * Higher shows first, and survives a low `limit`. Nudges were previously
+   * ordered by the order they happened to be pushed, so on a page asking
+   * for one nudge a cheerful "60 minutes from your goal" outranked
+   * "2 hours left to save your 23-day streak" — the single most important
+   * thing the app had to say, pushed off the page by a compliment.
+   */
+  priority: number
 }
 
 /**
@@ -41,24 +51,28 @@ export function usePracticeNudges(limit = 3): Nudge[] {
         sticker: 'target',
         tone: 'success',
         text: `${minsLeft} minutes from your weekly goal.`,
+        priority: 40,
       })
     }
 
-    if (summary.currentStreak > 0) {
-      // Session dates are written in local time (date-fns format), so
-      // 'today' must be too. toISOString() is UTC and rolls over early
-      // for anyone behind it — in PDT the nudge fired every evening even
-      // right after practising.
-      const today = format(new Date(), 'yyyy-MM-dd')
-      const practisedToday = sessions.some((s) => s.date.substring(0, 10) === today)
-      if (!practisedToday) {
-        out.push({
-          id: 'streak-at-risk',
-          sticker: 'flame',
-          tone: 'warning',
-          text: `Practise today to keep your ${summary.currentStreak}-day streak.`,
-        })
-      }
+    // A warning that reads the same at 9am and 11pm teaches people to
+    // ignore it, so this names the hours left and sharpens through the
+    // evening. See streakRisk for the rule.
+    const risk = streakRisk(
+      sessions,
+      summary.currentStreak,
+      freezesAvailable(summary.longestStreak, profile?.streakFreezesUsed ?? [])
+    )
+    if (risk.level !== 'none') {
+      out.push({
+        id: 'streak-at-risk',
+        sticker: 'flame',
+        tone: risk.level === 'calm' ? 'info' : 'warning',
+        text: riskCopy(risk),
+        // Something is about to be lost; as the night closes in it
+        // outranks everything else on the page.
+        priority: risk.level === 'urgent' ? 100 : risk.level === 'firm' ? 80 : 50,
+      })
     }
 
     // Sessions store the piece *id* in `pieceName` (every other read site
@@ -83,9 +97,11 @@ export function usePracticeNudges(limit = 3): Nudge[] {
         sticker: 'note',
         tone: 'info',
         text: `You haven't touched "${piece.title}" in over 5 days.`,
+        priority: 20,
       })
     }
 
-    return out.slice(0, limit)
-  }, [sessions, pieces, summary, weeklyGoal, limit])
+    // Stable sort: equal priorities keep the order they were built in.
+    return out.sort((a, b) => b.priority - a.priority).slice(0, limit)
+  }, [sessions, pieces, summary, weeklyGoal, limit, profile?.streakFreezesUsed])
 }

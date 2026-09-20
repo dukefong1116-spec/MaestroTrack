@@ -13,6 +13,7 @@ import { computeStreak } from '@/lib/utils/analytics'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import NudgeList from '@/components/common/NudgeList'
 import Sticker from '@/components/stickers/Sticker'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
@@ -248,6 +249,12 @@ export default function PracticeLogPage() {
             {format(new Date(), 'EEEE')} · let's get after it
           </p>
         </motion.div>
+
+        {/* The streak warning belongs here as much as on the dashboard —
+            this is the page you open when you intend to practise. */}
+        <div className="mb-4">
+          <NudgeList limit={1} />
+        </div>
 
         {/* session in progress */}
         {timerRunning && (
