@@ -16,7 +16,7 @@ import Sticker from '@/components/stickers/Sticker'
 export default function PendingUploads() {
   const { profile, user } = useAuth()
   const uid = profile?.uid ?? user?.uid
-  const { pending, uploading, progress, drain, status } = useUploadStore()
+  const { pending, progress, drain, recheck, status } = useUploadStore()
   const state = status()
 
   // Pick up anything owed from a previous visit.
@@ -28,11 +28,11 @@ export default function PendingUploads() {
   // Losing a take to a closed tab is the thing this whole queue exists to
   // prevent; warn while one is actually in flight.
   useEffect(() => {
-    if (!uploading) return
+    if (state !== 'uploading') return
     const warn = (e: BeforeUnloadEvent) => { e.preventDefault() }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [uploading])
+  }, [state])
 
   const owed = pending.length
   if (!uid || owed === 0 || state === 'idle') return null
@@ -40,12 +40,16 @@ export default function PendingUploads() {
   // "Uploading" is claimed only while an attempt is genuinely in flight,
   // and a percentage only once the transfer has actually reported one.
   // Anything else says what is really true: owed, but not moving.
+  const takes = `${owed} take${owed > 1 ? 's' : ''}`
+
   const headline =
-    state === 'uploading'
-      ? `Uploading ${owed > 1 ? `${owed} takes` : 'your take'}…`
-      : state === 'stalled'
-        ? `${owed} take${owed > 1 ? 's' : ''} didn't upload`
-        : `${owed} take${owed > 1 ? 's' : ''} waiting to upload`
+    state === 'unavailable'
+      ? `${takes} can't upload yet`
+      : state === 'uploading'
+        ? `Uploading ${owed > 1 ? `${owed} takes` : 'your take'}…`
+        : state === 'stalled'
+          ? `${takes} didn't upload`
+          : `${takes} waiting to upload`
 
   // Zero is not progress. A connection that has reported nothing and one
   // that has reported "0% transferred" look identical to a person, and both
@@ -53,11 +57,13 @@ export default function PendingUploads() {
   const measured = progress !== null && progress > 0
 
   const detail =
-    state === 'uploading'
-      ? 'Your session is already saved. You can keep using the app.'
-      : state === 'stalled'
-        ? 'Saved on this device — it will finish next time you are online.'
-        : 'Saved on this device. Starting shortly.'
+    state === 'unavailable'
+      ? 'Cloud Storage isn\u2019t enabled for this Firebase project, so there is nowhere to put them yet. They are safe on this device and will upload by themselves once it is switched on.'
+      : state === 'uploading'
+        ? 'Your session is already saved. You can keep using the app.'
+        : state === 'stalled'
+          ? 'Saved on this device \u2014 it will finish next time you are online.'
+          : 'Saved on this device. Starting shortly.'
 
   return (
     <AnimatePresence>
@@ -113,11 +119,11 @@ export default function PendingUploads() {
 
         {state !== 'uploading' && (
           <button
-            onClick={() => void drain(uid)}
+            onClick={() => void (state === 'unavailable' ? recheck(uid) : drain(uid))}
             className="mt-2 text-[12px] font-semibold"
             style={{ color: 'var(--clay-accent)' }}
           >
-            Try again now
+            {state === 'unavailable' ? 'I\u2019ve enabled it \u2014 check again' : 'Try again now'}
           </button>
         )}
       </motion.div>

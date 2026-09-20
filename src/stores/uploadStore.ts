@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { uploadRecording } from '@/lib/firebase/recordings'
 import { listClips, deleteClip, type PendingClip } from '@/lib/storage/pendingClips'
+import { checkStorageHealth, resetStorageHealth } from '@/lib/firebase/storageHealth'
 
 /**
  * A clip with no session has nothing to attach to. That is normal while a
@@ -36,10 +37,11 @@ const ORPHAN_MAX_AGE_MS = 24 * 60 * 60 * 1000
  * cannot distinguish working from stuck is worse than none.
  */
 export type UploadStatus =
-  | 'idle'       // nothing owed
-  | 'uploading'  // bytes are moving right now
-  | 'waiting'    // owed, but no attempt in flight
-  | 'stalled'    // attempted and failed; will retry
+  | 'idle'          // nothing owed
+  | 'uploading'     // bytes are moving right now
+  | 'waiting'       // owed, but no attempt in flight
+  | 'stalled'       // attempted and failed; will retry
+  | 'unavailable'   // no Storage bucket exists — retrying cannot help
 
 interface UploadState {
   /** Clips owed to a *saved* session — the only ones that can be uploaded. */
@@ -51,7 +53,11 @@ interface UploadState {
   uploading: boolean
   /** Clips that failed this run; retried on the next drain. */
   failed: string[]
+  /** True once we know the project has no Storage bucket. */
+  storageMissing: boolean
   status: () => UploadStatus
+  /** Re-check after enabling Storage, then drain. */
+  recheck: (userId: string) => Promise<void>
   refresh: (userId: string) => Promise<void>
   drain: (userId: string) => Promise<void>
 }
@@ -62,12 +68,20 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   progress: null,
   uploading: false,
   failed: [],
+  storageMissing: false,
 
   status: () => {
-    const { pending, uploading, failed } = get()
+    const { pending, uploading, failed, storageMissing } = get()
     if (pending.length === 0) return 'idle'
+    if (storageMissing) return 'unavailable'
     if (uploading) return 'uploading'
     return failed.length > 0 ? 'stalled' : 'waiting'
+  },
+
+  recheck: async (userId) => {
+    resetStorageHealth()
+    set({ storageMissing: false, failed: [] })
+    await get().drain(userId)
   },
 
   refresh: async (userId) => {
@@ -87,7 +101,17 @@ export const useUploadStore = create<UploadState>((set, get) => ({
       return
     }
 
-    set({ uploading: true, pending: queue, failed: [] })
+    // One request, before spending anyone's time: a missing bucket 404s on
+    // every upload, and the SDK retries a 404 for its full budget before
+    // reporting anything. Grinding through that for each take in turn is
+    // the difference between an honest message and a spinner that never ends.
+    const health = await checkStorageHealth()
+    if (health === 'not-configured') {
+      set({ storageMissing: true, uploading: false, pending: queue, currentId: null, progress: null })
+      return
+    }
+
+    set({ uploading: true, pending: queue, failed: [], storageMissing: false })
 
     for (const clip of queue) {
       set({ currentId: clip.id, progress: null })
