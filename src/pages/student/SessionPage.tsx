@@ -12,7 +12,7 @@ import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
-import Sticker from '@/components/stickers/Sticker'
+import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import type { InstrumentType, PracticeSession, PracticeCategory } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
@@ -21,6 +21,17 @@ type Clip = { url: string; blob: Blob; seconds: number; uploaded?: boolean }
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
 ]
+
+/**
+ * Three points on the 1-10 confidence scale the rest of the app already
+ * stores. Three, not ten: a slider at the end of a session asks someone to
+ * be precise about a feeling, and they answer 7 every time.
+ */
+const CONFIDENCE_CHOICES = [
+  { value: 4, label: 'Rough', hint: 'Fought me the whole way', sticker: 'footprints', tint: '#9AA6B8' },
+  { value: 7, label: 'Okay', hint: 'Steady, nothing surprising', sticker: 'note', tint: '#7CA9E8' },
+  { value: 9, label: 'Really good', hint: 'It clicked', sticker: 'bolt', tint: '#FF7A5C' },
+] as const satisfies readonly { value: number; label: string; hint: string; sticker: StickerName; tint: string }[]
 
 /* ── shared clay styles ─────────────────────────────────── */
 const surface: React.CSSProperties = {
@@ -47,11 +58,15 @@ export default function SessionPage() {
   /** Set once the session row exists, so a retry can't double-save it. */
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null)
   const [pendingReward, setPendingReward] = useState<SessionReward | null>(null)
+  /** Finish is a two-beat flow now: capture the length, then ask how it went. */
+  const [askingConfidence, setAskingConfidence] = useState(false)
   // The session's own date/length, so a retry — possibly after midnight —
   // tags recordings with the date they were actually made on, and the
   // delayed chime still reflects the real session length.
   const [savedDate, setSavedDate] = useState('')
   const [savedMinutes, setSavedMinutes] = useState(0)
+  /** Held so a save retry reuses the answer rather than asking twice. */
+  const answeredRef = useRef<number | null>(null)
   // The length is measured once, when Finish is tapped, and held until it
   // is safely persisted. Previously `finish()` called stopTimer() every
   // attempt — which also clears timerStartedAt — so if the first save threw,
@@ -277,8 +292,27 @@ export default function SessionPage() {
   }
 
   /* ── finish ────────────────────────────────────────────── */
-  async function finish() {
+
+  /**
+   * First beat of Finish. Everything that must happen at the moment the
+   * player stops playing happens here — above all stopping the clock, so
+   * that time spent deciding how the session went is not counted as
+   * practice.
+   */
+  function beginFinish() {
     primeAudioContext() // synchronous, inside the gesture
+    if (!(profile?.uid ?? user?.uid)) return
+
+    metroRef.current?.stop()
+    setMetroOn(false)
+    if (measuredSecRef.current === null) measuredSecRef.current = stopTimer()
+    setAskingConfidence(true)
+  }
+
+  async function finish(confidenceRating: number) {
+    answeredRef.current = confidenceRating
+    primeAudioContext() // this tap is a gesture too — Safari needs it here
+    setAskingConfidence(false)
 
     const uid = profile?.uid ?? user?.uid
     if (!uid) return
@@ -302,7 +336,7 @@ export default function SessionPage() {
       category,
       pieceName: pieceId || undefined,
       difficultyRating: 3,
-      confidenceRating: 7,
+      confidenceRating,
       notes: thoughts.trim() || undefined,
     }
 
@@ -781,7 +815,7 @@ export default function SessionPage() {
           </div>
         ) : (
           <motion.button
-            onClick={finish}
+            onClick={beginFinish}
             disabled={saving}
             whileTap={{ scale: 0.96 }}
             className="w-full py-4 text-[16px] font-semibold disabled:opacity-60"
@@ -796,6 +830,74 @@ export default function SessionPage() {
           </motion.button>
         )}
       </div>
+
+      {/* How did that go? One question, three taps. A second question would
+          turn the end of a session into a form. Skip keeps the old neutral 7
+          so nobody is forced to self-assess to log practice. */}
+      <AnimatePresence>
+        {askingConfidence && (
+          <motion.div
+            key="confidence"
+            className="fixed inset-0 z-[55] flex items-end justify-center p-4 sm:items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+          >
+            <div className="absolute inset-0" style={{ background: 'rgba(58,48,84,.45)' }} />
+            <motion.div
+              className="relative w-full max-w-md px-6 py-7"
+              style={{ ...surface, borderRadius: 'var(--clay-r-lg)', boxShadow: 'var(--clay-deep)' }}
+              initial={{ y: 40, scale: 0.97 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            >
+              <p className="text-center text-[19px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+                How did that go?
+              </p>
+              <p className="mt-1 text-center text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+                {mm}:{ss} of practice{pieceId ? ` · ${activePieces.find((p) => p.id === pieceId)?.title ?? ''}` : ''}
+              </p>
+
+              <div className="mt-5 space-y-2.5">
+                {CONFIDENCE_CHOICES.map((c) => (
+                  <motion.button
+                    key={c.value}
+                    onClick={() => void finish(c.value)}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left"
+                    style={{
+                      borderRadius: 'var(--clay-r-md)',
+                      background: 'var(--clay-bg)',
+                      color: 'var(--clay-ink)',
+                    }}
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: c.tint }}
+                    >
+                      <Sticker name={c.sticker} size={18} tone="onAccent" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold">{c.label}</span>
+                      <span className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>{c.hint}</span>
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => void finish(7)}
+                className="mx-auto mt-4 block text-[13px] font-semibold"
+                style={{ color: 'var(--clay-faint)' }}
+              >
+                Skip
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SessionCelebration
         reward={reward}

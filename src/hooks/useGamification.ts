@@ -9,7 +9,9 @@ import {
 import {
   computeProgression, buildBadgeContext, earnedBadges, type BadgeDef, type Progression,
 } from '@/lib/utils/progression'
-import { recordStreakFreezes, markBadgesSeen } from '@/lib/firebase/teacher'
+import { recordStreakFreezes, markBadgesSeen, markMasteryPrompted } from '@/lib/firebase/teacher'
+import { updatePiece } from '@/lib/firebase/pieces'
+import { findMasteryCandidate, type MasteryCandidate } from '@/lib/utils/mastery'
 
 export interface FreezeEvent {
   streak: number
@@ -27,8 +29,13 @@ export interface Gamification {
   /** Queued moments — show one at a time, oldest first. */
   pendingBadge: BadgeDef | null
   pendingFreeze: FreezeEvent | null
+  pendingMastery: MasteryCandidate | null
   dismissBadge: () => void
   dismissFreeze: () => void
+  /** "Not yet" — records the prompt so the piece is never offered again. */
+  dismissMastery: () => void
+  /** "Mastered" — flips the piece and records the prompt. */
+  confirmMastery: () => void
 }
 
 /**
@@ -44,10 +51,14 @@ export interface Gamification {
 export function useGamification(): Gamification {
   const { profile } = useAuth()
   const setProfile = useAuthStore((s) => s.setProfile)
-  const { sessions } = usePracticeStore()
+  const { sessions, pieces } = usePracticeStore()
 
   const frozen = useMemo(() => profile?.streakFreezesUsed ?? [], [profile?.streakFreezesUsed])
   const seen = useMemo(() => profile?.badgesSeen ?? [], [profile?.badgesSeen])
+  const masteryPrompted = useMemo(
+    () => profile?.masteryPromptsSeen ?? [],
+    [profile?.masteryPromptsSeen]
+  )
   const dailyGoal = Math.round((profile?.weeklyGoalMinutes ?? 300) / 7)
 
   const { current: streak, longest: longestStreak } = useMemo(
@@ -63,6 +74,14 @@ export function useGamification(): Gamification {
     [sessions, frozen, progression.level]
   )
   const badges = useMemo(() => earnedBadges(badgeCtx), [badgeCtx])
+
+  // Derived, not queued: if the data still says the piece is ready, the
+  // prompt is still valid. Answering either way writes the piece id, which
+  // removes it from consideration for good.
+  const pendingMastery = useMemo(
+    () => findMasteryCandidate(pieces, sessions, masteryPrompted),
+    [pieces, sessions, masteryPrompted]
+  )
 
   const [pendingFreeze, setPendingFreeze] = useState<FreezeEvent | null>(null)
   const [badgeQueue, setBadgeQueue] = useState<BadgeDef[]>([])
@@ -134,6 +153,32 @@ export function useGamification(): Gamification {
       .catch(() => {})
   }
 
+  function recordMasteryPrompt(pieceId: string) {
+    if (!profile?.uid) return
+    markMasteryPrompted(profile.uid, [pieceId])
+      .then(() => {
+        const latest = useAuthStore.getState().profile
+        if (!latest) return
+        const prompted = latest.masteryPromptsSeen ?? []
+        if (prompted.includes(pieceId)) return
+        setProfile({ ...latest, masteryPromptsSeen: [...prompted, pieceId] })
+      })
+      .catch(() => {})
+  }
+
+  function dismissMastery() {
+    if (pendingMastery) recordMasteryPrompt(pendingMastery.piece.id)
+  }
+
+  function confirmMastery() {
+    if (!pendingMastery) return
+    const id = pendingMastery.piece.id
+    // completionPercentage is derived from status for a mastered piece, so
+    // only the status needs writing here.
+    updatePiece(id, { status: 'mastered' }).catch(() => {})
+    recordMasteryPrompt(id)
+  }
+
   return {
     streak,
     longestStreak,
@@ -144,7 +189,12 @@ export function useGamification(): Gamification {
     // A freeze always takes priority — it explains why the streak survived.
     pendingBadge: pendingFreeze ? null : (badgeQueue[0] ?? null),
     pendingFreeze,
+    // One moment at a time, and mastery yields to both — the streak rescue
+    // and the badge auto-dismiss, whereas this one waits for an answer.
+    pendingMastery: pendingFreeze || badgeQueue.length > 0 ? null : pendingMastery,
     dismissBadge,
     dismissFreeze: () => setPendingFreeze(null),
+    dismissMastery,
+    confirmMastery,
   }
 }

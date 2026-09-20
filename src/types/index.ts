@@ -55,6 +55,8 @@ export interface UserProfile {
   streakFreezesUsed?: string[]
   /** Badge ids whose unlock animation has already been shown. */
   badgesSeen?: string[]
+  /** Piece ids already offered as "ready to call mastered?" — offered once each. */
+  masteryPromptsSeen?: string[]
 }
 
 export interface PracticeSession {

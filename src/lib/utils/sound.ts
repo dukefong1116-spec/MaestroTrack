@@ -275,3 +275,65 @@ export function playFreezeChime(): void {
     }
   })
 }
+
+/**
+ * Mastery — the largest moment in the app, and the only one earned by the
+ * music rather than by turning up.
+ *
+ * A perfect authentic cadence (V7 - I) rather than the badge's rising
+ * arpeggio: the badge fanfare announces, this one *resolves*. For a
+ * musician that difference carries the whole meaning, and it makes the two
+ * unmistakable even heard from another room.
+ */
+export function playMasteryCadence(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  if (audio.state === 'suspended') audio.resume().catch(() => {})
+
+  const bus = audio.createGain()
+  bus.gain.value = 0.8
+  bus.connect(audio.destination)
+
+  const tonic = 261.63 // C4
+  const now = audio.currentTime
+
+  // V7 — G B D F, voiced low and left slightly unresolved.
+  const dominant = [-5, -1, 2, 5]
+  for (const steps of dominant) {
+    const gain = audio.createGain()
+    gain.connect(bus)
+    const osc = audio.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = semitone(tonic, steps)
+    osc.connect(gain)
+    osc.start(now)
+    osc.stop(now + 0.75)
+    envelope(gain, now, 0.11, 0.03, 0.7)
+  }
+
+  // I — the resolution, arriving a beat later and an octave wider.
+  const at = now + 0.42
+  for (const steps of [-12, 0, 4, 7, 12]) {
+    const gain = audio.createGain()
+    gain.connect(bus)
+    const osc = audio.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = semitone(tonic, steps)
+    osc.connect(gain)
+    osc.start(at)
+    osc.stop(at + 2.2)
+    envelope(gain, at, 0.13, 0.04, 2.1)
+  }
+
+  // A high shimmer on the tonic, so the chord rings rather than stops.
+  const shimmer = audio.createGain()
+  shimmer.connect(bus)
+  const bell = audio.createOscillator()
+  bell.type = 'sine'
+  bell.frequency.value = semitone(tonic, 24)
+  bell.connect(shimmer)
+  bell.start(at + 0.1)
+  bell.stop(at + 2.2)
+  envelope(shimmer, at + 0.1, 0.05, 0.05, 2.0)
+}

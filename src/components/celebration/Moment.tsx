@@ -9,7 +9,7 @@ interface MomentProps {
   children: ReactNode
   /** Scrim colour — freeze uses a cold tint, the rest use warm ink. */
   scrim?: string
-  /** Milliseconds before it closes itself. */
+  /** Milliseconds before it closes itself; 0 means it waits for an answer. */
   autoDismissMs?: number
   /** Hide the mute control (e.g. for a silent moment). */
   hideMute?: boolean
@@ -43,11 +43,13 @@ export default function Moment({
 
   useEffect(() => {
     if (!open) return
-    const timer = setTimeout(onDismiss, autoDismissMs)
+    // 0 = no auto-dismiss. A moment that asks a question must wait for the
+    // answer; setTimeout(onDismiss, 0) would close it on the next tick.
+    const timer = autoDismissMs > 0 ? setTimeout(onDismiss, autoDismissMs) : null
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onDismiss() }
     document.addEventListener('keydown', onKey)
     return () => {
-      clearTimeout(timer)
+      if (timer) clearTimeout(timer)
       document.removeEventListener('keydown', onKey)
     }
   }, [open, onDismiss, autoDismissMs])

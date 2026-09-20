@@ -12,6 +12,7 @@ import NudgeList from '@/components/common/NudgeList'
 import WeekStrip from '@/components/streak/WeekStrip'
 import BadgeMoment from '@/components/celebration/BadgeMoment'
 import FreezeMoment from '@/components/celebration/FreezeMoment'
+import MasteryMoment from '@/components/celebration/MasteryMoment'
 import { useGamification } from '@/hooks/useGamification'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
@@ -227,6 +228,12 @@ export default function StudentDashboard() {
         daysFrozen={game.pendingFreeze?.daysFrozen ?? 1}
         remaining={game.pendingFreeze?.remaining ?? 0}
         onDismiss={game.dismissFreeze}
+      />
+      <MasteryMoment
+        candidate={game.pendingMastery}
+        open={!!game.pendingMastery}
+        onConfirm={game.confirmMastery}
+        onDismiss={game.dismissMastery}
       />
       <BadgeMoment
         badge={game.pendingBadge ? {

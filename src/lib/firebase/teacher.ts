@@ -125,6 +125,15 @@ export async function recordStreakFreezes(uid: string, dates: string[]): Promise
   )
 }
 
+export async function markMasteryPrompted(uid: string, pieceIds: string[]): Promise<void> {
+  if (pieceIds.length === 0) return
+  await setDoc(
+    doc(db, USERS, uid),
+    { masteryPromptsSeen: arrayUnion(...pieceIds), updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
+}
+
 export async function markBadgesSeen(uid: string, badgeIds: string[]): Promise<void> {
   if (badgeIds.length === 0) return
   await setDoc(
