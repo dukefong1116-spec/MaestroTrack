@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase/config'
 import { getUserProfile } from '@/lib/firebase/auth'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
+import SoundSetting from '@/components/settings/SoundSetting'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -192,6 +193,8 @@ export default function SettingsPage() {
             </div>
           )}
         </Card>
+
+        <SoundSetting instrument={profile?.instrument as InstrumentType | undefined} />
 
         {/* Resync */}
         <Card className="p-6">

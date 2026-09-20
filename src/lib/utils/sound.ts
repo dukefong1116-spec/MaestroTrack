@@ -24,6 +24,12 @@ export function setSoundMuted(muted: boolean): void {
   } catch {
     /* private mode — the preference just won't persist */
   }
+  // Un-muting happens inside a click, which is the one moment a browser
+  // will let us open an audio context. Take it: someone who has just
+  // turned sound on should not have to click a second time before the
+  // next celebration is audible.
+  if (!muted) primeAudioContext()
+  else armAudioContext()
 }
 
 /**
@@ -83,6 +89,40 @@ export function primeAudioContext(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (audio?.state === 'suspended') audio.resume().catch(() => {})
+}
+
+/**
+ * Opens the audio context on the first user gesture anywhere in the app.
+ *
+ * Celebration sounds fire from an effect when their moment opens, not from
+ * a click — so on a cold load straight onto the dashboard, a badge or
+ * mastery moment would try to create an audio context with no user
+ * activation behind it, and every browser refuses. The session chime was
+ * always fine because it primes inside the Finish tap; these were not.
+ *
+ * Listens until a context is actually running, then detaches. Muted users
+ * get no context at all, and re-arm when they un-mute.
+ */
+let listening = false
+
+export function armAudioContext(): void {
+  if (listening || typeof document === 'undefined') return
+  listening = true
+
+  const onGesture = () => {
+    if (isSoundMuted()) return // stay armed; setSoundMuted primes on un-mute
+    primeAudioContext()
+    if (ctx && ctx.state === 'running') detach()
+  }
+
+  const detach = () => {
+    listening = false
+    document.removeEventListener('pointerdown', onGesture, true)
+    document.removeEventListener('keydown', onGesture, true)
+  }
+
+  document.addEventListener('pointerdown', onGesture, true)
+  document.addEventListener('keydown', onGesture, true)
 }
 
 /**

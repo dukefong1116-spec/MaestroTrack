@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
 import { useTeacherData } from '@/hooks/useTeacherData'
@@ -97,6 +99,10 @@ function AppRoutes() {
 }
 
 export default function App() {
+  // Celebration sounds fire from effects, not clicks, so the audio context
+  // has to be opened by the first gesture the app sees — whatever it is.
+  useEffect(() => { armAudioContext() }, [])
+
   return (
     <BrowserRouter>
       <AppRoutes />
