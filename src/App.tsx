@@ -7,6 +7,7 @@ import { useTeacherData } from '@/hooks/useTeacherData'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
+import PendingUploads from '@/components/common/PendingUploads'
 
 import LoginPage from '@/pages/auth/LoginPage'
 import SignupPage from '@/pages/auth/SignupPage'
@@ -30,7 +31,14 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth()
   useStudentData(profile?.role === 'student' ? profile?.uid : undefined)
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      {/* Global, so a take left over from a closed tab is picked up on any
+          page — including the session page itself. */}
+      <PendingUploads />
+    </>
+  )
 }
 
 function AppRoutes() {

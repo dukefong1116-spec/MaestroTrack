@@ -6,7 +6,9 @@ import { format } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
-import { uploadRecording } from '@/lib/firebase/recordings'
+import { pickRecorderFormat, recorderOptions, MIC_CONSTRAINTS } from '@/lib/audio/recorderFormat'
+import { putClip, assignSession } from '@/lib/storage/pendingClips'
+import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
@@ -16,7 +18,14 @@ import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import type { InstrumentType, PracticeSession, PracticeCategory } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
-type Clip = { url: string; blob: Blob; seconds: number; uploaded?: boolean }
+type Clip = {
+  /** Also the IndexedDB key, so the durable copy and this one stay paired. */
+  id: string
+  url: string
+  blob: Blob
+  seconds: number
+  ext: string
+}
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
@@ -56,16 +65,8 @@ export default function SessionPage() {
   const [reward, setReward] = useState<SessionReward | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  /** Set once the session row exists, so a retry can't double-save it. */
-  const [savedSessionId, setSavedSessionId] = useState<string | null>(null)
-  const [pendingReward, setPendingReward] = useState<SessionReward | null>(null)
   /** Finish is a two-beat flow now: capture the length, then ask how it went. */
   const [askingConfidence, setAskingConfidence] = useState(false)
-  // The session's own date/length, so a retry — possibly after midnight —
-  // tags recordings with the date they were actually made on, and the
-  // delayed chime still reflects the real session length.
-  const [savedDate, setSavedDate] = useState('')
-  const [savedMinutes, setSavedMinutes] = useState(0)
   /** Held so a save retry reuses the answer rather than asking twice. */
   const answeredRef = useRef<number | null>(null)
   // The length is measured once, when Finish is tapped, and held until it
@@ -170,7 +171,7 @@ export default function SessionPage() {
         tunerCtxRef.current = null
       }
 
-      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia({ audio: true }))
+      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS))
       streamRef.current = stream
 
       const Ctor =
@@ -233,16 +234,41 @@ export default function SessionPage() {
   const startRecording = useCallback(async () => {
     setMicError('')
     try {
-      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia({ audio: true }))
+      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS))
       streamRef.current = stream
       chunksRef.current = []
-      const rec = new MediaRecorder(stream)
+      // Explicit format and bitrate: the default was measured at 129 kbps,
+      // which is 29 MB for a half-hour take and the real reason finishing a
+      // session felt like it hung.
+      const fmt = pickRecorderFormat()
+      const rec = new MediaRecorder(stream, recorderOptions(fmt))
       rec.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data) }
       rec.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || 'audio/webm' })
         const startedAt = recordStartRef.current
         const seconds = startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : 0
-        setClipsBoth((prev) => [...prev, { url: URL.createObjectURL(blob), blob, seconds }])
+        const id = `clip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        const ext = fmt.ext
+
+        setClipsBoth((prev) => [...prev, { id, url: URL.createObjectURL(blob), blob, seconds, ext }])
+
+        // Straight to disk. Until the upload lands this is the only copy
+        // that survives the tab closing.
+        // Piece, notes and date are only settled when the session is
+        // saved, so they are filled in then. This write exists purely so
+        // the audio itself survives the tab closing.
+        const uid = profile?.uid ?? user?.uid
+        if (uid) {
+          void putClip({
+            id, blob, seconds, ext,
+            sessionId: null,
+            date: format(new Date(), 'yyyy-MM-dd'),
+            pieceName: 'Practice session',
+            userId: uid,
+            createdAt: Date.now(),
+          })
+        }
+
         recordStartRef.current = null
         setRecSeconds(0)
         const resolvers = stopResolversRef.current
@@ -256,7 +282,7 @@ export default function SessionPage() {
     } catch {
       setMicError('Microphone access is needed to record.')
     }
-  }, [])
+  }, [profile?.uid, user?.uid])
 
   /** Resolves only once `onstop` has actually run and the clip is in `clipsRef`. */
   const stopRecording = useCallback((): Promise<void> => {
@@ -391,7 +417,21 @@ export default function SessionPage() {
 
     // Piece totals are derived from the session log — nothing to increment.
 
-    const remaining = await uploadClips(uid, id, date)
+    // Hand the takes their session and let them go up in the background.
+    // This used to be awaited, which is why finishing a session with a
+    // recording felt broken: the row above was already written, but the
+    // page sat on "Saving…" until tens of megabytes had transferred.
+    const clipIds = clipsRef.current.map((c) => c.id)
+    if (clipIds.length) {
+      const pieceTitle = pieces.find((p) => p.id === pieceId)?.title ?? 'Practice session'
+      await assignSession(clipIds, id, {
+        date,
+        pieceName: pieceTitle,
+        notes: thoughts.trim() || undefined,
+        category,
+      })
+      void useUploadStore.getState().drain(uid)
+    }
 
     const earned = computeSessionReward({
       sessionsBefore,
@@ -401,79 +441,8 @@ export default function SessionPage() {
 
     setSaving(false)
     resetTimer()
-
-    // The session is saved either way. If takes failed to upload, hold the
-    // page open so the failure is visible and retryable — the blobs are still
-    // in memory, so this is recoverable until the tab closes.
-    if (remaining > 0) {
-      setSavedSessionId(id)
-      setSavedDate(date)
-      setSavedMinutes(minutes)
-      setPendingReward(earned)
-      setSaveError(
-        `Session saved, but ${remaining} recording${remaining > 1 ? 's' : ''} didn't upload. ` +
-        `${remaining > 1 ? 'They are' : 'It is'} still held in this tab — retry now, or continue and lose ${remaining > 1 ? 'them' : 'it'}.`
-      )
-      return
-    }
-
     playSessionChime(profile?.instrument as InstrumentType | undefined, minutes)
     setReward(earned)
-  }
-
-  /**
-   * Uploads every clip not yet stored, tagging each with its session.
-   * Returns how many are still outstanding.
-   */
-  async function uploadClips(uid: string, sessionId: string, date: string): Promise<number> {
-    // clipsRef, not the `clips` state closure — see its declaration for why.
-    const outstanding = clipsRef.current.filter((c) => !c.uploaded)
-    if (!outstanding.length) return 0
-
-    const pieceTitle = pieces.find((p) => p.id === pieceId)?.title ?? 'Practice session'
-    const results = await Promise.allSettled(
-      outstanding.map((clip, i) => {
-        // Safari's MediaRecorder emits audio/mp4, everyone else audio/webm —
-        // derive the extension from the blob so the two always agree.
-        const ext = clip.blob.type.includes('mp4') ? 'mp4' : 'webm'
-        const file = new File([clip.blob], `session-${Date.now()}-${i}.${ext}`, { type: clip.blob.type })
-        return uploadRecording(uid, file, {
-          pieceName: pieceTitle,
-          date,
-          notes: thoughts.trim() || undefined,
-          duration: clip.seconds,
-          sessionId,
-        })
-      })
-    )
-
-    // Mark the ones that landed so a retry only re-sends genuine failures.
-    const succeeded = new Set(
-      outstanding.filter((_, i) => results[i].status === 'fulfilled').map((c) => c.url)
-    )
-    if (succeeded.size) {
-      setClipsBoth((prev) => prev.map((c) => (succeeded.has(c.url) ? { ...c, uploaded: true } : c)))
-    }
-
-    return results.filter((r) => r.status === 'rejected').length
-  }
-
-  async function retryUploads() {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid || !savedSessionId) return
-    setSaving(true)
-    // Reuse the session's own date, not "now" — a retry can happen well
-    // after midnight, and the clip should still be dated to the session.
-    const remaining = await uploadClips(uid, savedSessionId, savedDate)
-    setSaving(false)
-
-    if (remaining > 0) {
-      setSaveError(`Still couldn't upload ${remaining} recording${remaining > 1 ? 's' : ''}. Check your connection.`)
-      return
-    }
-    setSaveError('')
-    playSessionChime(profile?.instrument as InstrumentType | undefined, savedMinutes)
-    setReward(pendingReward)
   }
 
   const activePieces = useMemo(() => pieces.filter((p) => p.status === 'active'), [pieces])
@@ -817,38 +786,6 @@ export default function SessionPage() {
         )}
 
         {/* finish — becomes a retry/continue pair if takes failed to upload */}
-        {savedSessionId ? (
-          <div className="grid grid-cols-2 gap-3">
-            <motion.button
-              onClick={retryUploads}
-              disabled={saving}
-              whileTap={{ scale: 0.96 }}
-              className="py-4 text-[15px] font-semibold disabled:opacity-60"
-              style={{
-                borderRadius: 'var(--clay-r-lg)',
-                background: 'var(--clay-accent)',
-                color: 'var(--clay-on-accent)',
-                boxShadow: 'var(--clay-accent-shadow)',
-              }}
-            >
-              {saving ? 'Retrying…' : 'Retry upload'}
-            </motion.button>
-            <motion.button
-              onClick={() => { resetTimer(); navigate('/student/practice') }}
-              disabled={saving}
-              whileTap={{ scale: 0.96 }}
-              className="py-4 text-[15px] font-semibold disabled:opacity-60"
-              style={{
-                borderRadius: 'var(--clay-r-lg)',
-                background: 'var(--clay-surface)',
-                color: 'var(--clay-dim)',
-                boxShadow: 'var(--clay-raised)',
-              }}
-            >
-              Continue
-            </motion.button>
-          </div>
-        ) : (
           <motion.button
             onClick={beginFinish}
             disabled={saving}
@@ -863,7 +800,6 @@ export default function SessionPage() {
           >
             {saving ? 'Saving…' : 'Finish Session →'}
           </motion.button>
-        )}
       </div>
 
       {/* How did that go? One question, three taps. A second question would
