@@ -55,6 +55,14 @@ interface UploadState {
   failed: string[]
   /** True once we know the project has no Storage bucket. */
   storageMissing: boolean
+  /**
+   * Why the last attempt failed, as the SDK's own error code. "2 takes
+   * didn't upload" with no reason is the same opacity as a spinner that
+   * never moves — the code is the difference between guessing and knowing.
+   */
+  lastError: string | null
+  /** The path and identity of the last failed attempt, for diagnosing rules. */
+  lastAttempt: { path: string; authUid: string | null } | null
   status: () => UploadStatus
   /** Re-check after enabling Storage, then drain. */
   recheck: (userId: string) => Promise<void>
@@ -69,6 +77,8 @@ export const useUploadStore = create<UploadState>((set, get) => ({
   uploading: false,
   failed: [],
   storageMissing: false,
+  lastError: null,
+  lastAttempt: null,
 
   status: () => {
     const { pending, uploading, failed, storageMissing } = get()
@@ -111,7 +121,7 @@ export const useUploadStore = create<UploadState>((set, get) => ({
       return
     }
 
-    set({ uploading: true, pending: queue, failed: [], storageMissing: false })
+    set({ uploading: true, pending: queue, failed: [], storageMissing: false, lastError: null })
 
     for (const clip of queue) {
       set({ currentId: clip.id, progress: null })
@@ -136,11 +146,17 @@ export const useUploadStore = create<UploadState>((set, get) => ({
         // Only now is it safe to forget: the Firestore row exists.
         await deleteClip(clip.id)
         set((s) => ({ pending: s.pending.filter((c) => c.id !== clip.id) }))
-      } catch {
+      } catch (err) {
         // Keep it on disk and try again next time rather than dropping it.
         // A set, not a list: React runs mount effects twice in development,
         // so the same clip could otherwise be recorded as failed twice.
-        set((s) => ({ failed: s.failed.includes(clip.id) ? s.failed : [...s.failed, clip.id] }))
+        const code = (err as { code?: string })?.code ?? 'unknown'
+        const authUid = (await import('@/lib/firebase/config')).auth.currentUser?.uid ?? null
+        set((s) => ({
+          failed: s.failed.includes(clip.id) ? s.failed : [...s.failed, clip.id],
+          lastError: code,
+          lastAttempt: { path: `recordings/${authUid}/…`, authUid },
+        }))
       }
     }
 

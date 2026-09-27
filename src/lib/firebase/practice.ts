@@ -12,6 +12,7 @@ import {
   Timestamp,
 } from 'firebase/firestore'
 import { db } from './config'
+import { cleanForFirestore } from './clean'
 import type { PracticeSession } from '@/types'
 
 const COL = 'practiceSessions'
@@ -20,11 +21,10 @@ export async function addPracticeSession(
   userId: string,
   data: Omit<PracticeSession, 'id' | 'userId' | 'createdAt'>
 ): Promise<string> {
-  const clean: Record<string, unknown> = { userId, createdAt: new Date().toISOString() }
-  for (const [k, v] of Object.entries(data)) {
-    if (v !== undefined && v !== '') clean[k] = v
-  }
-  const ref = await addDoc(collection(db, COL), clean)
+  const ref = await addDoc(
+    collection(db, COL),
+    cleanForFirestore({ ...data, userId, createdAt: new Date().toISOString() })
+  )
   return ref.id
 }
 

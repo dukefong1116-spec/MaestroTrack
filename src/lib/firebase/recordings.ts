@@ -9,7 +9,8 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
-import { db, storage } from './config'
+import { db, storage, auth } from './config'
+import { cleanForFirestore } from './clean'
 import type { Recording } from '@/types'
 
 const COL = 'recordings'
@@ -20,7 +21,19 @@ export async function uploadRecording(
   metadata: Omit<Recording, 'id' | 'userId' | 'audioUrl' | 'createdAt'>,
   onProgress?: (pct: number) => void
 ): Promise<string> {
-  const storageRef = ref(storage, `recordings/${userId}/${Date.now()}_${file.name}`)
+  // The path must be built from the *authenticated* uid, because that is
+  // what the security rules compare against (request.auth.uid). Callers
+  // pass a uid taken from the profile, which is rebuilt from a local cache
+  // when the Firestore doc is missing and can therefore drift. If the two
+  // ever disagree the upload is rejected as unauthorized, with nothing to
+  // indicate why.
+  const authUid = auth.currentUser?.uid
+  if (!authUid) throw Object.assign(new Error('Not signed in'), { code: 'storage/unauthenticated' })
+  if (authUid !== userId) {
+    console.warn('[recordings] profile uid', userId, 'differs from auth uid', authUid, '— using auth uid')
+  }
+  const path = `recordings/${authUid}/${Date.now()}_${file.name}`
+  const storageRef = ref(storage, path)
   const uploadTask = uploadBytesResumable(storageRef, file)
 
   await new Promise<void>((resolve, reject) => {
@@ -36,12 +49,16 @@ export async function uploadRecording(
   })
 
   const audioUrl = await getDownloadURL(storageRef)
-  const docRef = await addDoc(collection(db, COL), {
+  // Stripped, not spread: a take with no notes carries `notes: undefined`,
+  // which Firestore refuses with `invalid-argument`. That rejection came
+  // *after* the audio had already uploaded, so the file sat in the bucket
+  // with no row pointing at it and the app reported the take as failed.
+  const docRef = await addDoc(collection(db, COL), cleanForFirestore({
     ...metadata,
-    userId,
+    userId: authUid,
     audioUrl,
     createdAt: new Date().toISOString(),
-  })
+  }))
   return docRef.id
 }
 

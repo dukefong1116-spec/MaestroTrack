@@ -16,7 +16,7 @@ import Sticker from '@/components/stickers/Sticker'
 export default function PendingUploads() {
   const { profile, user } = useAuth()
   const uid = profile?.uid ?? user?.uid
-  const { pending, progress, drain, recheck, status } = useUploadStore()
+  const { pending, progress, drain, recheck, status, lastError, lastAttempt } = useUploadStore()
   const state = status()
 
   // Pick up anything owed from a previous visit.
@@ -56,8 +56,20 @@ export default function PendingUploads() {
   // look broken as a number — so neither gets a percentage.
   const measured = progress !== null && progress > 0
 
+  /** Plain English for the SDK's error codes, so a failure is actionable. */
+  const reason: Record<string, string> = {
+    'storage/unauthorized':
+      'Your Storage security rules are rejecting it. In the Firebase console, open Storage \u2192 Rules and make sure they allow a signed-in user to write to recordings/{their own uid}/.',
+    'storage/unauthenticated': 'You appear to be signed out. Sign in and try again.',
+    'storage/quota-exceeded': 'The Storage bucket is out of space.',
+    'storage/retry-limit-exceeded': 'The connection kept failing. It will retry later.',
+    'storage/canceled': 'The upload was cancelled.',
+  }
+
   const detail =
-    state === 'unavailable'
+    state === 'stalled' && lastError && reason[lastError]
+      ? reason[lastError]
+      : state === 'unavailable'
       ? 'Cloud Storage isn\u2019t enabled for this Firebase project, so there is nowhere to put them yet. They are safe on this device and will upload by themselves once it is switched on.'
       : state === 'uploading'
         ? 'Your session is already saved. You can keep using the app.'
@@ -116,6 +128,14 @@ export default function PendingUploads() {
         <p className="mt-1.5 text-[11px]" style={{ color: 'var(--clay-faint)' }}>
           {detail}
         </p>
+
+        {/* The exact target of the rejected write, so a rules problem can be
+            compared against the rule rather than guessed at. */}
+        {state === 'stalled' && lastError && lastAttempt && (
+          <p className="mt-1 break-all text-[10px]" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+            {lastError} · {lastAttempt.path}
+          </p>
+        )}
 
         {state !== 'uploading' && (
           <button
