@@ -15,6 +15,7 @@ import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
 import NudgeList from '@/components/common/NudgeList'
 import Sticker from '@/components/stickers/Sticker'
+import TakePlayer from '@/components/recordings/TakePlayer'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -123,20 +124,19 @@ function SessionDetailSheet({
           </p>
         ) : (
           <div className="mb-5 space-y-2.5">
-            {recordings.map((r) => (
-              <div key={r.id} className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
-                <div className="mb-2 flex items-center gap-2">
-                  <Sticker name="mic" size={16} tone="accent" />
-                  <span className="truncate text-[12.5px] font-semibold">{r.pieceName}</span>
-                  {r.duration != null && (
-                    <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
-                      {String(Math.floor(r.duration / 60)).padStart(2, '0')}:{String(r.duration % 60).padStart(2, '0')}
-                    </span>
-                  )}
-                </div>
-                <audio src={r.audioUrl} controls preload="none" className="w-full" style={{ height: 34 }} />
-              </div>
-            ))}
+            {/* Oldest first, so "Take 1" is the one recorded first. Every take
+                otherwise carried the same fallback name and they were
+                impossible to tell apart. */}
+            {[...recordings]
+              .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+              .map((r, i) => (
+                <TakePlayer
+                  key={r.id}
+                  src={r.audioUrl}
+                  label={`Take ${i + 1}`}
+                  storedDuration={r.duration}
+                />
+              ))}
           </div>
         )}
 
