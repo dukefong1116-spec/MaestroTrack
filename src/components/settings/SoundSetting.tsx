@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
 import Card from '@/components/ui/Card'
-import { isSoundMuted, setSoundMuted, playSessionChime } from '@/lib/utils/sound'
-import type { InstrumentType } from '@/types'
+import { isSoundMuted, setSoundMuted } from '@/lib/utils/sound'
+import { diagnoseAudio, type AudioDiagnosis } from '@/lib/audio/diagnose'
 
 /**
  * Sound preference.
@@ -15,16 +15,25 @@ import type { InstrumentType } from '@/types'
  * profile: wanting the app silent on a laptop in a shared room says
  * nothing about wanting it silent on your own phone.
  */
-export default function SoundSetting({ instrument }: { instrument?: InstrumentType }) {
+export default function SoundSetting() {
   const [muted, setMuted] = useState(isSoundMuted)
+  const [checking, setChecking] = useState(false)
+  const [result, setResult] = useState<AudioDiagnosis | null>(null)
 
   function toggle() {
     const next = !muted
     setMuted(next)
     setSoundMuted(next) // opens the audio context when un-muting — this is a gesture
-    // Play the real chime back, so "on" is something you hear rather than
-    // something you take on trust until your next session.
-    if (!next) playSessionChime(instrument, 20)
+  }
+
+  async function check() {
+    setChecking(true)
+    setResult(null)
+    try {
+      setResult(await diagnoseAudio())
+    } finally {
+      setChecking(false)
+    }
   }
 
   return (
@@ -72,6 +81,32 @@ export default function SoundSetting({ instrument }: { instrument?: InstrumentTy
           />
         </span>
       </button>
+
+      {/* Measures rather than assumes, on whatever browser is running it —
+          the previous two attempts at this bug were both verified in a
+          browser the app is not used in. Silent: the test tone reaches an
+          analyser, never the speakers. */}
+      <div className="mt-4 border-t pt-4" style={{ borderColor: 'var(--clay-bg-deep)' }}>
+        <button
+          onClick={check}
+          disabled={checking}
+          className="text-[12.5px] font-semibold disabled:opacity-50"
+          style={{ color: 'var(--clay-accent)' }}
+        >
+          {checking ? 'Checking…' : 'Check audio on this device'}
+        </button>
+
+        {result && (
+          <div className="mt-2.5 px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+            <p className="text-[12.5px] font-semibold" style={{ color: result.producesSound ? 'var(--clay-ink)' : 'var(--clay-danger)' }}>
+              {result.verdict}
+            </p>
+            <p className="mt-1.5 text-[10.5px] leading-relaxed" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+              context: {result.state} · rate: {result.sampleRate ?? '—'} · signal: {result.peak}
+            </p>
+          </div>
+        )}
+      </div>
     </Card>
   )
 }

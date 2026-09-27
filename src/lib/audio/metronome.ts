@@ -9,6 +9,8 @@
  * affects when we queue, never when a click actually sounds.
  */
 
+import { unlock, peek } from './engine'
+
 export interface MetronomeOptions {
   /** Fires just before each beat sounds, for visual sync. */
   onBeat?: (beatIndex: number, isAccent: boolean, atTime: number) => void
@@ -18,7 +20,6 @@ const LOOKAHEAD_MS = 25
 const SCHEDULE_AHEAD_S = 0.1
 
 export class Metronome {
-  private ctx: AudioContext | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
   private nextNoteTime = 0
   private beat = 0
@@ -35,27 +36,37 @@ export class Metronome {
   /**
    * Must be called from inside a user gesture (Safari only authorises
    * resume() synchronously within the gesture's call stack).
+   *
+   * This used to build its own AudioContext, unguarded — so at Safari's
+   * ceiling of roughly four contexts per page the constructor threw,
+   * straight out through toggle() and into the React click handler. The
+   * metronome then appeared dead with nothing logged and no way back.
+   * The engine owns the one context now, and never throws.
    */
   prime(): void {
-    if (!this.ctx) {
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      if (!Ctor) return
-      this.ctx = new Ctor()
-    }
-    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {})
+    unlock()
+  }
+
+  /**
+   * The context whatever its state, not only when running: resume() is
+   * asynchronous, so insisting on 'running' here would make the very first
+   * tap do nothing on any browser that starts its context suspended.
+   * Clicks scheduled during the resume sound as soon as it completes.
+   */
+  private get ctx(): AudioContext | null {
+    return peek()
   }
 
   start(): void {
     if (this.running) return
-    this.prime()
-    if (!this.ctx) return
+    // unlock() returns the context even mid-resume, so a first tap works.
+    const ctx = unlock()
+    if (!ctx) return
 
     this.running = true
     this.beat = 0
     // Small offset so the very first click isn't scheduled in the past.
-    this.nextNoteTime = this.ctx.currentTime + 0.06
+    this.nextNoteTime = ctx.currentTime + 0.06
     this.tick()
   }
 
@@ -77,10 +88,13 @@ export class Metronome {
     this.bpm = Math.min(240, Math.max(30, Math.round(bpm)))
   }
 
+  /**
+   * Stops scheduling. It deliberately does *not* close the context: that
+   * context is shared with the reward chime and the tuner now, and closing
+   * it on leaving the session page silenced the whole app.
+   */
   dispose(): void {
     this.stop()
-    this.ctx?.close().catch(() => {})
-    this.ctx = null
   }
 
   /** Scheduler loop: queue everything landing inside the lookahead window. */
@@ -88,9 +102,10 @@ export class Metronome {
     if (!this.running || !this.ctx) return
 
     while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_S) {
-      const isAccent = this.beat % this.beatsPerBar === 0
-      this.click(this.nextNoteTime, isAccent)
-      this.onBeat?.(this.beat % this.beatsPerBar, isAccent, this.nextNoteTime)
+      // Every click identical — no accented downbeat. The bar position is
+      // still reported so the dots can light up in sequence.
+      this.click(this.nextNoteTime)
+      this.onBeat?.(this.beat % this.beatsPerBar, false, this.nextNoteTime)
 
       this.nextNoteTime += 60 / this.bpm
       this.beat++
@@ -100,7 +115,7 @@ export class Metronome {
   }
 
   /** One click: a short pitched blip with a fast decay. */
-  private click(at: number, accent: boolean): void {
+  private click(at: number): void {
     const ctx = this.ctx
     if (!ctx) return
 
@@ -108,9 +123,9 @@ export class Metronome {
     const gain = ctx.createGain()
 
     osc.type = 'square'
-    osc.frequency.value = accent ? 1600 : 1050
+    osc.frequency.value = 1050
 
-    const peak = accent ? 0.32 : 0.19
+    const peak = 0.19
     gain.gain.setValueAtTime(0.0001, at)
     gain.gain.exponentialRampToValueAtTime(peak, at + 0.001)
     gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.055)

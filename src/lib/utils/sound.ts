@@ -1,3 +1,4 @@
+import { unlock, ready, installAudioUnlock } from '@/lib/audio/engine'
 import type { InstrumentType } from '@/types'
 
 /**
@@ -63,66 +64,38 @@ function noteCount(minutes: number): number {
 
 const semitone = (root: number, steps: number) => root * Math.pow(2, steps / 12)
 
-/** Lazily created so construction happens inside a user gesture. */
-let ctx: AudioContext | null = null
-
+/**
+ * Sound borrows the app's single context rather than owning one — see
+ * lib/audio/engine. Three independent contexts was over Safari's budget
+ * before the tuner even opened.
+ *
+ * `ready()` yields the context only when it is actually running. Notes
+ * scheduled on a suspended clock never sound and raise nothing, which is
+ * exactly how audio disappeared twice without a single error to follow.
+ */
 function getContext(): AudioContext | null {
-  if (ctx) return ctx
-  try {
-    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!Ctor) return null
-    ctx = new Ctor()
-    return ctx
-  } catch {
-    return null
-  }
+  return ready()
 }
 
 /**
- * Creates (and resumes) the audio context. Call this as the very first
- * line of a click/submit handler, before any `await` — Safari only honours
- * `resume()` as part of a user gesture when it runs synchronously in that
- * gesture's call stack. Calling it again later (e.g. once real session data
- * is ready) is a cheap no-op that just re-attempts resume().
+ * Open or resume audio. Call as the first line of a click handler, before
+ * any `await` — Safari only honours resume() synchronously inside the
+ * gesture's own call stack, unlike Chrome, which resumes long afterwards
+ * and thereby hides this whole class of bug during testing.
  */
 export function primeAudioContext(): void {
   if (isSoundMuted()) return
-  const audio = getContext()
-  if (audio?.state === 'suspended') audio.resume().catch(() => {})
+  unlock()
 }
 
 /**
- * Opens the audio context on the first user gesture anywhere in the app.
- *
- * Celebration sounds fire from an effect when their moment opens, not from
- * a click — so on a cold load straight onto the dashboard, a badge or
- * mastery moment would try to create an audio context with no user
- * activation behind it, and every browser refuses. The session chime was
- * always fine because it primes inside the Finish tap; these were not.
- *
- * Listens until a context is actually running, then detaches. Muted users
- * get no context at all, and re-arm when they un-mute.
+ * Installed once at app start. Every gesture re-opens audio rather than
+ * only the first: Safari suspends the context when the tab is
+ * backgrounded, and the previous arm-once-then-detach approach made the
+ * first suspension permanent.
  */
-let listening = false
-
 export function armAudioContext(): void {
-  if (listening || typeof document === 'undefined') return
-  listening = true
-
-  const onGesture = () => {
-    if (isSoundMuted()) return // stay armed; setSoundMuted primes on un-mute
-    primeAudioContext()
-    if (ctx && ctx.state === 'running') detach()
-  }
-
-  const detach = () => {
-    listening = false
-    document.removeEventListener('pointerdown', onGesture, true)
-    document.removeEventListener('keydown', onGesture, true)
-  }
-
-  document.addEventListener('pointerdown', onGesture, true)
-  document.addEventListener('keydown', onGesture, true)
+  installAudioUnlock()
 }
 
 /**
@@ -141,7 +114,6 @@ export function playSessionChime(instrument: InstrumentType | undefined, minutes
   if (!audio) return
 
   // Last-ditch attempt in case priming wasn't called — harmless if it was.
-  if (audio.state === 'suspended') audio.resume().catch(() => {})
 
   const root = ROOTS[instrument ?? 'piano'] ?? 261.63
   const notes = CHORD.slice(0, noteCount(minutes))
@@ -204,7 +176,6 @@ export function playBadgeFanfare(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
-  if (audio.state === 'suspended') audio.resume().catch(() => {})
 
   const bus = audio.createGain()
   bus.gain.value = 0.85
@@ -270,7 +241,6 @@ export function playFreezeChime(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
-  if (audio.state === 'suspended') audio.resume().catch(() => {})
 
   const bus = audio.createGain()
   bus.gain.value = 0.9
@@ -329,7 +299,6 @@ export function playMasteryCadence(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
-  if (audio.state === 'suspended') audio.resume().catch(() => {})
 
   const bus = audio.createGain()
   bus.gain.value = 0.8

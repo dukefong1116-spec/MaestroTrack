@@ -194,7 +194,7 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        <SoundSetting instrument={profile?.instrument as InstrumentType | undefined} />
+        <SoundSetting />
 
         {/* Resync */}
         <Card className="p-6">

@@ -11,6 +11,7 @@ import { putClip, assignSession } from '@/lib/storage/pendingClips'
 import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
+import { unlock } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
@@ -140,19 +141,21 @@ export default function SessionPage() {
   const [micError, setMicError] = useState('')
   const streamRef = useRef<MediaStream | null>(null)
   const tunerRafRef = useRef<number | null>(null)
-  // Every open of the tuner built a new AudioContext and never closed the old
-  // one. Browsers cap concurrently-open contexts (Chrome: 6) — a few
-  // tuner→metronome→tuner cycles in one session would silently break all
-  // audio, chime included, for the rest of that session.
-  const tunerCtxRef = useRef<AudioContext | null>(null)
+  // The tuner borrows the app's single context (lib/audio/engine) instead
+  // of building its own. It used to create one per open and close it on
+  // exit — which, now that the context is shared, would silence the
+  // metronome and the reward chime along with it. Only the analyser graph
+  // is torn down here; the context outlives this page.
+  const tunerNodesRef = useRef<{ src: MediaStreamAudioSourceNode; analyser: AnalyserNode } | null>(null)
 
   const stopTuner = useCallback(() => {
     if (tunerRafRef.current !== null) cancelAnimationFrame(tunerRafRef.current)
     tunerRafRef.current = null
     setReading(null)
-    if (tunerCtxRef.current) {
-      tunerCtxRef.current.close().catch(() => {})
-      tunerCtxRef.current = null
+    if (tunerNodesRef.current) {
+      try { tunerNodesRef.current.src.disconnect() } catch { /* already gone */ }
+      try { tunerNodesRef.current.analyser.disconnect() } catch { /* already gone */ }
+      tunerNodesRef.current = null
     }
   }, [])
 
@@ -165,30 +168,28 @@ export default function SessionPage() {
         setMetroOn(false)
         setBeat(-1)
       }
-      // Guard against a stray double-open leaking a context.
-      if (tunerCtxRef.current) {
-        tunerCtxRef.current.close().catch(() => {})
-        tunerCtxRef.current = null
-      }
+      // Guard against a stray double-open leaving two analysers attached.
+      stopTuner()
 
       const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS))
       streamRef.current = stream
 
-      const Ctor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-      const ctx = new Ctor()
-      tunerCtxRef.current = ctx
+      const ctx = unlock()
+      if (!ctx) {
+        setMicError('Audio is unavailable in this browser right now.')
+        return
+      }
       const src = ctx.createMediaStreamSource(stream)
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 4096
       src.connect(analyser)
+      tunerNodesRef.current = { src, analyser }
 
       const buf = new Float32Array(analyser.fftSize)
       const loop = () => {
         // A previous loop can still have one frame in flight when the tuner
-        // is closed and reopened; bail if this context is no longer current.
-        if (tunerCtxRef.current !== ctx) return
+        // is closed and reopened; bail if these nodes are no longer current.
+        if (tunerNodesRef.current?.analyser !== analyser) return
         analyser.getFloatTimeDomainData(buf)
         const f = detectPitch(buf, ctx.sampleRate)
         setReading(f ? toNote(f) : null)
@@ -198,7 +199,7 @@ export default function SessionPage() {
     } catch {
       setMicError('Microphone access is needed for the tuner.')
     }
-  }, [])
+  }, [stopTuner])
 
   /* ── recorder ──────────────────────────────────────────── */
   const [recording, setRecording] = useState(false)
@@ -299,7 +300,7 @@ export default function SessionPage() {
   useEffect(() => {
     return () => {
       if (tunerRafRef.current !== null) cancelAnimationFrame(tunerRafRef.current)
-      tunerCtxRef.current?.close().catch(() => {})
+      // The shared context is deliberately not closed here.
       streamRef.current?.getTracks().forEach((t) => t.stop())
       // clipsRef, not `clips` — this effect has no deps, so the state
       // variable here is forever the empty array from the first render
@@ -441,6 +442,12 @@ export default function SessionPage() {
 
     setSaving(false)
     resetTimer()
+    // The gesture that started all this is long gone by now — several
+    // awaits back — so the context must already be running. It is, because
+    // beginFinish() and this handler both unlocked it at tap time, and
+    // every gesture in the app re-unlocks. If it somehow is not, the chime
+    // no-ops rather than scheduling notes onto a stopped clock, which is
+    // how the sound used to vanish with nothing reported.
     playSessionChime(profile?.instrument as InstrumentType | undefined, minutes)
     setReward(earned)
   }
