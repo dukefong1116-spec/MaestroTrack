@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// MaestroTrack Storage rules.
+//
+// Only the owner reads or writes through the SDK. Note that this is not
+// what lets a teacher hear a submitted take: getDownloadURL() returns a
+// URL carrying its own access token, which works for anyone holding it and
+// bypasses these rules entirely. The real gate on a recording is the
+// Firestore rule covering the /recordings document that holds that URL.
+//
+// Keep that in mind before treating a download URL as private — it is a
+// capability, and forwarding one forwards the audio.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /recordings/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Size and type bounds so a bug or a bad actor cannot fill the
+      // bucket. An hour of practice at the 64kbps the app records is about
+      // 30MB, so 200MB is generous without being unbounded.
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 200 * 1024 * 1024
+                   && request.resource.contentType.matches('audio/.*');
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Nothing else in the bucket is reachable.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

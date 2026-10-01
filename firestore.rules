@@ -15,6 +15,17 @@ rules_version = '2';
 // the data of students who have joined their studio. Nobody writes
 // anything on anyone else's behalf, and a student can never mark their own
 // work approved.
+//
+// What this changes from the previous rules:
+//
+//  - Teachers could not read anything belonging to a student. /users
+//    allowed reading only your own profile, so listing your students was
+//    rejected outright, as was looking a teacher up by studio code. The
+//    teacher side could not have worked.
+//  - A student could update any field of their own assignment, status
+//    included, so they could mark their own work approved.
+//  - Collections not named were already denied by default; that is now
+//    explicit.
 
 service cloud.firestore {
   match /databases/{database}/documents {
