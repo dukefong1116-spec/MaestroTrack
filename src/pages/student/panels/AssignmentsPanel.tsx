@@ -3,7 +3,7 @@ import Sticker from '@/components/stickers/Sticker'
 import AssignmentCard from '@/components/assignments/AssignmentCard'
 import SubmitSheet from '@/components/assignments/SubmitSheet'
 import { useAssignments } from '@/hooks/useAssignments'
-import { awaitingStudent } from '@/lib/utils/assignments'
+import { awaitingStudent, normaliseStatus } from '@/lib/utils/assignments'
 import type { Assignment } from '@/types'
 
 /**
@@ -48,7 +48,8 @@ export default function AssignmentsPanel() {
                 progress={x.progress}
                 due={x.due}
                 index={i}
-                onAction={() => setSubmitting(x.assignment)}
+                onOpen={() => setSubmitting(x.assignment)}
+                actionLabel={normaliseStatus(x.assignment.status) === 'returned' ? 'Try again' : 'Hand in'}
               />
             ))}
           </div>
@@ -63,7 +64,8 @@ export default function AssignmentsPanel() {
           <div className="space-y-2.5">
             {waiting.map((x, i) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} due={x.due} index={i} />
+                              progress={x.progress} due={x.due} index={i}
+                              onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>
         </section>
@@ -77,7 +79,8 @@ export default function AssignmentsPanel() {
           <div className="space-y-2.5">
             {done.slice(0, 20).map((x, i) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} due={x.due} index={i} />
+                              progress={x.progress} due={x.due} index={i}
+                              onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>
         </section>

@@ -200,6 +200,8 @@ export interface Assignment {
   updatedAt: string
   /** Set when the work is tied to a specific piece, enabling auto-progress. */
   pieceId?: string
+  /** Teacher wants to hear it, not just be told it is done. */
+  requiresRecording?: boolean
   submissions?: Submission[]
   feedback?: TeacherFeedback[]
 }

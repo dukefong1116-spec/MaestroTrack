@@ -24,13 +24,15 @@ const DUE_TONE: Record<Dueness, { bg: string; fg: string } | null> = {
  * situations and need to look different.
  */
 export default function AssignmentCard({
-  assignment, progress, due, onAction, index = 0,
+  assignment, progress, due, onOpen, actionLabel, index = 0,
 }: {
   assignment: Assignment
   progress: AssignmentProgress
   due: Dueness
-  /** Opens the submit sheet. Omitted when nothing is owed. */
-  onAction?: () => void
+  /** The whole card opens the assignment — the brief, the history, the form. */
+  onOpen?: () => void
+  /** Shown as a button when the student owes work. */
+  actionLabel?: string
   index?: number
 }) {
   const state = normaliseStatus(assignment.status)
@@ -44,7 +46,21 @@ export default function AssignmentCard({
     : null
 
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      // Handlers live here rather than on Card, which takes no DOM props —
+      // and Card is existing shared furniture, not something to widen for
+      // one caller.
+      onClick={onOpen}
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onKeyDown={onOpen ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() }
+      } : undefined}
+      className={onOpen ? 'cursor-pointer outline-none transition-transform active:scale-[0.99]' : undefined}
+    >
       <Card className="p-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -64,6 +80,12 @@ export default function AssignmentCard({
                   {badge.text}
                 </span>
               )}
+              {assignment.requiresRecording && (
+                <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                      style={{ background: 'var(--clay-bg-deep)', color: 'var(--clay-dim)' }}>
+                  <Sticker name="mic" size={10} tone="ink" /> recording
+                </span>
+              )}
               {tone && assignment.dueDate && (
                 <span className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
                       style={{ background: tone.bg, color: tone.fg }}>
@@ -73,14 +95,13 @@ export default function AssignmentCard({
             </div>
           </div>
 
-          {onAction && (
-            <button
-              onClick={onAction}
-              className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-transform active:scale-95"
+          {actionLabel && (
+            <span
+              className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold"
               style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
             >
-              {state === 'returned' ? 'Try again' : 'Hand in'}
-            </button>
+              {actionLabel}
+            </span>
           )}
         </div>
 

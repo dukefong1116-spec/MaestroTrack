@@ -25,6 +25,7 @@ export async function createAssignment(
     dueDate?: string
     category?: PracticeCategory
     targetMinutes?: number
+    requiresRecording?: boolean
   }
 ): Promise<string> {
   const now = new Date().toISOString()

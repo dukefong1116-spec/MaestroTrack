@@ -37,6 +37,7 @@ export default function StudentDetailPage() {
   const [assignTitle, setAssignTitle] = useState('')
   const [assignDesc, setAssignDesc] = useState('')
   const [assignDue, setAssignDue] = useState('')
+  const [assignNeedsRecording, setAssignNeedsRecording] = useState(false)
   const [assigning, setAssigning] = useState(false)
 
   const student = students.find((s) => s.uid === studentId)
@@ -69,10 +70,12 @@ export default function StudentDetailPage() {
         title: assignTitle.trim(),
         description: assignDesc.trim() || undefined,
         dueDate: assignDue || undefined,
+        requiresRecording: assignNeedsRecording || undefined,
       })
       setAssignTitle('')
       setAssignDesc('')
       setAssignDue('')
+      setAssignNeedsRecording(false)
     } finally {
       setAssigning(false)
     }
@@ -152,6 +155,38 @@ export default function StudentDetailPage() {
               onChange={(e) => setAssignDesc(e.target.value)}
               rows={2}
             />
+            {/* Off by default: requiring audio makes scales, sight-reading
+                and theory awkward to set, so it is something you opt into
+                when you actually want to hear the result. */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={assignNeedsRecording}
+              onClick={() => setAssignNeedsRecording((v) => !v)}
+              className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left"
+              style={{ background: 'var(--clay-bg)' }}
+            >
+              <span
+                className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
+                style={{ background: assignNeedsRecording ? 'var(--clay-accent)' : 'var(--clay-bg-deep)' }}
+              >
+                <span
+                  className="absolute top-0.5 h-4 w-4 rounded-full transition-all"
+                  style={{ left: assignNeedsRecording ? 20 : 2, background: '#fff' }}
+                />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                  Require a recording
+                </span>
+                <span className="block text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
+                  {assignNeedsRecording
+                    ? 'They must attach a take before they can hand this in'
+                    : 'They can hand it in with just a note'}
+                </span>
+              </span>
+            </button>
+
             <div className="flex items-center gap-3">
               <Input
                 type="date"
