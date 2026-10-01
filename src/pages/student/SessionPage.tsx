@@ -401,13 +401,23 @@ export default function SessionPage() {
     }
   }
 
+  /** Set for the whole of a save attempt, so a second tap cannot start one. */
+  const savingRef = useRef(false)
+
   async function finish(confidenceRating: number) {
+    // A ref, not the `saving` state: state updates are asynchronous and the
+    // exit animation keeps the confidence buttons in the DOM and clickable
+    // for a moment after they are dismissed, so two quick taps would both
+    // get past a state check and write two sessions.
+    if (savingRef.current) return
+    savingRef.current = true
+
     answeredRef.current = confidenceRating
     primeAudioContext() // this tap is a gesture too — Safari needs it here
     setAskingConfidence(false)
 
     const uid = profile?.uid ?? user?.uid
-    if (!uid) return
+    if (!uid) { savingRef.current = false; return }
 
     metroRef.current?.stop()
     setMetroOn(false)
@@ -439,6 +449,7 @@ export default function SessionPage() {
     } catch {
       setSaveError('Could not save the session. Check your connection and try again.')
       setSaving(false)
+      savingRef.current = false   // a failed attempt may be retried
       return
     }
 
@@ -908,6 +919,7 @@ export default function SessionPage() {
                   <motion.button
                     key={c.value}
                     onClick={() => void finish(c.value)}
+                    disabled={saving}
                     whileTap={{ scale: 0.97 }}
                     className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left"
                     style={{
@@ -933,6 +945,7 @@ export default function SessionPage() {
               <div className="mt-4 flex items-center justify-center gap-5">
                 <button
                   onClick={() => void finish(7)}
+                  disabled={saving}
                   className="text-[13px] font-semibold"
                   style={{ color: 'var(--clay-faint)' }}
                 >
@@ -941,6 +954,7 @@ export default function SessionPage() {
                 <span style={{ color: 'var(--clay-faint)' }}>·</span>
                 <button
                   onClick={cancelFinish}
+                  disabled={saving}
                   className="text-[13px] font-semibold"
                   style={{ color: 'var(--clay-faint)' }}
                 >

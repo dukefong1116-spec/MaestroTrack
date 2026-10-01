@@ -41,7 +41,19 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   setPerformances: (performances) => set({ performances }),
   setRecordings: (recordings) => set({ recordings }),
   setTeacherNotes: (notes) => set({ teacherNotes: notes }),
-  addSession: (session) => set((s) => ({ sessions: [session, ...s.sessions] })),
+  /**
+   * Optimistic add, ignored when the session is already present.
+   *
+   * addPracticeSession resolves only once Firestore has acknowledged the
+   * write, and the live subscription has usually delivered the document
+   * through setSessions before that promise settles. Prepending blindly
+   * then showed every freshly logged session twice, and nothing removed
+   * the copy until some unrelated change triggered a fresh snapshot.
+   */
+  addSession: (session) =>
+    set((s) => (s.sessions.some((x) => x.id === session.id)
+      ? s
+      : { sessions: [session, ...s.sessions] })),
   addPiece: (piece) => set((s) => ({ pieces: [piece, ...s.pieces] })),
   addPerformance: (performance) => set((s) => ({ performances: [performance, ...s.performances] })),
   /* Timer
