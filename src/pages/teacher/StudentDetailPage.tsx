@@ -19,13 +19,18 @@ import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
+import Select from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import StatCard from '@/components/common/StatCard'
-import type { PracticeSession, TeacherNote, Assignment, InstrumentType, Recording } from '@/types'
+import type { PracticeSession, TeacherNote, Assignment, InstrumentType, Recording, PracticeCategory } from '@/types'
+
+const CATEGORY_OPTIONS: PracticeCategory[] = [
+  'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
+]
 
 const NO_SESSIONS: PracticeSession[] = []
 
@@ -43,6 +48,8 @@ export default function StudentDetailPage() {
   const [assignDue, setAssignDue] = useState('')
   const [assignNeedsRecording, setAssignNeedsRecording] = useState(false)
   const [assignDailyMinutes, setAssignDailyMinutes] = useState('')
+  const [assignKind, setAssignKind] = useState<'task' | 'daily'>('task')
+  const [assignCategory, setAssignCategory] = useState('')
   // The form is a thing you occasionally do, not a thing you always look
   // at. Open by default it pushed the actual student data below the fold
   // every time you came here just to see how someone is getting on.
@@ -88,14 +95,22 @@ export default function StudentDetailPage() {
         title: assignTitle.trim(),
         description: assignDesc.trim() || undefined,
         dueDate: assignDue || undefined,
-        requiresRecording: assignNeedsRecording || undefined,
-        dailyTargetMinutes: Number(assignDailyMinutes) > 0 ? Number(assignDailyMinutes) : undefined,
+        type: assignKind,
+        // Each kind carries only its own fields, so a task cannot acquire a
+        // stray daily target and a daily one cannot demand a recording.
+        requiresRecording: assignKind === 'task' && assignNeedsRecording ? true : undefined,
+        dailyTargetMinutes: assignKind === 'daily' && Number(assignDailyMinutes) > 0
+          ? Number(assignDailyMinutes) : undefined,
+        category: assignKind === 'daily' && assignCategory
+          ? (assignCategory as PracticeCategory) : undefined,
       })
       setAssignTitle('')
       setAssignDesc('')
       setAssignDue('')
       setAssignNeedsRecording(false)
       setAssignDailyMinutes('')
+      setAssignCategory('')
+      setAssignKind('task')
       setComposing(false)
     } finally {
       setAssigning(false)
@@ -179,8 +194,38 @@ export default function StudentDetailPage() {
         {composing && (
         <Card className="p-5 mb-4">
           <div className="space-y-3">
+
+            {/* Two genuinely different things. A one-off task is handed in
+                and reviewed; daily practice measures itself off the log and
+                needs no review at all, so they ask for different fields. */}
+            <div className="flex gap-2">
+              {([
+                { id: 'task', label: 'Task', hint: 'handed in once' },
+                { id: 'daily', label: 'Daily practice', hint: 'minutes every day' },
+              ] as const).map((k) => {
+                const on = assignKind === k.id
+                return (
+                  <button
+                    key={k.id}
+                    onClick={() => setAssignKind(k.id)}
+                    className="flex-1 px-3 py-2.5 text-left transition-colors"
+                    style={{
+                      borderRadius: 'var(--clay-r-sm)',
+                      background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
+                      color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
+                    }}
+                  >
+                    <span className="block text-[13px] font-semibold">{k.label}</span>
+                    <span className="block text-[11px] opacity-80">{k.hint}</span>
+                  </button>
+                )
+              })}
+            </div>
+
             <Input
-              placeholder="Assignment title (e.g. Practice Hanon No. 1)"
+              placeholder={assignKind === 'daily'
+                ? 'Title (e.g. Daily scales)'
+                : 'Assignment title (e.g. Practice Hanon No. 1)'}
               value={assignTitle}
               onChange={(e) => setAssignTitle(e.target.value)}
             />
@@ -190,29 +235,48 @@ export default function StudentDetailPage() {
               onChange={(e) => setAssignDesc(e.target.value)}
               rows={2}
             />
-            {/* "Thirty minutes a day until our next lesson" — the app reads
-                this off the practice log, so the student does not report it
-                and you do not have to take their word. Needs a due date to
-                measure against, hence the hint. */}
-            <div className="flex items-center gap-2.5">
-              <Input
-                type="number"
-                min={1}
-                placeholder="Minutes per day (optional)"
-                value={assignDailyMinutes}
-                onChange={(e) => setAssignDailyMinutes(e.target.value)}
-                className="max-w-[220px]"
-              />
-              {Number(assignDailyMinutes) > 0 && !assignDue && (
-                <span className="text-[11.5px]" style={{ color: 'var(--clay-danger)' }}>
-                  Needs a due date
-                </span>
-              )}
-            </div>
+            {assignKind === 'daily' && (
+              <>
+                {/* The app reads this off the practice log, so the student
+                    reports nothing and you take nobody's word. A due date is
+                    required because it is the window being measured. */}
+                <div className="flex items-center gap-2.5">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="Minutes per day"
+                    value={assignDailyMinutes}
+                    onChange={(e) => setAssignDailyMinutes(e.target.value)}
+                    className="max-w-[180px]"
+                  />
+                  {!assignDue && (
+                    <span className="text-[11.5px]" style={{ color: 'var(--clay-danger)' }}>
+                      Set an end date below
+                    </span>
+                  )}
+                </div>
 
-            {/* Off by default: requiring audio makes scales, sight-reading
-                and theory awkward to set, so it is something you opt into
-                when you actually want to hear the result. */}
+                {/* Narrowing to one category is optional, and safe only
+                    because the student's session is pre-filled with it when
+                    they start from the assignment, and they are asked before
+                    saving if it still does not match. Without both of those
+                    this would silently fail to count. */}
+                <Select
+                  value={assignCategory}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignCategory(e.target.value)}
+                  options={[
+                    { value: '', label: 'Any kind of practice' },
+                    ...CATEGORY_OPTIONS.map((c) => ({ value: c, label: `Only ${c}` })),
+                  ]}
+                />
+              </>
+            )}
+
+            {/* Task only: a daily-practice assignment measures itself and is
+                not handed in, so there is nothing for a recording to attach
+                to. Off by default, since requiring audio makes scales,
+                sight-reading and theory awkward to set. */}
+            {assignKind === 'task' && (
             <button
               type="button"
               role="switch"
@@ -241,6 +305,7 @@ export default function StudentDetailPage() {
                 </span>
               </span>
             </button>
+            )}
 
             <div className="flex items-center gap-3">
               <Input

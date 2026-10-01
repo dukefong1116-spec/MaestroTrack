@@ -14,6 +14,7 @@ import { computeSessionReward, type SessionReward } from '@/lib/utils/gamificati
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
 import NudgeList from '@/components/common/NudgeList'
+import DailyToday from '@/components/assignments/DailyToday'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
 import Modal from '@/components/ui/Modal'
@@ -254,6 +255,12 @@ export default function PracticeLogPage() {
             this is the page you open when you intend to practise. */}
         <div className="mb-4">
           <NudgeList limit={1} />
+        </div>
+
+        {/* What a teacher is expecting today, above the button you press
+            to do it. Renders nothing when nothing is set. */}
+        <div className="mb-4">
+          <DailyToday />
         </div>
 
         {/* session in progress */}

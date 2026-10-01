@@ -208,6 +208,12 @@ export interface Assignment {
    * targetMinutes, which is a single total to reach by the deadline.
    */
   dailyTargetMinutes?: number
+  /**
+   * Which kind of assignment this is. Absent on everything created before
+   * the distinction existed, so it is inferred rather than required — see
+   * assignmentType in lib/utils/assignments.
+   */
+  type?: 'task' | 'daily'
   submissions?: Submission[]
   feedback?: TeacherFeedback[]
 }

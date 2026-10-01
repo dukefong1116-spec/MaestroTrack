@@ -27,6 +27,7 @@ export async function createAssignment(
     targetMinutes?: number
     requiresRecording?: boolean
     dailyTargetMinutes?: number
+    type?: 'task' | 'daily'
   }
 ): Promise<string> {
   const now = new Date().toISOString()

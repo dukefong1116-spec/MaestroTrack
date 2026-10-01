@@ -267,3 +267,88 @@ export function deriveDailyProgress(
 export function hasTarget(a: Assignment): boolean {
   return (a.dailyTargetMinutes ?? 0) > 0 || (a.targetMinutes ?? 0) > 0
 }
+
+/* ── kinds of assignment ──────────────────────────────────────────── */
+
+export type AssignmentType = 'task' | 'daily'
+
+/**
+ * Which kind of assignment this is.
+ *
+ * Inferred rather than required, because every assignment created before
+ * the two kinds were distinguished has no type field — and an unset field
+ * read as 'task' would make existing daily-minutes assignments silently
+ * stop measuring. Carrying a daily target is what makes it daily,
+ * whichever came first.
+ */
+export function assignmentType(a: Assignment): AssignmentType {
+  if (a.type === 'daily' || a.type === 'task') return a.type
+  return (a.dailyTargetMinutes ?? 0) > 0 ? 'daily' : 'task'
+}
+
+export function isDaily(a: Assignment): boolean {
+  return assignmentType(a) === 'daily'
+}
+
+/**
+ * Does a session count toward this assignment?
+ *
+ * The same rule deriveDailyProgress applies, pulled out so the session
+ * page can warn *before* saving that a session is about to not count —
+ * rather than the student discovering it afterwards from a square that
+ * stayed empty, with nothing to explain why.
+ */
+export function sessionCounts(
+  a: Assignment,
+  session: { category?: string; pieceName?: string }
+): boolean {
+  if (a.pieceId) return session.pieceName === a.pieceId
+  if (a.category) return session.category === a.category
+  return true
+}
+
+/** Minutes already logged today toward an assignment. */
+export function minutesToday(
+  a: Assignment,
+  sessions: PracticeSession[],
+  now: Date = new Date()
+): number {
+  const today = format(now, 'yyyy-MM-dd')
+  return sessions
+    .filter((s) => s.date.substring(0, 10) === today && sessionCounts(a, s))
+    .reduce((sum, s) => sum + s.durationMinutes, 0)
+}
+
+export interface TodayStanding {
+  done: number
+  target: number
+  /** Includes a session in progress, so the bar moves while you play. */
+  withLive: number
+  remaining: number
+  met: boolean
+}
+
+/**
+ * Where today stands, optionally counting a session that is still running.
+ *
+ * Minutes are not written until a session is saved, so without the live
+ * figure the bar sits frozen for the entire time someone is practising —
+ * which is exactly when they are looking at it.
+ */
+export function todayStanding(
+  a: Assignment,
+  sessions: PracticeSession[],
+  liveMinutes = 0,
+  now: Date = new Date()
+): TodayStanding {
+  const target = a.dailyTargetMinutes ?? 0
+  const done = minutesToday(a, sessions, now)
+  const withLive = done + Math.max(0, liveMinutes)
+  return {
+    done,
+    target,
+    withLive,
+    remaining: Math.max(0, target - withLive),
+    met: target > 0 && withLive >= target,
+  }
+}

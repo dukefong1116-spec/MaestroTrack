@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   normaliseStatus, isOpen, needsReview, awaitingStudent,
   deriveProgress, dueness, dueLabel, sortForStudent, sortForReview, latestSubmission,
-  deriveDailyProgress,
+  deriveDailyProgress, assignmentType, isDaily, sessionCounts, todayStanding,
 } from '../assignments'
 import type { Assignment, PracticeSession } from '@/types'
 
@@ -275,5 +275,74 @@ describe('deriveDailyProgress — "N minutes a day"', () => {
     )
     expect(p.days.map((d) => d.date))
       .toEqual(['2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10'])
+  })
+})
+
+describe('assignmentType — inferred, so old documents keep measuring', () => {
+  it('reads an explicit type', () => {
+    expect(assignmentType(a({ type: 'daily' }))).toBe('daily')
+    expect(assignmentType(a({ type: 'task' }))).toBe('task')
+  })
+
+  it('infers daily from a daily target when no type was stored', () => {
+    // Everything created before the two kinds were distinguished has no
+    // type. Defaulting to 'task' would make these silently stop measuring.
+    expect(assignmentType(a({ dailyTargetMinutes: 30 }))).toBe('daily')
+    expect(isDaily(a({ dailyTargetMinutes: 30 }))).toBe(true)
+  })
+
+  it('treats everything else as a task', () => {
+    expect(assignmentType(a())).toBe('task')
+    expect(assignmentType(a({ targetMinutes: 200 }))).toBe('task')
+  })
+})
+
+describe('sessionCounts — the warning the student gets before saving', () => {
+  it('counts anything when the assignment is unscoped', () => {
+    expect(sessionCounts(a(), { category: 'Technique' })).toBe(true)
+  })
+
+  it('counts only the named category', () => {
+    const scoped = a({ category: 'Scales' })
+    expect(sessionCounts(scoped, { category: 'Scales' })).toBe(true)
+    expect(sessionCounts(scoped, { category: 'Technique' })).toBe(false)
+  })
+
+  it('a named piece wins over a category', () => {
+    const scoped = a({ category: 'Scales', pieceId: 'p1' })
+    expect(sessionCounts(scoped, { category: 'Technique', pieceName: 'p1' })).toBe(true)
+    expect(sessionCounts(scoped, { category: 'Scales', pieceName: 'p2' })).toBe(false)
+  })
+})
+
+describe('todayStanding', () => {
+  const now = new Date('2026-09-10T12:00:00')
+  const daily = a({ dailyTargetMinutes: 30, createdAt: '2026-09-08T00:00:00.000Z', dueDate: '2026-09-12' })
+
+  it('counts only today', () => {
+    const s = [sess('2026-09-09', 30), sess('2026-09-10', 12)]
+    expect(todayStanding(daily, s, 0, now).done).toBe(12)
+  })
+
+  it('includes a session still running, so the bar moves while you play', () => {
+    const t = todayStanding(daily, [sess('2026-09-10', 12)], 9, now)
+    expect(t.withLive).toBe(21)
+    expect(t.remaining).toBe(9)
+    expect(t.met).toBe(false)
+  })
+
+  it('crosses the target mid-session', () => {
+    expect(todayStanding(daily, [sess('2026-09-10', 12)], 20, now).met).toBe(true)
+  })
+
+  it('never reports negative remaining', () => {
+    expect(todayStanding(daily, [sess('2026-09-10', 99)], 0, now).remaining).toBe(0)
+  })
+
+  it('ignores practice that does not match a scoped assignment', () => {
+    const scoped = a({ dailyTargetMinutes: 30, category: 'Scales',
+                       createdAt: '2026-09-08T00:00:00.000Z', dueDate: '2026-09-12' })
+    const s = [sess('2026-09-10', 40, { category: 'Technique' })]
+    expect(todayStanding(scoped, s, 0, now).done).toBe(0)
   })
 })

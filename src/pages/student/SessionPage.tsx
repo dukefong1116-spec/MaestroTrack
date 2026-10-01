@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus } from 'lucide-react'
 import { format } from 'date-fns'
@@ -16,6 +16,9 @@ import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import DailyToday from '@/components/assignments/DailyToday'
+import { useAssignments } from '@/hooks/useAssignments'
+import { isDaily, awaitingStudent, sessionCounts } from '@/lib/utils/assignments'
 import type { InstrumentType, PracticeSession, PracticeCategory } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
@@ -62,7 +65,16 @@ export default function SessionPage() {
   const [tool, setTool] = useState<Tool>(null)
   const [thoughts, setThoughts] = useState('')
   const [pieceId, setPieceId] = useState('')
-  const [category, setCategory] = useState<PracticeCategory>('Repertoire')
+  // Started from a scoped daily assignment, the category comes with it —
+  // the surest way to stop a session quietly not counting is for it never
+  // to have the wrong category in the first place.
+  const [params] = useSearchParams()
+  const fromAssignment = params.get('category')
+  const [category, setCategory] = useState<PracticeCategory>(
+    CATEGORIES.includes(fromAssignment as PracticeCategory)
+      ? (fromAssignment as PracticeCategory)
+      : 'Repertoire'
+  )
   const [reward, setReward] = useState<SessionReward | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -327,6 +339,24 @@ export default function SessionPage() {
     setTool(target)
     if (target === 'tuner') void startTuner()
   }
+
+  /**
+   * Scoped daily assignments this session is about to not count toward.
+   *
+   * A session logged under the wrong category simply never appears in the
+   * assignment's squares, with nothing anywhere to explain the gap — the
+   * student concludes the feature is broken, and the teacher concludes
+   * they did not practise. Catching it at the one moment the category is
+   * still editable turns a silent failure into a question.
+   */
+  const { open: openAssignments } = useAssignments()
+  const missed = useMemo(
+    () => openAssignments
+      .filter((x) => isDaily(x.assignment) && awaitingStudent(x.assignment) && x.assignment.category)
+      .filter((x) => !sessionCounts(x.assignment, { category, pieceName: pieceId || undefined }))
+      .map((x) => x.assignment),
+    [openAssignments, category, pieceId]
+  )
 
   /* ── finish ────────────────────────────────────────────── */
 
@@ -767,6 +797,13 @@ export default function SessionPage() {
           )}
         </AnimatePresence>
 
+        {/* Today's assignment target, counting the session in progress —
+            without the live figure it would sit frozen for exactly as long
+            as someone is practising and looking at it. */}
+        <div className="mb-5">
+          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} compact />
+        </div>
+
         {/* category */}
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {CATEGORIES.map((c) => (
@@ -841,6 +878,30 @@ export default function SessionPage() {
               <p className="mt-1 text-center text-[13px]" style={{ color: 'var(--clay-dim)' }}>
                 {mm}:{ss} of practice{pieceId ? ` · ${activePieces.find((p) => p.id === pieceId)?.title ?? ''}` : ''}
               </p>
+
+              {/* Asked rather than assumed. Changing the category is a tap;
+                  finding out a week later that nothing counted is not. */}
+              {missed.map((a) => (
+                <div
+                  key={a.id}
+                  className="mt-4 px-3.5 py-3"
+                  style={{ background: '#FFF1D6', borderRadius: 'var(--clay-r-sm)' }}
+                >
+                  <p className="text-[12.5px] font-semibold" style={{ color: '#B37A18' }}>
+                    This won't count toward "{a.title}"
+                  </p>
+                  <p className="mt-0.5 text-[12px]" style={{ color: 'var(--clay-ink)' }}>
+                    That one asks for {a.category}; you've logged this as {category}.
+                  </p>
+                  <button
+                    onClick={() => setCategory(a.category as PracticeCategory)}
+                    className="mt-2 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+                    style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
+                  >
+                    It was {a.category}
+                  </button>
+                </div>
+              ))}
 
               <div className="mt-5 space-y-2.5">
                 {CONFIDENCE_CHOICES.map((c) => (
