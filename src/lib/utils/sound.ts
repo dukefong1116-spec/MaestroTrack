@@ -346,3 +346,62 @@ export function playMasteryCadence(): void {
   bell.stop(at + 2.2)
   envelope(shimmer, at + 0.1, 0.05, 0.05, 2.0)
 }
+
+/**
+ * Handing an assignment in.
+ *
+ * Deliberately unresolved: a rising figure that stops on the dominant
+ * rather than returning home. Submitting is not finishing — the teacher
+ * has not looked at it yet — and a cadence that lands would promise an
+ * outcome the student has not had. The mastery sound resolves because
+ * mastery is an arrival; this one asks a question.
+ *
+ * Short, too. This happens often, and a long flourish every time an
+ * exercise is handed in becomes something to sit through.
+ */
+export function playSubmitChime(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+
+  const bus = audio.createGain()
+  bus.gain.value = 0.7
+  bus.connect(audio.destination)
+
+  const tonic = 329.63 // E4
+  const now = audio.currentTime
+
+  // Three notes climbing to the fifth and stopping there.
+  const rise = [0, 4, 7]
+  rise.forEach((steps, i) => {
+    const at = now + i * 0.07
+    const gain = audio.createGain()
+    gain.connect(bus)
+    const osc = audio.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = semitone(tonic, steps)
+    osc.connect(gain)
+    osc.start(at)
+    osc.stop(at + 0.5)
+    envelope(gain, at, 0.15, 0.006, 0.45)
+  })
+
+  // A breath of air underneath the last note — the sound of it leaving.
+  const at = now + rise.length * 0.07
+  const noise = audio.createBufferSource()
+  const len = Math.floor(audio.sampleRate * 0.4)
+  const buf = audio.createBuffer(1, len, audio.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < len; i++) {
+    // Fades as it goes, so it reads as departing rather than arriving.
+    data[i] = (Math.random() * 2 - 1) * (1 - i / len) * 0.35
+  }
+  noise.buffer = buf
+  const hp = audio.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 2200
+  const ng = audio.createGain()
+  noise.connect(hp); hp.connect(ng); ng.connect(bus)
+  noise.start(at)
+  envelope(ng, at, 0.1, 0.02, 0.38)
+}

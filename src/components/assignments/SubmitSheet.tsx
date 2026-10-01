@@ -6,6 +6,8 @@ import Textarea from '@/components/ui/Textarea'
 import TakePicker from './TakePicker'
 import AssignmentRecorder from './AssignmentRecorder'
 import { submitAssignment } from '@/lib/firebase/assignments'
+import SubmitMoment from '@/components/celebration/SubmitMoment'
+import { primeAudioContext } from '@/lib/utils/sound'
 import { deriveProgress, latestFeedback, awaitingStudent, normaliseStatus, dueLabel } from '@/lib/utils/assignments'
 import { usePracticeStore } from '@/stores/practiceStore'
 import type { Assignment } from '@/types'
@@ -35,6 +37,8 @@ export default function SubmitSheet({
   const [picked, setPicked] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  /** Held open after a successful submit so the moment can play. */
+  const [celebrating, setCelebrating] = useState<{ title: string; hadRecording: boolean } | null>(null)
 
   if (!open || !assignment) return null
 
@@ -54,6 +58,10 @@ export default function SubmitSheet({
 
   async function handSubmit() {
     if (!assignment) return
+    // First line of the handler, before any await: Safari only honours
+    // resume() synchronously inside the gesture, and the chime below plays
+    // after a network round trip when that window is long gone.
+    primeAudioContext()
     setSaving(true)
     setError('')
     try {
@@ -67,14 +75,29 @@ export default function SubmitSheet({
         recordingIds: picked.length ? picked : undefined,
         minutesAtSubmission: progress.tracked ? progress.minutesDone : undefined,
       })
+      const hadRecording = picked.length > 0
+      const title = assignment.title
       setNote('')
       setPicked([])
-      onClose()
+      // The sheet stays mounted until the moment finishes — closing first
+      // would unmount the celebration before it had played.
+      setCelebrating({ title, hadRecording })
     } catch {
       setError('Could not hand this in. Check your connection and try again.')
     } finally {
       setSaving(false)
     }
+  }
+
+  if (celebrating) {
+    return (
+      <SubmitMoment
+        open
+        title={celebrating.title}
+        hadRecording={celebrating.hadRecording}
+        onDismiss={() => { setCelebrating(null); onClose() }}
+      />
+    )
   }
 
   return (
