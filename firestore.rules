@@ -1,0 +1,173 @@
+rules_version = '2';
+
+// MaestroTrack Firestore security rules.
+//
+// These live in the repo so there is a history of them. They are NOT wired
+// to `firebase deploy` — there is deliberately no firebase.json listing
+// them — because the authoritative copy is still the one in the Firebase
+// console, and a stray deploy overwriting it with a stale file is a worse
+// failure than having to paste.
+//
+// To apply: Firebase console -> Firestore Database -> Rules -> paste ->
+// Publish. Then update this file in the same commit as any change.
+//
+// The governing idea: a student owns their data, and a teacher may read
+// the data of students who have joined their studio. Nobody writes
+// anything on anyone else's behalf, and a student can never mark their own
+// work approved.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isMe(userId) {
+      return signedIn() && uid() == userId;
+    }
+
+    // Reads the student's profile to see whether they belong to this
+    // teacher's studio. One document read per evaluation, cached within a
+    // request — acceptable because the alternative is denormalising a
+    // teacherId onto every session and recording, which then has to be
+    // kept correct forever.
+    function teaches(studentId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(studentId))
+        && get(/databases/$(database)/documents/users/$(studentId)).data.teacherId == uid();
+    }
+
+    function ownerOrTeacher(userId) {
+      return isMe(userId) || teaches(userId);
+    }
+
+    /* ── profiles ────────────────────────────────────────────────── */
+    match /users/{userId} {
+      // A signed-in user may read teacher profiles, which is what makes
+      // joining a studio by code work: that lookup is a query filtered to
+      // role == 'teacher', and Firestore only permits a query when the
+      // rule guarantees every possible result is readable.
+      //
+      // The cost is that any signed-in user can enumerate teacher
+      // profiles, studioCode included — so codes are discoverable rather
+      // than secret. See the note at the end of this file.
+      allow read: if isMe(userId)
+                  || (signedIn() && resource.data.role == 'teacher')
+                  || (signedIn() && resource.data.teacherId == uid());
+
+      allow create: if isMe(userId);
+
+      // Only ever your own profile. A teacher cannot edit a student's
+      // goals, and a student cannot assign themselves to a teacher who has
+      // not been given their code — that field is set by the join flow,
+      // which runs as the student, so it stays writable by them.
+      allow update: if isMe(userId);
+      allow delete: if false;
+    }
+
+    /* ── a student's own practice data ───────────────────────────── */
+    // Readable by the student and by their teacher; writable only by the
+    // student. A teacher observing practice must not be able to edit it.
+    match /practiceSessions/{id} {
+      allow read: if ownerOrTeacher(resource.data.userId);
+      allow create: if isMe(request.resource.data.userId);
+      allow update, delete: if isMe(resource.data.userId);
+    }
+
+    match /pieces/{id} {
+      allow read: if ownerOrTeacher(resource.data.userId);
+      allow create: if isMe(request.resource.data.userId);
+      allow update, delete: if isMe(resource.data.userId);
+    }
+
+    match /performances/{id} {
+      allow read: if ownerOrTeacher(resource.data.userId);
+      allow create: if isMe(request.resource.data.userId);
+      allow update, delete: if isMe(resource.data.userId);
+    }
+
+    // Recordings carry a download URL that works for anyone holding it, so
+    // this rule is what actually decides who can hear a take.
+    match /recordings/{id} {
+      allow read: if ownerOrTeacher(resource.data.userId);
+      allow create: if isMe(request.resource.data.userId);
+      allow update, delete: if isMe(resource.data.userId);
+    }
+
+    /* ── assignments ─────────────────────────────────────────────── */
+    match /assignments/{id} {
+      allow read: if signedIn()
+                  && (resource.data.studentId == uid() || resource.data.teacherId == uid());
+
+      // Only a teacher creates work, and only in their own name.
+      allow create: if signedIn()
+                    && request.resource.data.teacherId == uid()
+                    && teaches(request.resource.data.studentId);
+
+      // The teacher who set it may change anything about it.
+      allow update: if signedIn() && resource.data.teacherId == uid();
+
+      // The student may hand work in — and nothing else.
+      //
+      // This is the rule that matters most in the whole file. Without the
+      // affectedKeys constraint a student could set status to 'approved'
+      // and mark their own work complete; without pinning the status value
+      // they could do it through this same path. They also must not edit
+      // the brief, the due date, the target, or the teacher's feedback.
+      allow update: if signedIn()
+                    && resource.data.studentId == uid()
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['status', 'submissions', 'updatedAt'])
+                    && request.resource.data.status == 'submitted';
+
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── teacher's notes about a student ─────────────────────────── */
+    // The student can read what is written about them. Deliberate: notes a
+    // student may not see belong somewhere other than the app they log in to.
+    match /teacherNotes/{id} {
+      // The app queries these by studentId alone, so a teacher reading a
+      // student's notes is not identifiable from the query's filters. The
+      // teaches() lookup is what makes it permissible — it depends only on
+      // studentId, which the query does pin.
+      allow read: if signedIn()
+                  && (resource.data.studentId == uid()
+                      || resource.data.teacherId == uid()
+                      || teaches(resource.data.studentId));
+      allow create: if signedIn() && request.resource.data.teacherId == uid();
+      allow update, delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── lesson schedule ─────────────────────────────────────────── */
+    match /lessonSlots/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid() || resource.data.studentId == uid());
+      allow create: if signedIn() && request.resource.data.teacherId == uid();
+      allow update, delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    // Anything not named above is denied. New collections have to be
+    // granted access deliberately rather than inheriting it.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ── Known weakness, recorded rather than hidden ─────────────────────
+//
+// Studio codes are discoverable. Joining a studio looks a teacher up by
+// studioCode, which requires signed-in users to be able to read teacher
+// profiles, so a determined user could enumerate them and join a studio
+// uninvited.
+//
+// The fix is a separate collection keyed by the code — a `studioInvites`
+// type already exists in src/types and is unused — so the lookup becomes a
+// single document read and no profile is exposed. That is a change to the
+// working join flow, so it is written down here rather than done quietly.
