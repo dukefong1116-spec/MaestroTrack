@@ -6,8 +6,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
-import { subscribeStudentAssignments, updateAssignmentStatus } from '@/lib/firebase/assignments'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
+import AssignmentCard from '@/components/assignments/AssignmentCard'
+import SubmitSheet from '@/components/assignments/SubmitSheet'
+import { useAssignments } from '@/hooks/useAssignments'
+import { normaliseStatus } from '@/lib/utils/assignments'
 import NudgeList from '@/components/common/NudgeList'
 import WeekStrip from '@/components/streak/WeekStrip'
 import BadgeMoment from '@/components/celebration/BadgeMoment'
@@ -19,7 +22,6 @@ import ProgressRing from '@/components/ui/ProgressRing'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import StreakFlame from '@/components/icons/StreakFlame'
 import Badge from '@/components/ui/Badge'
-import { format, parseISO, differenceInDays } from 'date-fns'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -53,12 +55,10 @@ export default function StudentDashboard() {
 
 
 
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  useEffect(() => {
-    if (!profile?.uid) return
-    return subscribeStudentAssignments(profile.uid, setAssignments)
-  }, [profile?.uid])
-  const activeAssignments = assignments.filter((a) => a.status === 'active')
+  // The hook owns the subscription and the derived parts, so this page and
+  // the Library list cannot drift apart in what they consider outstanding.
+  const { todo } = useAssignments()
+  const [opened, setOpened] = useState<Assignment | null>(null)
 
   const [lessonSlots, setLessonSlots] = useState<LessonSlot[]>([])
   useEffect(() => {
@@ -187,40 +187,43 @@ export default function StudentDashboard() {
       </div>
 
       {/* Assignments from teacher */}
-      {activeAssignments.length > 0 && (
+      {todo.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-3 flex items-center gap-2">
             <Sticker name="clipboard" size={14} tone="ink" /> This Week's Assignments
           </p>
           <div className="space-y-2">
-            {activeAssignments.map((a) => (
-              <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-                <Card className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[var(--clay-ink)] text-sm">{a.title}</p>
-                    {a.description && <p className="text-xs text-[var(--clay-dim)] mt-0.5">{a.description}</p>}
-                    {a.dueDate && (
-                      <p className="text-xs text-[var(--clay-dim)] mt-1">
-                        Due {format(parseISO(a.dueDate), 'MMM d')}
-                        {differenceInDays(parseISO(a.dueDate), new Date()) <= 2 && (
-                          <span className="text-amber-400 ml-1">· Due soon</span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => updateAssignmentStatus(a.id, 'completed')}
-                    className="text-[var(--clay-dim)] hover:text-emerald-400 transition-colors shrink-0"
-                    title="Mark complete"
-                  >
-                    <Sticker name="check" size={20} tone="accent" />
-                  </button>
-                </Card>
-              </motion.div>
+            {/* The same card as the Library list, so an assignment looks and
+                behaves the same wherever it is met. This replaces a tick
+                that set the status to 'completed' directly — which skipped
+                submission and review entirely, so a student could mark work
+                done here while the other screen was still asking them to
+                hand it in. */}
+            {todo.slice(0, 4).map((x, i) => (
+              <AssignmentCard
+                key={x.assignment.id}
+                assignment={x.assignment}
+                progress={x.progress}
+                due={x.due}
+                index={i}
+                onOpen={() => setOpened(x.assignment)}
+                actionLabel={normaliseStatus(x.assignment.status) === 'returned' ? 'Try again' : 'Hand in'}
+              />
             ))}
           </div>
+          {todo.length > 4 && (
+            <button
+              onClick={() => navigate('/student/library?tab=assignments')}
+              className="mt-2.5 text-[12.5px] font-semibold"
+              style={{ color: 'var(--clay-accent)' }}
+            >
+              {todo.length - 4} more
+            </button>
+          )}
         </div>
       )}
+
+      <SubmitSheet assignment={opened} open={!!opened} onClose={() => setOpened(null)} />
 
       <FreezeMoment
         open={!!game.pendingFreeze}
