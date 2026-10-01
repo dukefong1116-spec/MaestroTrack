@@ -46,6 +46,7 @@ export default function AssignmentsPanel() {
                 key={x.assignment.id}
                 assignment={x.assignment}
                 progress={x.progress}
+                daily={x.daily}
                 due={x.due}
                 index={i}
                 onOpen={() => setSubmitting(x.assignment)}
@@ -64,7 +65,7 @@ export default function AssignmentsPanel() {
           <div className="space-y-2.5">
             {waiting.map((x, i) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} due={x.due} index={i}
+                              progress={x.progress} daily={x.daily} due={x.due} index={i}
                               onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>
@@ -79,7 +80,7 @@ export default function AssignmentsPanel() {
           <div className="space-y-2.5">
             {done.slice(0, 20).map((x, i) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} due={x.due} index={i}
+                              progress={x.progress} daily={x.daily} due={x.due} index={i}
                               onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>

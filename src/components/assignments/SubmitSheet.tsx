@@ -8,7 +8,10 @@ import AssignmentRecorder from './AssignmentRecorder'
 import { submitAssignment } from '@/lib/firebase/assignments'
 import SubmitMoment from '@/components/celebration/SubmitMoment'
 import { primeAudioContext } from '@/lib/utils/sound'
-import { deriveProgress, latestFeedback, awaitingStudent, normaliseStatus, dueLabel } from '@/lib/utils/assignments'
+import {
+  deriveProgress, deriveDailyProgress, latestFeedback, awaitingStudent, normaliseStatus, dueLabel,
+} from '@/lib/utils/assignments'
+import DailyStrip from './DailyStrip'
 import { usePracticeStore } from '@/stores/practiceStore'
 import type { Assignment } from '@/types'
 
@@ -43,6 +46,10 @@ export default function SubmitSheet({
   if (!open || !assignment) return null
 
   const progress = deriveProgress(assignment, sessions)
+  const daily = deriveDailyProgress(assignment, sessions)
+  // A daily-practice assignment is handed in once the practice is done —
+  // the app has already seen it, so there is nothing to argue about.
+  const dailyLocked = daily.tracked && !daily.targetMet
   const returned = latestFeedback(assignment)
   const canSubmit = awaitingStudent(assignment)
   const state = normaliseStatus(assignment.status)
@@ -120,6 +127,15 @@ export default function SubmitSheet({
               Your teacher asked for another go
             </p>
             <p className="mt-1 text-[13px]" style={{ color: 'var(--clay-ink)' }}>{returned.note}</p>
+          </div>
+        )}
+
+        {daily.tracked && (
+          <div className="mb-4">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[.1em]" style={{ color: 'var(--clay-dim)' }}>
+              {assignment.dailyTargetMinutes} min a day
+            </p>
+            <DailyStrip progress={daily} dailyTarget={assignment.dailyTargetMinutes ?? 0} />
           </div>
         )}
 
@@ -217,13 +233,15 @@ export default function SubmitSheet({
           </p>
         )}
 
-        <Button onClick={handSubmit} loading={saving} disabled={missingTake} className="mt-5 w-full">
+        <Button onClick={handSubmit} loading={saving} disabled={missingTake || dailyLocked} className="mt-5 w-full">
           Hand it in
         </Button>
         <p className="mt-2 text-center text-[11px]" style={{ color: 'var(--clay-faint)' }}>
-          {missingTake
-            ? 'Attach a take to hand this in.'
-            : 'Your teacher will see this and can ask for another go.'}
+          {dailyLocked
+            ? `Keep going — ${daily.daysRequired - daily.daysMet} more ${daily.daysRequired - daily.daysMet === 1 ? 'day' : 'days'} to go.`
+            : missingTake
+              ? 'Attach a take to hand this in.'
+              : 'Your teacher will see this and can ask for another go.'}
         </p>
         </>
         )}

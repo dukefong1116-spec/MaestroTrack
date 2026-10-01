@@ -9,7 +9,8 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { getPracticeSessions } from '@/lib/firebase/practice'
 import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/firebase/teacher'
 import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
-import { normaliseStatus, needsReview } from '@/lib/utils/assignments'
+import { normaliseStatus, needsReview, deriveDailyProgress, deriveProgress } from '@/lib/utils/assignments'
+import DailyStrip from '@/components/assignments/DailyStrip'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
 import { subscribeRecordings } from '@/lib/firebase/recordings'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
@@ -41,6 +42,7 @@ export default function StudentDetailPage() {
   const [assignDesc, setAssignDesc] = useState('')
   const [assignDue, setAssignDue] = useState('')
   const [assignNeedsRecording, setAssignNeedsRecording] = useState(false)
+  const [assignDailyMinutes, setAssignDailyMinutes] = useState('')
   // The form is a thing you occasionally do, not a thing you always look
   // at. Open by default it pushed the actual student data below the fold
   // every time you came here just to see how someone is getting on.
@@ -87,11 +89,13 @@ export default function StudentDetailPage() {
         description: assignDesc.trim() || undefined,
         dueDate: assignDue || undefined,
         requiresRecording: assignNeedsRecording || undefined,
+        dailyTargetMinutes: Number(assignDailyMinutes) > 0 ? Number(assignDailyMinutes) : undefined,
       })
       setAssignTitle('')
       setAssignDesc('')
       setAssignDue('')
       setAssignNeedsRecording(false)
+      setAssignDailyMinutes('')
       setComposing(false)
     } finally {
       setAssigning(false)
@@ -186,6 +190,26 @@ export default function StudentDetailPage() {
               onChange={(e) => setAssignDesc(e.target.value)}
               rows={2}
             />
+            {/* "Thirty minutes a day until our next lesson" — the app reads
+                this off the practice log, so the student does not report it
+                and you do not have to take their word. Needs a due date to
+                measure against, hence the hint. */}
+            <div className="flex items-center gap-2.5">
+              <Input
+                type="number"
+                min={1}
+                placeholder="Minutes per day (optional)"
+                value={assignDailyMinutes}
+                onChange={(e) => setAssignDailyMinutes(e.target.value)}
+                className="max-w-[220px]"
+              />
+              {Number(assignDailyMinutes) > 0 && !assignDue && (
+                <span className="text-[11.5px]" style={{ color: 'var(--clay-danger)' }}>
+                  Needs a due date
+                </span>
+              )}
+            </div>
+
             {/* Off by default: requiring audio makes scales, sight-reading
                 and theory awkward to set, so it is something you opt into
                 when you actually want to hear the result. */}
@@ -258,6 +282,30 @@ export default function StudentDetailPage() {
                       )}
                     </div>
                     {a.description && <p className="text-xs text-[var(--clay-dim)] mt-1">{a.description}</p>}
+                    {/* Progress without having to open anything: the point
+                        of a minutes-a-day assignment is that it answers
+                        itself from the practice log. */}
+                    {(() => {
+                      const daily = deriveDailyProgress(a, sessions)
+                      if (daily.tracked) return (
+                        <div className="mt-2">
+                          <DailyStrip progress={daily} dailyTarget={a.dailyTargetMinutes ?? 0} compact />
+                          <p className="text-xs mt-1.5" style={{ color: daily.onTrack ? 'var(--clay-dim)' : 'var(--clay-danger)' }}>
+                            {daily.minutesDone} / {daily.minutesRequired} min
+                            {' · '}{daily.daysMet} of {daily.daysRequired} days
+                            {!daily.onTrack && ' · missed a day'}
+                          </p>
+                        </div>
+                      )
+                      const total = deriveProgress(a, sessions)
+                      if (total.tracked) return (
+                        <p className="text-xs mt-1.5" style={{ color: 'var(--clay-dim)' }}>
+                          {total.minutesDone} / {a.targetMinutes} min practised
+                          {total.targetMet && ' · target met'}
+                        </p>
+                      )
+                      return null
+                    })()}
                     <p className="text-xs text-[var(--clay-dim)] mt-1">
                       Assigned {format(parseISO(a.createdAt), 'MMM d')}
                       {a.dueDate ? ` · Due ${format(parseISO(a.dueDate), 'MMM d')}` : ''}

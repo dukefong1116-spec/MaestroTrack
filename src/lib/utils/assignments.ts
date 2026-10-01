@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, parseISO, format } from 'date-fns'
+import { differenceInCalendarDays, parseISO, format, addDays } from 'date-fns'
 import type { Assignment, PracticeSession, Submission, TeacherFeedback } from '@/types'
 
 /**
@@ -165,4 +165,105 @@ export function sortForReview(list: Assignment[]): Assignment[] {
     const sb = latestSubmission(b)?.at ?? b.updatedAt
     return sa.localeCompare(sb)
   })
+}
+
+/* ── daily practice targets ───────────────────────────────────────── */
+
+export interface DailyDay {
+  date: string
+  minutes: number
+  met: boolean
+  isToday: boolean
+  /** Not yet arrived — shown but not counted against the student. */
+  isFuture: boolean
+}
+
+export interface DailyProgress {
+  tracked: boolean
+  days: DailyDay[]
+  /** Days meeting the target so far. */
+  daysMet: number
+  /** Days the assignment covers in total. */
+  daysRequired: number
+  minutesDone: number
+  /** dailyTarget × daysRequired — what the teacher set in total. */
+  minutesRequired: number
+  /** Every day that has already passed met its target. */
+  onTrack: boolean
+  /** Enough days met to hand it in. */
+  targetMet: boolean
+}
+
+/**
+ * A "practise N minutes a day" assignment, measured against the log.
+ *
+ * The window runs from the day the assignment was set to its due date.
+ * Without a due date there is no window and nothing to measure, so the
+ * assignment is treated as untracked rather than as an infinite one.
+ *
+ * Days are walked with date-fns rather than by adding 86_400_000ms: a
+ * fixed 24-hour step lands on the wrong local day across a DST change,
+ * which this codebase has already paid for.
+ */
+export function deriveDailyProgress(
+  a: Assignment,
+  sessions: PracticeSession[],
+  now: Date = new Date()
+): DailyProgress {
+  const target = a.dailyTargetMinutes ?? 0
+  const empty: DailyProgress = {
+    tracked: false, days: [], daysMet: 0, daysRequired: 0,
+    minutesDone: 0, minutesRequired: 0, onTrack: true, targetMet: false,
+  }
+  if (target <= 0 || !a.dueDate) return empty
+
+  const start = parseISO(a.createdAt.substring(0, 10))
+  const end = parseISO(a.dueDate.substring(0, 10))
+  if (differenceInCalendarDays(end, start) < 0) return empty
+
+  // Minutes per day, filtered to the assigned piece or category when set.
+  const byDay = new Map<string, number>()
+  for (const s of sessions) {
+    if (a.pieceId && s.pieceName !== a.pieceId) continue
+    if (!a.pieceId && a.category && s.category !== a.category) continue
+    const day = s.date.substring(0, 10)
+    byDay.set(day, (byDay.get(day) ?? 0) + s.durationMinutes)
+  }
+
+  const today = format(now, 'yyyy-MM-dd')
+  const days: DailyDay[] = []
+  for (let d = start; differenceInCalendarDays(end, d) >= 0; d = addDays(d, 1)) {
+    const date = format(d, 'yyyy-MM-dd')
+    const minutes = byDay.get(date) ?? 0
+    days.push({
+      date,
+      minutes,
+      met: minutes >= target,
+      isToday: date === today,
+      isFuture: date > today,
+    })
+  }
+
+  const elapsed = days.filter((d) => !d.isFuture)
+  const daysMet = days.filter((d) => d.met).length
+  const minutesDone = days.reduce((sum, d) => sum + d.minutes, 0)
+
+  return {
+    tracked: true,
+    days,
+    daysMet,
+    daysRequired: days.length,
+    minutesDone,
+    minutesRequired: target * days.length,
+    // Today is excluded: the day is not over, so missing it is not a miss.
+    onTrack: elapsed.filter((d) => !d.isToday).every((d) => d.met),
+    // Hand-in also unlocks once the window has closed, so missing one day
+    // does not strand the student with no way to hand anything in at all.
+    targetMet: daysMet >= days.length || (days.length > 0 && today > days[days.length - 1].date),
+  }
+}
+
+/** Either kind of target, whichever this assignment uses. */
+export function hasTarget(a: Assignment): boolean {
+  return (a.dailyTargetMinutes ?? 0) > 0 || (a.targetMinutes ?? 0) > 0
 }

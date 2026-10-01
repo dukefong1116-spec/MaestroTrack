@@ -202,6 +202,12 @@ export interface Assignment {
   pieceId?: string
   /** Teacher wants to hear it, not just be told it is done. */
   requiresRecording?: boolean
+  /**
+   * Minutes required *each day*, from the day it was set until its due
+   * date — "thirty minutes a day until our next lesson". Distinct from
+   * targetMinutes, which is a single total to reach by the deadline.
+   */
+  dailyTargetMinutes?: number
   submissions?: Submission[]
   feedback?: TeacherFeedback[]
 }

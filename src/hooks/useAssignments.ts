@@ -3,14 +3,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { subscribeStudentAssignments } from '@/lib/firebase/assignments'
 import {
-  isOpen, awaitingStudent, sortForStudent, deriveProgress, dueness,
-  type AssignmentProgress, type Dueness,
+  isOpen, awaitingStudent, sortForStudent, deriveProgress, deriveDailyProgress, dueness,
+  type AssignmentProgress, type DailyProgress, type Dueness,
 } from '@/lib/utils/assignments'
 import type { Assignment } from '@/types'
 
 export interface StudentAssignment {
   assignment: Assignment
   progress: AssignmentProgress
+  daily: DailyProgress
   due: Dueness
 }
 
@@ -45,6 +46,7 @@ export function useAssignments() {
     () => sortForStudent(raw, now).map((assignment) => ({
       assignment,
       progress: deriveProgress(assignment, sessions),
+      daily: deriveDailyProgress(assignment, sessions, now),
       due: dueness(assignment, now),
     })),
     [raw, sessions, now]

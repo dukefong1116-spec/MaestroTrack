@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   normaliseStatus, isOpen, needsReview, awaitingStudent,
   deriveProgress, dueness, dueLabel, sortForStudent, sortForReview, latestSubmission,
+  deriveDailyProgress,
 } from '../assignments'
 import type { Assignment, PracticeSession } from '@/types'
 
@@ -185,5 +186,94 @@ describe('latestSubmission', () => {
 
   it('is null before anything is handed in', () => {
     expect(latestSubmission(a())).toBeNull()
+  })
+})
+
+describe('deriveDailyProgress — "N minutes a day"', () => {
+  const now = new Date('2026-09-10T12:00:00')
+  const daily = (over: Partial<Assignment> = {}): Assignment =>
+    a({ createdAt: '2026-09-08T00:00:00.000Z', dueDate: '2026-09-12',
+        dailyTargetMinutes: 30, ...over })
+
+  it('is untracked without a daily target', () => {
+    expect(deriveDailyProgress(a({ dueDate: '2026-09-12' }), [], now).tracked).toBe(false)
+  })
+
+  it('is untracked without a due date — an open window cannot be measured', () => {
+    expect(deriveDailyProgress(a({ dailyTargetMinutes: 30 }), [], now).tracked).toBe(false)
+  })
+
+  it('covers every day from the day it was set to the due date', () => {
+    const p = deriveDailyProgress(daily(), [], now)
+    expect(p.days.map((d) => d.date))
+      .toEqual(['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12'])
+    expect(p.daysRequired).toBe(5)
+    expect(p.minutesRequired).toBe(150)   // 30 a day for five days
+  })
+
+  it('marks a day met only when the day reaches the target', () => {
+    const p = deriveDailyProgress(daily(), [sess('2026-09-08', 29), sess('2026-09-09', 30)], now)
+    expect(p.days[0].met).toBe(false)
+    expect(p.days[1].met).toBe(true)
+  })
+
+  it('adds up several sessions in one day', () => {
+    const p = deriveDailyProgress(daily(), [sess('2026-09-08', 10), sess('2026-09-08', 25)], now)
+    expect(p.days[0].minutes).toBe(35)
+    expect(p.days[0].met).toBe(true)
+  })
+
+  it('does not count today as missed — the day is not over', () => {
+    // 8th and 9th met, nothing yet today (the 10th).
+    const p = deriveDailyProgress(daily(), [sess('2026-09-08', 30), sess('2026-09-09', 30)], now)
+    expect(p.onTrack).toBe(true)
+  })
+
+  it('knows when a day was genuinely missed', () => {
+    const p = deriveDailyProgress(daily(), [sess('2026-09-08', 30)], now)  // 9th missed
+    expect(p.onTrack).toBe(false)
+  })
+
+  it('does not hold the future against anyone', () => {
+    const p = deriveDailyProgress(daily(), [], now)
+    expect(p.days.filter((d) => d.isFuture).map((d) => d.date))
+      .toEqual(['2026-09-11', '2026-09-12'])
+  })
+
+  it('unlocks hand-in once every day is met', () => {
+    const all = ['2026-09-08','2026-09-09','2026-09-10','2026-09-11','2026-09-12'].map((d) => sess(d, 30))
+    expect(deriveDailyProgress(daily(), all, now).targetMet).toBe(true)
+  })
+
+  it('does not unlock part-way through', () => {
+    expect(deriveDailyProgress(daily(), [sess('2026-09-08', 30)], now).targetMet).toBe(false)
+  })
+
+  it('unlocks after the due date even if days were missed, rather than stranding them', () => {
+    const after = new Date('2026-09-15T12:00:00')
+    const p = deriveDailyProgress(daily(), [sess('2026-09-08', 30)], after)
+    expect(p.daysMet).toBe(1)
+    expect(p.onTrack).toBe(false)
+    expect(p.targetMet).toBe(true)   // can hand in and explain
+  })
+
+  it('counts only the assigned piece when one is named', () => {
+    const mixed = [
+      sess('2026-09-08', 30, { pieceName: 'p1' }),
+      sess('2026-09-09', 30, { pieceName: 'p2' }),
+    ]
+    const p = deriveDailyProgress(daily({ pieceId: 'p1' }), mixed, now)
+    expect(p.days[0].met).toBe(true)
+    expect(p.days[1].met).toBe(false)
+  })
+
+  it('walks days safely across a DST change', () => {
+    // US clocks spring forward 2026-03-08; a fixed 24h step would skip it.
+    const p = deriveDailyProgress(
+      daily({ createdAt: '2026-03-06T00:00:00.000Z', dueDate: '2026-03-10' }),
+      [], new Date('2026-03-11T12:00:00')
+    )
+    expect(p.days.map((d) => d.date))
+      .toEqual(['2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10'])
   })
 })

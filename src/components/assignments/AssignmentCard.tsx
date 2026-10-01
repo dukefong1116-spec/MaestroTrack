@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import Card from '@/components/ui/Card'
 import Sticker from '@/components/stickers/Sticker'
+import DailyStrip from './DailyStrip'
 import {
   normaliseStatus, dueLabel, latestFeedback,
-  type AssignmentProgress, type Dueness,
+  type AssignmentProgress, type DailyProgress, type Dueness,
 } from '@/lib/utils/assignments'
 import type { Assignment } from '@/types'
 
@@ -24,10 +25,11 @@ const DUE_TONE: Record<Dueness, { bg: string; fg: string } | null> = {
  * situations and need to look different.
  */
 export default function AssignmentCard({
-  assignment, progress, due, onOpen, actionLabel, index = 0,
+  assignment, progress, daily, due, onOpen, actionLabel, index = 0,
 }: {
   assignment: Assignment
   progress: AssignmentProgress
+  daily?: DailyProgress
   due: Dueness
   /** The whole card opens the assignment — the brief, the history, the form. */
   onOpen?: () => void
@@ -104,6 +106,14 @@ export default function AssignmentCard({
             </span>
           )}
         </div>
+
+        {/* One square a day, because the spread is the point of this kind
+            of assignment and a single bar would hide it. */}
+        {daily?.tracked && (
+          <div className="mt-3">
+            <DailyStrip progress={daily} dailyTarget={assignment.dailyTargetMinutes ?? 0} />
+          </div>
+        )}
 
         {/* Derived from the practice log — nothing to self-report. */}
         {progress.tracked && (

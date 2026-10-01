@@ -204,6 +204,7 @@ export default function StudentDashboard() {
                 key={x.assignment.id}
                 assignment={x.assignment}
                 progress={x.progress}
+                daily={x.daily}
                 due={x.due}
                 index={i}
                 onOpen={() => setOpened(x.assignment)}
