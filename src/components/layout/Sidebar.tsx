@@ -21,7 +21,6 @@ const studentNav: { to: string; icon: StickerName | typeof LayoutDashboard; labe
 const teacherNav: { to: string; icon: StickerName | typeof LayoutDashboard; label: string; end?: boolean }[] = [
   { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/teacher/students', icon: 'users', label: 'My Students' },
-  { to: '/teacher/review', icon: 'clipboard', label: 'Review' },
   { to: '/teacher/schedule', icon: 'calendar', label: 'Schedule' },
   { to: '/teacher/research', icon: 'chart', label: 'Research' },
 ]

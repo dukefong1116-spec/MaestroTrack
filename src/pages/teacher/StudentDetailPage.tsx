@@ -9,6 +9,9 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { getPracticeSessions } from '@/lib/firebase/practice'
 import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/firebase/teacher'
 import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
+import { normaliseStatus, needsReview } from '@/lib/utils/assignments'
+import ReviewSheet from '@/components/assignments/ReviewSheet'
+import { subscribeRecordings } from '@/lib/firebase/recordings'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -21,7 +24,7 @@ import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import StatCard from '@/components/common/StatCard'
-import type { PracticeSession, TeacherNote, Assignment, InstrumentType } from '@/types'
+import type { PracticeSession, TeacherNote, Assignment, InstrumentType, Recording } from '@/types'
 
 const NO_SESSIONS: PracticeSession[] = []
 
@@ -38,6 +41,12 @@ export default function StudentDetailPage() {
   const [assignDesc, setAssignDesc] = useState('')
   const [assignDue, setAssignDue] = useState('')
   const [assignNeedsRecording, setAssignNeedsRecording] = useState(false)
+  // The form is a thing you occasionally do, not a thing you always look
+  // at. Open by default it pushed the actual student data below the fold
+  // every time you came here just to see how someone is getting on.
+  const [composing, setComposing] = useState(false)
+  const [reviewing, setReviewing] = useState<Assignment | null>(null)
+  const [studentRecordings, setStudentRecordings] = useState<Recording[]>([])
   const [assigning, setAssigning] = useState(false)
 
   const student = students.find((s) => s.uid === studentId)
@@ -56,6 +65,13 @@ export default function StudentDetailPage() {
       : undefined
     return () => { unsub(); unsubA?.() }
   }, [studentId, setStudentSessions, profile?.uid])
+
+  // Fetched only while a submission is actually open — a teacher browsing
+  // a student has no need to hold their audio in memory.
+  useEffect(() => {
+    if (!reviewing) { setStudentRecordings([]); return }
+    return subscribeRecordings(reviewing.studentId, setStudentRecordings)
+  }, [reviewing])
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, student?.weeklyGoalMinutes ?? 300), [sessions, student])
   const dailyData = useMemo(() => getDailyData(sessions, 14), [sessions])
@@ -76,6 +92,7 @@ export default function StudentDetailPage() {
       setAssignDesc('')
       setAssignDue('')
       setAssignNeedsRecording(false)
+      setComposing(false)
     } finally {
       setAssigning(false)
     }
@@ -139,9 +156,23 @@ export default function StudentDetailPage() {
 
       {/* Assignments */}
       <div className="mb-8">
-        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4 flex items-center gap-2">
-          <Sticker name="clipboard" size={14} tone="ink" /> Assignments
-        </p>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest flex items-center gap-2">
+            <Sticker name="clipboard" size={14} tone="ink" /> Assignments
+          </p>
+          <button
+            onClick={() => setComposing((v) => !v)}
+            className="shrink-0 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-transform active:scale-95"
+            style={{
+              background: composing ? 'var(--clay-bg)' : 'var(--clay-accent)',
+              color: composing ? 'var(--clay-dim)' : 'var(--clay-on-accent)',
+            }}
+          >
+            {composing ? 'Cancel' : '+ New assignment'}
+          </button>
+        </div>
+
+        {composing && (
         <Card className="p-5 mb-4">
           <div className="space-y-3">
             <Input
@@ -200,6 +231,7 @@ export default function StudentDetailPage() {
             </div>
           </div>
         </Card>
+        )}
         <div className="space-y-2">
           {assignments
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -208,12 +240,22 @@ export default function StudentDetailPage() {
                 <Card className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm ${a.status === 'completed' ? 'line-through text-[var(--clay-dim)]' : 'text-[var(--clay-ink)]'}`}>
+                      <p className={`font-semibold text-sm ${normaliseStatus(a.status) === 'approved' ? 'line-through text-[var(--clay-dim)]' : 'text-[var(--clay-ink)]'}`}>
                         {a.title}
                       </p>
-                      <Badge variant={a.status === 'completed' ? 'success' : 'info'} size="sm">
-                        {a.status}
-                      </Badge>
+                      {(() => {
+                        const st = normaliseStatus(a.status)
+                        const label = st === 'approved' ? 'approved'
+                          : st === 'submitted' ? 'handed in'
+                          : st === 'returned' ? 'sent back'
+                          : st === 'cancelled' ? 'cancelled' : 'assigned'
+                        const variant = st === 'approved' ? 'success'
+                          : st === 'submitted' ? 'warning' : 'info'
+                        return <Badge variant={variant} size="sm">{label}</Badge>
+                      })()}
+                      {a.requiresRecording && (
+                        <Badge variant="default" size="sm">recording</Badge>
+                      )}
                     </div>
                     {a.description && <p className="text-xs text-[var(--clay-dim)] mt-1">{a.description}</p>}
                     <p className="text-xs text-[var(--clay-dim)] mt-1">
@@ -222,9 +264,20 @@ export default function StudentDetailPage() {
                       {a.completedAt ? ` · Completed ${format(parseISO(a.completedAt), 'MMM d')}` : ''}
                     </p>
                   </div>
-                  <button onClick={() => deleteAssignment(a.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors shrink-0">
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {needsReview(a) && (
+                      <button
+                        onClick={() => setReviewing(a)}
+                        className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition-transform active:scale-95"
+                        style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
+                      >
+                        Review
+                      </button>
+                    )}
+                    <button onClick={() => deleteAssignment(a.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </Card>
               </motion.div>
             ))}
@@ -268,6 +321,15 @@ export default function StudentDetailPage() {
           ))}
         </div>
       </div>
+
+      <ReviewSheet
+        assignment={reviewing}
+        studentName={student?.displayName ?? 'Student'}
+        recordings={studentRecordings}
+        open={!!reviewing}
+        onClose={() => setReviewing(null)}
+      />
+
     </div>
   )
 }

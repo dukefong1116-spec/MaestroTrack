@@ -11,6 +11,7 @@ import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import StatCard from '@/components/common/StatCard'
+import SubmissionsWaiting from '@/components/assignments/SubmissionsWaiting'
 import EmptyState from '@/components/common/EmptyState'
 import type { UserProfile } from '@/types'
 
@@ -99,6 +100,9 @@ export default function TeacherDashboard() {
         <StatCard label="Avg Consistency" value={`${avgConsistency}%`} icon={<Sticker name="trend" size={16} tone="accent" />} delay={0.15} />
         <StatCard label="On Streak" value={studentsOnStreak} subtitle="3+ days" delay={0.2} />
       </div>
+
+      {/* Renders nothing when nobody is waiting, so it never costs space. */}
+      <SubmissionsWaiting />
 
       {/* Student list */}
       {students.length === 0 ? (
