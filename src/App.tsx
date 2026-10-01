@@ -26,6 +26,7 @@ import StudentDetailPage from '@/pages/teacher/StudentDetailPage'
 import ResearchPage from '@/pages/teacher/ResearchPage'
 import TeacherSettingsPage from '@/pages/teacher/TeacherSettingsPage'
 import SchedulePage from '@/pages/teacher/SchedulePage'
+import ReviewPage from '@/pages/teacher/ReviewPage'
 
 function DataProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth()
@@ -95,6 +96,7 @@ function AppRoutes() {
       }>
         <Route index element={<TeacherDashboard />} />
         <Route path="students" element={<StudentsPage />} />
+        <Route path="review" element={<ReviewPage />} />
         <Route path="students/:studentId" element={<StudentDetailPage />} />
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="research" element={<ResearchPage />} />

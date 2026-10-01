@@ -158,6 +158,24 @@ export interface LessonSlot {
   updatedAt: string
 }
 
+/** One attempt at handing work in. Append-only: a returned assignment is
+ *  resubmitted, and the trail of attempts is the record of the work. */
+export interface Submission {
+  at: string
+  note?: string
+  /** Ids of recordings already captured in practice sessions. */
+  recordingIds?: string[]
+  /** Minutes practised on the assignment at the moment of submitting. */
+  minutesAtSubmission?: number
+}
+
+/** A teacher's response to a submission. Also append-only. */
+export interface TeacherFeedback {
+  at: string
+  verdict: 'approved' | 'returned'
+  note?: string
+}
+
 export interface Assignment {
   id: string
   teacherId: string
@@ -167,10 +185,23 @@ export interface Assignment {
   dueDate?: string
   category?: PracticeCategory
   targetMinutes?: number
-  status: 'active' | 'completed' | 'dismissed'
+  /**
+   * Both vocabularies, deliberately. 'active' | 'completed' | 'dismissed'
+   * are what existing documents carry; the rest are the review loop. Kept
+   * as a union rather than widened to string so a typo is still a compile
+   * error. Nothing compares this field directly — reads go through
+   * normaliseStatus in lib/utils/assignments, which understands both.
+   */
+  status:
+    | 'active' | 'completed' | 'dismissed'
+    | 'assigned' | 'submitted' | 'returned' | 'approved' | 'cancelled'
   completedAt?: string
   createdAt: string
   updatedAt: string
+  /** Set when the work is tied to a specific piece, enabling auto-progress. */
+  pieceId?: string
+  submissions?: Submission[]
+  feedback?: TeacherFeedback[]
 }
 
 export interface StudioInvite {

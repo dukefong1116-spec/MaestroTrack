@@ -4,10 +4,12 @@ import PageHeader from '@/components/common/PageHeader'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import PiecesPanel from './panels/PiecesPanel'
 import PerformancesPanel from './panels/PerformancesPanel'
+import AssignmentsPanel from './panels/AssignmentsPanel'
 
 const TABS: { id: string; label: string; sticker: StickerName }[] = [
   { id: 'pieces', label: 'Pieces', sticker: 'book' },
   { id: 'performances', label: 'Performances', sticker: 'trophy' },
+  { id: 'assignments', label: 'Assignments', sticker: 'clipboard' },
 ]
 
 /**
@@ -16,7 +18,8 @@ const TABS: { id: string; label: string; sticker: StickerName }[] = [
  */
 export default function LibraryPage() {
   const [params, setParams] = useSearchParams()
-  const tab = params.get('tab') === 'performances' ? 'performances' : 'pieces'
+  const raw = params.get('tab')
+  const tab = raw === 'performances' || raw === 'assignments' ? raw : 'pieces'
 
   return (
     <div>
@@ -45,7 +48,9 @@ export default function LibraryPage() {
         })}
       </div>
 
-      {tab === 'pieces' ? <PiecesPanel /> : <PerformancesPanel />}
+      {tab === 'pieces' && <PiecesPanel />}
+      {tab === 'performances' && <PerformancesPanel />}
+      {tab === 'assignments' && <AssignmentsPanel />}
     </div>
   )
 }
