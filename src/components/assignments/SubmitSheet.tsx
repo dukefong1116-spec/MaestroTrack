@@ -4,6 +4,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
 import TakePicker from './TakePicker'
+import AssignmentRecorder from './AssignmentRecorder'
 import { submitAssignment } from '@/lib/firebase/assignments'
 import { deriveProgress, latestFeedback, awaitingStudent, normaliseStatus, dueLabel } from '@/lib/utils/assignments'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -168,6 +169,22 @@ export default function SubmitSheet({
             Your teacher asked to hear this one.
           </p>
         )}
+
+        {/* Record now, for the player sitting with the instrument reading
+            this; or pick an earlier take, for the one who has already
+            practised and wants to submit the best of several. */}
+        <AssignmentRecorder
+          // format(), never toISOString(): the latter is UTC and files a
+          // take under tomorrow's date for anyone west of Greenwich after
+          // late afternoon. This codebase has paid for that three times.
+          date={assignment.dueDate?.substring(0, 10) ?? format(new Date(), 'yyyy-MM-dd')}
+          pieceName={assignment.title}
+          onRecorded={(id) => setPicked((prev) => (prev.includes(id) ? prev : [...prev, id]))}
+        />
+
+        <p className="mb-1.5 mt-3 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+          Or pick an earlier take
+        </p>
         <TakePicker selected={picked} onChange={setPicked} />
 
         {error && (
