@@ -30,6 +30,23 @@ interface PracticeState {
   elapsedSeconds: () => number
 }
 
+/**
+ * Optimistic prepend that ignores anything already present.
+ *
+ * Every one of these lists is also filled by a live Firestore
+ * subscription. The write helpers resolve only once Firestore has
+ * acknowledged the document, and the subscription has usually delivered it
+ * through the matching setter before that promise settles — so adding it
+ * again showed it twice, and nothing removed the copy until some unrelated
+ * change triggered a fresh snapshot.
+ *
+ * It bit sessions first and pieces second. Shared so it cannot bite a
+ * third list separately.
+ */
+function prepend<T extends { id: string }>(list: T[], item: T): T[] {
+  return list.some((x) => x.id === item.id) ? list : [item, ...list]
+}
+
 export const usePracticeStore = create<PracticeState>((set, get) => ({
   sessions: [],
   pieces: [],
@@ -41,21 +58,9 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   setPerformances: (performances) => set({ performances }),
   setRecordings: (recordings) => set({ recordings }),
   setTeacherNotes: (notes) => set({ teacherNotes: notes }),
-  /**
-   * Optimistic add, ignored when the session is already present.
-   *
-   * addPracticeSession resolves only once Firestore has acknowledged the
-   * write, and the live subscription has usually delivered the document
-   * through setSessions before that promise settles. Prepending blindly
-   * then showed every freshly logged session twice, and nothing removed
-   * the copy until some unrelated change triggered a fresh snapshot.
-   */
-  addSession: (session) =>
-    set((s) => (s.sessions.some((x) => x.id === session.id)
-      ? s
-      : { sessions: [session, ...s.sessions] })),
-  addPiece: (piece) => set((s) => ({ pieces: [piece, ...s.pieces] })),
-  addPerformance: (performance) => set((s) => ({ performances: [performance, ...s.performances] })),
+  addSession: (session) => set((s) => ({ sessions: prepend(s.sessions, session) })),
+  addPiece: (piece) => set((s) => ({ pieces: prepend(s.pieces, piece) })),
+  addPerformance: (performance) => set((s) => ({ performances: prepend(s.performances, performance) })),
   /* Timer
    *
    * Elapsed time is banked on pause rather than recomputed from a single
