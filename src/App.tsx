@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
@@ -10,23 +10,50 @@ import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
 import PendingUploads from '@/components/common/PendingUploads'
 
+/**
+ * Login is loaded eagerly — it is the first thing anyone sees, and making
+ * the entry screen wait on a second request to show a password box would
+ * trade one delay for another.
+ */
 import LoginPage from '@/pages/auth/LoginPage'
-import SignupPage from '@/pages/auth/SignupPage'
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
 
-import StudentDashboard from '@/pages/student/StudentDashboard'
-import PracticeLogPage from '@/pages/student/PracticeLogPage'
-import SessionPage from '@/pages/student/SessionPage'
-import LibraryPage from '@/pages/student/LibraryPage'
-import ProgressPage from '@/pages/student/ProgressPage'
-import SettingsPage from '@/pages/student/SettingsPage'
+/**
+ * Everything else arrives when it is actually visited.
+ *
+ * The whole app used to ship as one 1.77MB file, so signing in meant
+ * downloading the charting library, the teacher dashboard, the metronome,
+ * the tuner, the pitch detector, the recorder and every celebration
+ * animation before the email field could be typed into. A student never
+ * opens a teacher page; a teacher never opens the practice session. Each
+ * screen now costs only the people who go there.
+ */
+const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 
-import TeacherDashboard from '@/pages/teacher/TeacherDashboard'
-import StudentsPage from '@/pages/teacher/StudentsPage'
-import StudentDetailPage from '@/pages/teacher/StudentDetailPage'
-import ResearchPage from '@/pages/teacher/ResearchPage'
-import TeacherSettingsPage from '@/pages/teacher/TeacherSettingsPage'
-import SchedulePage from '@/pages/teacher/SchedulePage'
+const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
+const PracticeLogPage = lazy(() => import('@/pages/student/PracticeLogPage'))
+const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
+const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
+const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
+const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+
+const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
+const StudentsPage = lazy(() => import('@/pages/teacher/StudentsPage'))
+const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage'))
+const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
+const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
+const SchedulePage = lazy(() => import('@/pages/teacher/SchedulePage'))
+
+function RouteLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--clay-bg)' }}>
+      <div
+        className="w-10 h-10 rounded-full animate-spin"
+        style={{ border: '4px solid var(--clay-accent-soft)', borderTopColor: 'var(--clay-accent)' }}
+      />
+    </div>
+  )
+}
 
 function DataProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth()
@@ -117,7 +144,12 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AppRoutes />
+      {/* Shown only while a screen's code is in flight, which on a warm
+          cache is never. Matches the auth loader so a transition does not
+          flash a different-looking spinner. */}
+      <Suspense fallback={<RouteLoading />}>
+        <AppRoutes />
+      </Suspense>
     </BrowserRouter>
   )
 }
