@@ -6,7 +6,8 @@ import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { getPracticeSessions } from '@/lib/firebase/practice'
+import { subscribePracticeSummary } from '@/lib/firebase/summary'
+import { sessionsFromSummary } from '@/lib/utils/summary'
 import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/firebase/teacher'
 import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
 import { normaliseStatus, needsReview, deriveDailyProgress, deriveProgress } from '@/lib/utils/assignments'
@@ -67,12 +68,14 @@ export default function StudentDetailPage() {
 
   useEffect(() => {
     if (!studentId) return
-    getPracticeSessions(studentId).then((s) => setStudentSessions(studentId, s))
+    // The rolled-up copy, not the sessions themselves — see useTeacherData.
+    const unsubSummary = subscribePracticeSummary(studentId, (summary) =>
+      setStudentSessions(studentId, sessionsFromSummary(summary)))
     const unsub = subscribeTeacherNotes(studentId, setNotes)
     const unsubA = profile?.uid
       ? subscribeTeacherStudentAssignments(profile.uid, studentId, setAssignments)
       : undefined
-    return () => { unsub(); unsubA?.() }
+    return () => { unsubSummary(); unsub(); unsubA?.() }
   }, [studentId, setStudentSessions, profile?.uid])
 
   // Fetched only while a submission is actually open — a teacher browsing

@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    {
+      "comment": "Recent sessions first, bounded. Firestore needs a composite index for an equality filter combined with an order on a different field.",
+      "collectionGroup": "practiceSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "comment": "A studio leaderboard: everyone sharing a teacher.",
+      "collectionGroup": "studioStats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "currentStreak", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

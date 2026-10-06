@@ -101,6 +101,12 @@ export interface Recording {
   createdAt: string
   /** Set when the clip was captured inside a practice session. */
   sessionId?: string
+  /**
+   * Set only when the take is attached to a submitted assignment. It is
+   * what the security rules check, so practice takes stay private by
+   * default and a teacher hears only what was handed to them.
+   */
+  sharedWithTeacher?: boolean
 }
 
 export interface Goal {
@@ -247,4 +253,38 @@ export interface CategoryData {
   category: PracticeCategory
   minutes: number
   percentage: number
+}
+
+/**
+ * What a student's classmates may see: how long they practised each day,
+ * and nothing else. No pieces, no categories, no notes, no sessions.
+ */
+export interface StudioStats {
+  uid: string
+  displayName: string
+  instrument?: InstrumentType
+  /**
+   * Which studio this belongs to. Stored on the document so classmates can
+   * be found with a single query — without it, a leaderboard would have to
+   * read everyone's profile to work out who shares a teacher.
+   */
+  teacherId?: string
+  currentStreak: number
+  /** 'yyyy-MM-dd' -> minutes practised that day. */
+  dailyMinutes: Record<string, number>
+  updatedAt: string
+}
+
+/**
+ * What a student's teacher may see. Everything the teacher's charts need,
+ * derived down to per-day totals — so a teacher never reads a practice
+ * session document, and therefore never sees the thoughts pad.
+ */
+export interface PracticeSummary {
+  uid: string
+  dailyMinutes: Record<string, number>
+  /** 'yyyy-MM-dd' -> category -> minutes. */
+  dailyCategories: Record<string, Record<string, number>>
+  totalSessions: number
+  updatedAt: string
 }

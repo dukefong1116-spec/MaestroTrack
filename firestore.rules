@@ -57,6 +57,13 @@ service cloud.firestore {
       return isMe(userId) || teaches(userId);
     }
 
+    /** The studio the signed-in user belongs to, or null. */
+    function myTeacherId() {
+      return exists(/databases/$(database)/documents/users/$(uid()))
+        ? get(/databases/$(database)/documents/users/$(uid())).data.teacherId
+        : null;
+    }
+
     /* ── profiles ────────────────────────────────────────────────── */
     match /users/{userId} {
       // A signed-in user may read teacher profiles, which is what makes
@@ -82,32 +89,73 @@ service cloud.firestore {
     }
 
     /* ── a student's own practice data ───────────────────────────── */
-    // Readable by the student and by their teacher; writable only by the
-    // student. A teacher observing practice must not be able to edit it.
+    //
+    // Nobody but the student reads any of this — not even their teacher.
+    //
+    // A practice session carries the thoughts pad, where someone writes
+    // that a piece is awful and they are sick of it. A rule cannot withhold
+    // one field: a reader gets the whole document or none of it. So the
+    // teacher gets none of it, and sees rolled-up figures instead, which is
+    // all their charts ever used.
     match /practiceSessions/{id} {
-      allow read: if ownerOrTeacher(resource.data.userId);
+      allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
       allow update, delete: if isMe(resource.data.userId);
     }
 
     match /pieces/{id} {
-      allow read: if ownerOrTeacher(resource.data.userId);
+      allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
       allow update, delete: if isMe(resource.data.userId);
     }
 
     match /performances/{id} {
-      allow read: if ownerOrTeacher(resource.data.userId);
+      allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
       allow update, delete: if isMe(resource.data.userId);
     }
 
     // Recordings carry a download URL that works for anyone holding it, so
     // this rule is what actually decides who can hear a take.
+    //
+    // A teacher hears only what was handed in. Students record freely while
+    // practising — bad takes, false starts, things they would never share —
+    // and sharedWithTeacher is set on the ones attached to a submission,
+    // and only those.
     match /recordings/{id} {
-      allow read: if ownerOrTeacher(resource.data.userId);
+      allow read: if isMe(resource.data.userId)
+                  || (resource.data.sharedWithTeacher == true
+                      && teaches(resource.data.userId));
       allow create: if isMe(request.resource.data.userId);
       allow update, delete: if isMe(resource.data.userId);
+    }
+
+    /* ── rolled-up practice ──────────────────────────────────────── */
+    //
+    // Two documents, because they have two audiences, and a rule governs a
+    // whole document. Both are written by the student's own app.
+
+    // What a teacher sees: per-day totals and a category breakdown. Enough
+    // for every chart on their page, and carrying no notes, no piece names
+    // and no individual sessions.
+    match /practiceSummary/{userId} {
+      allow read: if isMe(userId) || teaches(userId);
+      allow write: if isMe(userId);
+    }
+
+    // What classmates see: how long someone practised each day, their name
+    // and their streak. Nothing about what they practised.
+    //
+    // The studio check reads the viewer's own profile; the teacherId on the
+    // document is what makes a leaderboard a single query rather than a
+    // read of everyone's profile.
+    match /studioStats/{userId} {
+      allow read: if isMe(userId)
+                  || teaches(userId)
+                  || (signedIn()
+                      && resource.data.teacherId != null
+                      && resource.data.teacherId == myTeacherId());
+      allow write: if isMe(userId);
     }
 
     /* ── assignments ─────────────────────────────────────────────── */

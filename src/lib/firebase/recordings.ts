@@ -1,6 +1,7 @@
 import {
   collection,
   addDoc,
+  updateDoc,
   deleteDoc,
   doc,
   query,
@@ -60,6 +61,17 @@ export async function uploadRecording(
     createdAt: new Date().toISOString(),
   }))
   return docRef.id
+}
+
+/**
+ * Marks takes as handed in, which is what makes them readable by the
+ * student's teacher. Recordings are private until this is called — a
+ * student records freely while practising, and chooses what is heard.
+ */
+export async function shareRecordings(ids: string[]): Promise<void> {
+  await Promise.all(
+    ids.map((id) => updateDoc(doc(db, COL, id), { sharedWithTeacher: true }))
+  )
 }
 
 export async function deleteRecording(id: string, audioUrl: string): Promise<void> {

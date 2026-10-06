@@ -6,6 +6,7 @@ import Textarea from '@/components/ui/Textarea'
 import TakePicker from './TakePicker'
 import AssignmentRecorder from './AssignmentRecorder'
 import { submitAssignment } from '@/lib/firebase/assignments'
+import { shareRecordings } from '@/lib/firebase/recordings'
 import SubmitMoment from '@/components/celebration/SubmitMoment'
 import { primeAudioContext } from '@/lib/utils/sound'
 import {
@@ -77,6 +78,9 @@ export default function SubmitSheet({
         setSaving(false)
         return
       }
+      // Attached takes become readable by the teacher at this point, and
+      // only these ones — everything else recorded stays private.
+      if (picked.length) await shareRecordings(picked)
       await submitAssignment(assignment.id, {
         note: note.trim() || undefined,
         recordingIds: picked.length ? picked : undefined,

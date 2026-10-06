@@ -6,6 +6,8 @@ import {
   doc,
   query,
   where,
+  orderBy,
+  limit,
   getDocs,
   onSnapshot,
   type Unsubscribe,
@@ -47,11 +49,31 @@ export async function getPracticeSessions(userId: string): Promise<PracticeSessi
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
+/**
+ * How much history the app holds at once.
+ *
+ * Everything derived — streaks, XP, piece totals, assignment progress — is
+ * computed from this array, so it has to cover enough history to be
+ * correct while staying small enough to download on every visit. Two years
+ * of daily practice fits comfortably and outlasts every window any of
+ * those calculations look at.
+ *
+ * Without a bound this fetched a student's entire history forever, growing
+ * every single day they practised.
+ */
+const RECENT_SESSIONS = 800
+
 export function subscribePracticeSessions(
   userId: string,
-  callback: (sessions: PracticeSession[]) => void
+  callback: (sessions: PracticeSession[]) => void,
+  max = RECENT_SESSIONS
 ): Unsubscribe {
-  const q = query(collection(db, COL), where('userId', '==', userId))
+  const q = query(
+    collection(db, COL),
+    where('userId', '==', userId),
+    orderBy('date', 'desc'),
+    limit(max)
+  )
   return onSnapshot(q, (snap) => {
     const sorted = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)

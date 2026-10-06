@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
+import { useSummarySync } from '@/hooks/useSummarySync'
 import { useTeacherData } from '@/hooks/useTeacherData'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
@@ -30,6 +31,9 @@ import SchedulePage from '@/pages/teacher/SchedulePage'
 function DataProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth()
   useStudentData(profile?.role === 'student' ? profile?.uid : undefined)
+  // Keeps the rolled-up copies current, and backfills one for anyone who
+  // has practised but never had a summary written.
+  useSummarySync()
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
   return (
     <>
