@@ -13,7 +13,7 @@ import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments 
 import { normaliseStatus, needsReview, deriveDailyProgress, deriveProgress } from '@/lib/utils/assignments'
 import DailyStrip from '@/components/assignments/DailyStrip'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
-import { subscribeRecordings } from '@/lib/firebase/recordings'
+import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -82,7 +82,7 @@ export default function StudentDetailPage() {
   // a student has no need to hold their audio in memory.
   useEffect(() => {
     if (!reviewing) { setStudentRecordings([]); return }
-    return subscribeRecordings(reviewing.studentId, setStudentRecordings)
+    return subscribeSharedRecordings(reviewing.studentId, setStudentRecordings)
   }, [reviewing])
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, student?.weeklyGoalMinutes ?? 300), [sessions, student])

@@ -53,10 +53,6 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(studentId)).data.teacherId == uid();
     }
 
-    function ownerOrTeacher(userId) {
-      return isMe(userId) || teaches(userId);
-    }
-
     /** The studio the signed-in user belongs to, or null. */
     function myTeacherId() {
       return exists(/databases/$(database)/documents/users/$(uid()))

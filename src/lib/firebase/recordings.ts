@@ -84,6 +84,34 @@ export async function deleteRecording(id: string, audioUrl: string): Promise<voi
   }
 }
 
+/**
+ * The takes a teacher is allowed to hear: the ones handed in.
+ *
+ * Separate from subscribeRecordings rather than a parameter, because the
+ * filter is not cosmetic — a security rule only permits a query when the
+ * query itself proves every possible result is readable. Asking for a
+ * student's recordings without constraining sharedWithTeacher is refused
+ * outright, so a teacher would see none at all rather than only the
+ * private ones being withheld.
+ */
+export function subscribeSharedRecordings(
+  userId: string,
+  callback: (recordings: Recording[]) => void
+): Unsubscribe {
+  const q = query(
+    collection(db, COL),
+    where('userId', '==', userId),
+    where('sharedWithTeacher', '==', true)
+  )
+  return onSnapshot(q, (snap) => {
+    callback(
+      snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }) as Recording)
+        .sort((a, b) => b.date.localeCompare(a.date))
+    )
+  })
+}
+
 export function subscribeRecordings(
   userId: string,
   callback: (recordings: Recording[]) => void

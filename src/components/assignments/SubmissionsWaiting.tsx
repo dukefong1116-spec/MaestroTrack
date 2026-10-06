@@ -5,7 +5,7 @@ import Card from '@/components/ui/Card'
 import Sticker from '@/components/stickers/Sticker'
 import ReviewSheet from './ReviewSheet'
 import { useReviewQueue, type ReviewItem } from '@/hooks/useReviewQueue'
-import { subscribeRecordings } from '@/lib/firebase/recordings'
+import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import type { Recording } from '@/types'
 
 /**
@@ -26,7 +26,7 @@ export default function SubmissionsWaiting() {
   useEffect(() => {
     const studentId = reviewing?.assignment.studentId
     if (!studentId) { setRecordings([]); return }
-    return subscribeRecordings(studentId, setRecordings)
+    return subscribeSharedRecordings(studentId, setRecordings)
   }, [reviewing?.assignment.studentId])
 
   if (queue.length === 0) return null
