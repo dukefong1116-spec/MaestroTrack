@@ -57,6 +57,8 @@ export default function StudentDetailPage() {
   const [composing, setComposing] = useState(false)
   const [reviewing, setReviewing] = useState<Assignment | null>(null)
   const [studentRecordings, setStudentRecordings] = useState<Recording[]>([])
+  /** Null while the summary is still being fetched; false once we know. */
+  const [summaryExists, setSummaryExists] = useState<boolean | null>(null)
   const [assigning, setAssigning] = useState(false)
 
   const student = students.find((s) => s.uid === studentId)
@@ -69,8 +71,10 @@ export default function StudentDetailPage() {
   useEffect(() => {
     if (!studentId) return
     // The rolled-up copy, not the sessions themselves — see useTeacherData.
-    const unsubSummary = subscribePracticeSummary(studentId, (summary) =>
-      setStudentSessions(studentId, sessionsFromSummary(summary)))
+    const unsubSummary = subscribePracticeSummary(studentId, (summary) => {
+      setSummaryExists(!!summary)
+      setStudentSessions(studentId, sessionsFromSummary(summary))
+    })
     const unsub = subscribeTeacherNotes(studentId, setNotes)
     const unsubA = profile?.uid
       ? subscribeTeacherStudentAssignments(profile.uid, studentId, setAssignments)
@@ -150,6 +154,24 @@ export default function StudentDetailPage() {
           <p className="text-[var(--clay-dim)] text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
         </div>
       </div>
+
+      {/* An empty page used to be ambiguous: a student who has not
+          practised looked identical to figures that were never written.
+          Say which. */}
+      {summaryExists === false && (
+        <Card className="mb-6 p-5">
+          <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>
+            No practice figures for {student?.displayName ?? 'this student'} yet
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--clay-dim)' }}>
+            Their practice is recorded on their own device, and a summary of it is
+            published for you the next time they open the app. If they have been
+            practising and this stays empty, the <code>practiceSummary</code> and{' '}
+            <code>studioStats</code> rules have most likely not been published yet —
+            their app would be refused permission to share the figures.
+          </p>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

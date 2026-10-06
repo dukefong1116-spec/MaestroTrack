@@ -5,6 +5,16 @@ import { buildSummaries } from '@/lib/utils/summary'
 import { writeSummaries } from '@/lib/firebase/summary'
 
 /**
+ * Why the last write failed, if it did. Read by the teacher's empty state,
+ * which otherwise cannot tell "this student has not practised" from "the
+ * database refused to store the figures".
+ */
+let lastError: string | null = null
+export function summaryWriteError(): string | null {
+  return lastError
+}
+
+/**
  * Keeps a student's rolled-up practice up to date.
  *
  * Runs on the student's own device because there is no server yet. That
@@ -49,11 +59,20 @@ export function useSummarySync() {
     if (fingerprint === lastWritten.current) return
     lastWritten.current = fingerprint
 
-    void writeSummaries(studio, summary).catch(() => {
-      // A failed write just means the summary is stale until the next
-      // change; practice itself is already saved and is the real record.
-      lastWritten.current = ''
-    })
+    void writeSummaries(studio, summary)
+      .then(() => { lastError = null })
+      .catch((err: { code?: string }) => {
+        // Swallowing this was wrong. A denied write means a teacher sees an
+        // empty page and neither of us can tell why — practice is still
+        // safely recorded, but the rolled-up copy silently never appears.
+        lastError = err?.code ?? 'unknown'
+        console.warn(
+          '[summary] could not save the rolled-up practice figures:', lastError,
+          '— if this is permission-denied, the practiceSummary and studioStats',
+          'rules have not been published yet.'
+        )
+        lastWritten.current = ''
+      })
   }, [profile?.uid, profile?.role, profile?.displayName, profile?.instrument,
       profile?.teacherId, sessions, loading])
 }
