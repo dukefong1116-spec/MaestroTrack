@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
+import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { Recording } from '@/types'
 
@@ -109,7 +110,7 @@ export function subscribeSharedRecordings(
         .map((d) => ({ id: d.id, ...d.data() }) as Recording)
         .sort((a, b) => b.date.localeCompare(a.date))
     )
-  })
+  }, onSnapshotError('recordings'))
 }
 
 export function subscribeRecordings(
@@ -122,5 +123,5 @@ export function subscribeRecordings(
       .map((d) => ({ id: d.id, ...d.data() }) as Recording)
       .sort((a, b) => b.date.localeCompare(a.date))
     callback(sorted)
-  })
+  }, onSnapshotError('recordings'))
 }

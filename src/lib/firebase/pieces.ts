@@ -11,6 +11,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
+import { onSnapshotError } from './snapshotError'
 import type { Piece } from '@/types'
 
 const COL = 'pieces'
@@ -49,5 +50,5 @@ export function subscribePieces(userId: string, callback: (pieces: Piece[]) => v
       .map((d) => ({ id: d.id, ...d.data() }) as Piece)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     callback(sorted)
-  })
+  }, onSnapshotError('pieces'))
 }

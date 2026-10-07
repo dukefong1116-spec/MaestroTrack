@@ -1,5 +1,6 @@
 import { doc, setDoc, getDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
 import { db } from './config'
+import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { PracticeSummary, StudioStats } from '@/types'
 
@@ -38,7 +39,7 @@ export function subscribePracticeSummary(
   return onSnapshot(
     doc(db, SUMMARY, uid),
     (snap) => callback(snap.exists() ? ({ uid, ...snap.data() } as PracticeSummary) : null),
-    () => callback(null)
+    (e) => { onSnapshotError('practiceSummary')(e); callback(null) }
   )
 }
 
@@ -49,6 +50,6 @@ export function subscribeStudioStats(
   return onSnapshot(
     doc(db, STUDIO, uid),
     (snap) => callback(snap.exists() ? ({ uid, ...snap.data() } as StudioStats) : null),
-    () => callback(null)
+    (e) => { onSnapshotError('studioStats')(e); callback(null) }
   )
 }

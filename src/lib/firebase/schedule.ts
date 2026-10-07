@@ -10,6 +10,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
+import { onSnapshotError } from './snapshotError'
 import type { LessonSlot } from '@/types'
 
 const COL = 'lessonSlots'
@@ -37,8 +38,7 @@ export function subscribeTeacherSchedule(
 ): Unsubscribe {
   const q = query(collection(db, COL), where('teacherId', '==', teacherId))
   return onSnapshot(q, (snap) =>
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonSlot))
-  )
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonSlot)), onSnapshotError('schedule'))
 }
 
 export function subscribeStudentSchedule(
@@ -47,6 +47,5 @@ export function subscribeStudentSchedule(
 ): Unsubscribe {
   const q = query(collection(db, COL), where('studentId', '==', studentId))
   return onSnapshot(q, (snap) =>
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonSlot))
-  )
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LessonSlot)), onSnapshotError('schedule'))
 }

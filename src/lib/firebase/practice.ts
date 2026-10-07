@@ -68,18 +68,44 @@ export function subscribePracticeSessions(
   callback: (sessions: PracticeSession[]) => void,
   max = RECENT_SESSIONS
 ): Unsubscribe {
-  const q = query(
-    collection(db, COL),
-    where('userId', '==', userId),
-    orderBy('date', 'desc'),
-    limit(max)
-  )
-  return onSnapshot(q, (snap) => {
-    const sorted = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)
+  const toSessions = (snap: { docs: { id: string; data: () => unknown }[] }) =>
+    snap.docs
+      .map((d) => ({ id: d.id, ...(d.data() as object) }) as PracticeSession)
       .sort((a, b) => b.date.localeCompare(a.date))
-    callback(sorted)
-  })
+
+  let fallback: Unsubscribe | null = null
+
+  /**
+   * The bounded query needs a composite index, and an equality filter
+   * combined with an order on another field has no index until someone
+   * creates one. Firestore rejects the query entirely when it is missing —
+   * and with no error handler the callback simply never fired, so a
+   * student with two years of practice saw "No sessions yet" and nothing
+   * anywhere said why. The data was never in danger; it was unreachable.
+   *
+   * So the index is an optimisation, not a requirement. Without it this
+   * falls back to the unordered query, which needs no composite index,
+   * and trims client-side — more bandwidth, but a working app beats a
+   * fast empty one.
+   */
+  const primary = onSnapshot(
+    query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'desc'), limit(max)),
+    (snap) => callback(toSessions(snap)),
+    (err) => {
+      console.warn(
+        '[sessions] the ordered query failed (%s) — falling back to the unordered one. ' +
+        'If this is failed-precondition, the console error above carries a link that ' +
+        'creates the missing index.', err.code
+      )
+      fallback = onSnapshot(
+        query(collection(db, COL), where('userId', '==', userId)),
+        (snap) => callback(toSessions(snap).slice(0, max)),
+        (e) => console.error('[sessions] could not read practice sessions at all:', e.code)
+      )
+    }
+  )
+
+  return () => { primary(); fallback?.() }
 }
 
 export { Timestamp }

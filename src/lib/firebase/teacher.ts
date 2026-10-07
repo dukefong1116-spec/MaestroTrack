@@ -13,6 +13,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
+import { onSnapshotError } from './snapshotError'
 import type { TeacherNote, UserProfile } from '@/types'
 
 const USERS = 'users'
@@ -101,7 +102,7 @@ export function subscribeTeacherNotes(
   const q = query(collection(db, 'teacherNotes'), where('studentId', '==', studentId))
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TeacherNote))
-  })
+  }, onSnapshotError('teacher'))
 }
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {

@@ -10,6 +10,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
+import { onSnapshotError } from './snapshotError'
 import type { Performance } from '@/types'
 
 const COL = 'performances'
@@ -44,5 +45,5 @@ export function subscribePerformances(
       .map((d) => ({ id: d.id, ...d.data() }) as Performance)
       .sort((a, b) => a.date.localeCompare(b.date))
     callback(sorted)
-  })
+  }, onSnapshotError('performances'))
 }
