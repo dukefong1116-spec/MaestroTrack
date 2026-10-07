@@ -53,6 +53,51 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(studentId)).data.teacherId == uid();
     }
 
+    /**
+     * Is this profile change a legitimate one?
+     *
+     * `allow update: if isMe(userId)` let a student rewrite any field of
+     * their own profile — tested, and all four worked: promote themselves
+     * to teacher, point teacherId at any teacher they liked, invent a
+     * studio code. The last of those is the serious one, because pointing
+     * teacherId at a studio makes you a classmate, and classmates can read
+     * each other's practice figures. The studio code flow was decorative.
+     *
+     * So: role never changes after the account is created, a teacher's own
+     * studio code is fixed, and a student may only attach themselves to a
+     * teacher whose code they can actually produce — which is exactly what
+     * the join screen already sends.
+     */
+    function validProfileChange(userId) {
+      let d = request.resource.data;
+      let before = resource.data;
+      return d.role == before.role
+        && (d.role == 'teacher'
+              ? d.get('studioCode', '') == before.get('studioCode', '')
+              // Keeping the teacher you already have is always fine. The code
+              // is demanded only when the teacher actually changes — an
+              // earlier version asked for it on every write, which locked
+              // existing students out of editing their own name, since
+              // accounts that joined before the code was stored have none.
+              // Leave the studio fields alone, or set both to a pair that
+              // genuinely belongs together. A student's stored code is read
+              // by nothing today — the teacher lookup filters on role — but
+              // a field anyone can write to is a trap left for later.
+              : ((d.get('teacherId', null) == before.get('teacherId', null)
+                  && d.get('studioCode', '') == before.get('studioCode', ''))
+                 || studioCodeMatches(d)));
+    }
+
+    /** The teacher named really is a teacher, and the code really is theirs. */
+    function studioCodeMatches(d) {
+      let t = d.get('teacherId', '');
+      return t != ''
+        && exists(/databases/$(database)/documents/users/$(t))
+        && get(/databases/$(database)/documents/users/$(t)).data.role == 'teacher'
+        && get(/databases/$(database)/documents/users/$(t)).data.get('studioCode', '__none__')
+           == d.get('studioCode', '');
+    }
+
     /** The studio the signed-in user belongs to, or null. */
     function myTeacherId() {
       return exists(/databases/$(database)/documents/users/$(uid()))
@@ -74,13 +119,18 @@ service cloud.firestore {
                   || (signedIn() && resource.data.role == 'teacher')
                   || (signedIn() && resource.data.teacherId == uid());
 
-      allow create: if isMe(userId);
+      // A new account may not arrive already attached to a studio it has
+      // no code for; otherwise the update rule above is trivially avoided
+      // by setting teacherId at signup instead.
+      allow create: if isMe(userId)
+                    && (!('teacherId' in request.resource.data)
+                        || request.resource.data.teacherId == null
+                        || studioCodeMatches(request.resource.data));
 
-      // Only ever your own profile. A teacher cannot edit a student's
-      // goals, and a student cannot assign themselves to a teacher who has
-      // not been given their code — that field is set by the join flow,
-      // which runs as the student, so it stays writable by them.
-      allow update: if isMe(userId);
+      // Only ever your own profile, and not every field of it — see
+      // validProfileChange, which is what stops a student walking into a
+      // studio uninvited.
+      allow update: if isMe(userId) && validProfileChange(userId);
       allow delete: if false;
     }
 
@@ -151,7 +201,14 @@ service cloud.firestore {
                   || (signedIn()
                       && resource.data.teacherId != null
                       && resource.data.teacherId == myTeacherId());
-      allow write: if isMe(userId);
+
+      // The studio written here must be the one the profile actually says.
+      // Without this, claiming a studio in your own figures puts you in its
+      // leaderboard regardless of who your teacher is.
+      allow write: if isMe(userId)
+                   && (!('teacherId' in request.resource.data)
+                       || request.resource.data.teacherId == null
+                       || request.resource.data.teacherId == myTeacherId());
     }
 
     /* ── assignments ─────────────────────────────────────────────── */
