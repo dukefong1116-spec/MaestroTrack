@@ -13,7 +13,9 @@
     "that it overwrites whatever is published there.",
     "",
     "The rules files below are the same ones the console runs, so testing",
-    "against the emulator is testing the real rules."
+    "against the emulator is testing the real rules.",
+    "",
+    "Firestore runs on 8085 rather than the usual 8080: WeChat holds 8080 on this machine, and a port the emulator cannot bind simply refuses to start. src/lib/firebase/config.ts connects to the same number."
   ],
   "firestore": {
     "rules": "firestore.rules",
@@ -23,10 +25,23 @@
     "rules": "storage.rules"
   },
   "emulators": {
-    "auth": { "host": "127.0.0.1", "port": 9099 },
-    "firestore": { "host": "127.0.0.1", "port": 8080 },
-    "storage": { "host": "127.0.0.1", "port": 9199 },
-    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4000 },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8085
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 4000
+    },
     "singleProjectMode": true
   }
 }

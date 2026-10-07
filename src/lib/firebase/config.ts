@@ -56,7 +56,7 @@ storage.maxOperationRetryTime = 30_000
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === '1') {
   try {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
-    connectFirestoreEmulator(db, '127.0.0.1', 8080)
+    connectFirestoreEmulator(db, '127.0.0.1', 8085) // 8080 is commonly taken; see firebase.json
     connectStorageEmulator(storage, '127.0.0.1', 9199)
     console.info('[firebase] using local emulators')
   } catch (e) {
