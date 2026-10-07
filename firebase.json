@@ -1,0 +1,32 @@
+{
+  "_comment": [
+    "Local emulator configuration only.",
+    "",
+    "The default project is deliberately 'demo-maestrotrack'. Firebase treats",
+    "any project id beginning with 'demo-' as purely local: the emulators",
+    "refuse to contact a real project at all, so nothing here can read, write",
+    "or delete anything in maestrotrack-3c2cf.",
+    "",
+    "That also means `firebase deploy` has no real target by default. If you",
+    "ever want to deploy rules from this repo rather than pasting them into",
+    "the console, do it explicitly with --project maestrotrack-3c2cf, and know",
+    "that it overwrites whatever is published there.",
+    "",
+    "The rules files below are the same ones the console runs, so testing",
+    "against the emulator is testing the real rules."
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "firestore": { "host": "127.0.0.1", "port": 8080 },
+    "storage": { "host": "127.0.0.1", "port": 9199 },
+    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4000 },
+    "singleProjectMode": true
+  }
+}

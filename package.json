@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "TZ=America/Los_Angeles vitest run"
+    "test": "TZ=America/Los_Angeles vitest run",
+    "emulate": "firebase emulators:start --only auth,firestore,storage",
+    "dev:emulator": "VITE_USE_EMULATOR=1 vite"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.1",
+    "firebase-tools": "^15.32.1",
     "oxlint": "^1.69.0",
     "postcss": "^8.5.15",
     "tailwindcss": "^4.3.1",
