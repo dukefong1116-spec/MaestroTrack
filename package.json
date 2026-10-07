@@ -8,9 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "TZ=America/Los_Angeles vitest run",
+    "test": "TZ=America/Los_Angeles vitest run --exclude '**/rules.test.ts' --exclude '**/node_modules/**'",
     "emulate": "firebase emulators:start --only auth,firestore,storage",
-    "dev:emulator": "VITE_USE_EMULATOR=1 vite"
+    "dev:emulator": "VITE_USE_EMULATOR=1 vite",
+    "test:rules": "vitest run src/lib/firebase/__tests__/rules.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -29,6 +30,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@tailwindcss/vite": "^4.3.1",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
