@@ -146,6 +146,29 @@ service cloud.firestore {
       // validProfileChange, which is what stops a student walking into a
       // studio uninvited.
       allow update: if isMe(userId) && validProfileChange(userId);
+
+      // A teacher letting a student go.
+      //
+      // The Remove button on the students page writes `teacherId: null` to
+      // the student's own profile, which no rule permitted: profile writes
+      // required isMe(), and the teacher is not the student. The button has
+      // never worked. Found by running the app's own function rather than a
+      // query written to match the rule.
+      //
+      // Narrow on purpose: only a teacher this student is actually attached
+      // to, only to detach them, and only those fields. A teacher cannot
+      // claim a student this way, because the new teacherId must be null.
+      // `.get` rather than `.teacherId`: a student who has never joined a
+      // studio has no such field, and reading a missing field is an
+      // evaluation error. Firestore treats that error as a denial, so the
+      // rule was safe but noisy, and a clause that errors is a clause
+      // nobody can reason about.
+      allow update: if signedIn()
+                    && resource.data.get('teacherId', '') == uid()
+                    && request.resource.data.get('teacherId', null) == null
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['teacherId', 'studioCode', 'updatedAt']);
+
       allow delete: if false;
     }
 
