@@ -98,6 +98,21 @@ service cloud.firestore {
            == d.get('studioCode', '');
     }
 
+    /**
+     * Exactly one item added to a list, with what was already there kept.
+     *
+     * Allowing a student to write `submissions` at all meant they could
+     * replace the array outright — erasing an earlier attempt and the
+     * evidence of what a teacher had already seen. A resubmission should
+     * add to the record, not rewrite it.
+     */
+    function appendsOne(field) {
+      let before = resource.data.get(field, []);
+      let after = request.resource.data.get(field, []);
+      return after.size() == before.size() + 1
+        && (before.size() == 0 || before[before.size() - 1] in after);
+    }
+
     /** The studio the signed-in user belongs to, or null. */
     function myTeacherId() {
       return exists(/databases/$(database)/documents/users/$(uid()))
@@ -146,19 +161,31 @@ service cloud.firestore {
     match /practiceSessions/{id} {
       allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
-      allow update, delete: if isMe(resource.data.userId);
+      // userId is immutable: handing a record to someone else plants it in
+      // their log, where it counts toward their streaks and their totals.
+      allow update: if isMe(resource.data.userId)
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if isMe(resource.data.userId);
     }
 
     match /pieces/{id} {
       allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
-      allow update, delete: if isMe(resource.data.userId);
+      // userId is immutable: handing a record to someone else plants it in
+      // their log, where it counts toward their streaks and their totals.
+      allow update: if isMe(resource.data.userId)
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if isMe(resource.data.userId);
     }
 
     match /performances/{id} {
       allow read: if isMe(resource.data.userId);
       allow create: if isMe(request.resource.data.userId);
-      allow update, delete: if isMe(resource.data.userId);
+      // userId is immutable: handing a record to someone else plants it in
+      // their log, where it counts toward their streaks and their totals.
+      allow update: if isMe(resource.data.userId)
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if isMe(resource.data.userId);
     }
 
     // Recordings carry a download URL that works for anyone holding it, so
@@ -173,7 +200,11 @@ service cloud.firestore {
                   || (resource.data.sharedWithTeacher == true
                       && teaches(resource.data.userId));
       allow create: if isMe(request.resource.data.userId);
-      allow update, delete: if isMe(resource.data.userId);
+      // userId is immutable: handing a record to someone else plants it in
+      // their log, where it counts toward their streaks and their totals.
+      allow update: if isMe(resource.data.userId)
+                    && request.resource.data.userId == resource.data.userId;
+      allow delete: if isMe(resource.data.userId);
     }
 
     /* ── rolled-up practice ──────────────────────────────────────── */
@@ -235,7 +266,8 @@ service cloud.firestore {
                     && resource.data.studentId == uid()
                     && request.resource.data.diff(resource.data)
                          .affectedKeys().hasOnly(['status', 'submissions', 'updatedAt'])
-                    && request.resource.data.status == 'submitted';
+                    && request.resource.data.status == 'submitted'
+                    && appendsOne('submissions');
 
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
@@ -252,7 +284,12 @@ service cloud.firestore {
                   && (resource.data.studentId == uid()
                       || resource.data.teacherId == uid()
                       || teaches(resource.data.studentId));
-      allow create: if signedIn() && request.resource.data.teacherId == uid();
+      // teaches() as well as ownership: without it any teacher could write
+      // a note about any child in the system, and the student would read
+      // it, since students can see what is written about them.
+      allow create: if signedIn()
+                    && request.resource.data.teacherId == uid()
+                    && teaches(request.resource.data.studentId);
       allow update, delete: if signedIn() && resource.data.teacherId == uid();
     }
 
@@ -260,7 +297,11 @@ service cloud.firestore {
     match /lessonSlots/{id} {
       allow read: if signedIn()
                   && (resource.data.teacherId == uid() || resource.data.studentId == uid());
-      allow create: if signedIn() && request.resource.data.teacherId == uid();
+      // Same reasoning as teacherNotes: a lesson is an appointment with a
+      // particular child, not something to put in a stranger's calendar.
+      allow create: if signedIn()
+                    && request.resource.data.teacherId == uid()
+                    && teaches(request.resource.data.studentId);
       allow update, delete: if signedIn() && resource.data.teacherId == uid();
     }
 

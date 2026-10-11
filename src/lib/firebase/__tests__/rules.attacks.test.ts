@@ -278,3 +278,130 @@ describe('assignments', () => {
     await assertFails(updateDoc(doc(as(ANA), 'assignments', 'a1'), { studentId: BEN }))
   })
 })
+
+/* ── 8. writing about students who are not yours ──────────────────── */
+
+describe('a teacher acting outside their own studio', () => {
+  it('must not write a note about someone else\u2019s student', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'teacherNotes', 'intrusive'), {
+      teacherId: OTHER_TEACHER, studentId: ANA,
+      content: 'I have opinions about a child I do not teach',
+      createdAt: '', updatedAt: '',
+    }))
+  })
+
+  it('must not schedule a lesson for someone else\u2019s student', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'lessonSlots', 'intrusive'), {
+      teacherId: OTHER_TEACHER, studentId: ANA, studentName: 'Ana', dayOfWeek: 1,
+      startTime: '08:00', durationMinutes: 30, createdAt: '', updatedAt: '',
+    }))
+  })
+
+  it('may do both for their own student', async () => {
+    await assertSucceeds(setDoc(doc(as(OTHER_TEACHER), 'teacherNotes', 'ok'), {
+      teacherId: OTHER_TEACHER, studentId: CLARE, content: 'Good lesson',
+      createdAt: '', updatedAt: '',
+    }))
+  })
+})
+
+/* ── 9. erasing the record ────────────────────────────────────────── */
+
+describe('a student rewriting their own submission history', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'assignments', 'hist'), {
+        teacherId: TEACHER, studentId: ANA, title: 'Scales', status: 'returned',
+        createdAt: '', updatedAt: '',
+        submissions: [
+          { at: '2026-10-01T10:00:00.000Z', note: 'first attempt, went badly' },
+        ],
+        feedback: [
+          { at: '2026-10-02T10:00:00.000Z', verdict: 'returned', note: 'try again' },
+        ],
+      })
+    })
+  })
+
+  it('must not erase an earlier attempt while resubmitting', async () => {
+    // A teacher reviewing a second go wants to see the first. Replacing the
+    // array rather than appending to it hides what changed.
+    await assertFails(updateDoc(doc(as(ANA), 'assignments', 'hist'), {
+      status: 'submitted',
+      submissions: [{ at: '2026-10-05T10:00:00.000Z', note: 'nailed it first time' }],
+      updatedAt: '2026-10-05T10:00:00.000Z',
+    }))
+  })
+
+  it('must not delete the feedback it was returned with', async () => {
+    await assertFails(updateDoc(doc(as(ANA), 'assignments', 'hist'), {
+      status: 'submitted', feedback: [], updatedAt: 'now',
+    }))
+  })
+
+  it('may append a new attempt', async () => {
+    await assertSucceeds(updateDoc(doc(as(ANA), 'assignments', 'hist'), {
+      status: 'submitted',
+      submissions: [
+        { at: '2026-10-01T10:00:00.000Z', note: 'first attempt, went badly' },
+        { at: '2026-10-05T10:00:00.000Z', note: 'second go' },
+      ],
+      updatedAt: '2026-10-05T10:00:00.000Z',
+    }))
+  })
+})
+
+/* ── 10. values nobody checks ─────────────────────────────────────── */
+
+describe('data that is the right shape but nonsense', () => {
+  it('a session claiming a thousand hours is accepted \u2014 nothing validates it', async () => {
+    // Recorded, not asserted as safe. XP, streaks and assignment progress
+    // are all derived from these numbers, so a client that lies inflates
+    // every one of them. Rules can constrain values; none here do. Fixing
+    // it properly belongs with a server that computes rather than accepts.
+    await assertSucceeds(setDoc(doc(as(ANA), 'practiceSessions', 'absurd'), {
+      userId: ANA, date: '2026-10-06', durationMinutes: 60000, category: 'Scales',
+      difficultyRating: 3, confidenceRating: 7, createdAt: '',
+    }))
+  })
+
+  it('a session dated far in the future is accepted', async () => {
+    await assertSucceeds(setDoc(doc(as(ANA), 'practiceSessions', 'future'), {
+      userId: ANA, date: '2099-01-01', durationMinutes: 30, category: 'Scales',
+      difficultyRating: 3, confidenceRating: 7, createdAt: '',
+    }))
+  })
+
+  it('but a session still cannot be planted on someone else', async () => {
+    await assertFails(setDoc(doc(as(BEN), 'practiceSessions', 'planted'), {
+      userId: ANA, date: '2026-10-06', durationMinutes: 30, category: 'Scales',
+      difficultyRating: 3, confidenceRating: 7, createdAt: '',
+    }))
+  })
+})
+
+/* ── 11. moving a record to someone else ──────────────────────────── */
+
+describe('changing who owns a record', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'recordings', 'ana-take'), {
+        userId: ANA, pieceName: 'Ballade', date: '2026-10-06', audioUrl: 'x', createdAt: '',
+      })
+    })
+  })
+
+  it('a student must not reassign their own recording to someone else', async () => {
+    await assertFails(updateDoc(doc(as(ANA), 'recordings', 'ana-take'), { userId: BEN }))
+  })
+
+  it('a student must not reassign their own session to someone else', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'practiceSessions', 'mine'), {
+        userId: ANA, date: '2026-10-06', durationMinutes: 30, category: 'Scales',
+        difficultyRating: 3, confidenceRating: 7, createdAt: '',
+      })
+    })
+    await assertFails(updateDoc(doc(as(ANA), 'practiceSessions', 'mine'), { userId: BEN }))
+  })
+})
