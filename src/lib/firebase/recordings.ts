@@ -17,6 +17,18 @@ import type { Recording } from '@/types'
 
 const COL = 'recordings'
 
+/**
+ * A content type the Storage rules will accept.
+ *
+ * Falls back to audio/webm rather than refusing, because the file really
+ * is audio either way and the alternative is losing the take. The
+ * extension chosen at record time comes from the same format decision, so
+ * this stays consistent with the name.
+ */
+function audioContentType(blobType: string | undefined): string {
+  return blobType && blobType.startsWith('audio/') ? blobType : 'audio/webm'
+}
+
 export async function uploadRecording(
   userId: string,
   file: File,
@@ -36,7 +48,19 @@ export async function uploadRecording(
   }
   const path = `recordings/${authUid}/${Date.now()}_${file.name}`
   const storageRef = ref(storage, path)
-  const uploadTask = uploadBytesResumable(storageRef, file)
+  // Say what this is, rather than hoping the blob still knows.
+  //
+  // The upload used to send no metadata at all, which leaves the content
+  // type to whatever `file.type` happens to hold. The Storage rules only
+  // accept `audio/*`, so a blob that arrives with an empty type — or with
+  // a container type like video/webm, which some browsers report for an
+  // audio-only MediaRecorder — is rejected as `storage/unauthorized`:
+  // a permissions error for what is really a labelling problem, with
+  // nothing on screen to say so. Verified against the emulator: an empty
+  // content type is refused, every audio/* one is accepted.
+  const uploadTask = uploadBytesResumable(storageRef, file, {
+    contentType: audioContentType(file.type),
+  })
 
   await new Promise<void>((resolve, reject) => {
     uploadTask.on(

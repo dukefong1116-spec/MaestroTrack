@@ -124,3 +124,58 @@ describe('reading and deleting a take', () => {
     await assertFails(deleteObject(ref(as(TEACHER), `recordings/${ANA}/take-1.webm`)))
   })
 })
+
+/* ══════════════════════════════════════════════════════════════════════
+ * The content type the app actually sends
+ *
+ * Every test above states `audio/webm` explicitly, which is the one thing
+ * the upload never did: it passed no metadata at all and let the blob's
+ * own type decide. That is the gap this group closes — the cases below
+ * are what a browser really hands back, including the ones where the type
+ * is missing, and they go through the app's own normalisation rather than
+ * a value written here to suit the rule.
+ * ════════════════════════════════════════════════════════════════════ */
+
+describe('what the app sends as a content type', () => {
+  // Mirrors audioContentType in src/lib/firebase/recordings.ts.
+  const normalise = (t: string | undefined) =>
+    t && t.startsWith('audio/') ? t : 'audio/webm'
+
+  const FROM_BROWSERS = [
+    'audio/webm;codecs=opus',  // Chrome
+    'audio/ogg;codecs=opus',   // Firefox
+    'audio/mp4',               // Safari
+    'audio/webm',
+  ]
+
+  for (const type of FROM_BROWSERS) {
+    it(`accepts ${type}`, async () => {
+      await assertSucceeds(uploadBytes(
+        ref(as(ANA), `recordings/${ANA}/take.webm`), audio(),
+        { contentType: normalise(type) }))
+    })
+  }
+
+  it('a blob that lost its type still uploads, because the app names one', async () => {
+    await assertSucceeds(uploadBytes(
+      ref(as(ANA), `recordings/${ANA}/take.webm`), audio(),
+      { contentType: normalise('') }))
+  })
+
+  it('a container type some browsers report for audio-only recording', async () => {
+    await assertSucceeds(uploadBytes(
+      ref(as(ANA), `recordings/${ANA}/take.webm`), audio(),
+      { contentType: normalise('video/webm') }))
+  })
+
+  it('and the rule still refuses something that is genuinely not audio', async () => {
+    await assertFails(uploadBytes(
+      ref(as(ANA), `recordings/${ANA}/notes.pdf`), audio(),
+      { contentType: 'application/pdf' }))
+  })
+
+  it('sending no content type at all is refused — the case that bit', async () => {
+    await assertFails(uploadBytes(
+      ref(as(ANA), `recordings/${ANA}/take.webm`), audio()))
+  })
+})
