@@ -61,8 +61,23 @@ interface UploadState {
    * never moves — the code is the difference between guessing and knowing.
    */
   lastError: string | null
-  /** The path and identity of the last failed attempt, for diagnosing rules. */
-  lastAttempt: { path: string; authUid: string | null } | null
+  /**
+   * What the last failed attempt actually sent.
+   *
+   * The code alone is not enough to act on. `storage/unauthorized` is
+   * returned both when the rules refuse the content type and when the
+   * published rules refuse everything, and those have opposite fixes — one
+   * is in this repo, the other is in the Firebase console. Recording the
+   * content type and size tells the two apart without a browser console,
+   * which on Safari is behind a settings flag most people never turn on.
+   */
+  lastAttempt: {
+    path: string
+    authUid: string | null
+    contentType?: string
+    bytes?: number
+    serverMessage?: string
+  } | null
   status: () => UploadStatus
   /** Re-check after enabling Storage, then drain. */
   recheck: (userId: string) => Promise<void>
@@ -152,10 +167,24 @@ export const useUploadStore = create<UploadState>((set, get) => ({
         // so the same clip could otherwise be recorded as failed twice.
         const code = (err as { code?: string })?.code ?? 'unknown'
         const authUid = (await import('@/lib/firebase/config')).auth.currentUser?.uid ?? null
+        // The server often says more than the code does — an App Check
+        // rejection and a rules rejection share `storage/unauthorized`.
+        const serverMessage = (err as { serverResponse?: string })?.serverResponse
+        console.error(
+          '[upload] refused:', code,
+          '· sent', clip.blob?.type || '(no type)', clip.blob?.size, 'bytes',
+          '· as', authUid, serverMessage ?? ''
+        )
         set((s) => ({
           failed: s.failed.includes(clip.id) ? s.failed : [...s.failed, clip.id],
           lastError: code,
-          lastAttempt: { path: `recordings/${authUid}/…`, authUid },
+          lastAttempt: {
+            path: `recordings/${authUid}/…`,
+            authUid,
+            contentType: clip.blob?.type || '(none)',
+            bytes: clip.blob?.size,
+            serverMessage: serverMessage?.slice(0, 200),
+          },
         }))
       }
     }

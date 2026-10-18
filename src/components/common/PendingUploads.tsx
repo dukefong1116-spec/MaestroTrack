@@ -58,8 +58,12 @@ export default function PendingUploads() {
 
   /** Plain English for the SDK's error codes, so a failure is actionable. */
   const reason: Record<string, string> = {
+    // Deliberately does not name a culprit. The same code is returned when
+    // the rules refuse the content type, when the published rules refuse
+    // everything, and when App Check is enforced — and the line below says
+    // what was sent so the right one can be identified.
     'storage/unauthorized':
-      'Your Storage security rules are rejecting it. In the Firebase console, open Storage \u2192 Rules and make sure they allow a signed-in user to write to recordings/{their own uid}/.',
+      'Storage refused the write. The line below shows what was sent; compare it against Storage \u2192 Rules in the Firebase console.',
     'storage/unauthenticated': 'You appear to be signed out. Sign in and try again.',
     'storage/quota-exceeded': 'The Storage bucket is out of space.',
     'storage/retry-limit-exceeded': 'The connection kept failing. It will retry later.',
@@ -129,11 +133,18 @@ export default function PendingUploads() {
           {detail}
         </p>
 
-        {/* The exact target of the rejected write, so a rules problem can be
-            compared against the rule rather than guessed at. */}
+        {/* What was actually sent, not what we assume was wrong.
+            `storage/unauthorized` covers both "the rules refuse this content
+            type" and "the published rules refuse everything", and those have
+            opposite fixes. The content type and size separate them, and they
+            are on screen because Safari keeps its console behind a settings
+            flag. */}
         {state === 'stalled' && lastError && lastAttempt && (
           <p className="mt-1 break-all text-[10px]" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
             {lastError} · {lastAttempt.path}
+            {lastAttempt.contentType ? ` · sent ${lastAttempt.contentType}` : ''}
+            {typeof lastAttempt.bytes === 'number' ? ` · ${Math.round(lastAttempt.bytes / 1024)} KB` : ''}
+            {lastAttempt.serverMessage ? ` · ${lastAttempt.serverMessage}` : ''}
           </p>
         )}
 
