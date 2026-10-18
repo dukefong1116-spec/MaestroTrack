@@ -68,7 +68,7 @@ service cloud.firestore {
      * teacher whose code they can actually produce — which is exactly what
      * the join screen already sends.
      */
-    function validProfileChange(userId) {
+    function validProfileChange() {
       let d = request.resource.data;
       let before = resource.data;
       return d.role == before.role
@@ -113,6 +113,25 @@ service cloud.firestore {
         && (before.size() == 0 || before[before.size() - 1] in after);
     }
 
+    /**
+     * The name on a leaderboard row has to be the writer's own.
+     *
+     * studioStats carries a displayName so the leaderboard can be drawn
+     * from one query instead of a profile read per classmate. Nothing
+     * checked it, so a student could publish their row under a classmate's
+     * name and appear twice in their own studio's table.
+     *
+     * Guarded by exists(): a student whose profile document is missing is
+     * already invisible to classmates and teachers, because both paths to
+     * their row need that document, so refusing the write as well costs
+     * nothing.
+     */
+    function nameMatchesProfile(d) {
+      return exists(/databases/$(database)/documents/users/$(uid()))
+        && d.get('displayName', '')
+           == get(/databases/$(database)/documents/users/$(uid())).data.get('displayName', '');
+    }
+
     /** The studio the signed-in user belongs to, or null. */
     function myTeacherId() {
       return exists(/databases/$(database)/documents/users/$(uid()))
@@ -145,7 +164,7 @@ service cloud.firestore {
       // Only ever your own profile, and not every field of it — see
       // validProfileChange, which is what stops a student walking into a
       // studio uninvited.
-      allow update: if isMe(userId) && validProfileChange(userId);
+      allow update: if isMe(userId) && validProfileChange();
 
       // A teacher letting a student go.
       //
@@ -240,7 +259,13 @@ service cloud.firestore {
     // and no individual sessions.
     match /practiceSummary/{userId} {
       allow read: if isMe(userId) || teaches(userId);
-      allow write: if isMe(userId);
+
+      // The uid inside the document has to be the document's own id.
+      // Readers take it on trust — useTeacherData keys its chart data by
+      // it — so a row claiming to be somebody else's is a row that
+      // misattributes practice to them.
+      allow write: if isMe(userId)
+                   && request.resource.data.get('uid', userId) == userId;
     }
 
     // What classmates see: how long someone practised each day, their name
@@ -260,6 +285,8 @@ service cloud.firestore {
       // Without this, claiming a studio in your own figures puts you in its
       // leaderboard regardless of who your teacher is.
       allow write: if isMe(userId)
+                   && request.resource.data.get('uid', userId) == userId
+                   && nameMatchesProfile(request.resource.data)
                    && (!('teacherId' in request.resource.data)
                        || request.resource.data.teacherId == null
                        || request.resource.data.teacherId == myTeacherId());

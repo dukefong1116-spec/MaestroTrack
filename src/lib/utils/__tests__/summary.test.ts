@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { afterAll, beforeAll, describe, it, expect, vi } from 'vitest'
 import { buildSummaries, sessionsFromSummary, minutesOn } from '../summary'
 import { getDailyData, getCategoryData } from '../analytics'
 import type { PracticeSession } from '@/types'
@@ -12,6 +12,18 @@ const sess = (date: string, minutes: number, category = 'Technique', over: Parti
 })
 
 const now = new Date('2026-10-06T12:00:00')
+
+/**
+ * Pin the clock, not just buildSummaries' `now`.
+ *
+ * buildSummaries takes the date to work from, but getDailyData reads the
+ * real one to decide which days fall inside its window — so this file
+ * passed only while today happened to be within a fortnight of the
+ * fixture. It stopped on 2026-10-18, when 'Oct 04' dropped off the end of
+ * a 14-day window, and said nothing about the code it tests.
+ */
+beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(now) })
+afterAll(() => { vi.useRealTimers() })
 
 describe('buildSummaries', () => {
   it('totals minutes per day', () => {
