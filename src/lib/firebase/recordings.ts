@@ -18,15 +18,25 @@ import type { Recording } from '@/types'
 const COL = 'recordings'
 
 /**
- * A content type the Storage rules will accept.
+ * A content type the Storage rules will accept, naming the real container.
  *
- * Falls back to audio/webm rather than refusing, because the file really
- * is audio either way and the alternative is losing the take. The
- * extension chosen at record time comes from the same format decision, so
- * this stays consistent with the name.
+ * MediaRecorder does not reliably report an `audio/*` type for an
+ * audio-only recording: asked for audio/mp4 it may still describe what it
+ * produced as video/mp4, because mp4 is the container either way. The
+ * Storage rules match `audio/.*`, so such a take is refused as
+ * `storage/unauthorized` — which reads as a rules problem and is really a
+ * labelling one.
+ *
+ * So the container is kept and only the leading type corrected. Rewriting
+ * everything to audio/webm would pass the rule just as well, but would
+ * then describe an mp4 as webm, and the file extension — chosen from the
+ * same format decision at record time — would disagree with it.
  */
 function audioContentType(blobType: string | undefined): string {
-  return blobType && blobType.startsWith('audio/') ? blobType : 'audio/webm'
+  if (!blobType) return 'audio/webm'
+  if (blobType.startsWith('audio/')) return blobType
+  if (blobType.startsWith('video/')) return 'audio/' + blobType.slice('video/'.length)
+  return 'audio/webm'
 }
 
 export async function uploadRecording(

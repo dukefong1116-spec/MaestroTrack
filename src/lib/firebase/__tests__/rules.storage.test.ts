@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { beforeAll, afterAll, beforeEach, describe, it } from 'vitest'
+import { beforeAll, afterAll, beforeEach, describe, it, expect } from 'vitest'
 import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
@@ -138,8 +138,12 @@ describe('reading and deleting a take', () => {
 
 describe('what the app sends as a content type', () => {
   // Mirrors audioContentType in src/lib/firebase/recordings.ts.
-  const normalise = (t: string | undefined) =>
-    t && t.startsWith('audio/') ? t : 'audio/webm'
+  const normalise = (t: string | undefined): string => {
+    if (!t) return 'audio/webm'
+    if (t.startsWith('audio/')) return t
+    if (t.startsWith('video/')) return 'audio/' + t.slice('video/'.length)
+    return 'audio/webm'
+  }
 
   const FROM_BROWSERS = [
     'audio/webm;codecs=opus',  // Chrome
@@ -162,11 +166,20 @@ describe('what the app sends as a content type', () => {
       { contentType: normalise('') }))
   })
 
-  it('a container type some browsers report for audio-only recording', async () => {
-    await assertSucceeds(uploadBytes(
-      ref(as(ANA), `recordings/${ANA}/take.webm`), audio(),
-      { contentType: normalise('video/webm') }))
-  })
+  // The real failure: Safari records to mp4 and may describe the result as
+  // video/mp4, because mp4 is the container whether or not there is a
+  // picture in it. `storage/unauthorized` on a correctly-formed path was
+  // this, not a console misconfiguration.
+  it.each(['video/mp4', 'video/webm', 'video/ogg'])(
+    'a take the recorder described as %s', async (reported) => {
+      const corrected = normalise(reported)
+      expect(corrected.startsWith('audio/'), 'must satisfy the rule').toBe(true)
+      expect(corrected.split('/')[1], 'and must keep the container')
+        .toBe(reported.split('/')[1])
+      await assertSucceeds(uploadBytes(
+        ref(as(ANA), `recordings/${ANA}/take.webm`), audio(),
+        { contentType: corrected }))
+    })
 
   it('and the rule still refuses something that is genuinely not audio', async () => {
     await assertFails(uploadBytes(
