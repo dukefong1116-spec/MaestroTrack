@@ -169,7 +169,8 @@ export const useUploadStore = create<UploadState>((set, get) => ({
         const authUid = (await import('@/lib/firebase/config')).auth.currentUser?.uid ?? null
         // The server often says more than the code does — an App Check
         // rejection and a rules rejection share `storage/unauthorized`.
-        const serverMessage = (err as { serverResponse?: string })?.serverResponse
+        const serverMessage =
+          (err as { serverResponse?: string })?.serverResponse ?? (await probeStorage())
         console.error(
           '[upload] refused:', code,
           '· sent', clip.blob?.type || '(no type)', clip.blob?.size, 'bytes',
@@ -193,6 +194,44 @@ export const useUploadStore = create<UploadState>((set, get) => ({
     await get().refresh(userId)
   },
 }))
+
+/**
+ * Ask Storage directly why, when the SDK will not say.
+ *
+ * `storage/unauthorized` is returned for a rules refusal, for rules that
+ * refuse everything, and for App Check enforcement, and the SDK hands back
+ * the same code for all three with no message attached. The REST endpoint
+ * does answer: it returns the status and, for App Check, says so by name.
+ *
+ * One request, sixteen bytes, into the caller's own folder, and only after
+ * a real upload has already failed. If this is refused too, nothing about
+ * the take was the problem.
+ */
+async function probeStorage(): Promise<string | undefined> {
+  try {
+    const { auth, storage } = await import('@/lib/firebase/config')
+    const user = auth.currentUser
+    const bucket = storage.app.options.storageBucket
+    if (!user || !bucket) return undefined
+    const name = `recordings/${user.uid}/.probe-${Date.now()}`
+    const res = await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodeURIComponent(name)}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${await user.getIdToken()}`,
+          'Content-Type': 'audio/webm',
+        },
+        body: new Blob([new Uint8Array(16)]),
+      }
+    )
+    if (res.ok) return 'a plain audio/webm probe SUCCEEDED — the rules are fine'
+    const body = (await res.text()).replace(/\s+/g, ' ').slice(0, 160)
+    return `probe HTTP ${res.status}: ${body}`
+  } catch {
+    return undefined
+  }
+}
 
 /** A clip that can actually be sent: the session it belongs to exists. */
 type UploadableClip = PendingClip & { sessionId: string }

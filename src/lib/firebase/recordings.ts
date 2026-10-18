@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -73,21 +73,40 @@ export async function uploadRecording(
   // a permissions error for what is really a labelling problem, with
   // nothing on screen to say so. Verified against the emulator: an empty
   // content type is refused, every audio/* one is accepted.
-  const uploadTask = uploadBytesResumable(storageRef, file, {
-    contentType: audioContentType(file.type),
-  })
+  const contentType = audioContentType(file.type)
 
-  await new Promise<void>((resolve, reject) => {
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        onProgress?.(pct)
-      },
-      reject,
-      resolve
-    )
-  })
+  // A small take goes up in one request.
+  //
+  // A resumable upload is two exchanges: a POST that starts a session and
+  // carries the metadata in X-Goog-Upload-Header-Content-Type, then the
+  // bytes. The rules are evaluated against that first request, so what
+  // they see depends on a header rather than on the body — a longer path
+  // to the same place, and one more thing between a take and the bucket.
+  // Below a few megabytes there is nothing to resume anyway: the whole
+  // file is one request either way.
+  //
+  // Larger takes keep the resumable path, where progress reporting and
+  // recovery actually earn their keep.
+  const ONE_SHOT_MAX = 4 * 1024 * 1024
+
+  if (file.size <= ONE_SHOT_MAX) {
+    onProgress?.(0)
+    await uploadBytes(storageRef, file, { contentType })
+    onProgress?.(100)
+  } else {
+    const uploadTask = uploadBytesResumable(storageRef, file, { contentType })
+    await new Promise<void>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const pct = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+          onProgress?.(pct)
+        },
+        reject,
+        resolve
+      )
+    })
+  }
 
   const audioUrl = await getDownloadURL(storageRef)
   // Stripped, not spread: a take with no notes carries `notes: undefined`,
