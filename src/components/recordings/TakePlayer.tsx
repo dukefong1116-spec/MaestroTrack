@@ -38,6 +38,8 @@ export default function TakePlayer({
   const [loaded, setLoaded] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
+  /** The file arrived but this browser cannot decode it. */
+  const [undecodable, setUndecodable] = useState(false)
 
   const total = loaded ?? storedDuration ?? 0
   const pct = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0
@@ -48,7 +50,18 @@ export default function TakePlayer({
     const onTime = () => setElapsed(el.currentTime)
     const onMeta = () => { if (Number.isFinite(el.duration)) setLoaded(el.duration) }
     const onEnd = () => { setPlaying(false); setElapsed(0); el.currentTime = 0 }
-    const onErr = () => { setError(true); setPlaying(false); setBusy(false) }
+    const onErr = () => {
+      // Why it failed decides what to offer. A take recorded in Chrome is
+      // Opus in WebM, which Safari cannot decode however intact the file
+      // is — so "unavailable" was telling someone their recording was
+      // gone when it was sitting in the bucket, playable on any other
+      // browser. MEDIA_ERR_SRC_NOT_SUPPORTED is that case; the rest are a
+      // file that genuinely could not be fetched.
+      setUndecodable(el.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
+      setError(true)
+      setPlaying(false)
+      setBusy(false)
+    }
     const onPlaying = () => setBusy(false)
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('loadedmetadata', onMeta)
@@ -140,9 +153,30 @@ export default function TakePlayer({
               {label}
             </span>
             <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
-              {error ? 'unavailable' : playing || elapsed > 0 ? `${clock(elapsed)} / ${clock(total)}` : clock(total)}
+              {error
+                ? undecodable ? "can't play here" : 'unavailable'
+                : playing || elapsed > 0 ? `${clock(elapsed)} / ${clock(total)}` : clock(total)}
             </span>
           </div>
+
+          {/* A take this browser cannot decode is not a lost take. Offer it
+              for download rather than leaving a dead row: the file is
+              fine, and it plays in Chrome, in Firefox, or in anything
+              else on the device. */}
+          {undecodable && (
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
+              Recorded in a format this browser can’t play.{' '}
+              <a
+                href={src}
+                download
+                className="font-semibold underline"
+                style={{ color: 'var(--clay-accent)' }}
+              >
+                Download the take
+              </a>
+              {' '}— it opens in Chrome, or in any music player.
+            </p>
+          )}
 
           {/* Generous hit area around a slim bar — easy to scrub, quiet at rest. */}
           <div className="mt-2 -my-1.5 cursor-pointer py-1.5" onClick={scrub}>

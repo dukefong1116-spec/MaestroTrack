@@ -2,13 +2,18 @@ import { describe, it, expect } from 'vitest'
 import { pickRecorderFormat, extensionFor, recorderOptions, TARGET_BITS_PER_SECOND } from '../recorderFormat'
 
 describe('pickRecorderFormat', () => {
-  it('prefers opus in webm when available', () => {
-    expect(pickRecorderFormat(() => true)).toEqual({ mimeType: 'audio/webm;codecs=opus', ext: 'webm' })
+  it('prefers mp4, the one container every browser can play back', () => {
+    expect(pickRecorderFormat(() => true)).toEqual({ mimeType: 'audio/mp4', ext: 'mp4' })
   })
 
-  it('falls back to mp4 on Safari, which offers nothing else', () => {
+  it('takes mp4 on Safari, which offers nothing else', () => {
     const safari = (t: string) => t === 'audio/mp4'
     expect(pickRecorderFormat(safari)).toEqual({ mimeType: 'audio/mp4', ext: 'mp4' })
+  })
+
+  it('falls back to opus where mp4 cannot be recorded, as in Firefox', () => {
+    const firefox = (t: string) => t.startsWith('audio/ogg') || t.startsWith('audio/webm')
+    expect(pickRecorderFormat(firefox)).toEqual({ mimeType: 'audio/webm;codecs=opus', ext: 'webm' })
   })
 
   it('lets the browser decide when nothing is supported', () => {

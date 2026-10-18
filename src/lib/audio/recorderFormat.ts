@@ -11,12 +11,25 @@
  * practice diary, not a master. It is roughly a quarter of the size.
  */
 
-/** Ordered by preference. Safari only offers mp4/aac. */
+/**
+ * Ordered by what can be played back, not by what encodes best.
+ *
+ * Opus in WebM is the better codec and was first here for that reason.
+ * But Safari cannot decode it at all, and a take is recorded on one
+ * device and listened to on another — so a practice session recorded in
+ * Chrome came back as "unavailable" on the same account in Safari, with
+ * the file sitting in the bucket perfectly intact.
+ *
+ * mp4/AAC plays in every browser this app runs in. It is a little larger
+ * at the same bitrate, which is a fair price for a take that can actually
+ * be heard. Where mp4 recording is not offered — Firefox — the Opus
+ * options still apply and the player below handles the rest.
+ */
 const CANDIDATES = [
+  'audio/mp4',
   'audio/webm;codecs=opus',
   'audio/ogg;codecs=opus',
   'audio/webm',
-  'audio/mp4',
 ] as const
 
 export const TARGET_BITS_PER_SECOND = 64_000
