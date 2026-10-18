@@ -11,7 +11,7 @@
     "test": "TZ=America/Los_Angeles vitest run --exclude '**/rules*.test.ts' --exclude '**/node_modules/**'",
     "emulate": "firebase emulators:start --only auth,firestore,storage",
     "dev:emulator": "VITE_USE_EMULATOR=1 vite --port 5174 --strictPort",
-    "test:rules": "vitest run --no-file-parallelism src/lib/firebase/__tests__/rules.test.ts src/lib/firebase/__tests__/rules.attacks.test.ts src/lib/firebase/__tests__/rules.storage.test.ts src/lib/firebase/__tests__/rules.appqueries.test.ts src/lib/firebase/__tests__/rules.protected.test.ts"
+    "test:rules": "vitest run --no-file-parallelism src/lib/firebase/__tests__/rules.test.ts src/lib/firebase/__tests__/rules.attacks.test.ts src/lib/firebase/__tests__/rules.storage.test.ts src/lib/firebase/__tests__/rules.appqueries.test.ts src/lib/firebase/__tests__/rules.protected.test.ts src/lib/firebase/__tests__/rules.upload.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

@@ -36,7 +36,12 @@ function audioContentType(blobType: string | undefined): string {
   if (!blobType) return 'audio/webm'
   if (blobType.startsWith('audio/')) return blobType
   if (blobType.startsWith('video/')) return 'audio/' + blobType.slice('video/'.length)
-  return 'audio/webm'
+  // Anything else is passed through untouched, so the Storage rule still
+  // refuses it. Rewriting every unknown type to audio/webm would have made
+  // the upload succeed, which is the point — but it would also mean this
+  // app could put any file at all in the bucket under an audio label, and
+  // the rule's content check would constrain every client except ours.
+  return blobType
 }
 
 export async function uploadRecording(
