@@ -211,6 +211,51 @@ Both bugs that reached users were of exactly that shape.
 
 ---
 
+## Deploying
+
+Hosted on Vercel, built from this repo on every push to `main`.
+
+`vercel.json` holds one rewrite, and it is not optional. This is a
+single-page app: the server only ever has `index.html`, and the router
+makes `/student/settings` and the rest up in the browser. Without the
+rewrite, opening such a URL directly — or reloading the page — asks the
+server for a file that does not exist and gets a 404. The rewrite says
+"whatever was asked for, serve index.html and let the app sort it out".
+
+### Environment variables
+
+`.env` is gitignored, so the build on Vercel cannot see it. The same six
+`VITE_FIREBASE_*` names have to be set in the Vercel project's
+Environment Variables, with the values from your local `.env`. A missing
+one does not fail the build — it produces an app that loads and then
+cannot reach Firebase at all.
+
+These values are not secrets. Firebase client configuration ships inside
+every web app that uses it and is readable by anyone who opens the page;
+what protects the data is the security rules, not the config.
+
+### After the first deploy
+
+Add the deployed domain under Firebase console → Authentication →
+Settings → Authorized domains. Firebase only accepts sign-ins from
+domains listed there, `localhost` being allowed by default. Until it is
+added the app loads normally and every sign-in fails.
+
+### Indexes
+
+Deployed separately, and needed before anyone else uses the app:
+
+```bash
+npx firebase deploy --only firestore:indexes --project <your-project-id>
+```
+
+Two screens — a student's practice history and a teacher's view of
+handed-in recordings — run queries that need a composite index. Without
+one they return nothing rather than failing, so the symptom is an empty
+page and no error.
+
+---
+
 ## Known limits
 
 Worth knowing before trusting a number on screen.
