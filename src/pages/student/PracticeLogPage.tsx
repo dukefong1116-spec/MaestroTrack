@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Trash2, ChevronRight } from 'lucide-react'
-import { format, parseISO } from 'date-fns'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Share2, Trash2, ChevronRight } from 'lucide-react'
+import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
+import ShareSheet from '@/components/share/ShareSheet'
 import { addPracticeSession, deletePracticeSession } from '@/lib/firebase/practice'
 import { computeStreak } from '@/lib/utils/analytics'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
@@ -61,13 +62,14 @@ const CATEGORY_STICKER: Record<PracticeCategory, 'note' | 'pencil' | 'clock'> = 
 
 /** Read-only view of one logged session: its data, notes and any takes. */
 function SessionDetailSheet({
-  session, pieces, recordings, deleting, onDelete, onClose,
+  session, pieces, recordings, deleting, onDelete, onShare, onClose,
 }: {
   session: PracticeSession | null
   pieces: Piece[]
   recordings: Recording[]
   deleting: boolean
   onDelete: () => void
+  onShare: () => void
   onClose: () => void
 }) {
   if (!session) return null
@@ -141,9 +143,18 @@ function SessionDetailSheet({
           </div>
         )}
 
-        <Button variant="secondary" onClick={onDelete} loading={deleting} className="w-full">
-          <Trash2 size={15} /> Delete session
-        </Button>
+        <div className="flex gap-2">
+          {/* Sharing lives here rather than in the finishing flow on
+              purpose: a modal demanding to be dismissed at the end of
+              every session is a tax on practising, and this is reachable
+              for any session, not only the newest one. */}
+          <Button variant="primary" onClick={onShare} className="flex-1">
+            <Share2 size={15} /> Share
+          </Button>
+          <Button variant="secondary" onClick={onDelete} loading={deleting} className="flex-1">
+            <Trash2 size={15} /> Delete
+          </Button>
+        </div>
       </div>
     </Modal>
   )
@@ -152,7 +163,26 @@ function SessionDetailSheet({
 export default function PracticeLogPage() {
   const navigate = useNavigate()
   const { profile, user } = useAuth()
+
   const { sessions, pieces, recordings, addSession, timerRunning, resetTimer } = usePracticeStore()
+  const [sharing, setSharing] = useState<PracticeSession | null>(null)
+
+  /**
+   * The two figures the card needs beyond the session itself. Derived
+   * here from the same session log everything else reads, so a shared
+   * card can never disagree with the streak on screen.
+   */
+  const shareStreak = useMemo(() => computeStreak(sessions).current, [sessions])
+  const shareWeek = useMemo(() => {
+    if (!sharing) return undefined
+    const end = parseISO(sharing.date)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = format(subDays(end, 6 - i), 'yyyy-MM-dd')
+      return sessions
+        .filter((s) => s.date === day)
+        .reduce((total, s) => total + s.durationMinutes, 0)
+    })
+  }, [sessions, sharing])
 
   const [open, setOpen] = useState(false)
   const [detail, setDetail] = useState<PracticeSession | null>(null)
@@ -441,8 +471,22 @@ export default function PracticeLogPage() {
           await handleDelete(detail.id)
           setDetail(null)
         }}
+        onShare={() => setSharing(detail)}
         onClose={() => setDetail(null)}
       />
+
+      <AnimatePresence>
+        {sharing && (
+          <ShareSheet
+            session={sharing}
+            profile={{ displayName: profile?.displayName ?? '' }}
+            streakDays={shareStreak}
+            pieceTitle={pieces.find((p) => p.id === sharing.pieceName)?.title}
+            week={shareWeek}
+            onClose={() => setSharing(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <SessionCelebration
         reward={reward}

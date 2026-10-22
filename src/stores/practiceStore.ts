@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PracticeSession, Piece, Performance, Recording, TeacherNote } from '@/types'
+import type { PracticeSession, Piece, Performance, Recording, TeacherNote, LessonSlot } from '@/types'
 
 interface PracticeState {
   sessions: PracticeSession[]
@@ -7,11 +7,13 @@ interface PracticeState {
   performances: Performance[]
   recordings: Recording[]
   teacherNotes: TeacherNote[]
+  lessons: LessonSlot[]
   setSessions: (sessions: PracticeSession[]) => void
   setPieces: (pieces: Piece[]) => void
   setPerformances: (performances: Performance[]) => void
   setRecordings: (recordings: Recording[]) => void
   setTeacherNotes: (notes: TeacherNote[]) => void
+  setLessons: (lessons: LessonSlot[]) => void
   addSession: (session: PracticeSession) => void
   addPiece: (piece: Piece) => void
   addPerformance: (performance: Performance) => void
@@ -53,11 +55,13 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   performances: [],
   recordings: [],
   teacherNotes: [],
+  lessons: [],
   setSessions: (sessions) => set({ sessions }),
   setPieces: (pieces) => set({ pieces }),
   setPerformances: (performances) => set({ performances }),
   setRecordings: (recordings) => set({ recordings }),
   setTeacherNotes: (notes) => set({ teacherNotes: notes }),
+  setLessons: (lessons) => set({ lessons }),
   addSession: (session) => set((s) => ({ sessions: prepend(s.sessions, session) })),
   addPiece: (piece) => set((s) => ({ pieces: prepend(s.pieces, piece) })),
   addPerformance: (performance) => set((s) => ({ performances: prepend(s.performances, performance) })),

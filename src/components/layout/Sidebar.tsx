@@ -6,6 +6,8 @@ import { logOut } from '@/lib/firebase/auth'
 import { useAuth } from '@/hooks/useAuth'
 import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import NotificationBell from '@/components/notifications/NotificationBell'
+import { useNotifications } from '@/hooks/useNotifications'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import { useGamification } from '@/hooks/useGamification'
 import { cn } from '@/lib/utils/cn'
@@ -24,6 +26,11 @@ const teacherNav: { to: string; icon: StickerName | typeof LayoutDashboard; labe
   { to: '/teacher/schedule', icon: 'calendar', label: 'Schedule' },
   { to: '/teacher/research', icon: 'chart', label: 'Research' },
 ]
+
+/** Where notifications send people, per role — the dot goes on that tab. */
+function homeFor(role: string | null | undefined): string {
+  return role === 'teacher' ? '/teacher' : '/student'
+}
 
 function NavIcon({ icon, active }: { icon: StickerName | typeof LayoutDashboard; active: boolean }) {
   if (typeof icon === 'string') {
@@ -47,6 +54,7 @@ export default function Sidebar() {
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
   const nav = role === 'teacher' ? teacherNav : studentNav
+  const { unread } = useNotifications()
 
   async function handleLogout() {
     await logOut()
@@ -101,6 +109,13 @@ export default function Sidebar() {
         </div>
       )}
 
+      {/* Notifications — above the nav so the count is the first thing
+          read, and so the dot on a nav item below has something to
+          explain it. */}
+      <div className={cn('px-4 pb-3 flex', collapsed ? 'justify-center' : 'justify-start')}>
+        <NotificationBell />
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto">
         {nav.map(({ to, icon, label, end }) => (
@@ -122,6 +137,15 @@ export default function Sidebar() {
               <>
                 <NavIcon icon={icon} active={isActive} />
                 {!collapsed && <span>{label}</span>}
+                {/* Something on this page wants attention. A dot rather
+                    than a number: the count belongs on the bell, and two
+                    counts disagreeing is worse than one. */}
+                {unread > 0 && to === homeFor(role) && (
+                  <span
+                    className="ml-auto h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent)' }}
+                  />
+                )}
               </>
             )}
           </NavLink>

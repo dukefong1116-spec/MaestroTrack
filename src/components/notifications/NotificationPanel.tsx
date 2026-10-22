@@ -1,0 +1,96 @@
+import { AnimatePresence, motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
+import { formatDistanceToNowStrict, parseISO } from 'date-fns'
+import Sticker from '@/components/stickers/Sticker'
+import { isUnread, type AppNotification } from '@/lib/utils/notifications'
+
+/**
+ * The list itself. Kept apart from the bell so the same list can be shown
+ * inline on a page later without dragging a popover along with it.
+ */
+export default function NotificationPanel({
+  items, readAt, onClose,
+}: {
+  items: AppNotification[]
+  readAt?: string
+  onClose: () => void
+}) {
+  const navigate = useNavigate()
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+      transition={{ duration: 0.16, ease: 'easeOut' }}
+      className="absolute left-0 top-full z-50 mt-2 w-[310px] overflow-hidden p-1.5"
+      style={{
+        background: 'var(--clay-surface)',
+        borderRadius: 'var(--clay-r-md)',
+        boxShadow: 'var(--clay-deep)',
+      }}
+    >
+      {items.length === 0 ? (
+        <p className="px-3 py-6 text-center text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
+          Nothing new. Go and practise something.
+        </p>
+      ) : (
+        <ul className="max-h-[320px] overflow-y-auto">
+          {items.map((n) => {
+            const fresh = isUnread(n, readAt)
+            return (
+              <li key={n.id}>
+                <button
+                  onClick={() => { navigate(n.to); onClose() }}
+                  className="flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--clay-bg)]"
+                >
+                  <span className="mt-0.5 shrink-0">
+                    <Sticker name={n.sticker} size={16} tone="ink" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="truncate text-[12.5px] font-semibold"
+                        style={{ color: 'var(--clay-ink)' }}
+                      >
+                        {n.title}
+                      </span>
+                      {fresh && (
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: 'var(--clay-accent)' }}
+                        />
+                      )}
+                    </span>
+                    {n.body && (
+                      <span className="mt-0.5 block truncate text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
+                        {n.body}
+                      </span>
+                    )}
+                    <span className="mt-0.5 block text-[10.5px]" style={{ color: 'var(--clay-faint)' }}>
+                      {ago(n.at)}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </motion.div>
+  )
+}
+
+/** "in 40 minutes" reads wrong for something that has already happened. */
+function ago(iso: string): string {
+  try {
+    const d = parseISO(iso)
+    const future = d.getTime() > Date.now()
+    const rel = formatDistanceToNowStrict(d)
+    return future ? `in ${rel}` : `${rel} ago`
+  } catch {
+    return ''
+  }
+}
+
+export { AnimatePresence }

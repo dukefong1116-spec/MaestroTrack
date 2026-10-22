@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { parseISO, differenceInCalendarDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
+import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { streakRisk, riskCopy } from '@/lib/utils/streakRisk'
@@ -39,11 +40,10 @@ export function usePracticeNudges(limit = 3): Nudge[] {
   // when nothing else changes. Without this, a tab left open at 6pm still
   // read "6 hours left" at 10pm and never escalated to urgent — the one
   // message whose whole value is being timely was the one going stale.
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000)
-    return () => clearInterval(id)
-  }, [])
+  //
+  // The interval that used to live here now lives in useMinuteTick, shared
+  // with the notification list, so the two cannot disagree about the time.
+  const now = useMinuteTick()
 
   const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
   const summary = useMemo(

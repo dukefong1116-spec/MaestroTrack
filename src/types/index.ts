@@ -57,6 +57,14 @@ export interface UserProfile {
   badgesSeen?: string[]
   /** Piece ids already offered as "ready to call mastered?" — offered once each. */
   masteryPromptsSeen?: string[]
+  /**
+   * Everything that became true before this has been seen.
+   *
+   * A watermark rather than a list of ids: notifications are derived, so
+   * there is nothing to mark individually, and one timestamp cannot grow
+   * without bound the way an ever-appended array would.
+   */
+  notificationsReadAt?: string
 }
 
 export interface PracticeSession {
