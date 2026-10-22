@@ -5,14 +5,23 @@ import Sticker from '@/components/stickers/Sticker'
 import { isUnread, type AppNotification } from '@/lib/utils/notifications'
 
 /**
- * The list itself. Kept apart from the bell so the same list can be shown
- * inline on a page later without dragging a popover along with it.
+ * The list itself.
+ *
+ * Positioned in viewport coordinates and rendered through a portal by the
+ * bell, because the sidebar it is anchored to is narrower than the panel
+ * and scrolls: left inside it, the list was clipped at the sidebar's edge
+ * and drawn over the navigation.
  */
 export default function NotificationPanel({
-  items, readAt, onClose,
+  items, readAt, anchor, innerRef, emptyText, onClose,
 }: {
   items: AppNotification[]
   readAt?: string
+  /** A teacher is not waiting to be told to go and practise. */
+  emptyText: string
+  /** Viewport coordinates, because this is rendered outside the sidebar. */
+  anchor: { top: number; left: number }
+  innerRef: React.RefObject<HTMLDivElement | null>
   onClose: () => void
 }) {
   const navigate = useNavigate()
@@ -23,8 +32,11 @@ export default function NotificationPanel({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -6, scale: 0.98 }}
       transition={{ duration: 0.16, ease: 'easeOut' }}
-      className="absolute left-0 top-full z-50 mt-2 w-[310px] overflow-hidden p-1.5"
+      ref={innerRef}
+      className="fixed z-[70] w-[310px] overflow-hidden p-1.5"
       style={{
+        top: anchor.top,
+        left: anchor.left,
         background: 'var(--clay-surface)',
         borderRadius: 'var(--clay-r-md)',
         boxShadow: 'var(--clay-deep)',
@@ -32,7 +44,7 @@ export default function NotificationPanel({
     >
       {items.length === 0 ? (
         <p className="px-3 py-6 text-center text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
-          Nothing new. Go and practise something.
+          {emptyText}
         </p>
       ) : (
         <ul className="max-h-[320px] overflow-y-auto">

@@ -112,8 +112,8 @@ export default function Sidebar() {
       {/* Notifications — above the nav so the count is the first thing
           read, and so the dot on a nav item below has something to
           explain it. */}
-      <div className={cn('px-4 pb-3 flex', collapsed ? 'justify-center' : 'justify-start')}>
-        <NotificationBell />
+      <div className={cn('pb-1 flex', collapsed ? 'px-4 justify-center' : 'px-2.5')}>
+        <NotificationBell label={collapsed ? undefined : 'Notifications'} />
       </div>
 
       {/* Nav */}
