@@ -1,4 +1,4 @@
-import type { ShareFields } from './fields'
+import { plural, type ShareFields } from './fields'
 
 /**
  * The share card, drawn rather than screenshotted.
@@ -177,7 +177,7 @@ function drawNumber(ctx: CanvasRenderingContext2D, f: ShareFields) {
 
   text(ctx, 'TODAY I PRACTISED', 540, 420, 28, '500', C.faint, 'center', 5)
   text(ctx, String(f.minutes), 540, 620, 220, '700', C.ink, 'center')
-  text(ctx, 'minutes', 540, 694, 40, '400', C.dim, 'center')
+  text(ctx, f.minutes === 1 ? 'minute' : 'minutes', 540, 694, 40, '400', C.dim, 'center')
 
   if (f.streakDays) {
     ctx.fillStyle = C.accentSoft
@@ -203,7 +203,7 @@ function drawStreak(ctx: CanvasRenderingContext2D, f: ShareFields) {
 
   flame(ctx, 540, 300, 300, '#FFFFFF')
   text(ctx, String(f.streakDays ?? 1), 540, 860, 300, '700', '#FFFFFF', 'center')
-  text(ctx, 'DAY STREAK', 540, 936, 44, '500', C.accentSoft, 'center', 8)
+  text(ctx, f.streakDays === 1 ? 'DAY STREAK' : 'DAYS IN A ROW', 540, 936, 44, '500', C.accentSoft, 'center', 8)
 
   ctx.fillStyle = '#FFFFFF'
   roundRect(ctx, 300, 1020, 480, 110, 55)
@@ -253,7 +253,7 @@ function drawTicket(ctx: CanvasRenderingContext2D, f: ShareFields) {
   ctx.setLineDash([])
 
   text(ctx, `${f.minutes} min`, 96, 880, 120, '700', C.ink)
-  const meta = [f.streakDays ? `${f.streakDays}-day streak` : null, f.dateLabel]
+  const meta = [f.streakDays ? `${plural(f.streakDays, 'day')} in a row` : null, f.dateLabel]
     .filter(Boolean).join('  ·  ')
   text(ctx, meta, 96, 946, 30, '400', C.dim)
 

@@ -75,8 +75,13 @@ function safeDate(date: string): string {
   }
 }
 
+/** "1 minutes" on something somebody posts publicly is not a small thing. */
+export function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
+}
+
 export function buildShareText(f: ShareFields): string {
-  const bits = [`${f.minutes} minutes of practice`]
+  const bits = [`${plural(f.minutes, 'minute')} of practice`]
   if (f.pieceTitle) bits.push(`on ${f.pieceTitle}`)
   if (f.streakDays) bits.push(`· ${f.streakDays}-day streak`)
   return `${bits.join(' ')} — tracked with MaestroTrack`

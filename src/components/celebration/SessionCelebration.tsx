@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, VolumeX, Check } from 'lucide-react'
+import { Volume2, VolumeX, Check, Share2 } from 'lucide-react'
 import StreakFlame from '@/components/icons/StreakFlame'
 import Sparkle from '@/components/icons/Sparkle'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -16,6 +16,13 @@ interface SessionCelebrationProps {
   /** Instrument theme colours, mixed into the confetti. */
   accent?: { primary: string; secondary: string }
   onDismiss: () => void
+  /**
+   * Offered only where there is something to share. Passing it also stops
+   * the auto-dismiss: a button that disappears after two and a half
+   * seconds is worse than no button, and the moment someone might want to
+   * post about is exactly this one.
+   */
+  onShare?: () => void
 }
 
 const AUTO_DISMISS_MS = 2800
@@ -25,6 +32,7 @@ export default function SessionCelebration({
   instrument,
   accent,
   onDismiss,
+  onShare,
 }: SessionCelebrationProps) {
   const [muted, setMuted] = useState(isSoundMuted)
 
@@ -35,7 +43,9 @@ export default function SessionCelebration({
   // Auto-dismiss, plus Esc.
   useEffect(() => {
     if (!reward) return
-    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS)
+    // Nothing to do here but look at it — so it goes by itself. With a
+    // share button there is, so it waits.
+    const timer = onShare ? undefined : setTimeout(onDismiss, AUTO_DISMISS_MS)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onDismiss()
     }
@@ -44,7 +54,7 @@ export default function SessionCelebration({
       clearTimeout(timer)
       document.removeEventListener('keydown', onKey)
     }
-  }, [reward, onDismiss])
+  }, [reward, onDismiss, onShare])
 
   if (!reward) return null
 
@@ -197,6 +207,38 @@ export default function SessionCelebration({
             >
               Daily goal reached
             </motion.p>
+          )}
+
+          {onShare && (
+            <motion.div
+              className="mt-6 flex w-full flex-col items-center gap-2"
+              initial={reduced ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              // After the number has finished counting. Offering it while
+              // the figure is still moving reads as an interruption of
+              // the thing someone is actually here to watch.
+              transition={{ delay: reduced ? 0 : 1.1 }}
+            >
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={(e) => { e.stopPropagation(); onShare() }}
+                className="flex items-center justify-center gap-2 rounded-full px-7 py-3 text-[13.5px] font-bold"
+                style={{
+                  background: 'var(--clay-accent)',
+                  color: 'var(--clay-on-accent)',
+                  boxShadow: 'var(--clay-accent-shadow)',
+                }}
+              >
+                <Share2 size={15} /> Share this session
+              </motion.button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDismiss() }}
+                className="text-[12px] font-semibold"
+                style={{ color: 'var(--clay-dim)' }}
+              >
+                Not now
+              </button>
+            </motion.div>
           )}
         </motion.div>
       </motion.div>

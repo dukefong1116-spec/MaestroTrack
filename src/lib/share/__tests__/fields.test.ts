@@ -81,3 +81,18 @@ describe('what must never go on the card', () => {
     expect(text).toContain('47 minutes')
   })
 })
+
+describe('the words on a public post', () => {
+  it('never says "1 minutes"', () => {
+    const one = buildShareFields({
+      session: session({ durationMinutes: 1 }), profile, streakDays: 1,
+      options: DEFAULT_SHARE_OPTIONS,
+    })
+    expect(buildShareText(one)).toContain('1 minute of practice')
+    expect(buildShareText(one)).not.toContain('1 minutes')
+  })
+
+  it('and still pluralises everything else', () => {
+    expect(buildShareText(build())).toContain('47 minutes')
+  })
+})

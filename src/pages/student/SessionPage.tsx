@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
@@ -15,6 +15,8 @@ import { unlock } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import ShareSheet from '@/components/share/ShareSheet'
+import { computeStreak } from '@/lib/utils/analytics'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import DailyToday from '@/components/assignments/DailyToday'
 import { useAssignments } from '@/hooks/useAssignments'
@@ -76,6 +78,25 @@ export default function SessionPage() {
       : 'Repertoire'
   )
   const [reward, setReward] = useState<SessionReward | null>(null)
+  const [justSaved, setJustSaved] = useState<PracticeSession | null>(null)
+  const [sharing, setSharing] = useState<PracticeSession | null>(null)
+
+  /**
+   * The two figures the card needs beyond the session itself, derived from
+   * the same log every other screen reads — so a posted card can never
+   * disagree with the streak shown a moment earlier.
+   */
+  const shareStreak = useMemo(() => computeStreak(sessions).current, [sessions])
+  const shareWeek = useMemo(() => {
+    if (!sharing) return undefined
+    const end = parseISO(sharing.date)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = format(subDays(end, 6 - i), 'yyyy-MM-dd')
+      return sessions
+        .filter((x) => x.date === day)
+        .reduce((total, x) => total + x.durationMinutes, 0)
+    })
+  }, [sessions, sharing])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   /** Finish is a two-beat flow now: capture the length, then ask how it went. */
@@ -456,6 +477,10 @@ export default function SessionPage() {
     measuredSecRef.current = null // the row exists; the length is safe now
     const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...payload } as PracticeSession
     addSession(newSession as never)
+    // Held for the share card, which is offered on the celebration. The
+    // store has it too, but reading it back by id would race the
+    // subscription that is about to deliver the same row.
+    setJustSaved(newSession)
 
     // Piece totals are derived from the session log — nothing to increment.
 
@@ -970,7 +995,22 @@ export default function SessionPage() {
         reward={reward}
         instrument={profile?.instrument as InstrumentType | undefined}
         onDismiss={() => { setReward(null); navigate('/student/practice') }}
+        onShare={justSaved ? () => { setReward(null); setSharing(justSaved) } : undefined}
       />
+
+      <AnimatePresence>
+        {sharing && (
+          <ShareSheet
+            session={sharing}
+            profile={{ displayName: profile?.displayName ?? '' }}
+            streakDays={shareStreak}
+            pieceTitle={pieces.find((p) => p.id === sharing.pieceName)?.title}
+            week={shareWeek}
+            // Closing the card is the end of the session either way.
+            onClose={() => { setSharing(null); navigate('/student/practice') }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
