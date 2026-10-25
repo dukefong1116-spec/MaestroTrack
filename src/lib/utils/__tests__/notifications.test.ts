@@ -106,13 +106,35 @@ describe('a student’s notifications', () => {
     expect(out).toHaveLength(0)
   })
 
-  it('the most urgent thing is first', () => {
-    const out = build(
-      [assignment()],
-      [slot({ dayOfWeek: 0, startTime: '10:30' })],
-      new Date('2026-10-18T10:00:00')
-    )
-    expect(out[0].kind).toBe('lesson-soon')
+  it('the newest thing is first, whatever kind it is', () => {
+    // Feedback a minute ago against an assignment set this morning.
+    const out = build([assignment({
+      createdAt: '2026-10-18T06:00:00.000Z',
+      feedback: [{ at: '2026-10-18T09:59:00.000Z', verdict: 'returned' }],
+    } as Partial<Assignment>)])
+    expect(out[0].kind).toBe('assignment-returned')
+    expect(out[1].kind).toBe('assignment-new')
+  })
+
+  it('priority only settles a tie', () => {
+    const sameMoment = '2026-10-18T09:00:00.000Z'
+    const out = build([assignment({
+      createdAt: sameMoment,
+      feedback: [{ at: sameMoment, verdict: 'returned' }],
+    } as Partial<Assignment>)])
+    // Both happened at once, so the more urgent one leads.
+    expect(out[0].kind).toBe('assignment-returned')
+  })
+
+  it('the cap keeps the newest, not the most important', () => {
+    const many = Array.from({ length: 5 }, (_, i) => assignment({
+      id: `a${i}`,
+      createdAt: `2026-10-1${i + 3}T09:00:00.000Z`,
+    }))
+    const out = buildStudentNotifications({
+      assignments: many, lessons: [], options: { now: NOW, cap: 2 },
+    })
+    expect(out.map((n) => n.id)).toEqual(['assignment:a4:new', 'assignment:a3:new'])
   })
 
   it('never returns more than the cap', () => {

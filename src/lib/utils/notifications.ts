@@ -85,9 +85,23 @@ function withinHorizon(iso: string, now: Date, sinceDays: number): boolean {
   }
 }
 
+/**
+ * Newest first, and the cap keeps the newest.
+ *
+ * Priority used to lead, which sorted the list by how important each kind
+ * of thing is in general rather than by what has just happened. A lesson
+ * reminder from this morning outranked a teacher's feedback from a minute
+ * ago, so the one new thing someone opened the panel to see sat below
+ * something they had already read. Priority still decides ties, which is
+ * where it belongs: of two things that happened at the same moment, the
+ * more urgent goes first.
+ *
+ * The sort runs before the cap, so a long list keeps the most recent
+ * rather than the most important.
+ */
 function finish(out: AppNotification[], cap: number): AppNotification[] {
   return out
-    .sort((a, b) => (b.priority - a.priority) || b.at.localeCompare(a.at))
+    .sort((a, b) => b.at.localeCompare(a.at) || (b.priority - a.priority))
     .slice(0, cap)
 }
 
