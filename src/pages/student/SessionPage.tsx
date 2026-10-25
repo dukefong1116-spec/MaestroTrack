@@ -6,7 +6,8 @@ import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
-import { pickRecorderFormat, recorderOptions, MIC_CONSTRAINTS } from '@/lib/audio/recorderFormat'
+import { pickRecorderFormat, recorderOptions } from '@/lib/audio/recorderFormat'
+import { openMic, micProcessingWarning, remainingSettle } from '@/lib/audio/mic'
 import { putClip, assignSession } from '@/lib/storage/pendingClips'
 import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
@@ -172,6 +173,10 @@ export default function SessionPage() {
   /* ── tuner ─────────────────────────────────────────────── */
   const [reading, setReading] = useState<PitchReading | null>(null)
   const [micError, setMicError] = useState('')
+  /** Set when the browser insists on processing the signal anyway. */
+  const [micWarning, setMicWarning] = useState<string | null>(null)
+  /** Steps left before a freshly opened microphone is recorded. */
+  const [countdown, setCountdown] = useState<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const tunerRafRef = useRef<number | null>(null)
   // The tuner borrows the app's single context (lib/audio/engine) instead
@@ -204,8 +209,9 @@ export default function SessionPage() {
       // Guard against a stray double-open leaving two analysers attached.
       stopTuner()
 
-      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS))
+      const stream = await openMic(streamRef.current)
       streamRef.current = stream
+      setMicWarning(micProcessingWarning(stream))
 
       const ctx = unlock()
       if (!ctx) {
@@ -268,8 +274,34 @@ export default function SessionPage() {
   const startRecording = useCallback(async () => {
     setMicError('')
     try {
-      const stream = streamRef.current ?? (await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS))
+      const stream = await openMic(streamRef.current)
       streamRef.current = stream
+      setMicWarning(micProcessingWarning(stream))
+
+      /**
+       * Let the device settle before recording it.
+       *
+       * getUserMedia resolves when the track exists, not when the hardware
+       * is delivering steady audio — so the first seconds of a take caught
+       * an interface negotiating, a Bluetooth headset switching profile,
+       * or the input stage still coming up. That is why a take started
+       * quiet and then sounded fine.
+       *
+       * Counted down on screen rather than waited out silently: the delay
+       * is now something to play into, instead of a stretch of playing
+       * that comes back wrong. A stream that is already warm — any take
+       * after the first, since the mic stays open — asks for nothing.
+       */
+      const wait = remainingSettle(stream)
+      if (wait > 0) {
+        const steps = Math.max(1, Math.ceil(wait / 300))
+        for (let left = steps; left > 0; left--) {
+          setCountdown(left)
+          await new Promise((r) => setTimeout(r, Math.min(300, wait)))
+        }
+        setCountdown(null)
+      }
+
       chunksRef.current = []
       // Explicit format and bitrate: the default was measured at 129 kbps,
       // which is 29 MB for a half-hour take and the real reason finishing a
@@ -314,6 +346,7 @@ export default function SessionPage() {
       rec.start()
       setRecording(true)
     } catch {
+      setCountdown(null)
       setMicError('Microphone access is needed to record.')
     }
   }, [profile?.uid, user?.uid])
@@ -791,7 +824,11 @@ export default function SessionPage() {
                   <>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-[13px] font-semibold">
-                        {recording ? 'Recording…' : clips.length ? `${clips.length} clip${clips.length > 1 ? 's' : ''} ready` : 'Capture a take'}
+                        {countdown !== null
+                          ? 'Getting the mic ready…'
+                          : recording
+                            ? 'Recording…'
+                            : clips.length ? `${clips.length} clip${clips.length > 1 ? 's' : ''} ready` : 'Capture a take'}
                       </span>
                       <span className="text-[22px] font-semibold tabular-nums" style={{ color: recording ? 'var(--clay-accent)' : 'var(--clay-faint)' }}>
                         {String(Math.floor(recSeconds / 60)).padStart(2, '0')}:{String(recSeconds % 60).padStart(2, '0')}
@@ -800,16 +837,27 @@ export default function SessionPage() {
 
                     <motion.button
                       onClick={recording ? stopRecording : startRecording}
-                      whileTap={{ scale: 0.94 }}
-                      className="w-full py-3 text-[13px] font-semibold"
+                      disabled={countdown !== null}
+                      whileTap={{ scale: countdown !== null ? 1 : 0.94 }}
+                      className="w-full py-3 text-[13px] font-semibold disabled:opacity-80"
                       style={{
                         ...surface,
                         background: recording ? 'var(--clay-danger)' : 'var(--clay-accent)',
                         color: '#fff', boxShadow: 'none',
                       }}
                     >
-                      {recording ? 'Stop recording' : 'Start recording'}
+                      {countdown !== null
+                        ? `Starting in ${countdown}…`
+                        : recording ? 'Stop recording' : 'Start recording'}
                     </motion.button>
+
+                    {/* Said plainly, because a processed recording otherwise
+                        sounds like the instrument, the room, or the player. */}
+                    {micWarning && (
+                      <p className="mt-2.5 text-[11.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
+                        {micWarning}
+                      </p>
+                    )}
 
                     {clips.length > 0 && (
                       <div className="mt-3 space-y-2">
