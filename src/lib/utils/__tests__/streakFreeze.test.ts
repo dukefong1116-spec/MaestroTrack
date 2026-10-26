@@ -1,9 +1,24 @@
-import { describe, it, expect } from 'vitest'
+import { afterAll, describe, it, expect, vi } from 'vitest'
 import { format } from 'date-fns'
 import {
   freezesEarned, freezesAvailable, decideFreezes, weekStrip, MAX_FREEZES,
 } from '../streakFreeze'
 import type { PracticeSession } from '@/types'
+
+/**
+ * Pinned to a Wednesday.
+ *
+ * These build dates by counting back from the real clock, and weekStrip
+ * runs Monday to Sunday — so on a Monday "yesterday" fell in the previous
+ * week and was not in the strip at all. The suite passed for six days out
+ * of seven and failed on the seventh, saying nothing about the code.
+ * Mid-week keeps a few days either side inside the same strip.
+ */
+// At module scope, not in beforeAll: some fixtures below are built when
+// the describe blocks are evaluated, which happens first.
+vi.useFakeTimers()
+vi.setSystemTime(new Date('2026-10-21T12:00:00'))
+afterAll(() => { vi.useRealTimers() })
 
 const d = (n: number) => {
   const x = new Date()

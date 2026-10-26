@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  activeProcessing, listPhrase, micProcessingWarning,
-  remainingSettle, markOpened, SETTLE_MS,
-} from '../mic'
+import { activeProcessing, listPhrase, micProcessingWarning, peakOf, SILENCE_FLOOR } from '../mic'
 
 const track = (settings: Record<string, unknown> | 'throws'): MediaStreamTrack => ({
   readyState: 'live',
@@ -69,29 +66,22 @@ describe('listPhrase', () => {
   })
 })
 
-describe('settling', () => {
-  const stream = streamOf(track({}))
-
-  it('a device just opened gets the full wait', () => {
-    const now = 1_000_000
-    markOpened(stream, now)
-    expect(remainingSettle(stream, now)).toBe(SETTLE_MS)
+describe('telling silence from a quiet room', () => {
+  /**
+   * The distinction the whole warm-up now rests on: a microphone that is
+   * running produces room tone and its own converter noise, so exact
+   * zeros mean the device is not delivering yet.
+   */
+  it('exact digital silence is below the floor', () => {
+    expect(peakOf(new Float32Array(512))).toBeLessThan(SILENCE_FLOOR)
   })
 
-  it('counts down as it warms', () => {
-    const now = 1_000_000
-    markOpened(stream, now)
-    expect(remainingSettle(stream, now + 400)).toBe(SETTLE_MS - 400)
+  it('a very quiet room is above it', () => {
+    const roomTone = Float32Array.from({ length: 512 }, (_, i) => Math.sin(i) * 0.002)
+    expect(peakOf(roomTone)).toBeGreaterThan(SILENCE_FLOOR)
   })
 
-  /** The second take of a session must not wait for a mic that never closed. */
-  it('a warm device waits for nothing', () => {
-    const now = 1_000_000
-    markOpened(stream, now)
-    expect(remainingSettle(stream, now + SETTLE_MS + 50)).toBe(0)
-  })
-
-  it('and a stream we never opened is assumed warm', () => {
-    expect(remainingSettle(streamOf(track({})), Date.now())).toBe(0)
+  it('peak is the largest excursion either way', () => {
+    expect(peakOf(Float32Array.from([0.1, -0.9, 0.3]))).toBeCloseTo(0.9)
   })
 })

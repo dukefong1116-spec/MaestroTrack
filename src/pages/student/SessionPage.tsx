@@ -7,12 +7,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
 import { pickRecorderFormat, recorderOptions } from '@/lib/audio/recorderFormat'
-import { openMic, micProcessingWarning, remainingSettle } from '@/lib/audio/mic'
+import { openMic, micProcessingWarning, waitForSignal, leadingSilenceSeconds } from '@/lib/audio/mic'
 import { putClip, assignSession } from '@/lib/storage/pendingClips'
 import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
-import { unlock } from '@/lib/audio/engine'
+import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
@@ -32,6 +32,10 @@ type Clip = {
   blob: Blob
   seconds: number
   ext: string
+  /** What the browser actually encoded it as. */
+  mimeType?: string
+  /** Seconds of silence the take begins with, once measured. */
+  leadIn?: number
 }
 
 const CATEGORIES: PracticeCategory[] = [
@@ -175,8 +179,8 @@ export default function SessionPage() {
   const [micError, setMicError] = useState('')
   /** Set when the browser insists on processing the signal anyway. */
   const [micWarning, setMicWarning] = useState<string | null>(null)
-  /** Steps left before a freshly opened microphone is recorded. */
-  const [countdown, setCountdown] = useState<number | null>(null)
+  /** True while waiting for a freshly opened microphone to speak. */
+  const [preparing, setPreparing] = useState(false)
   const streamRef = useRef<MediaStream | null>(null)
   const tunerRafRef = useRef<number | null>(null)
   // The tuner borrows the app's single context (lib/audio/engine) instead
@@ -279,27 +283,23 @@ export default function SessionPage() {
       setMicWarning(micProcessingWarning(stream))
 
       /**
-       * Let the device settle before recording it.
+       * Wait for the microphone to actually produce audio.
        *
-       * getUserMedia resolves when the track exists, not when the hardware
-       * is delivering steady audio — so the first seconds of a take caught
-       * an interface negotiating, a Bluetooth headset switching profile,
-       * or the input stage still coming up. That is why a take started
-       * quiet and then sounded fine.
+       * getUserMedia resolves when the track exists, not when the device
+       * is delivering — an interface still negotiating, a Bluetooth
+       * headset switching to its telephony profile. Recording into that
+       * window records the silence.
        *
-       * Counted down on screen rather than waited out silently: the delay
-       * is now something to play into, instead of a stretch of playing
-       * that comes back wrong. A stream that is already warm — any take
-       * after the first, since the mic stays open — asks for nothing.
+       * A fixed warm-up was tried first and was wrong in both directions:
+       * too short for a slow device, pure delay for a ready one. This
+       * returns the moment a non-zero sample arrives, which is usually at
+       * once, and gives up after a beat so a silent room still records.
        */
-      const wait = remainingSettle(stream)
-      if (wait > 0) {
-        const steps = Math.max(1, Math.ceil(wait / 300))
-        for (let left = steps; left > 0; left--) {
-          setCountdown(left)
-          await new Promise((r) => setTimeout(r, Math.min(300, wait)))
-        }
-        setCountdown(null)
+      const prepCtx = unlock()
+      if (prepCtx) {
+        setPreparing(true)
+        await waitForSignal(stream, prepCtx)
+        setPreparing(false)
       }
 
       chunksRef.current = []
@@ -316,7 +316,22 @@ export default function SessionPage() {
         const id = `clip-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const ext = fmt.ext
 
-        setClipsBoth((prev) => [...prev, { id, url: URL.createObjectURL(blob), blob, seconds, ext }])
+        setClipsBoth((prev) => [...prev, {
+          id, url: URL.createObjectURL(blob), blob, seconds, ext,
+          mimeType: rec.mimeType || undefined,
+        }])
+
+        // Measured, not judged by ear. "The start is dead" and "it sounds
+        // fine now" are both unfalsifiable; a number says whether any of
+        // this worked, and which encoder produced it.
+        const measureCtx = peek()
+        if (measureCtx) {
+          void leadingSilenceSeconds(blob, measureCtx).then((lead) => {
+            if (lead === null) return
+            console.info('[take] leading silence %ss · %s', lead.toFixed(2), rec.mimeType)
+            setClipsBoth((prev) => prev.map((c) => (c.id === id ? { ...c, leadIn: lead } : c)))
+          })
+        }
 
         // Straight to disk. Until the upload lands this is the only copy
         // that survives the tab closing.
@@ -346,7 +361,7 @@ export default function SessionPage() {
       rec.start()
       setRecording(true)
     } catch {
-      setCountdown(null)
+      setPreparing(false)
       setMicError('Microphone access is needed to record.')
     }
   }, [profile?.uid, user?.uid])
@@ -824,8 +839,8 @@ export default function SessionPage() {
                   <>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-[13px] font-semibold">
-                        {countdown !== null
-                          ? 'Getting the mic ready…'
+                        {preparing
+                          ? 'Waiting for the mic…'
                           : recording
                             ? 'Recording…'
                             : clips.length ? `${clips.length} clip${clips.length > 1 ? 's' : ''} ready` : 'Capture a take'}
@@ -837,8 +852,8 @@ export default function SessionPage() {
 
                     <motion.button
                       onClick={recording ? stopRecording : startRecording}
-                      disabled={countdown !== null}
-                      whileTap={{ scale: countdown !== null ? 1 : 0.94 }}
+                      disabled={preparing}
+                      whileTap={{ scale: preparing ? 1 : 0.94 }}
                       className="w-full py-3 text-[13px] font-semibold disabled:opacity-80"
                       style={{
                         ...surface,
@@ -846,8 +861,8 @@ export default function SessionPage() {
                         color: '#fff', boxShadow: 'none',
                       }}
                     >
-                      {countdown !== null
-                        ? `Starting in ${countdown}…`
+                      {preparing
+                        ? 'Getting ready…'
                         : recording ? 'Stop recording' : 'Start recording'}
                     </motion.button>
 
@@ -862,7 +877,18 @@ export default function SessionPage() {
                     {clips.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {clips.map((c, i) => (
-                          <audio key={i} src={c.url} controls className="w-full" style={{ height: 34 }} />
+                          <div key={i}>
+                            <audio src={c.url} controls className="w-full" style={{ height: 34 }} />
+                            {/* Shown only when there is something to report, so
+                                it disappears the moment this is fixed rather
+                                than becoming another number nobody reads. */}
+                            {typeof c.leadIn === 'number' && c.leadIn > 0.25 && (
+                              <p className="mt-1 text-[10.5px]" style={{ color: 'var(--clay-danger)' }}>
+                                Starts with {c.leadIn.toFixed(1)}s of silence
+                                {c.mimeType ? ` · ${c.mimeType}` : ''}
+                              </p>
+                            )}
+                          </div>
                         ))}
                         <p className="text-[11px]" style={{ color: 'var(--clay-faint)' }}>
                           Saved to your recordings when you finish.

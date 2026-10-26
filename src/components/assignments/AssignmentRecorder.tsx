@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { Mic, Square } from 'lucide-react'
 import TakePlayer from '@/components/recordings/TakePlayer'
 import { pickRecorderFormat, recorderOptions } from '@/lib/audio/recorderFormat'
-import { openMic, micProcessingWarning, remainingSettle } from '@/lib/audio/mic'
+import { openMic, micProcessingWarning, waitForSignal } from '@/lib/audio/mic'
+import { unlock } from '@/lib/audio/engine'
 import { uploadRecording } from '@/lib/firebase/recordings'
 import { putClip, deleteClip } from '@/lib/storage/pendingClips'
 import { useAuth } from '@/hooks/useAuth'
@@ -40,7 +41,7 @@ export default function AssignmentRecorder({
   const [progress, setProgress] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [micWarning, setMicWarning] = useState<string | null>(null)
-  const [countdown, setCountdown] = useState<number | null>(null)
+  const [preparing, setPreparing] = useState(false)
   const [done, setDone] = useState(false)
 
   const recRef = useRef<MediaRecorder | null>(null)
@@ -69,16 +70,13 @@ export default function AssignmentRecorder({
       streamRef.current = stream
       setMicWarning(micProcessingWarning(stream))
 
-      // The same settle the session recorder takes, for the same reason:
-      // a device that has only just opened records itself coming up.
-      const wait = remainingSettle(stream)
-      if (wait > 0) {
-        const steps = Math.max(1, Math.ceil(wait / 300))
-        for (let left = steps; left > 0; left--) {
-          setCountdown(left)
-          await new Promise((r) => setTimeout(r, Math.min(300, wait)))
-        }
-        setCountdown(null)
+      // The same wait the session recorder takes, for the same reason: a
+      // device that has only just opened has nothing to give yet.
+      const prepCtx = unlock()
+      if (prepCtx) {
+        setPreparing(true)
+        await waitForSignal(stream, prepCtx)
+        setPreparing(false)
       }
 
       chunksRef.current = []
@@ -110,7 +108,7 @@ export default function AssignmentRecorder({
       rec.start()
       setRecording(true)
     } catch {
-      setCountdown(null)
+      setPreparing(false)
       setError('Microphone access is needed to record.')
     }
   }, [uid, date, pieceName])
@@ -193,7 +191,7 @@ export default function AssignmentRecorder({
       ) : (
         <button
           onClick={recording ? stop : start}
-          disabled={countdown !== null}
+          disabled={preparing}
           className="flex w-full items-center justify-center gap-2.5 py-3 text-[13px] font-semibold disabled:opacity-80"
           style={{
             borderRadius: 'var(--clay-r-sm)',
@@ -201,8 +199,8 @@ export default function AssignmentRecorder({
             color: recording ? '#fff' : 'var(--clay-ink)',
           }}
         >
-          {countdown !== null ? (
-            <><Mic size={15} /> Starting in {countdown}…</>
+          {preparing ? (
+            <><Mic size={15} /> Getting ready…</>
           ) : recording ? (
             <>
               <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }}>
