@@ -21,8 +21,14 @@ export default function AssignmentsPanel() {
 
   if (open.length === 0 && done.length === 0) {
     return (
-      <div className="py-10 text-center">
-        <Sticker name="clipboard" size={34} tone="ink" />
+      <div
+        className="rounded-[var(--clay-r-md)] px-5 py-12 text-center"
+        style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+      >
+        {/* text-center does not move a block-level sticker. */}
+        <div className="flex justify-center" style={{ opacity: 0.55 }}>
+          <Sticker name="clipboard" size={34} tone="ink" />
+        </div>
         <p className="mt-3 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
           Nothing set right now.
         </p>

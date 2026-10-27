@@ -66,9 +66,11 @@ export default function PerformancesPanel() {
 
   return (
     <div>
-      <div className="mb-5 flex items-center justify-end">
-        <Button onClick={() => setOpen(true)}><Plus size={16} /> Add performance</Button>
-      </div>
+      {performances.length > 0 && (
+        <div className="mb-5 flex items-center justify-end">
+          <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add performance</Button>
+        </div>
+      )}
 
       {performances.length === 0 ? (
         <EmptyState

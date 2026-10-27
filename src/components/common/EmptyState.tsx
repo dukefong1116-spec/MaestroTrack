@@ -10,7 +10,10 @@ interface EmptyStateProps {
 
 export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div
+      className="flex flex-col items-center justify-center rounded-[var(--clay-r-md)] px-5 py-12 text-center sm:py-16"
+      style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+    >
       {icon && (
         <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)', opacity: 0.55 }}>{icon}</div>
       )}

@@ -18,12 +18,16 @@ function Snowflake({ size = 11 }: { size?: number }) {
 export default function WeekStrip({
   days,
   size = 30,
+  className = '',
 }: {
   days: WeekDay[]
+  /** The circles' natural size. They shrink below it rather than
+   *  overflow when the row is narrower than seven of them. */
   size?: number
+  className?: string
 }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className={`flex items-center gap-1.5 ${className}`}>
       {days.map((day) => {
         const done = day.practised
         const frozen = day.frozen
@@ -38,12 +42,15 @@ export default function WeekStrip({
               : 'rgba(58,48,84,.09)'
 
         return (
-          <div key={day.date} className="flex flex-col items-center gap-1">
+          <div key={day.date} className="flex min-w-0 flex-col items-center gap-1">
             <motion.div
-              className="flex items-center justify-center rounded-full"
+              // aspect-square + max-w-full rather than a fixed height: on a
+              // 375px phone seven 30px circles plus gaps are wider than the
+              // card, and a fixed height made the last one clip instead of
+              // letting the row give.
+              className="flex aspect-square max-w-full items-center justify-center rounded-full"
               style={{
                 width: size,
-                height: size,
                 background: bg,
                 color: frozen ? '#2F6FA8' : '#fff',
                 border: day.isFuture ? '1.5px dashed rgba(58,48,84,.18)' : 'none',

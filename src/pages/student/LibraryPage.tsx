@@ -25,7 +25,9 @@ export default function LibraryPage() {
     <div>
       <PageHeader title="Library" subtitle="What you're working on, and what you're working toward." />
 
-      <div className="mb-6 flex gap-2">
+      {/* Equal thirds on a phone, where three auto-width pills ran off
+          the edge; the original auto-width row from sm up. */}
+      <div className="mb-6 grid grid-cols-3 gap-2 sm:flex">
         {TABS.map((t) => {
           const active = tab === t.id
           return (
@@ -33,7 +35,7 @@ export default function LibraryPage() {
               key={t.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => setParams(t.id === 'pieces' ? {} : { tab: t.id }, { replace: true })}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors"
+              className="flex min-h-[44px] items-center justify-center gap-2 px-2 text-[12px] font-semibold transition-colors sm:min-h-0 sm:px-4 sm:py-2.5 sm:text-sm"
               style={{
                 borderRadius: 'var(--clay-r-sm)',
                 background: active ? 'var(--clay-accent)' : 'var(--clay-surface)',
@@ -41,8 +43,8 @@ export default function LibraryPage() {
                 boxShadow: active ? 'var(--clay-accent-shadow)' : 'var(--clay-raised)',
               }}
             >
-              <Sticker name={t.sticker} size={16} tone={active ? 'onAccent' : 'ink'} />
-              {t.label}
+              <Sticker name={t.sticker} size={16} tone={active ? 'onAccent' : 'ink'} className="hidden shrink-0 sm:block" />
+              <span className="truncate">{t.label}</span>
             </motion.button>
           )
         })}

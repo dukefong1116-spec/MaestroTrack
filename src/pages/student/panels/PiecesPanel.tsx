@@ -98,7 +98,7 @@ export default function PiecesPanel() {
             {f} ({pieces.filter((p) => p.status === f).length})
           </button>
         ))}
-        <Button className="ml-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
+        <Button className="ml-auto w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
       </div>
 
       {filtered.length === 0 ? (

@@ -125,10 +125,10 @@ export default function StudentDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between gap-4 px-5 py-4"
+        className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between md:gap-4"
         style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', boxShadow: 'var(--clay-raised)' }}
       >
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>Streak</p>
           <p className="mt-0.5 text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
             {game.streak > 0 ? `${game.streak}-day streak` : 'Start a streak today'}
@@ -139,7 +139,7 @@ export default function StudentDashboard() {
             )}
           </p>
         </div>
-        <WeekStrip days={game.week} />
+        <WeekStrip days={game.week} className="w-full justify-between md:w-auto md:justify-end" />
       </motion.div>
 
       {/* Timely prompts — previously buried on the Reminders page */}
