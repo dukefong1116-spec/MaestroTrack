@@ -50,15 +50,21 @@ storage.maxOperationRetryTime = 30_000
  *
  * Doubly gated: `import.meta.env.DEV` is false in any production build, so
  * even setting the flag by accident cannot point real users at localhost.
- * Start it with `VITE_USE_EMULATOR=1 npm run dev` alongside
- * `firebase emulators:start`. Off, nothing here runs at all.
+ * Start it with `npm run dev:emulator` alongside `npm run emulate`. Off,
+ * nothing here runs at all.
+ *
+ * The host is taken from whatever served this page rather than hard-coded:
+ * `localhost` on this machine, and the computer's LAN address when a phone
+ * opens it over Wi-Fi. A literal 127.0.0.1 pointed the phone at itself, so
+ * testing on a real device was impossible.
  */
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === '1') {
+  const host = window.location.hostname
   try {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
-    connectFirestoreEmulator(db, '127.0.0.1', 8085) // 8080 is commonly taken; see firebase.json
-    connectStorageEmulator(storage, '127.0.0.1', 9199)
-    console.info('[firebase] using local emulators')
+    connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true })
+    connectFirestoreEmulator(db, host, 8085) // 8080 is commonly taken; see firebase.json
+    connectStorageEmulator(storage, host, 9199)
+    console.info(`[firebase] using local emulators at ${host}`)
   } catch (e) {
     console.warn('[firebase] emulator connection failed', e)
   }

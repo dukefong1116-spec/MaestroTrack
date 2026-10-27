@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "LAN variant of firebase.json, used only by `npm run emulate:lan`.",
+    "",
+    "Identical to firebase.json except that every emulator binds to 0.0.0.0",
+    "instead of 127.0.0.1, so a phone on the same Wi-Fi can reach them. That",
+    "is the whole point, and also the whole risk: while this is running, any",
+    "device on the network can read and write the emulator. Use it on a",
+    "network you trust, and stop it when you are done.",
+    "",
+    "Nothing real is exposed. The project id is still demo-maestrotrack, which",
+    "Firebase treats as purely local, so the emulators refuse to contact",
+    "maestrotrack-3c2cf at all. The data here is whatever you typed into it",
+    "this session; it is held in memory and discarded on exit.",
+    "",
+    "Everyday work should keep using `npm run emulate`, which stays on",
+    "127.0.0.1 and is reachable only from this machine."
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "host": "0.0.0.0",
+      "port": 9099
+    },
+    "firestore": {
+      "host": "0.0.0.0",
+      "port": 8085
+    },
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "host": "0.0.0.0",
+      "port": 4000
+    },
+    "singleProjectMode": true
+  }
+}

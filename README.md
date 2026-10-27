@@ -148,17 +148,104 @@ and Firebase treats any `demo-` prefix as strictly local.
 
 Needs a JDK (Adoptium Temurin 21 or later).
 
+### On this computer
+
+Two terminals, both left running.
+
 ```bash
-npm run emulate        # terminal 1 — leave it running
-npm run dev:emulator   # terminal 2 — app on http://localhost:5174
+npm run emulate
 ```
 
-Emulator UI: <http://127.0.0.1:4000>
+Wait for `All emulators ready`. Then, in a second terminal:
+
+```bash
+npm run dev:emulator
+```
+
+Open <http://localhost:5174>. The emulator UI is at <http://127.0.0.1:4000>.
+
+The database starts empty every time, so the first thing to do is make
+yourself some accounts:
+
+1. **Sign up a teacher.** `/signup` → Teacher. Any email works — nothing is
+   sent — and the password only has to be six characters. Copy the **studio
+   code** off the dashboard.
+2. **Sign up a student.** Log out, `/signup` → Student. Fill in instrument and
+   experience level; the form will not submit without them.
+3. **Join the studio.** As the student, Settings → Join a Studio → paste the
+   code → Join. It should say *Linked to studio ABC123*.
+4. **Log back in as the teacher** to add lessons, set assignments and review
+   what the student hands in.
+
+Stop both with Ctrl-C when you are done.
+
+### On your phone
+
+Same emulator, reached across your Wi-Fi. Useful because the phone layout —
+bottom tab bar, the day-view schedule, the floating bell — only appears below
+1024px, and a desktop browser squeezed narrow does not tell you how it feels
+under a thumb.
+
+**Both devices must be on the same Wi-Fi network.**
+
+1. **Find this computer's address:**
+
+   ```bash
+   ipconfig getifaddr en0
+   ```
+
+   Something like `192.168.1.42`. If it prints nothing, try `en1` — `en0` is
+   Ethernet on some Macs.
+
+2. **Start the emulator in LAN mode** (terminal 1):
+
+   ```bash
+   npm run emulate:lan
+   ```
+
+   This is `npm run emulate` with every emulator bound to `0.0.0.0` instead of
+   `127.0.0.1`, so your phone can reach them. macOS may ask whether to allow
+   incoming connections for Java — say yes.
+
+3. **Start the dev server in LAN mode** (terminal 2):
+
+   ```bash
+   npm run dev:mobile
+   ```
+
+   Vite prints a **Network** URL. That is the one you want.
+
+4. **On the phone, open `http://<that address>:5174`** — for example
+   `http://192.168.1.42:5174`. Type it in full; `localhost` on the phone means
+   the phone.
+
+5. **Sign up the accounts** exactly as above. They are separate from the ones
+   on your computer only in the sense that the database is shared — both
+   devices talk to the same emulator, so a lesson you add on the laptop shows
+   up on the phone.
+
+The app works out where the emulator lives from whatever address served the
+page (`src/lib/firebase/config.ts`), so there is nothing to configure. The
+browser console on the phone will say `[firebase] using local emulators at
+192.168.1.42`.
+
+**Two things to know:**
+
+- `emulate:lan` opens the emulator to everything on your network for as long
+  as it runs. The data is throwaway and cannot touch the real project, but use
+  it on a network you trust, and stop it when you are finished. Day-to-day
+  work should stay on `npm run emulate`, which only listens to this machine.
+- **The microphone will not work over a LAN address.** `getUserMedia` needs a
+  secure context — HTTPS or `localhost` — and `http://192.168.x.x` is neither,
+  so `navigator.mediaDevices` is simply undefined there. Timer, metronome and
+  every layout work fine; the tuner and recording do not. To try those on a
+  phone, use the deployed build at <https://maestro-track.vercel.app>, which
+  is HTTPS and talks to the real project.
 
 **Firestore runs on 8085, not the usual 8080** — 8080 was already taken on the
 machine this was set up on, and a port the emulator cannot bind just fails to
-start. `firebase.json` and `src/lib/firebase/config.ts` both say 8085; change
-both together or neither.
+start. `firebase.json`, `firebase.lan.json` and `src/lib/firebase/config.ts`
+all say 8085; change them together or not at all.
 
 ### Checking the app is really on the emulator
 
@@ -168,7 +255,7 @@ localhost by accident.
 
 Three ways to confirm, in increasing order of how much they prove:
 
-1. The browser console logs `[firebase] using local emulators` at startup.
+1. The browser console logs `[firebase] using local emulators at <host>`.
 2. Sign up a user and watch it appear in the emulator UI's Auth tab.
 3. Stop the emulator. If the app keeps working, it was never connected.
 
