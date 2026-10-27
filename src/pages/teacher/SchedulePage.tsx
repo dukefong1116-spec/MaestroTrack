@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
 import Modal from '@/components/ui/Modal'
 import EmptyState from '@/components/common/EmptyState'
+import MobileDaySchedule from './panels/MobileDaySchedule'
 import type { InstrumentType, LessonSlot } from '@/types'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -119,7 +120,12 @@ export default function SchedulePage() {
           action={{ label: 'Add Lesson', onClick: () => setOpen(true) }}
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <>
+        {/* A phone gets one day on a clock; the week grid resumes at lg. */}
+        <div className="lg:hidden">
+          <MobileDaySchedule schedule={schedule} onDelete={(id) => deleteLessonSlot(id)} />
+        </div>
+        <div className="hidden lg:grid lg:grid-cols-7 gap-3">
           {([1, 2, 3, 4, 5, 6, 0] as const).map((day) => {
             const daySlots = schedule
               .filter((s) => s.dayOfWeek === day)
@@ -149,6 +155,7 @@ export default function SchedulePage() {
             )
           })}
         </div>
+        </>
       )}
 
       <Modal open={open} onClose={() => { setOpen(false); reset() }} title="Add Lesson Slot">
