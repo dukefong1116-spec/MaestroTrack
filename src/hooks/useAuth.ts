@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { onAuthChange, getUserProfile } from '@/lib/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
+import { cleanForFirestore } from '@/lib/firebase/clean'
 
 export function useAuthInit() {
   const { setUser, setProfile, setLoading } = useAuthStore()
@@ -43,7 +44,10 @@ export function useAuthInit() {
             try {
               const { doc, setDoc } = await import('firebase/firestore')
               const { db } = await import('@/lib/firebase/config')
-              await setDoc(doc(db, 'users', user.uid), rebuilt)
+              // Firestore rejects the entire document for a single
+              // undefined field, and most of these are optional: a profile
+              // with no instrument set failed to save at all, silently.
+              await setDoc(doc(db, 'users', user.uid), cleanForFirestore(rebuilt))
               console.log('[Auth] Rebuilt Firestore doc with role:', role)
             } catch (writeErr) {
               console.error('[Auth] Failed to write rebuilt profile:', writeErr)
