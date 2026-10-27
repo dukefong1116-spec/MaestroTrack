@@ -39,7 +39,13 @@ export default function NotificationBell({ label, floating }: { label?: string; 
     // Beside the sidebar, not below the bell. Dropping it downwards put it
     // straight over the navigation — the rows someone is most likely to
     // want next after glancing at the list.
-    const left = Math.min(r.right + GAP, window.innerWidth - PANEL_W - GAP)
+    //
+    // Measured from the sidebar rather than the bell, because the bell sits
+    // inside the sidebar's padding: offsetting from the button put the
+    // panel a couple of pixels back over the edge it was meant to clear.
+    // On a phone there is no sidebar and the bell's own box is right.
+    const host = boxRef.current?.closest('aside')?.getBoundingClientRect() ?? r
+    const left = Math.min(host.right + GAP, window.innerWidth - PANEL_W - GAP)
     const top = Math.min(r.top, window.innerHeight - 160)
     setAnchor({ top: Math.max(GAP, top), left: Math.max(GAP, left) })
   }, [])
