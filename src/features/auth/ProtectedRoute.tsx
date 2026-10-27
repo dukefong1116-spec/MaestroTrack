@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--clay-bg)' }}>
+      <div className="min-h-[100dvh] flex items-center justify-center" style={{ background: 'var(--clay-bg)' }}>
         <div className="space-y-3 text-center">
           <div
             className="w-12 h-12 rounded-full animate-spin mx-auto"

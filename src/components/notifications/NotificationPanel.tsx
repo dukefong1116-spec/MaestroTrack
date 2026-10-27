@@ -47,7 +47,7 @@ export default function NotificationPanel({
           {emptyText}
         </p>
       ) : (
-        <ul className="max-h-[320px] overflow-y-auto">
+        <ul className="max-h-[min(320px,calc(100dvh-7rem))] overflow-y-auto">
           {items.map((n) => {
             const fresh = isUnread(n, readAt)
             return (

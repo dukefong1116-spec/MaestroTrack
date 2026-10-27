@@ -27,7 +27,10 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 backdrop-blur-sm"
+            // touch-action: the modal is a DOM descendant of the scrolling
+            // main, so dragging the dimmed area scrolled the page behind it
+            // on a touch screen. Taps still close it.
+            className="absolute inset-0 touch-none backdrop-blur-sm"
             style={{ background: 'rgba(58,48,84,.32)' }}
             onClick={onClose}
           />
@@ -36,7 +39,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className={`relative w-full ${widths[size]} overflow-hidden`}
+            className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${widths[size]} flex-col overflow-hidden`}
             style={{
               background: 'var(--clay-surface)',
               borderRadius: 'var(--clay-r-lg)',
@@ -44,7 +47,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             }}
           >
             <div
-              className="flex items-center justify-between px-6 py-4"
+              className="flex shrink-0 items-center justify-between px-6 py-4"
               style={{ boxShadow: 'inset 0 -1px 0 var(--clay-line)' }}
             >
               <h2 className="text-lg font-bold" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>
@@ -58,7 +61,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
                 <X size={17} />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[80vh]">{children}</div>
+            <div className="flex-1 overflow-y-auto p-6">{children}</div>
           </motion.div>
         </div>
       )}

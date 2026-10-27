@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
+    <div className="min-h-[100dvh] flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="mb-4 flex justify-center"><Sticker name="key" size={48} tone="accent" /></div>

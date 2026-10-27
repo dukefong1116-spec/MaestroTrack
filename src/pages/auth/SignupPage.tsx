@@ -71,7 +71,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
+    <div className="min-h-[100dvh] flex items-center justify-center p-4" style={{ background: 'var(--clay-bg)' }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 40% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">

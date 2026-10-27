@@ -87,7 +87,7 @@ export default function PendingUploads() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 10 }}
-        className="fixed bottom-4 left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 px-4 py-3"
+        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] left-1/2 z-40 w-[min(92vw,360px)] -translate-x-1/2 px-4 py-3 lg:bottom-4"
         style={{
           background: 'var(--clay-surface)',
           borderRadius: 'var(--clay-r-md)',

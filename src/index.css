@@ -62,7 +62,10 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  /* dvh, to match the shell in AppLayout. At 100vh this box is
+     taller than the screen while mobile Safari shows its toolbar, and
+     the document picks up a scroll of its own behind the app. */
+  min-height: 100dvh;
 }
 
 /* Custom scrollbar */
