@@ -132,13 +132,28 @@ export const INSTRUMENT_THEMES: Record<InstrumentType, InstrumentTheme> = {
     label: 'Guitar',
     description: 'Strings & Rhythm',
   },
+  other: {
+    primary: '#5b5177',
+    secondary: '#7c6f9c',
+    accent: '#ded7ee',
+    bg: 'from-violet-950 to-slate-950',
+    darkBg: 'bg-violet-950/30',
+    gradient: 'from-violet-500 to-indigo-600',
+    label: 'Other',
+    description: 'Not on the list',
+  },
 }
 
+/** Order shown in every instrument picker. 'other' stays last: it is the
+ *  fallback, not a choice competing with the named ones. */
 export const INSTRUMENT_LIST: InstrumentType[] = [
   'piano', 'violin', 'viola', 'cello', 'flute', 'clarinet',
   'saxophone', 'trumpet', 'trombone', 'percussion', 'voice', 'guitar',
+  'other',
 ]
 
 export function getTheme(instrument?: InstrumentType): InstrumentTheme {
-  return instrument ? INSTRUMENT_THEMES[instrument] : INSTRUMENT_THEMES.piano
+  // Falls back rather than indexing blind: a value stored before this list
+  // last changed would otherwise return undefined and take the page with it.
+  return (instrument && INSTRUMENT_THEMES[instrument]) || INSTRUMENT_THEMES.piano
 }

@@ -17,7 +17,9 @@ const studentSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  instrument: z.enum(['piano','violin','viola','cello','flute','clarinet','saxophone','trumpet','trombone','percussion','voice','guitar'] as [InstrumentType, ...InstrumentType[]]),
+  // Derived from the list the picker renders, so an instrument added to
+  // one can never be rejected by the other.
+  instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
   experienceLevel: z.enum(['beginner','intermediate','advanced','professional']),
   weeklyGoalMinutes: z.coerce.number().min(30).max(3000),
 })

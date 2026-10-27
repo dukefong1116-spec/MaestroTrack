@@ -42,6 +42,7 @@ const ROOTS: Record<InstrumentType, number> = {
   trombone: 130.81,   // C3
   percussion: 130.81, // C3
   piano: 261.63,      // C4
+  other: 261.63,      // C4 — middle of the range, knowing nothing else
   clarinet: 261.63,   // C4
   saxophone: 261.63,  // C4
   guitar: 261.63,     // C4

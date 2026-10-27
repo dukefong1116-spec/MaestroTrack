@@ -13,6 +13,8 @@ export type InstrumentType =
   | 'percussion'
   | 'voice'
   | 'guitar'
+  /** Anything the list above does not name. */
+  | 'other'
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'professional'
 

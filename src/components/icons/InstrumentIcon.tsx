@@ -187,6 +187,7 @@ const GLYPHS: Record<InstrumentType, (p: GlyphProps) => React.ReactElement> = {
   percussion: PercussionGlyph,
   voice: VoiceGlyph,
   guitar: GuitarGlyph,
+  other: NoteGlyph,
 }
 
 interface InstrumentIconProps extends GlyphProps {
@@ -194,6 +195,7 @@ interface InstrumentIconProps extends GlyphProps {
 }
 
 export default function InstrumentIcon({ instrument, ...props }: InstrumentIconProps) {
-  const Glyph = instrument ? GLYPHS[instrument] : NoteGlyph
+  // Same reason as getTheme: an unknown stored value must not crash.
+  const Glyph = (instrument && GLYPHS[instrument]) || NoteGlyph
   return <Glyph {...props} />
 }

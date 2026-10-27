@@ -21,7 +21,9 @@ import type { InstrumentType, UserProfile } from '@/types'
 
 const schema = z.object({
   displayName: z.string().min(2),
-  instrument: z.enum(['piano','violin','viola','cello','flute','clarinet','saxophone','trumpet','trombone','percussion','voice','guitar'] as [InstrumentType, ...InstrumentType[]]),
+  // Derived from the list the picker renders, so an instrument added to
+  // one can never be rejected by the other.
+  instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
   experienceLevel: z.enum(['beginner','intermediate','advanced','professional']),
   weeklyGoalMinutes: z.coerce.number().min(30),
 })
