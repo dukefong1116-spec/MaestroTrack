@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
 import PageHeader from '@/components/common/PageHeader'
+import MobileLogOut from '@/components/layout/MobileLogOut'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -90,6 +91,8 @@ export default function TeacherSettingsPage() {
             </div>
           </div>
         </Card>
+
+        <MobileLogOut />
       </div>
     </div>
   )

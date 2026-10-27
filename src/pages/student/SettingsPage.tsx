@@ -11,6 +11,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { getUserProfile } from '@/lib/firebase/auth'
 import PageHeader from '@/components/common/PageHeader'
+import MobileLogOut from '@/components/layout/MobileLogOut'
 import Card from '@/components/ui/Card'
 import SoundSetting from '@/components/settings/SoundSetting'
 import Button from '@/components/ui/Button'
@@ -234,6 +235,8 @@ export default function SettingsPage() {
             </div>
           </div>
         </Card>
+
+        <MobileLogOut />
       </div>
     </div>
   )

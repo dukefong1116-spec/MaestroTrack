@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LayoutDashboard, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { logOut } from '@/lib/firebase/auth'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,31 +8,13 @@ import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { useNotifications } from '@/hooks/useNotifications'
-import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import Sticker from '@/components/stickers/Sticker'
 import { useGamification } from '@/hooks/useGamification'
 import { cn } from '@/lib/utils/cn'
+import { homeFor, navFor, settingsFor, type NavItem } from './nav'
 import type { InstrumentType } from '@/types'
 
-const studentNav: { to: string; icon: StickerName | typeof LayoutDashboard; label: string; end?: boolean }[] = [
-  { to: '/student', icon: LayoutDashboard, label: 'Today', end: true },
-  { to: '/student/practice', icon: 'metro', label: 'Practice' },
-  { to: '/student/library', icon: 'book', label: 'Library' },
-  { to: '/student/progress', icon: 'target', label: 'Progress' },
-]
-
-const teacherNav: { to: string; icon: StickerName | typeof LayoutDashboard; label: string; end?: boolean }[] = [
-  { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/teacher/students', icon: 'users', label: 'My Students' },
-  { to: '/teacher/schedule', icon: 'calendar', label: 'Schedule' },
-  { to: '/teacher/research', icon: 'chart', label: 'Research' },
-]
-
-/** Where notifications send people, per role — the dot goes on that tab. */
-function homeFor(role: string | null | undefined): string {
-  return role === 'teacher' ? '/teacher' : '/student'
-}
-
-function NavIcon({ icon, active }: { icon: StickerName | typeof LayoutDashboard; active: boolean }) {
+function NavIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
   if (typeof icon === 'string') {
     return <Sticker name={icon} size={18} tone={active ? 'onAccent' : 'ink'} className="shrink-0" />
   }
@@ -53,7 +35,7 @@ export default function Sidebar() {
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
-  const nav = role === 'teacher' ? teacherNav : studentNav
+  const nav = navFor(role)
   const { unread } = useNotifications()
 
   async function handleLogout() {
@@ -65,7 +47,7 @@ export default function Sidebar() {
     <motion.aside
       animate={{ width: collapsed ? 72 : 248 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="relative flex flex-col h-screen shrink-0 overflow-hidden"
+      className="relative hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
       style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(58,48,84,.14)', zIndex: 1 }}
     >
       {/* Logo */}
@@ -155,7 +137,7 @@ export default function Sidebar() {
       {/* Bottom */}
       <div className="px-2.5 pb-4 space-y-1 pt-2">
         <NavLink
-          to={role === 'teacher' ? '/teacher/settings' : '/student/settings'}
+          to={settingsFor(role)}
           className={({ isActive }) => cn(
             'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
             !isActive && 'hover:bg-[var(--clay-bg)]'

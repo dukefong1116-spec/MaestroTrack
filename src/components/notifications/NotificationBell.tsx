@@ -14,7 +14,7 @@ import NotificationPanel from './NotificationPanel'
  * any one row, and a badge that only clears item by item would stay lit
  * for things nobody intends to open.
  */
-export default function NotificationBell({ label }: { label?: string }) {
+export default function NotificationBell({ label, floating }: { label?: string; floating?: boolean }) {
   const { profile } = useAuth()
   const { items, unread, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
@@ -84,12 +84,22 @@ export default function NotificationBell({ label }: { label?: string }) {
         className={
           label
             ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]'
-            : 'relative flex h-9 w-9 items-center justify-center rounded-full'
+            : floating
+              ? 'relative flex h-11 w-11 items-center justify-center rounded-full'
+              : 'relative flex h-9 w-9 items-center justify-center rounded-full'
         }
-        style={label ? { color: 'var(--clay-dim)' } : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
+        style={
+          label
+            ? { color: 'var(--clay-dim)' }
+            : floating
+              // On a phone this sits over the page rather than inside the
+              // sidebar, so it needs its own surface to read as a control.
+              ? { background: 'var(--clay-surface)', color: 'var(--clay-ink)', boxShadow: 'var(--clay-raised)' }
+              : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
+        }
       >
         <span className="relative flex shrink-0 items-center justify-center">
-          <Bell size={label ? 18 : 16} />
+          <Bell size={label || floating ? 18 : 16} />
           {!label && (
             <AnimatePresence>
               {unread > 0 && (
