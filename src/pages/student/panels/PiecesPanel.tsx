@@ -92,8 +92,8 @@ export default function PiecesPanel() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-[var(--clay-ink)]' : 'text-[var(--clay-dim)] hover:text-[var(--clay-ink)] bg-transparent'}`}
-            style={filter === f ? { backgroundColor: theme.primary } : undefined}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? '' : 'text-[var(--clay-dim)] hover:text-[var(--clay-ink)] bg-transparent'}`}
+            style={filter === f ? { backgroundColor: theme.primary, color: 'var(--clay-on-accent)' } : undefined}
           >
             {f} ({pieces.filter((p) => p.status === f).length})
           </button>

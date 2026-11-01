@@ -650,7 +650,7 @@ export default function SessionPage() {
         <div className="relative mb-7 flex h-[268px] items-end justify-center">
           <motion.div
             className="absolute bottom-[34px] left-1/2 origin-bottom rounded-full"
-            style={{ width: 5, height: 226, marginLeft: -2.5, background: '#CFC4E6' }}
+            style={{ width: 5, height: 226, marginLeft: -2.5, background: 'var(--clay-bg-deep)' }}
             animate={{ rotate: metroOn ? [-16, 16] : [-4, 4] }}
             transition={{
               duration: metroOn ? 60 / bpm : 3.2,
@@ -934,7 +934,7 @@ export default function SessionPage() {
         </div>
 
         {saveError && (
-          <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: '#FFE8EA', color: 'var(--clay-danger)' }}>
+          <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {saveError}
           </p>
         )}
@@ -995,9 +995,9 @@ export default function SessionPage() {
                 <div
                   key={a.id}
                   className="mt-4 px-3.5 py-3"
-                  style={{ background: '#FFF1D6', borderRadius: 'var(--clay-r-sm)' }}
+                  style={{ background: 'var(--clay-warning-bg)', borderRadius: 'var(--clay-r-sm)' }}
                 >
-                  <p className="text-[12.5px] font-semibold" style={{ color: '#B37A18' }}>
+                  <p className="text-[12.5px] font-semibold" style={{ color: 'var(--clay-warning-fg)' }}>
                     This won't count toward "{a.title}"
                   </p>
                   <p className="mt-0.5 text-[12px]" style={{ color: 'var(--clay-ink)' }}>

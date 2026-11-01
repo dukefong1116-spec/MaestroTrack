@@ -9,8 +9,8 @@ import {
 import type { Assignment } from '@/types'
 
 const DUE_TONE: Record<Dueness, { bg: string; fg: string } | null> = {
-  overdue: { bg: '#FFE8EA', fg: 'var(--clay-danger)' },
-  today: { bg: '#FFF1D6', fg: '#B37A18' },
+  overdue: { bg: 'var(--clay-danger-bg)', fg: 'var(--clay-danger)' },
+  today: { bg: 'var(--clay-warning-bg)', fg: 'var(--clay-warning-fg)' },
   soon: { bg: 'var(--clay-accent-soft)', fg: 'var(--clay-accent-ink)' },
   later: null,
   none: null,
@@ -43,8 +43,8 @@ export default function AssignmentCard({
 
   const badge =
     state === 'submitted' ? { text: 'Waiting on your teacher', bg: 'var(--clay-bg-deep)', fg: 'var(--clay-dim)' }
-    : state === 'returned' ? { text: 'Another go', bg: '#FFF1D6', fg: '#B37A18' }
-    : state === 'approved' ? { text: 'Approved', bg: '#DFF5EA', fg: '#2E8B62' }
+    : state === 'returned' ? { text: 'Another go', bg: 'var(--clay-warning-bg)', fg: 'var(--clay-warning-fg)' }
+    : state === 'approved' ? { text: 'Approved', bg: 'var(--clay-success-bg)', fg: 'var(--clay-success-fg)' }
     : null
 
   return (
@@ -121,7 +121,7 @@ export default function AssignmentCard({
             <div className="mb-1 flex items-baseline justify-between text-[10.5px]" style={{ color: 'var(--clay-dim)' }}>
               <span>{progress.minutesDone} / {assignment.targetMinutes} min practised</span>
               {progress.targetMet && (
-                <span className="flex items-center gap-1" style={{ color: '#2E8B62' }}>
+                <span className="flex items-center gap-1" style={{ color: 'var(--clay-success-fg)' }}>
                   <Sticker name="check" size={11} tone="accent" /> target met
                 </span>
               )}
@@ -135,13 +135,13 @@ export default function AssignmentCard({
 
         {state === 'returned' && feedback?.note && (
           <p className="mt-3 px-3 py-2 text-[12px]"
-             style={{ background: '#FFF1D6', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-ink)' }}>
+             style={{ background: 'var(--clay-warning-bg)', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-ink)' }}>
             {feedback.note}
           </p>
         )}
         {state === 'approved' && feedback?.note && (
           <p className="mt-3 px-3 py-2 text-[12px]"
-             style={{ background: '#DFF5EA', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-ink)' }}>
+             style={{ background: 'var(--clay-success-bg)', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-ink)' }}>
             {feedback.note}
           </p>
         )}

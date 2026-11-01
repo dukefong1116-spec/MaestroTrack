@@ -151,7 +151,7 @@ export default function AssignmentRecorder({
     return (
       <div className="space-y-2">
         <TakePlayer src={preview.url} label="Just recorded" storedDuration={preview.secs} />
-        <p className="text-[11.5px]" style={{ color: '#2E8B62' }}>Added to this submission.</p>
+        <p className="text-[11.5px]" style={{ color: 'var(--clay-success-fg)' }}>Added to this submission.</p>
       </div>
     )
   }

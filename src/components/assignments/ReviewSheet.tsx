@@ -109,7 +109,7 @@ export default function ReviewSheet({
 
         {error && (
           <p className="mt-3 rounded-2xl px-3.5 py-2.5 text-[12.5px]"
-             style={{ background: '#FFE8EA', color: 'var(--clay-danger)' }}>
+             style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {error}
           </p>
         )}

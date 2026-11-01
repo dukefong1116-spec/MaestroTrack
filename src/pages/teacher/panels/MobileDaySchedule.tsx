@@ -26,9 +26,9 @@ const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
  *  who cannot separate them by colour alone. */
 const TINTS = [
   { bg: 'var(--clay-accent-soft)', bar: 'var(--clay-accent)', ink: 'var(--clay-accent-ink)' },
-  { bg: '#E7F7EF', bar: '#6BCB9B', ink: '#2F7A58' },
-  { bg: '#FFF6D9', bar: '#FFC85C', ink: '#8A6410' },
-  { bg: '#E8F0FD', bar: '#7CA9E8', ink: '#2E5C9A' },
+  { bg: 'var(--clay-tint-mint)', bar: '#6BCB9B', ink: '#2F7A58' },
+  { bg: 'var(--clay-tint-butter)', bar: '#FFC85C', ink: '#8A6410' },
+  { bg: 'var(--clay-tint-sky)', bar: '#7CA9E8', ink: '#2E5C9A' },
 ]
 
 function minutesOf(time: string): number {

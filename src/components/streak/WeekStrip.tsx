@@ -36,7 +36,7 @@ export default function WeekStrip({
         const bg = done
           ? 'var(--clay-accent)'
           : frozen
-            ? '#BBD9F2'
+            ? 'var(--clay-frozen)'
             : day.isFuture
               ? 'transparent'
               : 'rgba(58,48,84,.09)'

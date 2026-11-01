@@ -48,7 +48,7 @@ export default function StatCard({
         {trend && (
           <div
             className="text-xs font-semibold flex items-center gap-1"
-            style={{ color: trend.value >= 0 ? '#2E8B62' : 'var(--clay-danger)' }}
+            style={{ color: trend.value >= 0 ? 'var(--clay-success-fg)' : 'var(--clay-danger)' }}
           >
             {trend.value >= 0 ? '↑' : '↓'} {Math.abs(trend.value)}% {trend.label}
           </div>

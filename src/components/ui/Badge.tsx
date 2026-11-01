@@ -14,11 +14,11 @@ interface BadgeProps {
  */
 const VARIANTS: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
   default: { background: 'var(--clay-bg-deep)', color: 'var(--clay-dim)' },
-  success: { background: '#DFF5EA', color: '#2E8B62' },
-  warning: { background: '#FFF1D6', color: '#B37A18' },
-  danger: { background: '#FFE3E7', color: '#D64257' },
+  success: { background: 'var(--clay-success-bg)', color: 'var(--clay-success-fg)' },
+  warning: { background: 'var(--clay-warning-bg)', color: 'var(--clay-warning-fg)' },
+  danger: { background: 'var(--clay-danger-bg)', color: 'var(--clay-danger-fg)' },
   info: { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' },
-  purple: { background: '#EDE6FB', color: '#7A5AC4' },
+  purple: { background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' },
 }
 
 export default function Badge({ children, variant = 'default', size = 'sm', className }: BadgeProps) {
