@@ -1,33 +1,20 @@
-import { Check } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateUserProfile, getTeacherByStudioCode } from '@/lib/firebase/teacher'
-import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
+import { getTeacherByStudioCode } from '@/lib/firebase/teacher'
+import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { useAuthStore } from '@/stores/authStore'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { getUserProfile } from '@/lib/firebase/auth'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
+import Avatar from '@/components/profile/Avatar'
 import Card from '@/components/ui/Card'
 import SoundSetting from '@/components/settings/SoundSetting'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
 import type { InstrumentType, UserProfile } from '@/types'
-
-const schema = z.object({
-  displayName: z.string().min(2),
-  // Derived from the list the picker renders, so an instrument added to
-  // one can never be rejected by the other.
-  instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
-  experienceLevel: z.enum(['beginner','intermediate','advanced','professional']),
-  weeklyGoalMinutes: z.coerce.number().min(30),
-})
-type FormData = z.infer<typeof schema>
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
@@ -36,58 +23,6 @@ export default function SettingsPage() {
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState(false)
   const [joining, setJoining] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [resyncing, setResyncing] = useState(false)
-  const [resyncMsg, setResyncMsg] = useState('')
-
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: {
-      displayName: profile?.displayName ?? '',
-      instrument: profile?.instrument,
-      experienceLevel: profile?.experienceLevel,
-      weeklyGoalMinutes: profile?.weeklyGoalMinutes ?? 300,
-    }
-  })
-
-  async function handleResync() {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid) return
-    setResyncing(true)
-    setResyncMsg('')
-    try {
-      const fresh = await getUserProfile(uid)
-      if (fresh) {
-        setProfile(fresh)
-        localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(fresh))
-        setResyncMsg(`role=${fresh.role ?? 'missing'}, studioCode=${fresh.studioCode ?? 'none'}, teacherId=${fresh.teacherId ?? 'none'}`)
-      } else {
-        setResyncMsg('No profile found in Firestore.')
-      }
-    } catch (e) {
-      setResyncMsg(`Error: ${String(e)}`)
-    } finally {
-      setResyncing(false)
-    }
-  }
-
-  async function onSubmit(data: FormData) {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid) return
-    setSaving(true)
-    try {
-      await updateUserProfile(uid, data)
-      const updated = {
-        ...(profile ?? { uid, email: user?.email ?? '', role: 'student' as const, createdAt: new Date().toISOString() }),
-        ...data,
-        updatedAt: new Date().toISOString(),
-      }
-      setProfile(updated)
-      localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
-    } finally {
-      setSaving(false)
-    }
-  }
 
   async function handleJoinStudio() {
     const uid = profile?.uid ?? user?.uid
@@ -139,37 +74,39 @@ export default function SettingsPage() {
     }
   }
 
+  const instrument = profile?.instrument as InstrumentType | undefined
+  const subtitle = [
+    instrument ? INSTRUMENT_THEMES[instrument]?.label : null,
+    profile?.experienceLevel,
+  ].filter(Boolean).join(' · ')
+
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage your profile and preferences." />
 
       <div className="space-y-6 max-w-2xl">
-        {/* Profile */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-4">Profile</p>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input label="Display Name" error={errors.displayName?.message} {...register('displayName')} />
-            <Select
-              label="Instrument"
-              options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
-              error={errors.instrument?.message}
-              {...register('instrument')}
-            />
-            <Select
-              label="Experience Level"
-              options={[
-                { value: 'beginner', label: 'Beginner' },
-                { value: 'intermediate', label: 'Intermediate' },
-                { value: 'advanced', label: 'Advanced' },
-                { value: 'professional', label: 'Professional' },
-              ]}
-              error={errors.experienceLevel?.message}
-              {...register('experienceLevel')}
-            />
-            <Input label="Weekly Goal (minutes)" type="number" error={errors.weeklyGoalMinutes?.message} {...register('weeklyGoalMinutes')} />
-            <Button type="submit" loading={isSubmitting || saving}>Save Profile</Button>
-          </form>
-        </Card>
+        {/* Who you are. The whole row opens the editor — the fields that
+            used to sit here in a form have moved there, along with the
+            things a form on a settings page could never do (your photo,
+            your email, your password). */}
+        <Link
+          to="/student/settings/profile"
+          className="flex items-center gap-4 rounded-[var(--clay-r-md)] p-4 transition-transform active:scale-[.99]"
+          style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+        >
+          <Avatar src={profile?.avatar} name={profile?.displayName} instrument={instrument} size={60} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+              {profile?.displayName || 'Your profile'}
+            </p>
+            {subtitle && (
+              <p className="mt-0.5 truncate text-[13px] capitalize" style={{ color: 'var(--clay-dim)' }}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          <ChevronRight size={18} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
+        </Link>
 
         {/* Studio */}
         <Card className="p-6">
@@ -198,20 +135,6 @@ export default function SettingsPage() {
         </Card>
 
         <SoundSetting />
-
-        {/* Resync */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-1">Reload Profile</p>
-          <p className="text-xs text-[var(--clay-dim)] mb-4">Re-reads your profile from the database.</p>
-          <Button variant="outline" size="sm" onClick={handleResync} loading={resyncing}>
-            Reload from Database
-          </Button>
-          {resyncMsg && (
-            <p className={`mt-3 text-xs font-mono ${resyncMsg.startsWith('Error') || resyncMsg.includes('missing') || resyncMsg.includes('No profile') ? 'text-red-400' : 'text-emerald-400'}`}>
-              {resyncMsg}
-            </p>
-          )}
-        </Card>
 
         {/* Account info */}
         <Card className="p-6">

@@ -36,6 +36,8 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
+const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
 
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
 const StudentsPage = lazy(() => import('@/pages/teacher/StudentsPage'))
@@ -106,6 +108,11 @@ function AppRoutes() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        {/* Nested under settings on purpose: the Settings tab and the
+            sidebar item match by prefix, so they stay lit while you are
+            in here. */}
+        <Route path="settings/profile" element={<ProfilePage />} />
+        <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
 
         {/* Retired routes — redirected so existing links and bookmarks
             keep working after the Library/Progress consolidation. */}
