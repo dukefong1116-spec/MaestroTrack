@@ -11,8 +11,12 @@ import { useState } from 'react'
  * component, which is what React Fast Refresh needs to reload it cleanly.
  */
 export function usePrefersReducedMotion(): boolean {
-  const [reduced] = useState(
-    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  )
+  const [reduced] = useState(() => {
+    if (typeof window === 'undefined') return false
+    // Either source counts: the OS setting, or the switch in Settings.
+    // CSS handles its own transitions; this is what stops the JS ones.
+    if (document.documentElement.dataset.motion === 'reduce') return true
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  })
   return reduced
 }

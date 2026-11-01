@@ -18,6 +18,23 @@ export type InstrumentType =
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'professional'
 
+/* ── display and alert preferences ─────────────────────────────── */
+export type ThemeChoice = 'system' | 'light' | 'dark'
+export type AccentName = 'instrument' | 'coral' | 'indigo' | 'teal' | 'amber' | 'rose' | 'slate'
+/** Each maps to real NotificationKind values the builders emit — see
+ *  notifications.ts. Nothing here is a switch wired to nothing. */
+export type NotifyKind =
+  /** assignment-new */
+  | 'assignments'
+  /** assignment-returned, assignment-approved */
+  | 'feedback'
+  /** lesson-tomorrow, lesson-soon */
+  | 'lessons'
+  /** submission-received — teachers only */
+  | 'submissions'
+  /** The prompts on Today, which are a separate surface from the bell. */
+  | 'nudges'
+
 export type PracticeCategory =
   | 'Scales'
   | 'Technique'
@@ -51,7 +68,18 @@ export interface UserProfile {
   updatedAt: string
   reminderTime?: string
   reminderEnabled?: boolean
-  theme?: 'light' | 'dark'
+  theme?: ThemeChoice
+  /** Set once somebody has actually used the Appearance screen. Absent
+   *  means every preference below is a default the app wrote, not a
+   *  choice the person made — see prefs.ts. */
+  prefsVersion?: number
+  /** Which colour the app wears. 'instrument' leaves it as the app ships. */
+  accent?: AccentName
+  /** Percent; 100 is the app's own sizing. */
+  displayScale?: number
+  reduceMotion?: boolean
+  /** Which kinds of notification reach the bell. */
+  notify?: Partial<Record<NotifyKind, boolean>>
   avatar?: string
   /** Dates (yyyy-MM-dd) rescued by a streak freeze. */
   streakFreezesUsed?: string[]

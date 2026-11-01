@@ -1,3 +1,4 @@
+import { accentThemeOverride, isDarkTheme } from '@/lib/utils/prefs'
 import type { InstrumentType } from '@/types'
 
 export interface InstrumentTheme {
@@ -152,8 +153,36 @@ export const INSTRUMENT_LIST: InstrumentType[] = [
   'other',
 ]
 
+/**
+ * The instrument colours are chosen for a light ground — violin's #b45309
+ * is a deep amber that all but vanishes on a dark surface. Rather than
+ * hand-pick 28 more values and keep two sets in step, each is mixed
+ * toward white by a fixed amount when the app is dark. Consistent by
+ * construction, and there is only ever one set to maintain.
+ */
+function lift(hex: string, amount: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  const mix = (c: number) => Math.round(c + (255 - c) * amount)
+  const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255)
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
+}
+
 export function getTheme(instrument?: InstrumentType): InstrumentTheme {
   // Falls back rather than indexing blind: a value stored before this list
   // last changed would otherwise return undefined and take the page with it.
-  return (instrument && INSTRUMENT_THEMES[instrument]) || INSTRUMENT_THEMES.piano
+  const base = (instrument && INSTRUMENT_THEMES[instrument]) || INSTRUMENT_THEMES.piano
+
+  // Someone who picked an accent asked for one colour, not two. Everything
+  // that tints by instrument — the hero gradient, the goal rings, the piece
+  // bars — reads this function, so overriding here reaches all of them
+  // without threading a preference through every call site. The label,
+  // description and icon are untouched: the instrument is still named.
+  const override = accentThemeOverride()
+  const picked = override ? { ...base, primary: override.primary, secondary: override.secondary } : base
+
+  return isDarkTheme()
+    ? { ...picked, primary: lift(picked.primary, 0.42), secondary: lift(picked.secondary, 0.42), accent: lift(picked.accent, 0.2) }
+    : picked
 }
