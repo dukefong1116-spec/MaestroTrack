@@ -2,7 +2,6 @@ import { Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
-import NotificationBell from '@/components/notifications/NotificationBell'
 
 export default function AppLayout() {
   return (
@@ -34,12 +33,6 @@ export default function AppLayout() {
           </div>
         </motion.main>
         <BottomTabs />
-      </div>
-
-      {/* The bell leaves the navigation on a phone: a count nobody can see
-          is a count nobody acts on. Gone at lg, where the sidebar has it. */}
-      <div className="fixed right-4 top-5 z-40 lg:hidden">
-        <NotificationBell floating />
       </div>
     </div>
   )

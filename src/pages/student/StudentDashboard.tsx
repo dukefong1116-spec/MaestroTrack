@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -87,6 +88,13 @@ export default function StudentDashboard() {
         style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.secondary}10)`, border: `1px solid ${theme.primary}30` }}
       >
         <div className="absolute top-2 right-5 opacity-[0.13] select-none pointer-events-none" style={{ color: theme.primary }}><InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={104} strokeWidth={1.2} /></div>
+        {/* The bell lives here rather than floating over every screen:
+            this is the one place notifications point at, and inside the
+            hero it scrolls away like everything else. Gone at lg, where
+            the sidebar carries it. */}
+        <div className="absolute right-4 top-4 z-10 lg:hidden">
+          <NotificationBell floating />
+        </div>
         <p className="text-[var(--clay-dim)] text-sm font-medium mb-1">{greeting}</p>
         <h1 className="text-3xl font-bold text-[var(--clay-ink)] mb-2">{profile?.displayName ?? 'Musician'}</h1>
         <div className="flex items-center gap-4 flex-wrap">

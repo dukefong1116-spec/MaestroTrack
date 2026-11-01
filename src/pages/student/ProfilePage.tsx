@@ -180,9 +180,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl">
-      {/* pr-14 clears the floating notification bell on a phone, the same
-          allowance PageHeader makes. */}
-      <div className="mb-6 flex items-center gap-3 pr-14 lg:mb-8 lg:pr-0">
+      <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to="/student/settings"
           aria-label="Back to Settings"

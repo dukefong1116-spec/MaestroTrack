@@ -12,7 +12,7 @@ export default function PageHeader({ title, subtitle, actions }: PageHeaderProps
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-start justify-between gap-4 mb-6 pr-14 lg:mb-8 lg:pr-0"
+      className="flex items-start justify-between gap-4 mb-6 lg:mb-8"
     >
       <div>
         <h1

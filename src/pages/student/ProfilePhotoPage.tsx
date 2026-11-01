@@ -110,7 +110,7 @@ export default function ProfilePhotoPage() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex items-center gap-3 pr-14 lg:mb-8 lg:pr-0">
+      <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to="/student/settings/profile"
           aria-label="Back to Edit Profile"
