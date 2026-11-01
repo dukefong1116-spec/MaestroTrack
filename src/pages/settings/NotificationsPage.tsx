@@ -63,24 +63,17 @@ export default function NotificationsPage() {
             />
           </>
         )}
-      </Panel>
 
-      {!isTeacher && (
-        <Panel>
+        {!isTeacher && (
+        <>
           <ToggleRow
-            first
             icon={<Lightbulb size={19} />}
             label="Prompts on Today"
             hint="Nudges about your goal and your streak"
             checked={prefs.notify.nudges}
             onChange={toggle('nudges')}
           />
-        </Panel>
-      )}
-
-      {!isTeacher && (
-        <Panel>
-          <Block first>
+          <Block>
             <Legend
               title="Practice reminder"
               hint="A nudge at the time you pick. It can only appear while MaestroTrack is open in a tab — the app has no way to reach you when it is closed."
@@ -107,11 +100,12 @@ export default function NotificationsPage() {
               </label>
             </Block>
           )}
-        </Panel>
+        </>
       )}
 
       {/* Stays per device, for the reason it already gives itself. */}
-      <SoundSetting />
+      <Block><SoundSetting bare /></Block>
+      </Panel>
     </SettingsScreen>
   )
 }

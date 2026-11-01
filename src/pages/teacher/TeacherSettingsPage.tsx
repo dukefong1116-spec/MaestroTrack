@@ -69,10 +69,8 @@ export default function TeacherSettingsPage() {
           <NavRow icon={<Bell size={19} />} label="Notifications" to="/teacher/settings/notifications" />
           <NavRow icon={<Palette size={19} />} label="Appearance" to="/teacher/settings/appearance" />
           <NavRow icon={<ShieldCheck size={19} />} label="Privacy & Security" to="/teacher/settings/privacy" />
-        </Panel>
 
-        <Panel>
-          <Block first>
+          <Block>
             <Legend title="Studio Code" hint="Share this code with students to invite them to your studio." />
             <div className="flex items-center gap-3">
               <div
@@ -86,17 +84,14 @@ export default function TeacherSettingsPage() {
               </Button>
             </div>
           </Block>
-        </Panel>
 
-        <Panel>
-          <NavRow first icon={<LifeBuoy size={19} />} label="Support & Legal" to="/teacher/settings/about" />
-        </Panel>
+          <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/teacher/settings/about" />
 
-        <Panel>
-          <FactRow first label="Email" value={user?.email ?? '—'} />
+          <FactRow label="Email" value={user?.email ?? '—'} />
           <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
         </Panel>
 
+        {/* Outside, deliberately: the only destructive action on the page. */}
         <MobileLogOut />
       </div>
     </div>

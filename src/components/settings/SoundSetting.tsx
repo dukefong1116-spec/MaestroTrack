@@ -15,7 +15,11 @@ import { diagnoseAudio, type AudioDiagnosis } from '@/lib/audio/diagnose'
  * profile: wanting the app silent on a laptop in a shared room says
  * nothing about wanting it silent on your own phone.
  */
-export default function SoundSetting() {
+/**
+ * `bare` drops the card wrapper so this can sit inside the one connected
+ * panel the settings screens use, rather than floating beside it.
+ */
+export default function SoundSetting({ bare }: { bare?: boolean } = {}) {
   const [muted, setMuted] = useState(isSoundMuted)
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<AudioDiagnosis | null>(null)
@@ -36,8 +40,12 @@ export default function SoundSetting() {
     }
   }
 
+  const Shell = bare
+    ? ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+    : ({ children }: { children: React.ReactNode }) => <Card className="p-6">{children}</Card>
+
   return (
-    <Card className="p-6">
+    <Shell>
       <p className="text-sm font-semibold text-[var(--clay-faint)] mb-1">Sound</p>
       <p className="text-xs text-[var(--clay-dim)] mb-4">
         The chime when you finish a session, and the celebrations for streaks, badges
@@ -107,6 +115,6 @@ export default function SoundSetting() {
           </div>
         )}
       </div>
-    </Card>
+    </Shell>
   )
 }

@@ -96,22 +96,19 @@ export default function AboutPage() {
         <Placeholder title="Terms of service" icon={<FileText size={19} />}>
           <NotWrittenYet what="terms of service" />
         </Placeholder>
-      </Panel>
 
-      <Panel>
-        <Block first>
+        <Block>
           <Legend title="This build" />
         </Block>
         <FactRow label="Version" value={__APP_VERSION__} />
         <FactRow label="Built" value={__BUILD_DATE__} />
-      </Panel>
 
-      <Panel>
         <button
           type="button"
           onClick={() => setShowLicenses((o) => !o)}
           aria-expanded={showLicenses}
           className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-transform active:scale-[.99] sm:px-6"
+          style={{ borderTop: '1px solid var(--clay-line)' }}
         >
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>

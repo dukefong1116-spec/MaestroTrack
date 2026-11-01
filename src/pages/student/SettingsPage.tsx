@@ -109,12 +109,10 @@ export default function SettingsPage() {
           <NavRow icon={<Bell size={19} />} label="Notifications" to="/student/settings/notifications" />
           <NavRow icon={<Palette size={19} />} label="Appearance" to="/student/settings/appearance" />
           <NavRow icon={<ShieldCheck size={19} />} label="Privacy & Security" to="/student/settings/privacy" />
-        </Panel>
 
-        {/* Studio — a row once you are in one, the form until then. */}
-        <Panel>
+          {/* Studio — a row once you are in one, the form until then. */}
           {linked ? (
-            <div className="flex items-center gap-3.5 px-5 py-4 sm:px-6">
+            <div className="flex items-center gap-3.5 px-5 py-4 sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
               <span className="flex shrink-0" style={{ color: 'var(--clay-dim)' }}><GraduationCap size={19} /></span>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>Your studio</span>
@@ -124,7 +122,7 @@ export default function SettingsPage() {
               </span>
             </div>
           ) : (
-            <Block first>
+            <Block>
               <Legend title="Join a Studio" hint="Enter your teacher's studio code to connect your account." />
               <div className="flex gap-3">
                 <Input
@@ -140,14 +138,10 @@ export default function SettingsPage() {
               )}
             </Block>
           )}
-        </Panel>
 
-        <Panel>
-          <NavRow first icon={<LifeBuoy size={19} />} label="Support & Legal" to="/student/settings/about" />
-        </Panel>
+          <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/student/settings/about" />
 
-        <Panel>
-          <FactRow first label="Email" value={user?.email ?? '—'} />
+          <FactRow label="Email" value={user?.email ?? '—'} />
           <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
           <FactRow label="Studio code" value={profile?.studioCode ?? '—'} />
           <FactRow
@@ -156,6 +150,8 @@ export default function SettingsPage() {
           />
         </Panel>
 
+        {/* The one thing left outside: signing out is the only destructive
+            action here, and it should not share a surface with the rest. */}
         <MobileLogOut />
       </div>
     </div>

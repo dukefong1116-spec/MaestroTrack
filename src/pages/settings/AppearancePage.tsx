@@ -103,11 +103,7 @@ export default function AppearancePage() {
             })}
           </div>
         </Block>
-      </Panel>
-
-      <Panel>
         <ToggleRow
-          first
           icon={<Zap size={19} />}
           label="Reduce motion"
           hint="Turns off the celebrations and the sliding. Already on if your device asks for it."

@@ -88,10 +88,8 @@ export default function PrivacyPage() {
             forwarding one forwards the audio.
           </p>
         </Block>
-      </Panel>
 
-      <Panel>
-        <Block first>
+        <Block>
           <Legend
             title="Your data"
             hint="Everything on your account as one JSON file — profile, sessions, pieces, performances, assignments."
@@ -108,10 +106,8 @@ export default function PrivacyPage() {
             <p className="mt-3 text-[13px] font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>
           )}
         </Block>
-      </Panel>
 
-      <Panel>
-        <Block first>
+        <Block>
           <Legend title="Sign-in" />
         </Block>
         <FactRow label="Email" value={user?.email ?? '—'} />
