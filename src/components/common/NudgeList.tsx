@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
 import { usePracticeNudges, type NudgeTone } from '@/hooks/usePracticeNudges'
+import { useAuth } from '@/hooks/useAuth'
 
 const TONE: Record<NudgeTone, { bg: string; fg: string }> = {
-  success: { bg: '#DFF5EA', fg: '#2E8B62' },
-  warning: { bg: '#FFF1D6', fg: '#B37A18' },
+  success: { bg: 'var(--clay-success-bg)', fg: 'var(--clay-success-fg)' },
+  warning: { bg: 'var(--clay-warning-bg)', fg: 'var(--clay-warning-fg)' },
   info: { bg: 'var(--clay-accent-soft)', fg: 'var(--clay-accent-ink)' },
 }
 
@@ -14,7 +15,11 @@ const TONE: Record<NudgeTone, { bg: string; fg: string }> = {
  * noise, not reassurance.
  */
 export default function NudgeList({ limit = 3 }: { limit?: number }) {
+  const { profile } = useAuth()
   const nudges = usePracticeNudges(limit)
+  // Switched off in Settings → Notifications. Checked after the hook, not
+  // around it, because a hook cannot be called conditionally.
+  if (profile?.notify?.nudges === false) return null
   if (nudges.length === 0) return null
 
   return (

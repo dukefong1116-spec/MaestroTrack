@@ -6,7 +6,7 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { subscribeStudentAssignments, subscribeTeacherAssignments } from '@/lib/firebase/assignments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import {
-  buildStudentNotifications, buildTeacherNotifications, unreadCount,
+  applyNotifyPrefs, buildStudentNotifications, buildTeacherNotifications, unreadCount,
   type AppNotification,
 } from '@/lib/utils/notifications'
 import type { Assignment } from '@/types'
@@ -56,12 +56,17 @@ export function useNotifications(): {
     return localReadAt > stored ? localReadAt : stored
   }, [profile?.notificationsReadAt, localReadAt])
 
+  // Settings decides which categories reach the bell. Filtered after the
+  // build rather than inside it, so the builders stay about what is true
+  // and this stays about what you asked to see.
+  const notify = profile?.notify
   const items = useMemo(() => {
     if (!uid) return []
-    return isTeacher
+    const all = isTeacher
       ? buildTeacherNotifications({ assignments, students, options: { now } })
       : buildStudentNotifications({ assignments, lessons, options: { now } })
-  }, [uid, isTeacher, assignments, students, lessons, now])
+    return applyNotifyPrefs(all, notify ?? {})
+  }, [uid, isTeacher, assignments, students, lessons, now, notify])
 
   const markAllRead = useCallback(() => {
     if (!uid) return

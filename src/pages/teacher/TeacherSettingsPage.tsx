@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Copy } from 'lucide-react'
+import { Copy, Bell, Palette, ShieldCheck, LifeBuoy } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
-import Card from '@/components/ui/Card'
+import { Panel, Block, Legend, NavRow, FactRow } from '@/components/settings/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
@@ -55,42 +55,47 @@ export default function TeacherSettingsPage() {
     <div>
       <PageHeader title="Settings" subtitle="Manage your studio and profile." />
 
-      <div className="space-y-6 max-w-2xl">
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-4">Profile & Studio</p>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input label="Your Name" error={errors.displayName?.message} {...register('displayName')} />
-            <Input label="Studio Name" placeholder="Chen Music Studio" error={errors.studioName?.message} {...register('studioName')} />
-            <Button type="submit" loading={isSubmitting || saving}>Save</Button>
-          </form>
-        </Card>
+      <div className="max-w-2xl space-y-6">
+        <Panel>
+          <Block first>
+            <Legend title="Profile & Studio" />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <Input label="Your Name" error={errors.displayName?.message} {...register('displayName')} />
+              <Input label="Studio Name" placeholder="Chen Music Studio" error={errors.studioName?.message} {...register('studioName')} />
+              <Button type="submit" loading={isSubmitting || saving}>Save</Button>
+            </form>
+          </Block>
 
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-1">Studio Code</p>
-          <p className="text-xs text-[var(--clay-dim)] mb-4">Share this code with students to invite them to your studio.</p>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 bg-[var(--clay-bg-deep)] border border-[var(--clay-line)] rounded-xl px-4 py-3 font-mono text-2xl font-bold text-[var(--clay-ink)] tracking-widest">
-              {profile?.studioCode ?? '—'}
-            </div>
-            <Button size="sm" variant="outline" onClick={copyCode}>
-              <Copy size={14} /> {copied ? 'Copied!' : 'Copy'}
-            </Button>
-          </div>
-        </Card>
+          <NavRow icon={<Bell size={19} />} label="Notifications" to="/teacher/settings/notifications" />
+          <NavRow icon={<Palette size={19} />} label="Appearance" to="/teacher/settings/appearance" />
+          <NavRow icon={<ShieldCheck size={19} />} label="Privacy & Security" to="/teacher/settings/privacy" />
+        </Panel>
 
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-4">Account</p>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Email</span>
-              <span className="text-[var(--clay-ink)]">{user?.email}</span>
+        <Panel>
+          <Block first>
+            <Legend title="Studio Code" hint="Share this code with students to invite them to your studio." />
+            <div className="flex items-center gap-3">
+              <div
+                className="flex-1 rounded-[var(--clay-r-sm)] px-4 py-3 font-mono text-2xl font-bold tracking-widest"
+                style={{ background: 'var(--clay-bg-deep)', color: 'var(--clay-ink)' }}
+              >
+                {profile?.studioCode ?? '—'}
+              </div>
+              <Button size="sm" variant="outline" onClick={copyCode}>
+                <Copy size={14} /> {copied ? 'Copied!' : 'Copy'}
+              </Button>
             </div>
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Role</span>
-              <span className="text-[var(--clay-ink)] capitalize">{profile?.role}</span>
-            </div>
-          </div>
-        </Card>
+          </Block>
+        </Panel>
+
+        <Panel>
+          <NavRow first icon={<LifeBuoy size={19} />} label="Support & Legal" to="/teacher/settings/about" />
+        </Panel>
+
+        <Panel>
+          <FactRow first label="Email" value={user?.email ?? '—'} />
+          <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
+        </Panel>
 
         <MobileLogOut />
       </div>

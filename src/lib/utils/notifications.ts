@@ -1,5 +1,5 @@
 import { addDays, getDay, parseISO, set, startOfDay, differenceInCalendarDays } from 'date-fns'
-import type { Assignment, LessonSlot, UserProfile } from '@/types'
+import type { Assignment, LessonSlot, NotifyKind, UserProfile } from '@/types'
 import type { StickerName } from '@/components/stickers/Sticker'
 
 /**
@@ -36,6 +36,29 @@ export interface AppNotification {
   to: string
   priority: number
   sticker: StickerName
+}
+
+/** Which NotificationKinds each Settings category switches off. */
+export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> = {
+  assignments: ['assignment-new'],
+  feedback: ['assignment-returned', 'assignment-approved'],
+  lessons: ['lesson-tomorrow', 'lesson-soon'],
+  submissions: ['submission-received'],
+  // Not a bell notification at all — the prompts on Today. Listed so the
+  // categories are one set, and skipped by the filter below.
+  nudges: [],
+}
+
+/** Drops the kinds whose category has been switched off in Settings. */
+export function applyNotifyPrefs(
+  items: AppNotification[],
+  notify: Partial<Record<NotifyKind, boolean>>
+): AppNotification[] {
+  const off = new Set<NotificationKind>()
+  for (const [category, kinds] of Object.entries(KINDS_BY_CATEGORY) as [NotifyKind, readonly NotificationKind[]][]) {
+    if (notify[category] === false) for (const k of kinds) off.add(k)
+  }
+  return off.size ? items.filter((n) => !off.has(n.kind)) : items
 }
 
 export interface BuildOptions {

@@ -74,7 +74,7 @@ function SheetRow({
 
 function Note({ tone, children }: { tone: 'ok' | 'bad'; children: React.ReactNode }) {
   return (
-    <p className="mt-3 text-[13px] font-medium" style={{ color: tone === 'ok' ? '#2E8B62' : 'var(--clay-danger)' }}>
+    <p className="mt-3 text-[13px] font-medium" style={{ color: tone === 'ok' ? 'var(--clay-success-fg)' : 'var(--clay-danger)' }}>
       {children}
     </p>
   )
