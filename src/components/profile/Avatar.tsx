@@ -1,4 +1,4 @@
-import { getTheme } from '@/lib/utils/instruments'
+import { getInstrumentTheme } from '@/lib/utils/instruments'
 import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 
@@ -48,7 +48,9 @@ export default function Avatar({ src, name, instrument, size = 60, className }: 
     )
   }
 
-  const theme = getTheme(instrument)
+  // The instrument keeps its own colour here even when an accent is
+  // chosen — a face is whose it is, not what colour the app is wearing.
+  const theme = getInstrumentTheme(instrument)
   return (
     <span
       aria-hidden="true"

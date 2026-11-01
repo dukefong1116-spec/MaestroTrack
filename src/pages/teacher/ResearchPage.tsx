@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import Sticker from '@/components/stickers/Sticker'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { getCategoryData, computeConsistencyScore } from '@/lib/utils/analytics'
-import { getTheme } from '@/lib/utils/instruments'
+import { getInstrumentTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import PageHeader from '@/components/common/PageHeader'
 import Card from '@/components/ui/Card'
@@ -80,7 +80,9 @@ export default function ResearchPage() {
           <div className="space-y-3">
             {byInstrument.map(([inst, data]) => {
               const avgMin = data.count > 0 ? Math.round(data.totalMinutes / data.count) : 0
-              const theme = getTheme(inst.toLowerCase() as InstrumentType)
+              // One bar per instrument: the colour has to stay the
+              // instrument’s, or the chart says nothing.
+              const theme = getInstrumentTheme(inst.toLowerCase() as InstrumentType)
               return (
                 <div key={inst}>
                   <div className="flex justify-between text-xs text-[var(--clay-faint)] mb-1">

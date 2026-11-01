@@ -1,7 +1,7 @@
 import { Sun, Moon, Monitor, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
-import { getTheme } from '@/lib/utils/instruments'
+import { getInstrumentTheme } from '@/lib/utils/instruments'
 import { ACCENTS, SCALES, type AccentName, type ThemeChoice } from '@/lib/utils/prefs'
 import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/settings/Panel'
 import { cn } from '@/lib/utils/cn'
@@ -18,7 +18,10 @@ export default function AppearancePage() {
   const { prefs, set } = usePrefs()
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const instrument = profile?.instrument as InstrumentType | undefined
-  const instrumentTheme = getTheme(instrument)
+  // Raw, not getTheme: this swatch is a preview of what 'match my
+  // instrument' would look like, so running it through the override made
+  // it show the accent already chosen — the option misrepresenting itself.
+  const instrumentTheme = getInstrumentTheme(instrument)
 
   return (
     <SettingsScreen title="Appearance" back={back}>
