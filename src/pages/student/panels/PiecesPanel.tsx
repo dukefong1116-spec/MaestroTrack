@@ -88,20 +88,29 @@ export default function PiecesPanel() {
     <div>
       {/* Filter + add, as the panel's own toolbar rather than a floating row */}
       <Block first>
-        <div className="flex flex-wrap items-center gap-2">
-          {(['active', 'mastered', 'archived'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className="rounded-full px-3.5 py-1.5 text-sm font-medium capitalize transition-all"
-              style={filter === f
-                ? { backgroundColor: theme.primary, color: 'var(--clay-on-accent)' }
-                : { color: 'var(--clay-dim)' }}
-            >
-              {f} ({pieces.filter((p) => p.status === f).length})
-            </button>
-          ))}
-          <Button className="ml-auto w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
+        {/* One row on a phone, not three: the filters scroll sideways if
+            they have to, and Add stays put. The pills were 32px tall,
+            which is below any reasonable thumb. */}
+        <div className="flex items-center gap-2">
+          <div className="-mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {(['active', 'mastered', 'archived'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className="min-h-[40px] shrink-0 rounded-full px-3.5 text-sm font-medium capitalize transition-all"
+                style={filter === f
+                  ? { backgroundColor: theme.primary, color: 'var(--clay-on-accent)' }
+                  : { color: 'var(--clay-dim)' }}
+              >
+                {f} ({pieces.filter((p) => p.status === f).length})
+              </button>
+            ))}
+          </div>
+          <Button className="shrink-0" onClick={() => setOpen(true)}>
+            <Plus size={16} />
+            <span className="hidden sm:inline">Add piece</span>
+            <span className="sr-only sm:hidden">Add piece</span>
+          </Button>
         </div>
       </Block>
 
