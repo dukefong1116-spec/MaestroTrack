@@ -81,10 +81,12 @@ export default function GoalsPanel() {
 
   const earnedIds = new Set(game.badges.map((b) => b.id))
 
+  // Sized for a phone first: at 92/120/92 the three columns plus their
+  // labels ran past the panel edge and "This Month" was cut in half.
   const rings = [
-    { label: 'Today', pct: todayPct, value: todayMinutes, goal: dailyGoal, size: 92 },
-    { label: 'This Week', pct: weekPct, value: weekTotal, goal: weeklyGoal, size: 120 },
-    { label: 'This Month', pct: monthPct, value: monthTotal, goal: monthGoal, size: 92 },
+    { label: 'Today', pct: todayPct, value: todayMinutes, goal: dailyGoal, size: 72 },
+    { label: 'This Week', pct: weekPct, value: weekTotal, goal: weeklyGoal, size: 96 },
+    { label: 'This Month', pct: monthPct, value: monthTotal, goal: monthGoal, size: 72 },
   ]
 
   const streakStats = [
@@ -126,21 +128,24 @@ export default function GoalsPanel() {
           </motion.div>
         )}
 
-        <div className="flex items-center justify-around gap-2">
+        {/* A grid, not a flex row: equal columns keep a long label from
+            pushing its neighbour off the edge, and min-w-0 lets it wrap
+            inside its own column instead. */}
+        <div className="grid grid-cols-3 gap-1">
           {rings.map((ring, i) => (
             <motion.div
               key={ring.label}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="flex flex-col items-center gap-3"
+              className="flex min-w-0 flex-col items-center gap-2.5"
             >
-              <ProgressRing percentage={ring.pct} size={ring.size} strokeWidth={ring.size === 120 ? 11 : 8} color={theme.primary}>
-                <p className="text-base font-bold" style={{ color: 'var(--clay-ink)' }}>{ring.pct}%</p>
+              <ProgressRing percentage={ring.pct} size={ring.size} strokeWidth={ring.size === 96 ? 9 : 7} color={theme.primary}>
+                <p className="text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>{ring.pct}%</p>
               </ProgressRing>
-              <div className="text-center">
-                <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>{ring.label}</p>
-                <p className="text-xs tabular-nums" style={{ color: 'var(--clay-dim)' }}>{ring.value}/{ring.goal} min</p>
+              <div className="min-w-0 text-center">
+                <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--clay-ink)' }}>{ring.label}</p>
+                <p className="text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>{ring.value}/{ring.goal} min</p>
               </div>
             </motion.div>
           ))}
