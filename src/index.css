@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap');
 
+/* Tailwind's radius scale, pulled in to match the clay tokens below.
+   Most pages were written with `rounded-xl` / `rounded-2xl` rather than a
+   token, so changing only the tokens left half the app rounder than the
+   other half. Overriding the scale makes one set of numbers — 8, 10, 12,
+   16 — govern every corner in the app. `rounded-full` is untouched: pills
+   and avatars are meant to be circular. */
+@theme {
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+}
+
 /* ─────────────────────────────────────────────────────────────
    SOFT CLAY design tokens.
 
@@ -33,10 +46,10 @@
   --clay-butter: #FFC85C;
   --clay-danger: #FF5C6E;
 
-  /* form */
-  --clay-r-lg: 26px;
-  --clay-r-md: 20px;
-  --clay-r-sm: 14px;
+  /* form — squared off a little; 26/20/14 read as a toy, not a tool */
+  --clay-r-lg: 16px;
+  --clay-r-md: 12px;
+  --clay-r-sm: 8px;
 
   /* the signature: puffy drop + inner top highlight */
   --clay-raised: 0 6px 16px -6px rgba(58, 48, 84, .22), inset 0 2px 0 rgba(255, 255, 255, .9);

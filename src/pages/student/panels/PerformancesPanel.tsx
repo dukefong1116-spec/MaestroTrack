@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPerformance, updatePerformance, deletePerformance } from '@/lib/firebase/performances'
 import { getTheme } from '@/lib/utils/instruments'
-import Card from '@/components/ui/Card'
+import { Block } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -65,7 +65,7 @@ export default function PerformancesPanel() {
     .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
 
   return (
-    <div>
+    <Block first>
       {performances.length > 0 && (
         <div className="mb-5 flex items-center justify-end">
           <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add performance</Button>
@@ -89,7 +89,7 @@ export default function PerformancesPanel() {
                   const daysLeft = differenceInDays(parseISO(perf.date), new Date())
                   return (
                     <motion.div key={perf.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                      <Card className="p-5">
+                      <div className="p-4" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -130,7 +130,7 @@ export default function PerformancesPanel() {
                         </div>
 
                         {perf.notes && <p className="text-xs text-[var(--clay-dim)] mt-3 italic">"{perf.notes}"</p>}
-                      </Card>
+                      </div>
                     </motion.div>
                   )
                 })}
@@ -143,7 +143,7 @@ export default function PerformancesPanel() {
               <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Past</p>
               <div className="space-y-2">
                 {past.map((perf) => (
-                  <Card key={perf.id} className="p-4 opacity-70">
+                  <div key={perf.id} className="p-4 opacity-70" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <Badge variant={typeColors[perf.type]}>{perf.type}</Badge>
@@ -156,7 +156,7 @@ export default function PerformancesPanel() {
                         <Trash2 size={14} />
                       </button>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </div>
@@ -183,6 +183,6 @@ export default function PerformancesPanel() {
           </div>
         </form>
       </Modal>
-    </div>
+    </Block>
   )
 }

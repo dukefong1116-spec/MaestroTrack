@@ -1,7 +1,7 @@
 import { Bell, Clock, MessageSquare, CalendarDays, Inbox, Lightbulb } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
-import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/settings/Panel'
+import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/ui/Panel'
 import SoundSetting from '@/components/settings/SoundSetting'
 import type { NotifyKind } from '@/types'
 

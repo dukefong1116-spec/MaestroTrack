@@ -13,6 +13,10 @@ const TONE: Record<NudgeTone, { bg: string; fg: string }> = {
  * Timely prompts, shown where they'll actually be seen. Renders nothing
  * when there's nothing worth saying — an empty "no reminders" card is
  * noise, not reassurance.
+ *
+ * No surface of its own: the rows are divided by hairlines and the caller
+ * supplies the panel they sit in. They used to be three separate floating
+ * pills, which is three chunks for what is one short list.
  */
 export default function NudgeList({ limit = 3 }: { limit?: number }) {
   const { profile } = useAuth()
@@ -23,7 +27,7 @@ export default function NudgeList({ limit = 3 }: { limit?: number }) {
   if (nudges.length === 0) return null
 
   return (
-    <div className="space-y-2.5">
+    <div>
       {nudges.map((n, i) => {
         const tone = TONE[n.tone]
         return (
@@ -32,12 +36,8 @@ export default function NudgeList({ limit = 3 }: { limit?: number }) {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            className="flex items-center gap-3 px-4 py-3"
-            style={{
-              background: 'var(--clay-surface)',
-              borderRadius: 'var(--clay-r-md)',
-              boxShadow: 'var(--clay-raised)',
-            }}
+            className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+            style={i === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
           >
             <span
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"

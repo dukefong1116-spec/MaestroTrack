@@ -8,7 +8,7 @@ import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
-import { Panel, Block, Legend, NavRow, FactRow } from '@/components/settings/Panel'
+import { Panel, Block, Legend, NavRow, FactRow } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 

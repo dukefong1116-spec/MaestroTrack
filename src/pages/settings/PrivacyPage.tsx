@@ -3,7 +3,7 @@ import { Check, Download, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
 import { authErrorMessage } from '@/lib/firebase/account'
-import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/settings/Panel'
+import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 
 /**

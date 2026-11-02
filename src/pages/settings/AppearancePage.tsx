@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
 import { getInstrumentTheme } from '@/lib/utils/instruments'
 import { ACCENTS, SCALES, type AccentName, type ThemeChoice } from '@/lib/utils/prefs'
-import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/settings/Panel'
+import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/ui/Panel'
 import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 

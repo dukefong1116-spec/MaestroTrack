@@ -15,6 +15,8 @@ import { computeSessionReward, type SessionReward } from '@/lib/utils/gamificati
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
 import NudgeList from '@/components/common/NudgeList'
+import { usePracticeNudges } from '@/hooks/usePracticeNudges'
+import { Panel, Block } from '@/components/ui/Panel'
 import DailyToday from '@/components/assignments/DailyToday'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
@@ -39,12 +41,6 @@ const schema = z.object({
   notes: z.string().optional(),
 })
 type FormData = z.infer<typeof schema>
-
-const surface: React.CSSProperties = {
-  background: 'var(--clay-surface)',
-  borderRadius: 'var(--clay-r-md)',
-  boxShadow: 'var(--clay-raised)',
-}
 
 /**
  * The metronome glyph is a triangle — at 22px it reads as a warning sign,
@@ -203,6 +199,11 @@ export default function PracticeLogPage() {
   const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
 
   /** Mon-first array of the last 7 days, flagged where practice happened. */
+  // NudgeList renders null when it has nothing to say, so the Block
+  // around it has to ask the same question or it draws an empty rule.
+  const nudges = usePracticeNudges(1)
+  const showNudge = profile?.notify?.nudges !== false && nudges.length > 0
+
   const week = useMemo(() => {
     const days = new Set(sessions.map((s) => s.date.substring(0, 10)))
     return Array.from({ length: 7 }, (_, i) => {
@@ -281,18 +282,6 @@ export default function PracticeLogPage() {
           </p>
         </motion.div>
 
-        {/* The streak warning belongs here as much as on the dashboard —
-            this is the page you open when you intend to practise. */}
-        <div className="mb-4">
-          <NudgeList limit={1} />
-        </div>
-
-        {/* What a teacher is expecting today, above the button you press
-            to do it. Renders nothing when nothing is set. */}
-        <div className="mb-4">
-          <DailyToday />
-        </div>
-
         {/* session in progress */}
         {timerRunning && (
           <motion.button
@@ -316,13 +305,29 @@ export default function PracticeLogPage() {
           </motion.button>
         )}
 
+        {/* One surface for the state of your practice: what you were
+            reminded of, what your teacher set, how the streak stands, and
+            the two things you can do about it. */}
+        <Panel className="mb-6">
+        {/* The streak warning belongs here as much as on the dashboard —
+            this is the page you open when you intend to practise. */}
+        {showNudge && (
+          <Block first>
+            <NudgeList limit={1} />
+          </Block>
+        )}
+
+        {/* What a teacher is expecting today, above the button you press
+            to do it. Renders nothing when nothing is set. */}
+        <DailyToday />
+
         {/* streak */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04 }}
-          className="mb-5 flex items-center gap-3 px-4 py-3.5"
-          style={{ ...surface, background: 'var(--clay-accent-soft)', boxShadow: 'none' }}
+          className="flex items-center gap-3 px-5 py-4"
+          style={{ background: 'var(--clay-accent-soft)' }}
         >
           <Sticker name="flame" size={24} tone="accent" />
           <div className="min-w-0">
@@ -348,21 +353,18 @@ export default function PracticeLogPage() {
           </div>
         </motion.div>
 
-        {/* the two chunks */}
-        <div className="mb-7 grid grid-cols-2 gap-3.5">
+        {/* the two actions, attached to the panel rather than floating
+            below it — a 3.5 gap between two big buttons was the loudest
+            chunk on the page */}
+        <div className="grid grid-cols-2">
           <motion.button
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08, type: 'spring', stiffness: 300, damping: 22 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => navigate('/student/session')}
-            className="flex flex-col items-center px-3 pb-4 pt-5 text-center"
-            style={{
-              borderRadius: 'var(--clay-r-lg)',
-              background: 'var(--clay-accent)',
-              boxShadow: 'var(--clay-accent-shadow)',
-              color: 'var(--clay-on-accent)',
-            }}
+            className="flex flex-col items-center px-3 pb-5 pt-6 text-center"
+            style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
           >
             <Sticker name="metro" size={40} tone="onAccent" />
             <span className="mt-2.5 text-[16px] font-semibold leading-tight">Start<br />Session</span>
@@ -377,8 +379,8 @@ export default function PracticeLogPage() {
             transition={{ delay: 0.14, type: 'spring', stiffness: 300, damping: 22 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => setOpen(true)}
-            className="flex flex-col items-center px-3 pb-4 pt-5 text-center"
-            style={{ ...surface, borderRadius: 'var(--clay-r-lg)' }}
+            className="flex flex-col items-center px-3 pb-5 pt-6 text-center"
+            style={{ background: 'var(--clay-surface)', borderLeft: '1px solid var(--clay-line)' }}
           >
             <Sticker name="pencil" size={40} tone="accent" />
             <span className="mt-2.5 text-[16px] font-semibold leading-tight">Log It<br />Manually</span>
@@ -387,6 +389,7 @@ export default function PracticeLogPage() {
             </span>
           </motion.button>
         </div>
+        </Panel>
 
         {/* history */}
         {grouped.length === 0 ? (
@@ -398,15 +401,19 @@ export default function PracticeLogPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <Panel>
             {grouped.map(([date, day], gi) => (
               <motion.div
                 key={date}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18 + gi * 0.04 }}
+                style={gi === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
               >
-                <div className="mb-2.5 flex items-baseline gap-2">
+                <div
+                  className="flex items-baseline gap-2 px-5 py-2.5"
+                  style={{ background: 'var(--clay-bg)' }}
+                >
                   <p className="text-[11px] font-semibold uppercase tracking-[.1em]" style={{ color: 'var(--clay-dim)' }}>
                     {format(parseISO(date), 'EEE, MMM d')}
                   </p>
@@ -415,8 +422,8 @@ export default function PracticeLogPage() {
                   </span>
                 </div>
 
-                <div className="space-y-2.5">
-                  {day.map((s) => {
+                <div>
+                  {day.map((s, si) => {
                     const title = pieces.find((p) => p.id === s.pieceName)?.title ?? s.pieceName
                     const clipCount = recordings.filter((r) => r.sessionId === s.id).length
                     return (
@@ -424,8 +431,8 @@ export default function PracticeLogPage() {
                         key={s.id}
                         onClick={() => setDetail(s)}
                         whileTap={{ scale: 0.98 }}
-                        className="flex w-full items-center gap-3 px-3.5 py-3 text-left"
-                        style={surface}
+                        className="flex w-full items-center gap-3 px-5 py-3 text-left"
+                        style={si === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
                       >
                         <Sticker name={CATEGORY_STICKER[s.category] ?? 'note'} size={22} tone="accent" />
                         <div className="min-w-0 flex-1">
@@ -457,7 +464,7 @@ export default function PracticeLogPage() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </Panel>
         )}
       </div>
 

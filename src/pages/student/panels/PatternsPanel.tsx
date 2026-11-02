@@ -6,12 +6,24 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { generateInsights, getCategoryData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
-import Card from '@/components/ui/Card'
+import { Block, Legend } from '@/components/ui/Panel'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import TrendLineChart from '@/components/charts/TrendLineChart'
 import { getWeeklyData } from '@/lib/utils/analytics'
 import type { InstrumentType } from '@/types'
 
+/** The insight tones, as tokens — they used to be literal emerald/amber/
+ *  blue Tailwind classes, which stayed pale after dark. */
+const TONE = {
+  positive: { fg: 'var(--clay-success-fg)', bg: 'var(--clay-success-bg)' },
+  warning: { fg: 'var(--clay-warning-fg)', bg: 'var(--clay-warning-bg)' },
+  info: { fg: 'var(--clay-purple-fg)', bg: 'var(--clay-purple-bg)' },
+} as const
+
+/**
+ * The patterns half of Progress. Renders blocks, not a page — see the note
+ * on GoalsPanel.
+ */
 export default function PatternsPanel() {
   const { profile } = useAuth()
   const { sessions, pieces } = usePracticeStore()
@@ -22,56 +34,63 @@ export default function PatternsPanel() {
   const weeklyTrend = useMemo(() => getWeeklyData(sessions, 8), [sessions])
 
   const iconMap = { positive: TrendingUp, warning: AlertTriangle, info: Info }
-  const colorMap = { positive: 'text-emerald-600 bg-emerald-50', warning: 'text-amber-600 bg-amber-50', info: 'text-blue-600 bg-blue-50' }
 
   return (
-    <div>
-      <div className="mb-4 flex items-baseline justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
-          Patterns
-        </p>
-        <p className="text-xs" style={{ color: 'var(--clay-faint)' }}>
-          from {sessions.length} logged session{sessions.length === 1 ? '' : 's'}
-        </p>
-      </div>
-
-      {/* Insight cards */}
-      {insights.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          {insights.map((insight, i) => {
-            const Icon = iconMap[insight.type]
-            return (
-              <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                <Card className="p-5 space-y-3">
-                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${colorMap[insight.type]}`}>
-                    <Icon size={14} />
-                    <span className="text-xs font-semibold capitalize">{insight.type}</span>
-                  </div>
-                  <p className="font-semibold text-[var(--clay-ink)]">{insight.title}</p>
-                  <p className="text-sm text-[var(--clay-dim)]">{insight.description}</p>
-                </Card>
-              </motion.div>
-            )
-          })}
+    <>
+      <Block>
+        <div className="mb-4 flex items-baseline justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+            Patterns
+          </p>
+          <p className="text-xs" style={{ color: 'var(--clay-faint)' }}>
+            from {sessions.length} logged session{sessions.length === 1 ? '' : 's'}
+          </p>
         </div>
-      ) : (
-        <Card className="p-8 text-center mb-8">
-          <div className="mb-3 flex justify-center"><Sticker name="brain" size={36} tone="ink" /></div>
-          <p className="text-[var(--clay-dim)]">Log more practice sessions to generate personalized insights.</p>
-        </Card>
-      )}
 
-      {/* Trend + Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Weekly Practice Trend</p>
-          <TrendLineChart data={weeklyTrend} color={theme.primary} />
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Practice Distribution</p>
-          <CategoryPieChart data={categories} />
-        </Card>
-      </div>
-    </div>
+        {insights.length > 0 ? (
+          <div className="space-y-4">
+            {insights.map((insight, i) => {
+              const Icon = iconMap[insight.type]
+              const tone = TONE[insight.type]
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="flex gap-3.5"
+                >
+                  <span
+                    className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center"
+                    style={{ background: tone.bg, color: tone.fg, borderRadius: 'var(--clay-r-sm)' }}
+                  >
+                    <Icon size={15} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold" style={{ color: 'var(--clay-ink)' }}>{insight.title}</p>
+                    <p className="text-sm" style={{ color: 'var(--clay-dim)' }}>{insight.description}</p>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="py-4 text-center">
+            <div className="mb-3 flex justify-center"><Sticker name="brain" size={36} tone="ink" /></div>
+            <p style={{ color: 'var(--clay-dim)' }}>Log more practice sessions to generate personalized insights.</p>
+          </div>
+        )}
+      </Block>
+
+      <Block>
+        <Legend title="Weekly practice trend" />
+        <TrendLineChart data={weeklyTrend} color={theme.primary} />
+      </Block>
+
+      <Block>
+        <Legend title="Practice distribution" />
+        <CategoryPieChart data={categories} />
+      </Block>
+    </>
   )
 }

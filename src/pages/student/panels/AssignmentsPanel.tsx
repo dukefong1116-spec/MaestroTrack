@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Sticker from '@/components/stickers/Sticker'
 import AssignmentCard from '@/components/assignments/AssignmentCard'
 import SubmitSheet from '@/components/assignments/SubmitSheet'
+import { Block } from '@/components/ui/Panel'
 import { useAssignments } from '@/hooks/useAssignments'
 import { awaitingStudent, normaliseStatus } from '@/lib/utils/assignments'
 import type { Assignment } from '@/types'
@@ -40,7 +41,8 @@ export default function AssignmentsPanel() {
   }
 
   return (
-    <div className="space-y-6">
+    <Block first>
+      <div className="space-y-6">
       {todo.length > 0 && (
         <section>
           <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
@@ -98,6 +100,7 @@ export default function AssignmentsPanel() {
         open={!!submitting}
         onClose={() => setSubmitting(null)}
       />
-    </div>
+      </div>
+    </Block>
   )
 }

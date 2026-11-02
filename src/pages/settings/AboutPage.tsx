@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Mail, FileText, Shield, HelpCircle, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/settings/Panel'
+import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 import licenses from '@/generated/licenses.json'
 
 const SUPPORT_EMAIL = 'support@maestrotrack.app'

@@ -4,11 +4,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 /**
- * The settings surface.
+ * The app's page surface.
  *
- * One panel with hairline rules, not a stack of floating cards: the rows
- * belong to the same subject, and separating them into cards made the page
- * read as a pile of unrelated chunks.
+ * One panel with hairline rules, not a stack of floating cards: the blocks
+ * belong to the same subject, and separating them into cards made every
+ * page read as a pile of unrelated chunks.
+ *
+ * Started life in settings/ and now carries Today, Progress, Library and
+ * Practice too, which is why it lives in ui/.
  *
  * Everything here is token-only — no literal colours — so the dark-mode
  * pass has one surface to check rather than one per screen.
