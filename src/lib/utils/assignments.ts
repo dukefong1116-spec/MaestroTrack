@@ -352,3 +352,15 @@ export function todayStanding(
     met: target > 0 && withLive >= target,
   }
 }
+
+/**
+ * Whether an open assignment is one the "today" strip on the Practice page
+ * would draw.
+ *
+ * Here rather than in the component so a caller can ask "is there anything
+ * to show?" before drawing a panel around it, without restating the rule
+ * and letting the two drift apart.
+ */
+export function isDailyToday(x: { assignment: Assignment; daily: { tracked: boolean } }): boolean {
+  return isDaily(x.assignment) && awaitingStudent(x.assignment) && x.daily.tracked
+}

@@ -18,6 +18,8 @@ import NudgeList from '@/components/common/NudgeList'
 import { usePracticeNudges } from '@/hooks/usePracticeNudges'
 import { Panel, Block } from '@/components/ui/Panel'
 import DailyToday from '@/components/assignments/DailyToday'
+import { useAssignments } from '@/hooks/useAssignments'
+import { isDailyToday } from '@/lib/utils/assignments'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
 import Modal from '@/components/ui/Modal'
@@ -203,16 +205,30 @@ export default function PracticeLogPage() {
   // around it has to ask the same question or it draws an empty rule.
   const nudges = usePracticeNudges(1)
   const showNudge = profile?.notify?.nudges !== false && nudges.length > 0
+  // Both of these render null when empty, so the panel around them has to
+  // ask the same questions or it draws an empty box.
+  const { open: openAssignments } = useAssignments()
+  const hasDaily = openAssignments.some(isDailyToday)
 
   const week = useMemo(() => {
-    const days = new Set(sessions.map((s) => s.date.substring(0, 10)))
+    const minutes: Record<string, number> = {}
+    for (const s of sessions) {
+      const key = s.date.substring(0, 10)
+      minutes[key] = (minutes[key] ?? 0) + s.durationMinutes
+    }
+    const today = format(new Date(), 'yyyy-MM-dd')
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date()
       d.setDate(d.getDate() - (6 - i))
       const key = format(d, 'yyyy-MM-dd')
-      return { key, label: format(d, 'EEEEE'), done: days.has(key) }
+      const mins = minutes[key] ?? 0
+      return { key, label: format(d, 'EEEEE'), done: mins > 0, minutes: mins, isToday: key === today }
     })
   }, [sessions])
+
+  /** The tallest bar sets the scale; a flat week should not look empty. */
+  const weekPeak = useMemo(() => Math.max(30, ...week.map((d) => d.minutes)), [week])
+  const weekTotal = useMemo(() => week.reduce((a, d) => a + d.minutes, 0), [week])
 
   const grouped = useMemo(() => {
     const map: Record<string, typeof sessions> = {}
@@ -274,12 +290,26 @@ export default function PracticeLogPage() {
     >
       <div className="mx-auto w-full max-w-md">
 
-        {/* heading */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
-          <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
-          <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
-            {format(new Date(), 'EEEE')} · let's get after it
-          </p>
+        {/* heading, with the exception tucked beside it */}
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
+            <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+              {format(new Date(), 'EEEE')} · let's get after it
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="flex min-h-[36px] shrink-0 items-center gap-1.5 px-3 text-[12.5px] font-semibold transition-transform active:scale-95"
+            style={{
+              borderRadius: 'var(--clay-r-sm)',
+              border: '1px solid var(--clay-line)',
+              color: 'var(--clay-accent-ink)',
+            }}
+          >
+            <Sticker name="pencil" size={14} tone="accent" /> Log past
+          </button>
         </motion.div>
 
         {/* session in progress */}
@@ -305,90 +335,103 @@ export default function PracticeLogPage() {
           </motion.button>
         )}
 
-        {/* One surface for the state of your practice: what you were
-            reminded of, what your teacher set, how the streak stands, and
-            the two things you can do about it. */}
-        <Panel className="mb-6">
-        {/* The streak warning belongs here as much as on the dashboard —
-            this is the page you open when you intend to practise. */}
-        {showNudge && (
-          <Block first>
-            <NudgeList limit={1} />
-          </Block>
+        {/* Anything asking for your attention, before the doing. Renders
+            nothing at all when there is nothing to say. */}
+        {(showNudge || hasDaily) && (
+          <Panel className="mb-5">
+            {showNudge && (
+              <Block first>
+                <NudgeList limit={1} />
+              </Block>
+            )}
+            <DailyToday compact />
+          </Panel>
         )}
 
-        {/* What a teacher is expecting today, above the button you press
-            to do it. Renders nothing when nothing is set. */}
-        <DailyToday />
-
-        {/* streak */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.04 }}
-          className="flex items-center gap-3 px-5 py-4"
-          style={{ background: 'var(--clay-accent-soft)' }}
-        >
-          <Sticker name="flame" size={24} tone="accent" />
-          <div className="min-w-0">
-            <p className="text-[17px] font-semibold leading-none" style={{ color: 'var(--clay-accent-ink)' }}>
-              {streak} {streak === 1 ? 'day' : 'days'}
+        {/* The doing, then the week it adds up to. */}
+        <Panel className="mb-6">
+          <Block first>
+            <button
+              type="button"
+              onClick={() => navigate('/student/session')}
+              className="flex min-h-[58px] w-full items-center justify-center gap-2.5 text-[17px] font-bold transition-transform active:scale-[.99]"
+              style={{
+                borderRadius: 'var(--clay-r-sm)',
+                background: 'var(--clay-accent)',
+                color: 'var(--clay-on-accent)',
+              }}
+            >
+              <Sticker name="metro" size={22} tone="onAccent" /> Start session
+            </button>
+            <p className="mt-2.5 text-center text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
+              Timer · metronome · tuner · record
             </p>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
-              {streak > 0 ? 'keep it lit' : 'start one today'}
-            </p>
-          </div>
-          <div className="ml-auto flex gap-1.5">
-            {week.map((d) => (
-              <span
-                key={d.key}
-                title={d.key}
-                className="block rounded-full"
-                style={{
-                  width: 9, height: 9,
-                  background: d.done ? 'var(--clay-accent)' : 'rgba(58,48,84,.14)',
-                }}
-              />
-            ))}
-          </div>
-        </motion.div>
+          </Block>
 
-        {/* the two actions, attached to the panel rather than floating
-            below it — a 3.5 gap between two big buttons was the loudest
-            chunk on the page */}
-        <div className="grid grid-cols-2">
-          <motion.button
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08, type: 'spring', stiffness: 300, damping: 22 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => navigate('/student/session')}
-            className="flex flex-col items-center px-3 pb-5 pt-6 text-center"
-            style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
-          >
-            <Sticker name="metro" size={40} tone="onAccent" />
-            <span className="mt-2.5 text-[16px] font-semibold leading-tight">Start<br />Session</span>
-            <span className="mt-1.5 text-[10.5px] leading-snug opacity-90">
-              timer · metronome<br />tuner · record
-            </span>
-          </motion.button>
+          {/* The shape of the week, which no other screen shows: a number
+              says how much, this says when. */}
+          <Block>
+            <div className="mb-4 flex items-baseline justify-between gap-3">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+                Last seven days
+              </p>
+              <p className="text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>
+                {Math.round(weekTotal / 7)} min/day
+              </p>
+            </div>
 
-          <motion.button
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.14, type: 'spring', stiffness: 300, damping: 22 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => setOpen(true)}
-            className="flex flex-col items-center px-3 pb-5 pt-6 text-center"
-            style={{ background: 'var(--clay-surface)', borderLeft: '1px solid var(--clay-line)' }}
-          >
-            <Sticker name="pencil" size={40} tone="accent" />
-            <span className="mt-2.5 text-[16px] font-semibold leading-tight">Log It<br />Manually</span>
-            <span className="mt-1.5 text-[10.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
-              already<br />practiced?
-            </span>
-          </motion.button>
-        </div>
+            <div className="grid h-[96px] items-end gap-[7px]" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+              {week.map((d) => (
+                <div key={d.key} className="flex h-full flex-col items-center justify-end gap-1.5">
+                  <span
+                    className="text-[10px] tabular-nums"
+                    style={{ color: d.isToday ? 'var(--clay-accent-ink)' : 'var(--clay-faint)', fontWeight: d.isToday ? 600 : 400 }}
+                  >
+                    {d.minutes > 0 ? d.minutes : ''}
+                  </span>
+                  <div
+                    className="w-full transition-all duration-700"
+                    style={{
+                      // A day with nothing still gets a sliver, so the
+                      // column reads as empty rather than as missing.
+                      height: d.minutes > 0 ? `${Math.max(6, (d.minutes / weekPeak) * 72)}px` : '3px',
+                      borderRadius: '5px 5px 0 0',
+                      // One series, today emphasised — a dimmed accent
+                      // rather than a second colour. --clay-bg-deep was
+                      // within a few points of the panel on dark, so the
+                      // bars were there and invisible.
+                      background: d.minutes > 0 ? 'var(--clay-accent)' : 'var(--clay-line)',
+                      opacity: d.minutes === 0 || d.isToday ? 1 : 0.4,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-2 grid gap-[7px] text-center" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+              {week.map((d) => (
+                <span
+                  key={d.key}
+                  className="text-[10.5px]"
+                  style={{ color: d.isToday ? 'var(--clay-accent-ink)' : 'var(--clay-faint)', fontWeight: d.isToday ? 600 : 400 }}
+                >
+                  {d.label}
+                </span>
+              ))}
+            </div>
+          </Block>
+
+          <Block>
+            <div className="flex items-center gap-2.5">
+              <Sticker name="flame" size={18} tone="accent" />
+              <span className="min-w-0 flex-1 text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                {streak > 0 ? `${streak} ${streak === 1 ? 'day' : 'days'}` : 'Start one today'}
+              </span>
+              <span className="shrink-0 text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>
+                {weekTotal} min this week
+              </span>
+            </div>
+          </Block>
         </Panel>
 
         {/* history */}
@@ -402,25 +445,21 @@ export default function PracticeLogPage() {
           </div>
         ) : (
           <Panel>
+            <div className="flex items-baseline justify-between px-5 pb-2.5 pt-3.5">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+                Recent
+              </p>
+              <p className="text-[12px]" style={{ color: 'var(--clay-faint)' }}>
+                {sessions.length} session{sessions.length === 1 ? '' : 's'}
+              </p>
+            </div>
             {grouped.map(([date, day], gi) => (
               <motion.div
                 key={date}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.18 + gi * 0.04 }}
-                style={gi === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
               >
-                <div
-                  className="flex items-baseline gap-2 px-5 py-2.5"
-                  style={{ background: 'var(--clay-bg)' }}
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-[.1em]" style={{ color: 'var(--clay-dim)' }}>
-                    {format(parseISO(date), 'EEE, MMM d')}
-                  </p>
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--clay-faint)' }}>
-                    {day.reduce((s, x) => s + x.durationMinutes, 0)} min
-                  </span>
-                </div>
 
                 <div>
                   {day.map((s, si) => {
@@ -431,30 +470,36 @@ export default function PracticeLogPage() {
                         key={s.id}
                         onClick={() => setDetail(s)}
                         whileTap={{ scale: 0.98 }}
-                        className="flex w-full items-center gap-3 px-5 py-3 text-left"
-                        style={si === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
+                        className="flex w-full items-center gap-3.5 px-5 py-3 text-left"
+                        style={{ borderTop: '1px solid var(--clay-line)' }}
                       >
-                        <Sticker name={CATEGORY_STICKER[s.category] ?? 'note'} size={22} tone="accent" />
+                        {/* The date rides the row rather than a tinted strip
+                            above it; only the first row of a day carries it,
+                            so a day still reads as a group. */}
+                        <span className="w-[34px] shrink-0 text-center">
+                          {si === 0 && (
+                            <>
+                              <span className="block text-[10px] uppercase tracking-[.08em]" style={{ color: 'var(--clay-faint)' }}>
+                                {format(parseISO(date), 'EEE')}
+                              </span>
+                              <span className="block text-[15px] font-semibold leading-tight">
+                                {format(parseISO(date), 'd')}
+                              </span>
+                            </>
+                          )}
+                        </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13.5px] font-semibold">{title || s.category}</p>
-                          <p className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
-                            {s.category}
+                          <p className="truncate text-[13.5px] font-semibold capitalize">{title || s.category}</p>
+                          <p className="flex items-center gap-1.5 text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
                             {clipCount > 0 && (
-                              <span className="inline-flex items-center gap-1">
-                                · <Sticker name="mic" size={11} tone="accent" /> {clipCount}
+                              <span className="inline-flex shrink-0 items-center gap-1">
+                                <Sticker name="mic" size={11} tone="accent" /> {clipCount} ·
                               </span>
                             )}
-                            {s.notes && <span className="truncate">· {s.notes}</span>}
+                            <span className="truncate">{s.notes || s.category}</span>
                           </p>
                         </div>
-                        <span
-                          className="shrink-0 px-2.5 py-1 text-[11px] font-semibold"
-                          style={{
-                            borderRadius: 999,
-                            background: 'var(--clay-accent-soft)',
-                            color: 'var(--clay-accent-ink)',
-                          }}
-                        >
+                        <span className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>
                           {s.durationMinutes}m
                         </span>
                         <ChevronRight size={15} style={{ color: 'var(--clay-faint)' }} className="shrink-0" />

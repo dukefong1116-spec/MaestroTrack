@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import PinnedBadges from '@/components/badges/PinnedBadges'
@@ -22,9 +21,8 @@ import MasteryMoment from '@/components/celebration/MasteryMoment'
 import { useGamification } from '@/hooks/useGamification'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
 import ProgressRing from '@/components/ui/ProgressRing'
-import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import Avatar from '@/components/profile/Avatar'
 import StreakFlame from '@/components/icons/StreakFlame'
-import Badge from '@/components/ui/Badge'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -78,6 +76,13 @@ export default function StudentDashboard() {
       })[0]
     : null
 
+  const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
+  const minutesLeft = Math.max(0, weeklyGoal - summary.totalMinutesThisWeek)
+  // Days left in the week, today included — startOfWeek is Sunday, so
+  // Monday leaves six. Said out loud because "135 min to go" means
+  // something different on a Tuesday than on a Saturday.
+  const daysLeft = 7 - new Date().getDay()
+
   // NudgeList renders null when it has nothing to say, so the Block
   // around it has to ask the same question or it draws an empty rule.
   const showNudges = profile?.notify?.nudges !== false && nudges.length > 0
@@ -86,87 +91,75 @@ export default function StudentDashboard() {
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="space-y-6">
-      {/* One surface for the state of the day: who you are, what is next,
-          how the week is going, and the one button that matters. These
-          were six cards floating a gap apart, which read as a pile of
-          unrelated widgets rather than a page. */}
+    <div className="space-y-5">
+      {/* Who you are is one line. It was a third of the screen, spent on a
+          greeting nobody needs told twice. */}
+      <div className="flex items-center gap-3 px-1">
+        <Avatar
+          src={profile?.avatar}
+          name={profile?.displayName}
+          instrument={profile?.instrument as InstrumentType | undefined}
+          size={40}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{greeting}</p>
+          <p className="truncate text-[16px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+            {profile?.displayName ?? 'Musician'}
+          </p>
+        </div>
+        {/* The bell belongs to this screen, not to every screen. Gone at
+            lg, where the sidebar carries it. */}
+        <div className="lg:hidden">
+          <NotificationBell floating />
+        </div>
+      </div>
+
+      {/* The week, made the subject: it is the question the page answers. */}
       <Panel>
-        {/* Hero greeting — keeps the instrument gradient, loses the
-            separate border and shadow; it is the top of the panel now. */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden p-6 sm:p-8"
-          style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.secondary}10)` }}
-        >
-          <div className="pointer-events-none absolute right-5 top-2 select-none opacity-[0.13]" style={{ color: theme.primary }}>
-            <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={104} strokeWidth={1.2} />
-          </div>
-          {/* The bell lives here rather than floating over every screen:
-              this is the one place notifications point at, and inside the
-              hero it scrolls away like everything else. Gone at lg, where
-              the sidebar carries it. */}
-          <div className="absolute right-4 top-4 z-10 lg:hidden">
-            <NotificationBell floating />
-          </div>
-          <p className="mb-1 text-sm font-medium" style={{ color: 'var(--clay-dim)' }}>{greeting}</p>
-          <h1 className="mb-2 text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>{profile?.displayName ?? 'Musician'}</h1>
-          <div className="flex flex-wrap items-center gap-4">
-            <Badge variant="purple" size="md">
-              <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={13} style={{ color: theme.secondary }} />
-              {theme.label}
-            </Badge>
-            <Badge variant="info" size="md">{profile?.experienceLevel ?? 'Student'}</Badge>
-            {summary.currentStreak > 0 && (
-              <Badge variant="warning" size="md">
-                <StreakFlame streak={summary.currentStreak} size={14} /> {summary.currentStreak}-day streak
-              </Badge>
-            )}
-          </div>
-
-          {/* The badges chosen for Today, in the greeting itself. Nothing
-              at all when none are pinned. */}
-          <div className="mt-4">
-            <PinnedBadges />
-          </div>
-        </motion.div>
-
-        {nextLesson && (
-          <Block>
-            <div className="flex items-center gap-4">
-              <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center"
-                style={{ background: 'var(--clay-accent-soft)', borderRadius: 'var(--clay-r-sm)' }}
-              >
-                <Sticker name="calendar" size={18} tone="accent" />
+        <Block first>
+          <div className="flex flex-col items-center">
+            <ProgressRing
+              percentage={summary.weeklyGoalPercentage}
+              size={178}
+              strokeWidth={14}
+              color={theme.primary}
+            >
+              <div className="text-center">
+                <p className="text-[40px] font-bold leading-none" style={{ color: 'var(--clay-ink)' }}>
+                  {summary.weeklyGoalPercentage}%
+                </p>
+                <p className="mt-1.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>of your week</p>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium" style={{ color: 'var(--clay-dim)' }}>Next lesson</p>
-                <p className="font-semibold" style={{ color: 'var(--clay-ink)' }}>{getNextLessonText(nextLesson)}</p>
-              </div>
-              <p className="ml-auto shrink-0 text-xs" style={{ color: 'var(--clay-dim)' }}>
-                {nextLesson.durationMinutes} min
-              </p>
-            </div>
-          </Block>
-        )}
+            </ProgressRing>
+            <p className="mt-3.5 text-[19px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+              {summary.totalMinutesThisWeek} of {weeklyGoal} min
+            </p>
+            <p className="mt-0.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+              {minutesLeft > 0
+                ? `${minutesLeft} to go · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
+                : 'Goal reached'}
+            </p>
+          </div>
+        </Block>
 
-        {/* The week at a glance — what makes the streak feel losable */}
+        {/* The seven days, labelled, so a gap in them is legible. */}
         <Block>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>Streak</p>
-              <p className="mt-0.5 text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                {game.streak > 0 ? `${game.streak}-day streak` : 'Start a streak today'}
-                {game.freezesLeft > 0 && (
-                  <span style={{ color: 'var(--clay-faint)', fontWeight: 500 }}>
-                    {'  ·  '}{game.freezesLeft} freeze{game.freezesLeft === 1 ? '' : 's'}
-                  </span>
-                )}
-              </p>
-            </div>
-            <WeekStrip days={game.week} className="w-full justify-between md:w-auto md:justify-end" />
+          <WeekStrip days={game.week} className="justify-between" />
+        </Block>
+
+        {/* Streak and the badges you pinned share one line. */}
+        <Block>
+          <div className="flex items-center gap-2.5">
+            <StreakFlame streak={game.streak} size={18} />
+            <span className="min-w-0 flex-1 text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+              {game.streak > 0 ? `${game.streak} days` : 'No streak yet'}
+              {game.freezesLeft > 0 && (
+                <span style={{ color: 'var(--clay-faint)', fontWeight: 500 }}>
+                  {'  ·  '}{game.freezesLeft} freeze{game.freezesLeft === 1 ? '' : 's'}
+                </span>
+              )}
+            </span>
+            <PinnedBadges size={28} />
           </div>
         </Block>
 
@@ -177,45 +170,44 @@ export default function StudentDashboard() {
           </Block>
         )}
 
+        {/* A button, not a slab. */}
         <Block>
-          <div className="flex items-center gap-5 sm:gap-7">
-            <ProgressRing percentage={summary.weeklyGoalPercentage} size={104} strokeWidth={9} color={theme.primary}>
-              <div className="text-center">
-                <p className="text-xl font-bold" style={{ color: 'var(--clay-ink)' }}>{summary.weeklyGoalPercentage}%</p>
-              </div>
-            </ProgressRing>
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>Weekly goal</p>
-              <p className="mt-1 text-lg font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                {summary.totalMinutesThisWeek} / {profile?.weeklyGoalMinutes ?? 300} min
+          <button
+            type="button"
+            onClick={() => navigate('/student/session')}
+            className="flex min-h-[54px] w-full items-center justify-center gap-2.5 text-[16.5px] font-bold transition-transform active:scale-[.99]"
+            style={{
+              borderRadius: 'var(--clay-r-sm)',
+              background: 'var(--clay-accent)',
+              color: 'var(--clay-on-accent)',
+            }}
+          >
+            <Sticker name="note" size={20} tone="onAccent" />
+            {summary.currentStreak > 0 ? 'Keep it going' : 'Start practising'}
+          </button>
+          <p className="mt-2.5 text-center text-xs" style={{ color: 'var(--clay-dim)' }}>
+            Timer · metronome · tuner · record
+          </p>
+        </Block>
+      </Panel>
+
+      {/* What is coming, quietly. */}
+      {nextLesson && (
+        <Panel>
+          <Block first>
+            <div className="flex items-center gap-3">
+              <Sticker name="calendar" size={18} tone="accent" />
+              <p className="min-w-0 flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>
+                Next lesson{' '}
+                <span style={{ color: 'var(--clay-dim)' }}>{getNextLessonText(nextLesson)}</span>
               </p>
-              <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>
-                {(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek > 0
-                  ? `${(profile?.weeklyGoalMinutes ?? 300) - summary.totalMinutesThisWeek} min to go`
-                  : 'Goal reached'}
+              <p className="shrink-0 text-xs" style={{ color: 'var(--clay-dim)' }}>
+                {nextLesson.durationMinutes} min
               </p>
             </div>
-          </div>
-        </Block>
-
-        {/* The one action, attached to the panel rather than floating
-            beside it: it is the end of the page, so it is the end of the
-            surface. */}
-        <motion.button
-          onClick={() => navigate('/student/session')}
-          whileTap={{ scale: 0.99 }}
-          className="flex w-full flex-col items-center justify-center gap-2 p-7 text-center"
-          style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
-        >
-          <Sticker name="note" size={40} tone="onAccent" />
-          <span className="text-xl font-bold">
-            {summary.currentStreak > 0 ? 'Keep it going' : 'Start practising'}
-          </span>
-          <span className="text-sm opacity-90">
-            Timer, metronome, tuner and recording — all in one place.
-          </span>
-        </motion.button>
-      </Panel>
+          </Block>
+        </Panel>
+      )}
 
       {/* Assignments from teacher — their own panel, because a list of
           things handed to you is a different subject from how your week
