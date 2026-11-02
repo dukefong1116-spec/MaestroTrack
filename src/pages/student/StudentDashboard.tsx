@@ -110,10 +110,13 @@ export default function StudentDashboard() {
             </Badge>
           )}
         </div>
-      </motion.div>
 
-      {/* The badges chosen for Today — nothing at all when none are pinned */}
-      <PinnedBadges />
+        {/* The badges chosen for Today, in the greeting itself. Nothing at
+            all when none are pinned. */}
+        <div className="mt-4">
+          <PinnedBadges />
+        </div>
+      </motion.div>
 
       {/* Next lesson */}
       {nextLesson && (
