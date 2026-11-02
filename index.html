@@ -6,9 +6,14 @@
     <meta name="description" content="MaestroTrack — The practice intelligence platform for musicians. Track practice, monitor students, and build better habits." />
     <meta name="theme-color" content="#F1ECF8" />
     <!--
-      Applied before the first paint, so a dark theme does not flash light
-      on the way in. Reads the same key the app writes; wrapped because
-      private mode can throw on localStorage access.
+      Applied before the first paint, so a chosen theme does not flash the
+      other one on the way in. Reads the same key the app writes; wrapped
+      because private mode can throw on localStorage access.
+
+      With nothing stored the attribute is set to "light" rather than left
+      off: off means "follow the OS" to the stylesheet, so a first visit on
+      a dark-mode machine would have painted dark before React could say
+      otherwise.
     -->
     <script>
       (function () {
@@ -16,6 +21,7 @@
           var p = JSON.parse(localStorage.getItem('maestro_prefs') || 'null') || {};
           var r = document.documentElement;
           if (p.theme === 'dark' || p.theme === 'light') r.dataset.theme = p.theme;
+          else if (p.theme !== 'system') r.dataset.theme = 'light';
           if (p.reduceMotion === true) r.dataset.motion = 'reduce';
           if (typeof p.displayScale === 'number') r.style.setProperty('--clay-zoom', p.displayScale / 100);
         } catch (e) { /* no stored preference, or no storage at all */ }

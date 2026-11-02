@@ -25,7 +25,10 @@ export interface Prefs {
 }
 
 export const DEFAULT_PREFS: Prefs = {
-  theme: 'system',
+  // Light, not 'system': the app is designed light and that is what a new
+  // account should see. Following the OS is still a choice on the
+  // Appearance screen, just no longer the one nobody made.
+  theme: 'light',
   accent: 'instrument',
   displayScale: 100,
   reduceMotion: false,
