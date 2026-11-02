@@ -36,6 +36,8 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+import BackendBadge from '@/components/common/BackendBadge'
+
 const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
 const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
 
@@ -172,6 +174,9 @@ export default function App() {
       <Suspense fallback={<RouteLoading />}>
         <AppRoutes />
       </Suspense>
+      {/* Outside Suspense and outside the routes, so it is on the login
+          screen too — which is exactly where the wrong backend bites. */}
+      <BackendBadge />
     </BrowserRouter>
   )
 }
