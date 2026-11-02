@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Camera, Check, Mail, KeyRound } from 'lucide-react'
 import { useForm, type Resolver } from 'react-hook-form'
@@ -86,8 +86,24 @@ export default function ProfilePage() {
   const navigate = useNavigate()
 
   const [saving, setSaving] = useState(false)
+  /**
+   * Shown on the Save button itself, and only for a moment.
+   *
+   * It used to be a note printed under the form — forty-odd lines above
+   * the button you had just pressed, so on a phone it rendered off the
+   * top of the screen. And it never cleared, so once it had appeared it
+   * sat there saying "Saved." about some earlier save, which tells you
+   * nothing about this one.
+   */
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  useEffect(() => {
+    if (!saved) return
+    const t = setTimeout(() => setSaved(false), 2500)
+    return () => clearTimeout(t)
+  }, [saved])
+
 
   const [emailOpen, setEmailOpen] = useState(false)
   const [emailPw, setEmailPw] = useState('')
@@ -104,6 +120,15 @@ export default function ProfilePage() {
   const [pwBusy, setPwBusy] = useState(false)
   const [pwErr, setPwErr] = useState('')
   const [pwDone, setPwDone] = useState('')
+
+  // Goes stale the same way "Saved." did. The email note below does not
+  // get this: it asks you to go and open a link, so it has to survive
+  // until you have done something about it.
+  useEffect(() => {
+    if (!pwDone) return
+    const t = setTimeout(() => setPwDone(''), 4000)
+    return () => clearTimeout(t)
+  }, [pwDone])
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -266,7 +291,6 @@ export default function ProfilePage() {
               {...register('weeklyGoalMinutes')}
             />
           </form>
-          {saved && <Note tone="ok"><Check size={13} className="mr-1 inline" />Saved.</Note>}
           {saveError && <Note tone="bad">{saveError}</Note>}
         </Block>
 
@@ -284,13 +308,24 @@ export default function ProfilePage() {
         />
       </div>
 
+      {/* The email note stays: it asks you to go and open a link, so it
+          has to survive until you have. The password one is a plain
+          confirmation and goes stale like any other. */}
       {emailDone && <Note tone="ok">{emailDone}</Note>}
       {pwDone && <Note tone="ok"><Check size={13} className="mr-1 inline" />{pwDone}</Note>}
 
       {/* The one save on this screen. */}
       <div className="mt-6 flex gap-3">
-        <Button type="submit" form="profile-details" className="flex-1" loading={isSubmitting || saving}>
-          Save changes
+        <Button
+          type="submit"
+          form="profile-details"
+          className="flex-1"
+          loading={isSubmitting || saving}
+          // The label carries the result, because the button is where
+          // you are already looking when you press it.
+          style={saved ? { background: 'var(--clay-success-fg)', color: '#FFFFFF' } : undefined}
+        >
+          {saved ? <><Check size={16} /> Saved</> : 'Save changes'}
         </Button>
         <Button variant="outline" onClick={() => navigate('/student/settings')}>
           Cancel

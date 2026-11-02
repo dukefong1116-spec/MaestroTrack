@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import AssignmentCard from '@/components/assignments/AssignmentCard'
 import SubmitSheet from '@/components/assignments/SubmitSheet'
@@ -17,6 +18,31 @@ import type { Assignment } from '@/types'
 export default function AssignmentsPanel() {
   const { todo, open, done } = useAssignments()
   const [submitting, setSubmitting] = useState<Assignment | null>(null)
+  const [params, setParams] = useSearchParams()
+
+  /**
+   * Opened straight from a notification.
+   *
+   * The bell sends you to ?tab=assignments&open=<id>; this finds that one
+   * and opens it. The parameter is stripped once it has been acted on, so
+   * closing the sheet does not immediately reopen it on the next render,
+   * and a reload does not drag you back in.
+   *
+   * Waits for the assignment to exist: the list arrives from a
+   * subscription, so on a cold load the id is in the URL before there is
+   * anything to match it against.
+   */
+  const wanted = params.get('open')
+  useEffect(() => {
+    if (!wanted) return
+    const all = [...todo, ...open, ...done]
+    const found = all.find((x) => x.assignment.id === wanted)
+    if (!found) return
+    setSubmitting(found.assignment)
+    const next = new URLSearchParams(params)
+    next.delete('open')
+    setParams(next, { replace: true })
+  }, [wanted, todo, open, done, params, setParams])
 
   const waiting = open.filter((x) => !awaitingStudent(x.assignment))
 

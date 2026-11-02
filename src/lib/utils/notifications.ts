@@ -61,6 +61,22 @@ export function applyNotifyPrefs(
   return off.size ? items.filter((n) => !off.has(n.kind)) : items
 }
 
+/**
+ * Where a notification about one assignment should land you.
+ *
+ * Every notification used to say `/student`, which is clickable but not
+ * useful: being told your scales came back for another go and then being
+ * put on Today leaves you to find the thing yourself. The Library already
+ * keeps its tab in the URL, so the assignment rides along beside it and
+ * the panel opens that one.
+ *
+ * Lessons are the exception and still point at `/student` — the next
+ * lesson is shown on Today, so that is already where the answer is.
+ */
+function assignmentHref(assignmentId: string): string {
+  return `/student/library?tab=assignments&open=${encodeURIComponent(assignmentId)}`
+}
+
 export interface BuildOptions {
   now: Date
   /** Ignore anything older than this. Unbounded history is unbounded work. */
@@ -147,7 +163,7 @@ export function buildStudentNotifications(input: {
         title: 'New assignment',
         body: a.title,
         at: a.createdAt,
-        to: '/student',
+        to: assignmentHref(a.id),
         priority: 60,
         sticker: 'book',
       })
@@ -166,7 +182,7 @@ export function buildStudentNotifications(input: {
         title: approved ? 'Work approved' : 'Sent back for another go',
         body: f.note ? `${a.title} — ${f.note}` : a.title,
         at: f.at,
-        to: '/student',
+        to: assignmentHref(a.id),
         priority: approved ? 70 : 85,
         sticker: approved ? 'trophy' : 'note',
       })
@@ -233,7 +249,7 @@ export function buildTeacherNotifications(input: {
         title: `${nameOf.get(a.studentId) ?? 'A student'} handed work in`,
         body: a.title,
         at: s.at,
-        to: '/teacher',
+        to: `/teacher/students/${a.studentId}?review=${a.id}`,
         priority: 90,
         sticker: 'book',
       })

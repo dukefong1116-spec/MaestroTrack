@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
@@ -55,7 +55,29 @@ export default function StudentDetailPage() {
   // at. Open by default it pushed the actual student data below the fold
   // every time you came here just to see how someone is getting on.
   const [composing, setComposing] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [reviewing, setReviewing] = useState<Assignment | null>(null)
+
+  /**
+   * Opened straight from the bell.
+   *
+   * "Ana handed work in" used to drop you on the teacher dashboard, which
+   * is clickable but leaves you to go and find the submission. It now
+   * names the student and the assignment, and this opens the review.
+   *
+   * Waits for the list, which arrives from a subscription, and strips the
+   * parameter once used so closing the sheet does not reopen it.
+   */
+  const wantedReview = searchParams.get('review')
+  useEffect(() => {
+    if (!wantedReview) return
+    const found = assignments.find((a) => a.id === wantedReview)
+    if (!found) return
+    setReviewing(found)
+    const next = new URLSearchParams(searchParams)
+    next.delete('review')
+    setSearchParams(next, { replace: true })
+  }, [wantedReview, assignments, searchParams, setSearchParams])
   const [studentRecordings, setStudentRecordings] = useState<Recording[]>([])
   /** Null while the summary is still being fetched; false once we know. */
   const [summaryExists, setSummaryExists] = useState<boolean | null>(null)
