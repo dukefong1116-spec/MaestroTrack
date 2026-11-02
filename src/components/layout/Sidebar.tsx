@@ -1,8 +1,7 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import { logOut } from '@/lib/firebase/auth'
 import { useAuth } from '@/hooks/useAuth'
 import { getInstrumentTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -10,6 +9,8 @@ import NotificationBell from '@/components/notifications/NotificationBell'
 import { useNotifications } from '@/hooks/useNotifications'
 import Sticker from '@/components/stickers/Sticker'
 import { useGamification } from '@/hooks/useGamification'
+import { useLogOutConfirm } from './useLogOut'
+import LogOutSheet from './LogOutSheet'
 import { cn } from '@/lib/utils/cn'
 import { homeFor, navFor, settingsFor, type NavItem } from './nav'
 import type { InstrumentType } from '@/types'
@@ -29,7 +30,6 @@ function NavIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
  */
 export default function Sidebar() {
   const { profile, user } = useAuth()
-  const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   // Same reasoning as the avatar: this tile is the person, not the chrome.
   const theme = getInstrumentTheme(profile?.instrument as InstrumentType | undefined)
@@ -39,10 +39,7 @@ export default function Sidebar() {
   const nav = navFor(role)
   const { unread } = useNotifications()
 
-  async function handleLogout() {
-    await logOut()
-    navigate('/login')
-  }
+  const logout = useLogOutConfirm()
 
   return (
     <motion.aside
@@ -153,7 +150,7 @@ export default function Sidebar() {
           {!collapsed && <span>Settings</span>}
         </NavLink>
         <button
-          onClick={handleLogout}
+          onClick={logout.ask}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150 hover:bg-[var(--clay-danger-bg)]"
           style={{ color: 'var(--clay-dim)' }}
         >
@@ -161,6 +158,13 @@ export default function Sidebar() {
           {!collapsed && <span>Log Out</span>}
         </button>
       </div>
+
+      <LogOutSheet
+        open={logout.asking}
+        busy={logout.busy}
+        onCancel={logout.cancel}
+        onConfirm={logout.confirm}
+      />
 
       {/* Collapse toggle */}
       <button
