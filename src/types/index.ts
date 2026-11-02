@@ -91,6 +91,10 @@ export interface UserProfile {
   badgeEarnedAt?: Record<string, string>
   /** BadgeIds shown on Today, in the order they were pinned. Capped at 3. */
   pinnedBadges?: string[]
+  /** Set the first time the person pins or unpins anything themselves.
+   *  The app fills the row for someone who never has, so that the feature
+   *  is discovered; this is what stops it undoing their arrangement after. */
+  badgePinsTouched?: boolean
   /** Piece ids already offered as "ready to call mastered?" — offered once each. */
   masteryPromptsSeen?: string[]
   /**

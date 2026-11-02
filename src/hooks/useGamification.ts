@@ -10,7 +10,11 @@ import {
   computeProgression, buildBadgeContext, earnedBadges, badgeFamilies,
   type BadgeDef, type BadgeContext, type FamilyState, type Progression,
 } from '@/lib/utils/progression'
-import { recordStreakFreezes, markBadgesSeen, markMasteryPrompted, recordBadgesEarned } from '@/lib/firebase/teacher'
+import {
+  recordStreakFreezes, markBadgesSeen, markMasteryPrompted, recordBadgesEarned,
+  updateUserProfile,
+} from '@/lib/firebase/teacher'
+import { MAX_PINNED } from '@/hooks/usePinnedBadges'
 import { updatePiece } from '@/lib/firebase/pieces'
 import { findMasteryCandidate, type MasteryCandidate } from '@/lib/utils/mastery'
 
@@ -62,6 +66,7 @@ export function useGamification(): Gamification {
   const frozen = useMemo(() => profile?.streakFreezesUsed ?? [], [profile?.streakFreezesUsed])
   const seen = useMemo(() => profile?.badgesSeen ?? [], [profile?.badgesSeen])
   const earnedAt = useMemo(() => profile?.badgeEarnedAt ?? {}, [profile?.badgeEarnedAt])
+  const pinned = useMemo(() => profile?.pinnedBadges ?? [], [profile?.pinnedBadges])
   const masteryPrompted = useMemo(
     () => profile?.masteryPromptsSeen ?? [],
     [profile?.masteryPromptsSeen]
@@ -161,6 +166,51 @@ export function useGamification(): Gamification {
       return additions.length ? [...q, ...additions] : q
     })
   }, [badges, seen, earnedAt, profile?.uid, setProfile])
+
+  // ── fill the row on Today, so the feature is found at all ────────────
+  //
+  // Someone who has never pinned anything sees nothing under the greeting,
+  // and nothing anywhere says that space exists. So the app pins the first
+  // few on their behalf. The moment they pin or unpin anything themselves
+  // the flag goes up and this never runs again — without that, an unpin
+  // would be filled straight back in and the button would look broken.
+  const pinning = useRef(false)
+  useEffect(() => {
+    if (pinning.current) return
+    if (!profile?.uid || profile.role === 'teacher') return
+    if (profile.badgePinsTouched) return
+
+    const free = MAX_PINNED - pinned.length
+    if (free <= 0) return
+
+    // One per family, the highest tier held: the same representative the
+    // Progress grid shows, and never two rungs of one ladder.
+    const additions: string[] = []
+    for (const f of families) {
+      if (additions.length >= free) break
+      if (!f.highest) continue
+      if (f.tiers.some((t) => pinned.includes(t.id))) continue
+      additions.push(f.highest.id)
+    }
+    if (additions.length === 0) return
+
+    pinning.current = true
+    const next = [...pinned, ...additions]
+
+    // Deliberately not setting badgePinsTouched: this is the app's doing,
+    // not theirs. Every mounted copy computes the same list from the same
+    // profile, so two of them racing write the same thing.
+    updateUserProfile(profile.uid, { pinnedBadges: next })
+      .then(() => {
+        const latest = useAuthStore.getState().profile
+        if (!latest) return
+        setProfile({ ...latest, pinnedBadges: next })
+        // Cleared, so a badge won later in the same session still lands in
+        // a free slot. A failure leaves it set: one attempt per mount.
+        pinning.current = false
+      })
+      .catch(() => {})
+  }, [profile?.uid, profile?.role, profile?.badgePinsTouched, pinned, families, setProfile])
 
   function dismissBadge() {
     const shown = badgeQueue[0]

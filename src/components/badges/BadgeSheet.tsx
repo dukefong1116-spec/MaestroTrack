@@ -3,6 +3,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import BadgeArt, { type BadgeArtName } from './BadgeArt'
 import { badgeProgress, isEarned, type BadgeContext, type FamilyState } from '@/lib/utils/progression'
+import { MAX_PINNED } from '@/hooks/usePinnedBadges'
 
 /**
  * One badge family, in full: what you have, what is next, and how far.
@@ -10,8 +11,6 @@ import { badgeProgress, isEarned, type BadgeContext, type FamilyState } from '@/
  * Uses the app's own Modal — the same sheet Change password opens — so
  * there is one way a sheet behaves rather than two.
  */
-
-const MAX_PINNED = 3
 
 function amount(value: number, unit: string): string {
   if (unit === 'minutes') {
