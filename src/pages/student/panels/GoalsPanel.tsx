@@ -128,10 +128,12 @@ export default function GoalsPanel() {
           </motion.div>
         )}
 
-        {/* A grid, not a flex row: equal columns keep a long label from
-            pushing its neighbour off the edge, and min-w-0 lets it wrap
-            inside its own column instead. */}
-        <div className="grid grid-cols-3 gap-1">
+        {/* A grid, not a flex row: columns keep a long label from pushing
+            its neighbour off the edge, and min-w-0 lets it wrap inside its
+            own column instead. The middle column sizes to its ring — at an
+            equal third the 96px ring was 3px wider than the 91px column it
+            had to live in. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-1">
           {rings.map((ring, i) => (
             <motion.div
               key={ring.label}
@@ -144,8 +146,8 @@ export default function GoalsPanel() {
                 <p className="text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>{ring.pct}%</p>
               </ProgressRing>
               <div className="min-w-0 text-center">
-                <p className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--clay-ink)' }}>{ring.label}</p>
-                <p className="text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>{ring.value}/{ring.goal} min</p>
+                <p className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--clay-ink)' }}>{ring.label}</p>
+                <p className="text-[10.5px] tabular-nums leading-tight" style={{ color: 'var(--clay-dim)' }}>{ring.value}/{ring.goal} min</p>
               </div>
             </motion.div>
           ))}

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import DailyStrip from './DailyStrip'
 import { useAssignments } from '@/hooks/useAssignments'
-import { isDaily, awaitingStudent } from '@/lib/utils/assignments'
+import { isDailyToday } from '@/lib/utils/assignments'
 
 /**
  * What today's practice owes a teacher, on the page you practise from.
@@ -28,10 +28,7 @@ export default function DailyToday({
   const navigate = useNavigate()
   const { open } = useAssignments()
 
-  const active = useMemo(
-    () => open.filter((x) => isDaily(x.assignment) && awaitingStudent(x.assignment) && x.daily.tracked),
-    [open]
-  )
+  const active = useMemo(() => open.filter(isDailyToday), [open])
 
   if (active.length === 0) return null
 

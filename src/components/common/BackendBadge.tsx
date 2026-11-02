@@ -18,10 +18,11 @@ export default function BackendBadge() {
 
   return (
     <div
-      // Bottom-left: the tab bar owns the bottom-centre and the
-      // notification bell the top-right.
-      className="pointer-events-none fixed bottom-2 left-2 z-[100] select-none rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-      style={{ background: '#8A1B1B', color: '#fff', opacity: 0.85 }}
+      // Bottom-left, clear of the tab bar — at bottom-2 it sat on top of
+      // the Practice label on a phone. The bell owns the top-right.
+      className="pointer-events-none fixed left-2 z-[100] select-none rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+      // calc keeps it above the bar plus the home-indicator inset.
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)', background: '#8A1B1B', color: '#fff', opacity: 0.85 }}
       title="This build talks to the local Firebase emulator, not your real project. Accounts here are not your real accounts."
     >
       Emulator
