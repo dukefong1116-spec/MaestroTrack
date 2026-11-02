@@ -135,13 +135,11 @@ export default function BadgeArt({
   size = 76,
   locked = false,
   className,
-  style,
 }: {
   name: BadgeArtName
   size?: number
   locked?: boolean
   className?: string
-  style?: React.CSSProperties
 }) {
   const p = locked ? LOCKED : PALETTES[name]
   return (
@@ -151,7 +149,6 @@ export default function BadgeArt({
       viewBox="0 0 120 120"
       fill="none"
       className={className}
-      style={style}
       role="img"
       aria-hidden="true"
     >
