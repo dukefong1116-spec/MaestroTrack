@@ -192,3 +192,74 @@ describe('what the app sends as a content type', () => {
       ref(as(ANA), `recordings/${ANA}/take.webm`), audio()))
   })
 })
+
+/**
+ * Profile photos.
+ *
+ * A second write path into the bucket, so it gets the same scrutiny the
+ * recordings path got: who may write, what may be written, and how big.
+ */
+describe('profile photos', () => {
+  const png = (bytes = 2048) => new Uint8Array(bytes)
+  const asPng = { contentType: 'image/png' }
+
+  it('you write your own', async () => {
+    await assertSucceeds(uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), asPng))
+  })
+
+  it('and read it back', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), `avatars/${ANA}/profile`), png(), asPng)
+    })
+    await assertSucceeds(getBytes(ref(as(ANA), `avatars/${ANA}/profile`)))
+  })
+
+  it('nobody else writes into your folder', async () => {
+    await assertFails(uploadBytes(ref(as(BEN), `avatars/${ANA}/profile`), png(), asPng))
+    await assertFails(uploadBytes(ref(as(TEACHER), `avatars/${ANA}/profile`), png(), asPng))
+    await assertFails(uploadBytes(ref(anon(), `avatars/${ANA}/profile`), png(), asPng))
+  })
+
+  it('nobody else reads it by path', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), `avatars/${ANA}/profile`), png(), asPng)
+    })
+    await assertFails(getBytes(ref(as(BEN), `avatars/${ANA}/profile`)))
+    await assertFails(getBytes(ref(anon(), `avatars/${ANA}/profile`)))
+  })
+
+  it('only images, so the bucket is not file hosting', async () => {
+    await assertFails(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: 'application/pdf' }))
+    await assertFails(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: 'audio/webm' }))
+    // An empty type is what a blob with no label arrives as.
+    await assertFails(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: '' }))
+  })
+
+  it('not SVG, which can carry script', async () => {
+    await assertFails(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: 'image/svg+xml' }))
+  })
+
+  it('jpeg and webp are fine too', async () => {
+    await assertSucceeds(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: 'image/jpeg' }))
+    await assertSucceeds(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(), { contentType: 'image/webp' }))
+  })
+
+  it('5MB is the ceiling', async () => {
+    await assertFails(
+      uploadBytes(ref(as(ANA), `avatars/${ANA}/profile`), png(5 * 1024 * 1024 + 1), asPng))
+  })
+
+  it('you can delete your own, and only your own', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), `avatars/${ANA}/profile`), png(), asPng)
+    })
+    await assertFails(deleteObject(ref(as(BEN), `avatars/${ANA}/profile`)))
+    await assertSucceeds(deleteObject(ref(as(ANA), `avatars/${ANA}/profile`)))
+  })
+})

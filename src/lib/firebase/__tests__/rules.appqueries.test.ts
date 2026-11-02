@@ -370,6 +370,7 @@ describe("the student's own writes", () => {
     await assertSucceeds(teacher.recordStreakFreezes(ANA, ['2026-03-02']))
     await assertSucceeds(teacher.markMasteryPrompted(ANA, ['p1']))
     await assertSucceeds(teacher.markBadgesSeen(ANA, ['first-week']))
+    await assertSucceeds(teacher.recordBadgesEarned(ANA, ['first-week'], '2026-03-02T00:00:00.000Z'))
   })
 
   it('submitAssignment — handing work in, and again after feedback', async () => {

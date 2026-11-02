@@ -36,6 +36,17 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+import BackendBadge from '@/components/common/BackendBadge'
+
+const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
+const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
+
+/* Shared by both roles — each reads the signed-in role to know where its
+   back arrow goes and which controls apply. */
+const NotificationsPage = lazy(() => import('@/pages/settings/NotificationsPage'))
+const AppearancePage = lazy(() => import('@/pages/settings/AppearancePage'))
+const PrivacyPage = lazy(() => import('@/pages/settings/PrivacyPage'))
+const AboutPage = lazy(() => import('@/pages/settings/AboutPage'))
 
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
 const StudentsPage = lazy(() => import('@/pages/teacher/StudentsPage'))
@@ -106,6 +117,15 @@ function AppRoutes() {
         <Route path="library" element={<LibraryPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        {/* Nested under settings on purpose: the Settings tab and the
+            sidebar item match by prefix, so they stay lit while you are
+            in here. */}
+        <Route path="settings/profile" element={<ProfilePage />} />
+        <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
+        <Route path="settings/notifications" element={<NotificationsPage />} />
+        <Route path="settings/appearance" element={<AppearancePage />} />
+        <Route path="settings/privacy" element={<PrivacyPage />} />
+        <Route path="settings/about" element={<AboutPage />} />
 
         {/* Retired routes — redirected so existing links and bookmarks
             keep working after the Library/Progress consolidation. */}
@@ -130,6 +150,10 @@ function AppRoutes() {
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="research" element={<ResearchPage />} />
         <Route path="settings" element={<TeacherSettingsPage />} />
+        <Route path="settings/notifications" element={<NotificationsPage />} />
+        <Route path="settings/appearance" element={<AppearancePage />} />
+        <Route path="settings/privacy" element={<PrivacyPage />} />
+        <Route path="settings/about" element={<AboutPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
@@ -150,6 +174,9 @@ export default function App() {
       <Suspense fallback={<RouteLoading />}>
         <AppRoutes />
       </Suspense>
+      {/* Outside Suspense and outside the routes, so it is on the login
+          screen too — which is exactly where the wrong backend bites. */}
+      <BackendBadge />
     </BrowserRouter>
   )
 }

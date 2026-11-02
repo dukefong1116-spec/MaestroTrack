@@ -405,3 +405,71 @@ describe('changing who owns a record', () => {
     await assertFails(updateDoc(doc(as(ANA), 'practiceSessions', 'mine'), { userId: BEN }))
   })
 })
+
+/* ── 12. the personal data a profile has grown ────────────────────── */
+//
+// The profile doc started as a name and an instrument. It now also holds
+// an avatar URL, notification preferences, display preferences and a
+// badge history. Every one of those is written by the owner through the
+// same `allow update` clause, so each needs the same proof: mine to
+// change, nobody else's — including the teacher who may read it.
+
+describe('badges, pins and preferences', () => {
+  it('a student may set their own pins and preferences', async () => {
+    await assertSucceeds(updateDoc(doc(as(ANA), 'users', ANA), {
+      pinnedBadges: ['first_session', 'week_warrior'],
+      badgePinsTouched: true,
+      badgeEarnedAt: { first_session: '2026-10-06T00:00:00.000Z' },
+      theme: 'dark', accent: 'teal', fontScale: 1.1, reduceMotion: true,
+      notify: { assignment: false },
+    }))
+  })
+
+  it('another student must not pin badges on someone else’s profile', async () => {
+    await assertFails(updateDoc(doc(as(BEN), 'users', ANA), { pinnedBadges: ['marathon'] }))
+  })
+
+  it('another student must not forge when a badge was earned', async () => {
+    await assertFails(updateDoc(doc(as(BEN), 'users', ANA), {
+      badgeEarnedAt: { marathon: '2020-01-01T00:00:00.000Z' },
+    }))
+  })
+
+  it('a teacher must not rewrite their own student’s preferences', async () => {
+    // The teacher may read this document. Reading is not writing: the only
+    // update a teacher is ever allowed on a student is the detach.
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), { theme: 'dark' }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), { notify: { assignment: false } }))
+  })
+
+  it('a teacher must not point a student’s avatar at something else', async () => {
+    // An avatar is a URL the app renders. Writing it is writing what every
+    // viewer of that profile loads.
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), { avatar: 'https://evil.test/x.png' }))
+  })
+
+  it('a stranger must not point a student’s avatar at something else', async () => {
+    await assertFails(updateDoc(doc(as(CLARE), 'users', ANA), { avatar: 'https://evil.test/x.png' }))
+  })
+
+  it('the teacher’s detach clause must not smuggle other fields through', async () => {
+    // `hasOnly([teacherId, studioCode, updatedAt])` is what holds this shut.
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), {
+      teacherId: null, theme: 'dark',
+    }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), {
+      teacherId: null, pinnedBadges: ['marathon'],
+    }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', ANA), {
+      teacherId: null, avatar: 'https://evil.test/x.png',
+    }))
+    // …while the detach it exists for still works.
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'users', ANA), {
+      teacherId: null, updatedAt: 'now',
+    }))
+  })
+
+  it('a stranger must not read a student’s profile at all', async () => {
+    await assertFails(getDoc(doc(as(CLARE), 'users', ANA)))
+  })
+})

@@ -7,9 +7,14 @@ import {
   decideFreezes, freezesAvailable, weekStrip, type WeekDay,
 } from '@/lib/utils/streakFreeze'
 import {
-  computeProgression, buildBadgeContext, earnedBadges, type BadgeDef, type Progression,
+  computeProgression, buildBadgeContext, earnedBadges, badgeFamilies,
+  type BadgeDef, type BadgeContext, type FamilyState, type Progression,
 } from '@/lib/utils/progression'
-import { recordStreakFreezes, markBadgesSeen, markMasteryPrompted } from '@/lib/firebase/teacher'
+import {
+  recordStreakFreezes, markBadgesSeen, markMasteryPrompted, recordBadgesEarned,
+  updateUserProfile,
+} from '@/lib/firebase/teacher'
+import { MAX_PINNED } from '@/hooks/usePinnedBadges'
 import { updatePiece } from '@/lib/firebase/pieces'
 import { findMasteryCandidate, type MasteryCandidate } from '@/lib/utils/mastery'
 
@@ -26,6 +31,11 @@ export interface Gamification {
   week: WeekDay[]
   progression: Progression
   badges: BadgeDef[]
+  /** The numbers every badge is measured against — the grid and the detail
+   *  sheet both read these, so neither can disagree with the other. */
+  badgeCtx: BadgeContext
+  /** Badges grouped into ladders, one per family, as the grid shows them. */
+  families: FamilyState[]
   /** Queued moments — show one at a time, oldest first. */
   pendingBadge: BadgeDef | null
   pendingFreeze: FreezeEvent | null
@@ -55,6 +65,8 @@ export function useGamification(): Gamification {
 
   const frozen = useMemo(() => profile?.streakFreezesUsed ?? [], [profile?.streakFreezesUsed])
   const seen = useMemo(() => profile?.badgesSeen ?? [], [profile?.badgesSeen])
+  const earnedAt = useMemo(() => profile?.badgeEarnedAt ?? {}, [profile?.badgeEarnedAt])
+  const pinned = useMemo(() => profile?.pinnedBadges ?? [], [profile?.pinnedBadges])
   const masteryPrompted = useMemo(
     () => profile?.masteryPromptsSeen ?? [],
     [profile?.masteryPromptsSeen]
@@ -69,11 +81,14 @@ export function useGamification(): Gamification {
   const week = useMemo(() => weekStrip(sessions, frozen), [sessions, frozen])
   const progression = useMemo(() => computeProgression(sessions, dailyGoal), [sessions, dailyGoal])
 
+  // The level goes in rather than being patched over the top afterwards —
+  // buildBadgeContext no longer invents one.
   const badgeCtx = useMemo(
-    () => ({ ...buildBadgeContext(sessions, frozen), level: progression.level }),
+    () => buildBadgeContext(sessions, frozen, progression.level),
     [sessions, frozen, progression.level]
   )
   const badges = useMemo(() => earnedBadges(badgeCtx), [badgeCtx])
+  const families = useMemo(() => badgeFamilies(badgeCtx), [badgeCtx])
 
   // Derived, not queued: if the data still says the piece is ready, the
   // prompt is still valid. Answering either way writes the piece id, which
@@ -120,9 +135,28 @@ export function useGamification(): Gamification {
       })
   }, [profile, sessions, frozen, longestStreak, setProfile])
 
-  // ── queue unseen badges ──────────────────────────────────────────────
+  // ── queue unseen badges, and stamp when they were won ────────────────
   useEffect(() => {
     if (!profile?.uid) return
+
+    // The date goes in the moment the app first sees the badge earned, not
+    // when the celebration is dismissed: someone who never comes back still
+    // won it today. Ids that already carry a date are skipped, or a merge
+    // would push it forward every time this ran.
+    const undated = badges.filter((b) => !earnedAt[b.id]).map((b) => b.id)
+    if (undated.length > 0) {
+      const at = new Date().toISOString()
+      recordBadgesEarned(profile.uid, undated, at)
+        .then(() => {
+          const latest = useAuthStore.getState().profile
+          if (!latest) return
+          const merged = { ...(latest.badgeEarnedAt ?? {}) }
+          for (const id of undated) if (!merged[id]) merged[id] = at
+          setProfile({ ...latest, badgeEarnedAt: merged })
+        })
+        .catch(() => {})
+    }
+
     const unseen = badges.filter((b) => !seen.includes(b.id))
     if (unseen.length === 0) return
 
@@ -131,7 +165,52 @@ export function useGamification(): Gamification {
       const additions = unseen.filter((b) => !known.has(b.id))
       return additions.length ? [...q, ...additions] : q
     })
-  }, [badges, seen, profile?.uid])
+  }, [badges, seen, earnedAt, profile?.uid, setProfile])
+
+  // ── fill the row on Today, so the feature is found at all ────────────
+  //
+  // Someone who has never pinned anything sees nothing under the greeting,
+  // and nothing anywhere says that space exists. So the app pins the first
+  // few on their behalf. The moment they pin or unpin anything themselves
+  // the flag goes up and this never runs again — without that, an unpin
+  // would be filled straight back in and the button would look broken.
+  const pinning = useRef(false)
+  useEffect(() => {
+    if (pinning.current) return
+    if (!profile?.uid || profile.role === 'teacher') return
+    if (profile.badgePinsTouched) return
+
+    const free = MAX_PINNED - pinned.length
+    if (free <= 0) return
+
+    // One per family, the highest tier held: the same representative the
+    // Progress grid shows, and never two rungs of one ladder.
+    const additions: string[] = []
+    for (const f of families) {
+      if (additions.length >= free) break
+      if (!f.highest) continue
+      if (f.tiers.some((t) => pinned.includes(t.id))) continue
+      additions.push(f.highest.id)
+    }
+    if (additions.length === 0) return
+
+    pinning.current = true
+    const next = [...pinned, ...additions]
+
+    // Deliberately not setting badgePinsTouched: this is the app's doing,
+    // not theirs. Every mounted copy computes the same list from the same
+    // profile, so two of them racing write the same thing.
+    updateUserProfile(profile.uid, { pinnedBadges: next })
+      .then(() => {
+        const latest = useAuthStore.getState().profile
+        if (!latest) return
+        setProfile({ ...latest, pinnedBadges: next })
+        // Cleared, so a badge won later in the same session still lands in
+        // a free slot. A failure leaves it set: one attempt per mount.
+        pinning.current = false
+      })
+      .catch(() => {})
+  }, [profile?.uid, profile?.role, profile?.badgePinsTouched, pinned, families, setProfile])
 
   function dismissBadge() {
     const shown = badgeQueue[0]
@@ -186,6 +265,8 @@ export function useGamification(): Gamification {
     week,
     progression,
     badges,
+    badgeCtx,
+    families,
     // A freeze always takes priority — it explains why the streak survived.
     pendingBadge: pendingFreeze ? null : (badgeQueue[0] ?? null),
     pendingFreeze,

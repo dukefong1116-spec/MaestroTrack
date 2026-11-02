@@ -8,6 +8,7 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import StreakFlame from '@/components/icons/StreakFlame'
 import PageHeader from '@/components/common/PageHeader'
+import NotificationBell from '@/components/notifications/NotificationBell'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import StatCard from '@/components/common/StatCard'
@@ -80,7 +81,13 @@ export default function TeacherDashboard() {
 
   return (
     <div>
-      <PageHeader title={`${profile?.studioName ?? 'My Studio'}`} subtitle="Manage your students and monitor their progress." />
+      <PageHeader
+        title={`${profile?.studioName ?? 'My Studio'}`}
+        subtitle="Manage your students and monitor their progress."
+        // The bell sits on the one screen notifications point at, inside
+        // the header so it scrolls away. The sidebar carries it from lg up.
+        actions={<div className="lg:hidden"><NotificationBell floating /></div>}
+      />
 
       {/* Studio code */}
       <Card className="p-4 mb-6 flex items-center justify-between">

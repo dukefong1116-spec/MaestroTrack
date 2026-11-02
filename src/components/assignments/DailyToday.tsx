@@ -61,7 +61,7 @@ export default function DailyToday({
             <div className="flex items-start gap-3">
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                style={{ background: met ? '#DFF5EA' : 'var(--clay-accent-soft)' }}
+                style={{ background: met ? 'var(--clay-success-bg)' : 'var(--clay-accent-soft)' }}
               >
                 <Sticker name={met ? 'check' : 'target'} size={15} tone="accent" />
               </span>
@@ -70,7 +70,7 @@ export default function DailyToday({
                 <p className="truncate text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
                   {assignment.title}
                 </p>
-                <p className="mt-0.5 text-[12px]" style={{ color: met ? '#2E8B62' : 'var(--clay-dim)' }}>
+                <p className="mt-0.5 text-[12px]" style={{ color: met ? 'var(--clay-success-fg)' : 'var(--clay-dim)' }}>
                   {met
                     ? `Today's ${target} min done`
                     : `${done} of ${target} min today · ${remaining} to go`}
@@ -81,7 +81,7 @@ export default function DailyToday({
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
                   <motion.div
                     className="h-full rounded-full"
-                    style={{ background: met ? '#2E8B62' : 'var(--clay-accent)' }}
+                    style={{ background: met ? 'var(--clay-success-fg)' : 'var(--clay-accent)' }}
                     animate={{ width: `${target > 0 ? Math.min(100, (done / target) * 100) : 0}%` }}
                     transition={{ duration: 0.3 }}
                   />

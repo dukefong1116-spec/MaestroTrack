@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap');
 
+/* Tailwind's radius scale, pulled in to match the clay tokens below.
+   Most pages were written with `rounded-xl` / `rounded-2xl` rather than a
+   token, so changing only the tokens left half the app rounder than the
+   other half. Overriding the scale makes one set of numbers — 8, 10, 12,
+   16 — govern every corner in the app. `rounded-full` is untouched: pills
+   and avatars are meant to be circular. */
+@theme {
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+}
+
 /* ─────────────────────────────────────────────────────────────
    SOFT CLAY design tokens.
 
@@ -33,23 +46,148 @@
   --clay-butter: #FFC85C;
   --clay-danger: #FF5C6E;
 
-  /* form */
-  --clay-r-lg: 26px;
-  --clay-r-md: 20px;
-  --clay-r-sm: 14px;
+  /* form — squared off a little; 26/20/14 read as a toy, not a tool */
+  --clay-r-lg: 16px;
+  --clay-r-md: 12px;
+  --clay-r-sm: 8px;
 
   /* the signature: puffy drop + inner top highlight */
   --clay-raised: 0 6px 16px -6px rgba(58, 48, 84, .22), inset 0 2px 0 rgba(255, 255, 255, .9);
   --clay-accent-shadow: 0 10px 22px -6px rgba(255, 122, 92, .45), inset 0 2px 0 rgba(255, 255, 255, .45);
   --clay-deep: 0 14px 30px -10px rgba(58, 48, 84, .3), inset 0 3px 0 rgba(255, 255, 255, .9);
 
+  /* status — the tones that were literal hexes in 26 files */
+  --clay-success-fg: #2E8B62;
+  --clay-success-bg: #DFF5EA;
+  --clay-warning-fg: #B37A18;
+  --clay-warning-bg: #FFF1D6;
+  --clay-danger-fg:  #D64257;
+  --clay-danger-bg:  #FFE3E7;
+  --clay-purple-fg:  #7A5AC4;
+  --clay-purple-bg:  #EDE6FB;
+
+  /* pale fills that have to stop being pale after dark */
+  --clay-sticker-ink-fill: #E9E3F5;
+  --clay-sticker-accent-fill: #FFE0D6;
+  --clay-frozen: #BBD9F2;
+  --clay-tint-mint: #E7F7EF;
+  --clay-tint-butter: #FFF6D9;
+  --clay-tint-sky: #E8F0FD;
+
   /* type */
   --clay-font: 'Fredoka', system-ui, sans-serif;
   --clay-hand: 'Caveat', cursive;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   SOFT CLAY after dark.
+
+   The hues are the easy part. The material is not: --clay-raised is a
+   drop shadow plus a near-white inner top highlight, and on a dark
+   surface that highlight reads as a scratch while the shadow disappears
+   into the background. So the highlight drops from .9 to .06 — just
+   enough to catch an edge — and the shadow goes darker and deeper to do
+   the lifting instead.
+
+   Applied two ways on purpose: by preference when someone has chosen,
+   and by the system setting when they have not. The :not() guard is what
+   lets an explicit "Light" win over a dark operating system.
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --clay-bg: #15121E;
+    --clay-bg-deep: #1F1A2C;
+    --clay-surface: #241E33;
+
+    --clay-ink: #F0ECF8;
+    --clay-dim: #A79EC0;
+    --clay-faint: #9D94B8;
+    --clay-line: #352E4A;
+
+    --clay-accent: #FF8A6E;
+    --clay-accent-hover: #FF9F88;
+    --clay-accent-soft: #3A2419;
+    --clay-accent-ink: #FFB9A6;
+    --clay-on-accent: #1A1119;
+
+    --clay-mint: #6BCB9B;
+    --clay-butter: #E8C06A;
+    --clay-danger: #FF7183;
+
+    --clay-success-fg: #6BCB9B;
+    --clay-success-bg: #1C3A2C;
+    --clay-warning-fg: #E8C06A;
+    --clay-warning-bg: #3A2F16;
+    --clay-danger-fg:  #FF8A9B;
+    --clay-danger-bg:  #3C1F26;
+    --clay-purple-fg:  #BCA6F2;
+    --clay-purple-bg:  #2A2342;
+
+    --clay-sticker-ink-fill: #3A3350;
+    --clay-sticker-accent-fill: #4A2A1E;
+    --clay-frozen: #2B4A66;
+    --clay-tint-mint: #1C3A2C;
+    --clay-tint-butter: #3A2F16;
+    --clay-tint-sky: #213449;
+
+    --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+    --clay-accent-shadow: 0 10px 22px -6px rgba(255, 138, 110, .30), inset 0 1px 0 rgba(255, 255, 255, .16);
+    --clay-deep: 0 14px 30px -10px rgba(0, 0, 0, .68), inset 0 1px 0 rgba(255, 255, 255, .07);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --clay-bg: #15121E;
+  --clay-bg-deep: #1F1A2C;
+  --clay-surface: #241E33;
+
+  --clay-ink: #F0ECF8;
+  --clay-dim: #A79EC0;
+  --clay-faint: #9D94B8;
+  --clay-line: #352E4A;
+
+  --clay-accent: #FF8A6E;
+  --clay-accent-hover: #FF9F88;
+  --clay-accent-soft: #3A2419;
+  --clay-accent-ink: #FFB9A6;
+  --clay-on-accent: #1A1119;
+
+  --clay-mint: #6BCB9B;
+  --clay-butter: #E8C06A;
+  --clay-danger: #FF7183;
+
+  --clay-success-fg: #6BCB9B;
+  --clay-success-bg: #1C3A2C;
+  --clay-warning-fg: #E8C06A;
+  --clay-warning-bg: #3A2F16;
+  --clay-danger-fg:  #FF8A9B;
+  --clay-danger-bg:  #3C1F26;
+  --clay-purple-fg:  #BCA6F2;
+  --clay-purple-bg:  #2A2342;
+
+  --clay-sticker-ink-fill: #3A3350;
+  --clay-sticker-accent-fill: #4A2A1E;
+  --clay-frozen: #2B4A66;
+  --clay-tint-mint: #1C3A2C;
+  --clay-tint-butter: #3A2F16;
+  --clay-tint-sky: #213449;
+
+  --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
+  --clay-accent-shadow: 0 10px 22px -6px rgba(255, 138, 110, .30), inset 0 1px 0 rgba(255, 255, 255, .16);
+  --clay-deep: 0 14px 30px -10px rgba(0, 0, 0, .68), inset 0 1px 0 rgba(255, 255, 255, .07);
+
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
+}
+
+html {
+  /* Was an inline style on <html>, which no stylesheet could theme. */
+  background-color: var(--clay-bg);
 }
 
 body {
@@ -60,6 +198,24 @@ body {
   color: var(--clay-ink);
   font-family: var(--clay-font);
 }
+
+/* Reduced motion asked for in Settings, rather than by the operating
+   system. CSS can only stop CSS — framer-motion animates inline styles, so
+   usePrefersReducedMotion reads the same preference for those. */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Display size. Applied to the scrolling content only, never the shell:
+   zooming a box that is 100dvh tall makes it taller than the screen, and
+   the tab bar should stay the size a thumb expects whatever the content
+   does. */
+.clay-zoom { zoom: var(--clay-zoom, 1); }
 
 #root {
   /* dvh, to match the shell in AppLayout. At 100vh this box is
@@ -77,7 +233,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CFC7E2;
+  background: var(--clay-faint);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {

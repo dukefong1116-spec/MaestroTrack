@@ -41,7 +41,7 @@ export async function signUp(
     studioName: options.studioName,
     studioCode,
     reminderEnabled: false,
-    theme: 'dark',
+    theme: 'system',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }

@@ -126,8 +126,8 @@ export default function SubmitSheet({
 
         {/* What the teacher said last time, if this is a second attempt. */}
         {returned?.verdict === 'returned' && returned.note && (
-          <div className="mb-4 px-3.5 py-3" style={{ background: '#FFF1D6', borderRadius: 'var(--clay-r-sm)' }}>
-            <p className="text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: '#B37A18' }}>
+          <div className="mb-4 px-3.5 py-3" style={{ background: 'var(--clay-warning-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+            <p className="text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-warning-fg)' }}>
               Your teacher asked for another go
             </p>
             <p className="mt-1 text-[13px]" style={{ color: 'var(--clay-ink)' }}>{returned.note}</p>
@@ -171,7 +171,7 @@ export default function SubmitSheet({
               {history.map((h, i) => (
                 <div key={i} className="px-3 py-2" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
                   <p className="text-[10.5px] font-semibold uppercase tracking-[.08em]"
-                     style={{ color: h.kind === 'approved' ? '#2E8B62' : h.kind === 'returned' ? '#B37A18' : 'var(--clay-dim)' }}>
+                     style={{ color: h.kind === 'approved' ? 'var(--clay-success-fg)' : h.kind === 'returned' ? 'var(--clay-warning-fg)' : 'var(--clay-dim)' }}>
                     {h.kind === 'submitted' ? 'You handed it in' : h.kind === 'approved' ? 'Approved' : 'Sent back'}
                     {' · '}{format(parseISO(h.at), 'MMM d')}
                   </p>
@@ -232,7 +232,7 @@ export default function SubmitSheet({
 
         {error && (
           <p className="mt-3 rounded-2xl px-3.5 py-2.5 text-[12.5px]"
-             style={{ background: '#FFE8EA', color: 'var(--clay-danger)' }}>
+             style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {error}
           </p>
         )}

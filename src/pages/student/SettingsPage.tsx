@@ -1,33 +1,19 @@
-import { Check } from 'lucide-react'
+import { Check, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap } from 'lucide-react'
 import { useState } from 'react'
-import { useForm, type Resolver } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { updateUserProfile, getTeacherByStudioCode } from '@/lib/firebase/teacher'
-import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
+import { getTeacherByStudioCode } from '@/lib/firebase/teacher'
+import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { useAuthStore } from '@/stores/authStore'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
-import { getUserProfile } from '@/lib/firebase/auth'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
-import Card from '@/components/ui/Card'
-import SoundSetting from '@/components/settings/SoundSetting'
+import Avatar from '@/components/profile/Avatar'
+import { Panel, Block, Legend, NavRow, FactRow } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
 import type { InstrumentType, UserProfile } from '@/types'
-
-const schema = z.object({
-  displayName: z.string().min(2),
-  // Derived from the list the picker renders, so an instrument added to
-  // one can never be rejected by the other.
-  instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
-  experienceLevel: z.enum(['beginner','intermediate','advanced','professional']),
-  weeklyGoalMinutes: z.coerce.number().min(30),
-})
-type FormData = z.infer<typeof schema>
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
@@ -36,58 +22,8 @@ export default function SettingsPage() {
   const [joinError, setJoinError] = useState('')
   const [joinSuccess, setJoinSuccess] = useState(false)
   const [joining, setJoining] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [resyncing, setResyncing] = useState(false)
-  const [resyncMsg, setResyncMsg] = useState('')
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
-    resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: {
-      displayName: profile?.displayName ?? '',
-      instrument: profile?.instrument,
-      experienceLevel: profile?.experienceLevel,
-      weeklyGoalMinutes: profile?.weeklyGoalMinutes ?? 300,
-    }
-  })
-
-  async function handleResync() {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid) return
-    setResyncing(true)
-    setResyncMsg('')
-    try {
-      const fresh = await getUserProfile(uid)
-      if (fresh) {
-        setProfile(fresh)
-        localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(fresh))
-        setResyncMsg(`role=${fresh.role ?? 'missing'}, studioCode=${fresh.studioCode ?? 'none'}, teacherId=${fresh.teacherId ?? 'none'}`)
-      } else {
-        setResyncMsg('No profile found in Firestore.')
-      }
-    } catch (e) {
-      setResyncMsg(`Error: ${String(e)}`)
-    } finally {
-      setResyncing(false)
-    }
-  }
-
-  async function onSubmit(data: FormData) {
-    const uid = profile?.uid ?? user?.uid
-    if (!uid) return
-    setSaving(true)
-    try {
-      await updateUserProfile(uid, data)
-      const updated = {
-        ...(profile ?? { uid, email: user?.email ?? '', role: 'student' as const, createdAt: new Date().toISOString() }),
-        ...data,
-        updatedAt: new Date().toISOString(),
-      }
-      setProfile(updated)
-      localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
-    } finally {
-      setSaving(false)
-    }
-  }
+  const linked = (profile?.studioCode && profile?.teacherId) || joinSuccess
 
   async function handleJoinStudio() {
     const uid = profile?.uid ?? user?.uid
@@ -139,50 +75,55 @@ export default function SettingsPage() {
     }
   }
 
+  const instrument = profile?.instrument as InstrumentType | undefined
+  const subtitle = [
+    instrument ? INSTRUMENT_THEMES[instrument]?.label : null,
+    profile?.experienceLevel,
+  ].filter(Boolean).join(' · ')
+
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage your profile and preferences." />
 
-      <div className="space-y-6 max-w-2xl">
-        {/* Profile */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-4">Profile</p>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input label="Display Name" error={errors.displayName?.message} {...register('displayName')} />
-            <Select
-              label="Instrument"
-              options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
-              error={errors.instrument?.message}
-              {...register('instrument')}
-            />
-            <Select
-              label="Experience Level"
-              options={[
-                { value: 'beginner', label: 'Beginner' },
-                { value: 'intermediate', label: 'Intermediate' },
-                { value: 'advanced', label: 'Advanced' },
-                { value: 'professional', label: 'Professional' },
-              ]}
-              error={errors.experienceLevel?.message}
-              {...register('experienceLevel')}
-            />
-            <Input label="Weekly Goal (minutes)" type="number" error={errors.weeklyGoalMinutes?.message} {...register('weeklyGoalMinutes')} />
-            <Button type="submit" loading={isSubmitting || saving}>Save Profile</Button>
-          </form>
-        </Card>
+      <div className="max-w-2xl space-y-6">
+        {/* One panel, not a pile of cards: these rows are the same subject. */}
+        <Panel>
+          <Link
+            to="/student/settings/profile"
+            className="flex items-center gap-4 p-4 transition-transform active:scale-[.99]"
+          >
+            <Avatar src={profile?.avatar} name={profile?.displayName} instrument={instrument} size={60} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+                {profile?.displayName || 'Your profile'}
+              </p>
+              {subtitle && (
+                <p className="mt-0.5 truncate text-[13px] capitalize" style={{ color: 'var(--clay-dim)' }}>
+                  {subtitle}
+                </p>
+              )}
+            </div>
+            <ChevronRight size={18} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
+          </Link>
 
-        {/* Studio */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-1">Join a Studio</p>
-          <p className="text-xs text-[var(--clay-dim)] mb-4">Enter your teacher's studio code to connect your account.</p>
-          {(profile?.studioCode && profile?.teacherId) || joinSuccess ? (
-            <div className="text-sm text-emerald-400 space-y-1">
-              <div className="flex items-center gap-2">
-                <Check size={13} /> Linked to studio {profile?.studioCode ?? studioCode}
-              </div>
+          <NavRow icon={<Bell size={19} />} label="Notifications" to="/student/settings/notifications" />
+          <NavRow icon={<Palette size={19} />} label="Appearance" to="/student/settings/appearance" />
+          <NavRow icon={<ShieldCheck size={19} />} label="Privacy & Security" to="/student/settings/privacy" />
+
+          {/* Studio — a row once you are in one, the form until then. */}
+          {linked ? (
+            <div className="flex items-center gap-3.5 px-5 py-4 sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
+              <span className="flex shrink-0" style={{ color: 'var(--clay-dim)' }}><GraduationCap size={19} /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>Your studio</span>
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--clay-success-fg)' }}>
+                  <Check size={12} /> Linked to {profile?.studioCode ?? studioCode}
+                </span>
+              </span>
             </div>
           ) : (
-            <div className="space-y-3">
+            <Block>
+              <Legend title="Join a Studio" hint="Enter your teacher's studio code to connect your account." />
               <div className="flex gap-3">
                 <Input
                   placeholder="Enter studio code (e.g. ABC123)"
@@ -192,52 +133,25 @@ export default function SettingsPage() {
                 />
                 <Button onClick={handleJoinStudio} loading={joining}>Join</Button>
               </div>
-              {joinError && <p className="text-red-400 text-sm">{joinError}</p>}
-            </div>
+              {joinError && (
+                <p className="mt-3 text-sm font-medium" style={{ color: 'var(--clay-danger)' }}>{joinError}</p>
+              )}
+            </Block>
           )}
-        </Card>
 
-        <SoundSetting />
+          <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/student/settings/about" />
 
-        {/* Resync */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-1">Reload Profile</p>
-          <p className="text-xs text-[var(--clay-dim)] mb-4">Re-reads your profile from the database.</p>
-          <Button variant="outline" size="sm" onClick={handleResync} loading={resyncing}>
-            Reload from Database
-          </Button>
-          {resyncMsg && (
-            <p className={`mt-3 text-xs font-mono ${resyncMsg.startsWith('Error') || resyncMsg.includes('missing') || resyncMsg.includes('No profile') ? 'text-red-400' : 'text-emerald-400'}`}>
-              {resyncMsg}
-            </p>
-          )}
-        </Card>
+          <FactRow label="Email" value={user?.email ?? '—'} />
+          <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
+          <FactRow label="Studio code" value={profile?.studioCode ?? '—'} />
+          <FactRow
+            label="Member since"
+            value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}
+          />
+        </Panel>
 
-        {/* Account info */}
-        <Card className="p-6">
-          <p className="text-sm font-semibold text-[var(--clay-faint)] mb-4">Account</p>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Email</span>
-              <span className="text-[var(--clay-ink)]">{user?.email}</span>
-            </div>
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Role</span>
-              <span className={`capitalize ${profile?.role ? 'text-[var(--clay-ink)]' : 'text-red-400'}`}>
-                {profile?.role ?? '—'}
-              </span>
-            </div>
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Studio Code</span>
-              <span className="text-[var(--clay-ink)]">{profile?.studioCode ?? '—'}</span>
-            </div>
-            <div className="flex justify-between text-[var(--clay-dim)]">
-              <span>Member Since</span>
-              <span className="text-[var(--clay-ink)]">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}</span>
-            </div>
-          </div>
-        </Card>
-
+        {/* The one thing left outside: signing out is the only destructive
+            action here, and it should not share a surface with the rest. */}
         <MobileLogOut />
       </div>
     </div>

@@ -30,7 +30,7 @@ export default function DailyStrip({
               ? 'var(--clay-bg-deep)'
               : d.isToday
                 ? 'var(--clay-accent-soft)'
-                : '#FFE8EA'          // a day that passed without the target
+                : 'var(--clay-danger-bg)'          // a day that passed without the target
           return (
             <motion.div
               key={d.date}

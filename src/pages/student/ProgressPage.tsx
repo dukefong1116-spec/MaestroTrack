@@ -4,7 +4,7 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import { getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
 import PageHeader from '@/components/common/PageHeader'
-import Card from '@/components/ui/Card'
+import { Panel, Block, Legend } from '@/components/ui/Panel'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import GoalsPanel from './panels/GoalsPanel'
 import PatternsPanel from './panels/PatternsPanel'
@@ -14,6 +14,9 @@ import type { InstrumentType } from '@/types'
  * Everything about how you're doing, in one place — goals, patterns and
  * lifetime totals. Previously spread across Goals, Insights and an
  * Analytics page that was never reachable from the UI.
+ *
+ * And in one panel: these are all answers to the same question, so they
+ * are divided by hairlines rather than floated apart as separate cards.
  */
 export default function ProgressPage() {
   const { profile } = useAuth()
@@ -44,26 +47,32 @@ export default function ProgressPage() {
     <div>
       <PageHeader title="Progress" subtitle="How you're doing against your week." />
 
-      <GoalsPanel />
+      <Panel>
+        <GoalsPanel />
 
-      {/* Lifetime totals */}
-      <div className="mb-8 mt-2 grid grid-cols-3 gap-4">
-        {lifetime.map((s) => (
-          <Card key={s.label} className="p-4 text-center">
-            <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--clay-ink)' }}>{s.value}</p>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--clay-dim)' }}>{s.label}</p>
-          </Card>
-        ))}
-      </div>
+        <Block>
+          <Legend title="All time" />
+          <div className="grid grid-cols-3">
+            {lifetime.map((s, i) => (
+              <div
+                key={s.label}
+                className="px-1 text-center"
+                style={i === 0 ? undefined : { borderLeft: '1px solid var(--clay-line)' }}
+              >
+                <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--clay-ink)' }}>{s.value}</p>
+                <p className="mt-0.5 text-xs" style={{ color: 'var(--clay-dim)' }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </Block>
 
-      <PatternsPanel />
+        <PatternsPanel />
 
-      <Card className="mt-8 p-5">
-        <p className="mb-4 text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
-          Every day you've practised
-        </p>
-        <PracticeHeatmap data={heatmap} color={theme.primary} />
-      </Card>
+        <Block>
+          <Legend title="Every day you've practised" />
+          <PracticeHeatmap data={heatmap} color={theme.primary} />
+        </Block>
+      </Panel>
     </div>
   )
 }

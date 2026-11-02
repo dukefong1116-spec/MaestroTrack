@@ -27,6 +27,32 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Profile photos.
+    //
+    // One object per person at a fixed path, overwritten on each upload, so
+    // changing your picture cannot leave the old one behind and the bucket
+    // does not grow a file per change.
+    //
+    // Read is owner-only, like recordings. That is a narrower gate than it
+    // looks: getDownloadURL() hands back a URL carrying its own token, which
+    // works for anyone holding it regardless of what is written here. The
+    // rule stops someone walking the bucket by path; it does not make a URL
+    // you have shared private again.
+    match /avatars/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Bounded and typed for the same reason the recordings rule is: so a
+      // bug or a bad actor cannot fill the bucket, and so nothing that is
+      // not an image can be stored where an <img> will point at it. SVG is
+      // deliberately absent — it can carry script.
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/(jpeg|png|webp)');
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Nothing else in the bucket is reachable.
     match /{allPaths=**} {
       allow read, write: if false;

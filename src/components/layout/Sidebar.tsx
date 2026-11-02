@@ -4,7 +4,7 @@ import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { logOut } from '@/lib/firebase/auth'
 import { useAuth } from '@/hooks/useAuth'
-import { getTheme } from '@/lib/utils/instruments'
+import { getInstrumentTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { useNotifications } from '@/hooks/useNotifications'
@@ -31,7 +31,8 @@ export default function Sidebar() {
   const { profile, user } = useAuth()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
-  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
+  // Same reasoning as the avatar: this tile is the person, not the chrome.
+  const theme = getInstrumentTheme(profile?.instrument as InstrumentType | undefined)
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
@@ -153,7 +154,7 @@ export default function Sidebar() {
         </NavLink>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150 hover:bg-[#FFE3E7]"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150 hover:bg-[var(--clay-danger-bg)]"
           style={{ color: 'var(--clay-dim)' }}
         >
           <LogOut size={18} className="shrink-0" />

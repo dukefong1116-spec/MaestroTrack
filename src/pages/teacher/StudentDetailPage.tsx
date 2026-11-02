@@ -15,7 +15,7 @@ import DailyStrip from '@/components/assignments/DailyStrip'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
 import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
-import { getTheme } from '@/lib/utils/instruments'
+import { getInstrumentTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -66,7 +66,9 @@ export default function StudentDetailPage() {
   // the four useMemos below — every chart recomputed over the full session
   // history on each keystroke in the assignment form.
   const sessions: PracticeSession[] = studentSessions[studentId ?? ''] ?? NO_SESSIONS
-  const theme = getTheme(student?.instrument as InstrumentType | undefined)
+  // This page is about the student, so it wears the student’s colour,
+  // not whatever accent the teacher happens to have picked.
+  const theme = getInstrumentTheme(student?.instrument as InstrumentType | undefined)
 
   useEffect(() => {
     if (!studentId) return

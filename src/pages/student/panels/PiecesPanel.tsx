@@ -11,7 +11,7 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import { derivePieceStats } from '@/lib/utils/pieces'
 import { addPiece, updatePiece, deletePiece } from '@/lib/firebase/pieces'
 import { getTheme } from '@/lib/utils/instruments'
-import Card from '@/components/ui/Card'
+import { Block } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
@@ -86,82 +86,110 @@ export default function PiecesPanel() {
 
   return (
     <div>
-      {/* Filter tabs + add, on one row */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {(['active', 'mastered', 'archived'] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'text-[var(--clay-ink)]' : 'text-[var(--clay-dim)] hover:text-[var(--clay-ink)] bg-transparent'}`}
-            style={filter === f ? { backgroundColor: theme.primary } : undefined}
-          >
-            {f} ({pieces.filter((p) => p.status === f).length})
-          </button>
-        ))}
-        <Button className="ml-auto w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
-      </div>
+      {/* Filter + add, as the panel's own toolbar rather than a floating row */}
+      <Block first>
+        <div className="flex flex-wrap items-center gap-2">
+          {(['active', 'mastered', 'archived'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className="rounded-full px-3.5 py-1.5 text-sm font-medium capitalize transition-all"
+              style={filter === f
+                ? { backgroundColor: theme.primary, color: 'var(--clay-on-accent)' }
+                : { color: 'var(--clay-dim)' }}
+            >
+              {f} ({pieces.filter((p) => p.status === f).length})
+            </button>
+          ))}
+          <Button className="ml-auto w-full sm:w-auto" onClick={() => setOpen(true)}><Plus size={16} /> Add piece</Button>
+        </div>
+      </Block>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon={<Sticker name="book" size={36} tone="accent" />}
-          title={`No ${filter} pieces`}
-          description={filter === 'active' ? 'Add a piece to start tracking your practice.' : `No pieces with ${filter} status yet.`}
-          action={filter === 'active' ? { label: 'Add Your First Piece', onClick: () => setOpen(true) } : undefined}
-        />
+        <Block>
+          <EmptyState
+            icon={<Sticker name="book" size={36} tone="accent" />}
+            title={`No ${filter} pieces`}
+            description={filter === 'active' ? 'Add a piece to start tracking your practice.' : `No pieces with ${filter} status yet.`}
+            action={filter === 'active' ? { label: 'Add Your First Piece', onClick: () => setOpen(true) } : undefined}
+          />
+        </Block>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        /* A library is a list, so these are rows divided by hairlines
+           rather than a grid of floating cards. */
+        <div>
           {filtered.map((piece, i) => {
             const stats = derivePieceStats(piece, sessions)
             return (
-            <motion.div key={piece.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card className="p-5 space-y-4" hover onClick={() => setSelected(piece)}>
-                <div className="flex items-start justify-between gap-2">
+              <motion.div
+                key={piece.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                onClick={() => setSelected(piece)}
+                className="cursor-pointer px-5 py-4 transition-colors sm:px-6"
+                style={{ borderTop: '1px solid var(--clay-line)' }}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-[var(--clay-ink)] truncate">{piece.title}</p>
-                    {piece.composer && <p className="text-xs text-[var(--clay-dim)]">{piece.composer}</p>}
+                    <p className="truncate font-semibold" style={{ color: 'var(--clay-ink)' }}>{piece.title}</p>
+                    {piece.composer && <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{piece.composer}</p>}
                   </div>
-                  <Badge variant={statusColors[piece.status]}>{piece.status}</Badge>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex">
+                      {Array.from({ length: 5 }, (_, n) => (
+                        <Star
+                          key={n}
+                          size={10}
+                          style={{ color: n < piece.difficulty ? 'var(--clay-butter)' : 'var(--clay-line)' }}
+                          fill={n < piece.difficulty ? 'var(--clay-butter)' : 'none'}
+                        />
+                      ))}
+                    </div>
+                    <Badge variant={statusColors[piece.status]}>{piece.status}</Badge>
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-1">
-                    <span>Completion</span>
-                    <span>{stats.completionPercentage}%</span>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--clay-line)' }}>
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${stats.completionPercentage}%`, backgroundColor: theme.primary }}
+                    />
                   </div>
-                  <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${stats.completionPercentage}%`, backgroundColor: theme.primary }} />
-                  </div>
+                  <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--clay-dim)' }}>
+                    {stats.completionPercentage}%
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-[var(--clay-dim)]">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--clay-dim)' }}>
                   <span>{stats.totalMinutes} min total</span>
+                  <span aria-hidden="true">·</span>
                   <span>{stats.sessionCount} sessions</span>
-                  <div className="flex">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Star key={i} size={10} className={i < piece.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[var(--clay-ink)]'} />
-                    ))}
-                  </div>
+                  {piece.targetDate && (() => {
+                    const daysLeft = differenceInDays(parseISO(piece.targetDate!), new Date())
+                    const tone = daysLeft < 0 ? 'var(--clay-danger-fg)' : daysLeft <= 7 ? 'var(--clay-warning-fg)' : 'var(--clay-dim)'
+                    return (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <span style={{ color: tone }}>
+                          <Crosshair size={11} className="-mt-px mr-1 inline" />
+                          {format(parseISO(piece.targetDate!), 'MMM d')}
+                          {daysLeft >= 0 ? ` · ${daysLeft}d left` : ' · Overdue'}
+                        </span>
+                      </>
+                    )
+                  })()}
+                  <span className="ml-auto flex gap-1" onClick={(e) => e.stopPropagation()}>
+                    {piece.status === 'active' && (
+                      <Button size="sm" variant="ghost" onClick={() => handleMaster(piece)}><Star size={12} /> Master</Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => handleArchive(piece)}>
+                      <Archive size={12} /> {piece.status === 'archived' ? 'Restore' : 'Archive'}
+                    </Button>
+                  </span>
                 </div>
-                {piece.targetDate && (() => {
-                  const daysLeft = differenceInDays(parseISO(piece.targetDate!), new Date())
-                  return (
-                    <p className={`text-xs mt-1 ${daysLeft < 0 ? 'text-red-400' : daysLeft <= 7 ? 'text-amber-400' : 'text-[var(--clay-dim)]'}`}>
-                      <Crosshair size={11} className="inline mr-1 -mt-px" />Target: {format(parseISO(piece.targetDate!), 'MMM d')}
-                      {daysLeft >= 0 ? ` · ${daysLeft}d left` : ' · Overdue'}
-                    </p>
-                  )
-                })()}
-
-                <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                  {piece.status === 'active' && (
-                    <Button size="sm" variant="ghost" onClick={() => handleMaster(piece)}><Star size={12} /> Master</Button>
-                  )}
-                  <Button size="sm" variant="ghost" onClick={() => handleArchive(piece)}>
-                    <Archive size={12} /> {piece.status === 'archived' ? 'Restore' : 'Archive'}
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
+              </motion.div>
             )
           })}
         </div>

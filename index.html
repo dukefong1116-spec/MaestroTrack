@@ -1,16 +1,32 @@
 <!doctype html>
-<html lang="en" class="dark" style="background:#F1ECF8">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="MaestroTrack — The practice intelligence platform for musicians. Track practice, monitor students, and build better habits." />
     <meta name="theme-color" content="#F1ECF8" />
+    <!--
+      Applied before the first paint, so a dark theme does not flash light
+      on the way in. Reads the same key the app writes; wrapped because
+      private mode can throw on localStorage access.
+    -->
+    <script>
+      (function () {
+        try {
+          var p = JSON.parse(localStorage.getItem('maestro_prefs') || 'null') || {};
+          var r = document.documentElement;
+          if (p.theme === 'dark' || p.theme === 'light') r.dataset.theme = p.theme;
+          if (p.reduceMotion === true) r.dataset.motion = 'reduce';
+          if (typeof p.displayScale === 'number') r.style.setProperty('--clay-zoom', p.displayScale / 100);
+        } catch (e) { /* no stored preference, or no storage at all */ }
+      })();
+    </script>
     <title>MaestroTrack — Practice Intelligence for Musicians</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
-  <body style="background:#F1ECF8; margin:0;">
+  <body style="margin:0;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

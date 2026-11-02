@@ -47,8 +47,8 @@ interface StickerProps {
 }
 
 const TONES = {
-  ink: { stroke: 'var(--clay-ink)', fill: '#E9E3F5' },
-  accent: { stroke: 'var(--clay-accent)', fill: '#FFE0D6' },
+  ink: { stroke: 'var(--clay-ink)', fill: 'var(--clay-sticker-ink-fill)' },
+  accent: { stroke: 'var(--clay-accent)', fill: 'var(--clay-sticker-accent-fill)' },
   onAccent: { stroke: '#FFFFFF', fill: 'rgba(255,255,255,.38)' },
 } as const
 
