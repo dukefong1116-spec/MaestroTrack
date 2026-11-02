@@ -298,18 +298,9 @@ export default function PracticeLogPage() {
               {format(new Date(), 'EEEE')} · let's get after it
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="flex min-h-[36px] shrink-0 items-center gap-1.5 px-3 text-[12.5px] font-semibold transition-transform active:scale-95"
-            style={{
-              borderRadius: 'var(--clay-r-sm)',
-              border: '1px solid var(--clay-line)',
-              color: 'var(--clay-accent-ink)',
-            }}
-          >
+          <Button variant="outline" size="sm" className="shrink-0" onClick={() => setOpen(true)}>
             <Sticker name="pencil" size={14} tone="accent" /> Log past
-          </button>
+          </Button>
         </motion.div>
 
         {/* session in progress */}
@@ -354,18 +345,16 @@ export default function PracticeLogPage() {
             <button
               type="button"
               onClick={() => navigate('/student/session')}
-              className="flex min-h-[58px] w-full items-center justify-center gap-2.5 text-[17px] font-bold transition-transform active:scale-[.99]"
+              className="flex min-h-[72px] w-full items-center justify-center gap-3 text-[19px] font-bold transition-transform active:scale-[.99]"
               style={{
                 borderRadius: 'var(--clay-r-sm)',
                 background: 'var(--clay-accent)',
                 color: 'var(--clay-on-accent)',
+                boxShadow: 'var(--clay-accent-shadow)',
               }}
             >
-              <Sticker name="metro" size={22} tone="onAccent" /> Start session
+              <Sticker name="metro" size={26} tone="onAccent" /> Start session
             </button>
-            <p className="mt-2.5 text-center text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
-              Timer · metronome · tuner · record
-            </p>
           </Block>
 
           {/* The shape of the week, which no other screen shows: a number
