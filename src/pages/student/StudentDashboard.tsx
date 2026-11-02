@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import PinnedBadges from '@/components/badges/PinnedBadges'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -110,6 +111,9 @@ export default function StudentDashboard() {
           )}
         </div>
       </motion.div>
+
+      {/* The badges chosen for Today — nothing at all when none are pinned */}
+      <PinnedBadges />
 
       {/* Next lesson */}
       {nextLesson && (

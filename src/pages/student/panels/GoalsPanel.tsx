@@ -7,10 +7,12 @@ import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
-import { BADGES } from '@/lib/utils/progression'
+import type { BadgeFamily } from '@/lib/utils/progression'
 import { useGamification } from '@/hooks/useGamification'
 import { getTheme } from '@/lib/utils/instruments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
+import BadgeSheet from '@/components/badges/BadgeSheet'
+import { usePinnedBadges } from '@/hooks/usePinnedBadges'
 import Card from '@/components/ui/Card'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Button from '@/components/ui/Button'
@@ -18,6 +20,13 @@ import Input from '@/components/ui/Input'
 import { useState } from 'react'
 import type { InstrumentType } from '@/types'
 
+
+/** Minutes read as hours once there are enough of them to bother. */
+function amountShort(value: number, unit: string): string {
+  if (unit !== 'minutes') return String(Math.round(value))
+  const h = value / 60
+  return h >= 1 ? `${Math.round(h * 10) / 10}h` : `${Math.round(value)}m`
+}
 
 export default function GoalsPanel() {
   const { profile } = useAuth()
@@ -27,6 +36,10 @@ export default function GoalsPanel() {
   const [editGoals, setEditGoals] = useState(false)
   const [weeklyGoal, setWeeklyGoal] = useState(profile?.weeklyGoalMinutes ?? 300)
   const [saving, setSaving] = useState(false)
+  const [openFamily, setOpenFamily] = useState<BadgeFamily | null>(null)
+  const { pinned, togglePin } = usePinnedBadges()
+  const { families, badgeCtx } = game
+  const earnedAt = profile?.badgeEarnedAt ?? {}
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300), [sessions, profile])
   const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
@@ -134,38 +147,73 @@ export default function GoalsPanel() {
         </Card>
       </div>
 
-      {/* Badges */}
+      {/* Badges — one tile per family, each a way in to the ladder */}
       <div>
         <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Achievement Badges</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {BADGES.map((badge, i) => {
-            const earned = earnedIds.has(badge.id)
+          {families.map((fam, i) => {
+            const got = !!fam.highest
+            const pct = Math.round(fam.progress * 100)
             return (
-              <motion.div key={badge.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <motion.button
+                key={fam.family}
+                type="button"
+                onClick={() => setOpenFamily(fam.family)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="text-left transition-transform active:scale-[.97]"
+              >
                 {/* Art-forward: the badge IS the tile. Locked state is drawn,
                     not filtered, so unlocking reads as colour arriving. */}
                 <Card className="relative p-4 pt-5 text-center">
-                  {earned && (
+                  {got && (
                     <Sticker name="check" size={18} tone="accent" className="absolute right-3 top-3" />
                   )}
                   <div className="flex justify-center">
-                    <BadgeArt name={badge.id} size={76} locked={!earned} />
+                    <BadgeArt name={fam.display.id} size={76} locked={!got} />
                   </div>
                   <p
                     className="mt-2.5 text-sm font-semibold"
-                    style={{ color: earned ? 'var(--clay-ink)' : 'var(--clay-dim)' }}
+                    style={{ color: got ? 'var(--clay-ink)' : 'var(--clay-dim)' }}
                   >
-                    {badge.label}
+                    {fam.display.label}
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-[var(--clay-faint)]">
-                    {badge.description}
-                  </p>
+
+                  {fam.next ? (
+                    <>
+                      <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--clay-faint)' }}>
+                        {amountShort(fam.next.current(badgeCtx), fam.next.unit)} of {amountShort(fam.next.target, fam.next.unit)}
+                        {fam.next.unit === 'sessions' ? ' sessions' : fam.next.unit === 'days' ? ' days' : ''}
+                      </p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: 'var(--clay-accent)' }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--clay-faint)' }}>
+                      All tiers earned
+                    </p>
+                  )}
                 </Card>
-              </motion.div>
+              </motion.button>
             )
           })}
         </div>
       </div>
+
+      <BadgeSheet
+        family={families.find((f) => f.family === openFamily) ?? null}
+        ctx={badgeCtx}
+        pinned={pinned}
+        earnedAt={earnedAt}
+        onClose={() => setOpenFamily(null)}
+        onTogglePin={togglePin}
+        onShare={(id) => console.log('share badge', id)}
+      />
     </div>
   )
 }

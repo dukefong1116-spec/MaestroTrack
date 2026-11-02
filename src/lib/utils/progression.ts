@@ -226,11 +226,33 @@ export type BadgeId =
   | 'consistency'
   | 'ten_hours'
 
+/** What a badge is counting, so the detail screen can say it in words. */
+export type BadgeUnit = 'sessions' | 'days' | 'minutes' | 'level'
+
+/** Tiered badges belong to a family; the grid shows one tile per family. */
+export type BadgeFamily = 'hours' | 'sessions' | 'streak' | 'level' | 'session_length'
+
+/**
+ * A badge is a target and a way of reading the current number off the
+ * context — never a predicate.
+ *
+ * It used to be `earned: (ctx) => boolean`, which was fine while nothing
+ * showed progress. A progress bar needs the number *and* the target, and
+ * writing both by hand means they drift: a bar at 100% beside a badge that
+ * is still locked. Deriving `earned` from the same two values makes that
+ * disagreement impossible to express.
+ */
 export interface BadgeDef {
   id: BadgeId
   label: string
+  /** What it means, for the detail screen. */
   description: string
-  earned: (ctx: BadgeContext) => boolean
+  family: BadgeFamily
+  /** 1-based position within the family. */
+  tier: number
+  unit: BadgeUnit
+  target: number
+  current: (ctx: BadgeContext) => number
 }
 
 export interface BadgeContext {
@@ -243,17 +265,46 @@ export interface BadgeContext {
 }
 
 export const BADGES: BadgeDef[] = [
-  { id: 'first_session', label: 'First Note', description: 'Logged your first practice session', earned: (c) => c.sessionCount >= 1 },
-  { id: 'week_warrior', label: 'Week Warrior', description: 'Practised every day for a week', earned: (c) => c.longestStreak >= 7 },
-  { id: 'century', label: 'Century Club', description: 'Logged 100 practice sessions', earned: (c) => c.sessionCount >= 100 },
-  { id: 'marathon', label: 'Marathon', description: 'Practised 60+ minutes in one session', earned: (c) => c.longestSessionMinutes >= 60 },
-  { id: 'consistency', label: 'Iron Discipline', description: 'Reached a 30-day streak', earned: (c) => c.longestStreak >= 30 },
-  { id: 'ten_hours', label: '10 Hours Strong', description: 'Accumulated 600 minutes of practice', earned: (c) => c.totalMinutes >= 600 },
+  { id: 'first_session', label: 'First Note', description: 'Logged your first practice session',
+    family: 'sessions', tier: 1, unit: 'sessions', target: 1, current: (c) => c.sessionCount },
+  { id: 'century', label: 'Century Club', description: 'Logged 100 practice sessions',
+    family: 'sessions', tier: 2, unit: 'sessions', target: 100, current: (c) => c.sessionCount },
+
+  { id: 'week_warrior', label: 'Week Warrior', description: 'Practised every day for a week',
+    family: 'streak', tier: 1, unit: 'days', target: 7, current: (c) => c.longestStreak },
+  { id: 'consistency', label: 'Iron Discipline', description: 'Reached a 30-day streak',
+    family: 'streak', tier: 2, unit: 'days', target: 30, current: (c) => c.longestStreak },
+
+  { id: 'marathon', label: 'Marathon', description: 'Practised 60+ minutes in one session',
+    family: 'session_length', tier: 1, unit: 'minutes', target: 60, current: (c) => c.longestSessionMinutes },
+
+  { id: 'ten_hours', label: '10 Hours Strong', description: 'Accumulated 600 minutes of practice',
+    family: 'hours', tier: 1, unit: 'minutes', target: 600, current: (c) => c.totalMinutes },
 ]
 
+/** Won, or not. The one definition — nothing else decides this. */
+export function isEarned(badge: BadgeDef, ctx: BadgeContext): boolean {
+  return badge.current(ctx) >= badge.target
+}
+
+/** 0 to 1, for the bar. Capped, so an overshoot does not overflow it. */
+export function badgeProgress(badge: BadgeDef, ctx: BadgeContext): number {
+  if (badge.target <= 0) return 1
+  return Math.max(0, Math.min(1, badge.current(ctx) / badge.target))
+}
+
+/**
+ * The level is passed in rather than defaulted.
+ *
+ * It used to default to 1 and rely on every caller remembering to spread
+ * the real one over the top — which useGamification does, so the app was
+ * right, but the function still returned something untrue on its own and
+ * any new caller would have inherited that quietly.
+ */
 export function buildBadgeContext(
   sessions: PracticeSession[],
-  frozen: string[] = []
+  frozen: string[] = [],
+  level = 1
 ): BadgeContext {
   const { current, longest } = computeStreak(sessions, frozen)
   const totalMinutes = sessions.reduce((s, p) => s + p.durationMinutes, 0)
@@ -263,10 +314,64 @@ export function buildBadgeContext(
     longestStreak: longest,
     longestSessionMinutes: sessions.reduce((m, s) => Math.max(m, s.durationMinutes), 0),
     totalMinutes,
-    level: 1,
+    level,
   }
 }
 
+/** What each family is called where a person reads it. */
+export const FAMILY_LABEL: Record<BadgeFamily, string> = {
+  sessions: 'Sessions logged',
+  streak: 'Streak',
+  hours: 'Hours practised',
+  level: 'Level',
+  session_length: 'One long session',
+}
+
+export interface FamilyState {
+  family: BadgeFamily
+  label: string
+  /** Every tier, lowest first. */
+  tiers: BadgeDef[]
+  /** The highest tier won, or null before the first. */
+  highest: BadgeDef | null
+  /** The next one to go for, or null once the family is complete. */
+  next: BadgeDef | null
+  /** What the grid tile draws: the one won, else the one being worked toward. */
+  display: BadgeDef
+  /** 0 to 1 toward `next`; 1 when the family is complete. */
+  progress: number
+}
+
+/**
+ * The badges grouped the way the grid shows them — one tile per family,
+ * carrying the highest tier won and how far along the next one is.
+ *
+ * Grouped here rather than in the component so the grid, the detail sheet
+ * and anything later all read the same ladder.
+ */
+export function badgeFamilies(ctx: BadgeContext): FamilyState[] {
+  const order: BadgeFamily[] = ['sessions', 'streak', 'hours', 'session_length', 'level']
+  const out: FamilyState[] = []
+
+  for (const family of order) {
+    const tiers = BADGES.filter((b) => b.family === family).sort((a, b) => a.tier - b.tier)
+    if (tiers.length === 0) continue
+    const won = tiers.filter((b) => isEarned(b, ctx))
+    const highest = won.length ? won[won.length - 1] : null
+    const next = tiers.find((b) => !isEarned(b, ctx)) ?? null
+    out.push({
+      family,
+      label: FAMILY_LABEL[family],
+      tiers,
+      highest,
+      next,
+      display: highest ?? tiers[0],
+      progress: next ? badgeProgress(next, ctx) : 1,
+    })
+  }
+  return out
+}
+
 export function earnedBadges(ctx: BadgeContext): BadgeDef[] {
-  return BADGES.filter((b) => b.earned(ctx))
+  return BADGES.filter((b) => isEarned(b, ctx))
 }

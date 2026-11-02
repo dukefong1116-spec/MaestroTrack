@@ -85,6 +85,12 @@ export interface UserProfile {
   streakFreezesUsed?: string[]
   /** Badge ids whose unlock animation has already been shown. */
   badgesSeen?: string[]
+  /** BadgeId → ISO date, written the first time a badge is seen as won.
+   *  Absent for anything earned before this existed: that date is genuinely
+   *  unknown, and a guessed one would read as fact. */
+  badgeEarnedAt?: Record<string, string>
+  /** BadgeIds shown on Today, in the order they were pinned. Capped at 3. */
+  pinnedBadges?: string[]
   /** Piece ids already offered as "ready to call mastered?" — offered once each. */
   masteryPromptsSeen?: string[]
   /**

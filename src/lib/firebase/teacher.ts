@@ -135,6 +135,24 @@ export async function markMasteryPrompted(uid: string, pieceIds: string[]): Prom
   )
 }
 
+/**
+ * Stamps when a badge was won, once.
+ *
+ * Written the first time the app notices it earned rather than when the
+ * celebration is dismissed — someone who never opens the app again still
+ * won it then. The caller skips ids that already carry a date, because a
+ * merge would otherwise move it forward on every write.
+ */
+export async function recordBadgesEarned(uid: string, badgeIds: string[], at: string): Promise<void> {
+  if (badgeIds.length === 0) return
+  const stamps = Object.fromEntries(badgeIds.map((id) => [id, at]))
+  await setDoc(
+    doc(db, USERS, uid),
+    { badgeEarnedAt: stamps, updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
+}
+
 export async function markBadgesSeen(uid: string, badgeIds: string[]): Promise<void> {
   if (badgeIds.length === 0) return
   await setDoc(
