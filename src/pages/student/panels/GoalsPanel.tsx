@@ -13,6 +13,8 @@ import { getTheme } from '@/lib/utils/instruments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import BadgeSheet from '@/components/badges/BadgeSheet'
 import { usePinnedBadges } from '@/hooks/usePinnedBadges'
+import { publishAndShare } from '@/lib/share/link'
+import { BADGES } from '@/lib/utils/progression'
 import { Block, Legend } from '@/components/ui/Panel'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Button from '@/components/ui/Button'
@@ -43,6 +45,31 @@ export default function GoalsPanel() {
   const [saving, setSaving] = useState(false)
   const [openFamily, setOpenFamily] = useState<BadgeFamily | null>(null)
   const { pinned, togglePin } = usePinnedBadges()
+  const [shareNote, setShareNote] = useState<string | null>(null)
+
+  /**
+   * Publishing a badge as a link.
+   *
+   * Only the badge's own name and the date it was won leave the device —
+   * no session, no notes, no piece. The name rides along on the same
+   * opt-in the session card uses, which is on by default.
+   */
+  async function shareBadge(id: string) {
+    const uid = profile?.uid
+    const badge = BADGES.find((b) => b.id === id)
+    if (!uid || !badge) return
+    const wonAt = earnedAt[id]
+    const outcome = await publishAndShare(uid, 'badge', {
+      minutes: 0,
+      dateLabel: wonAt ? new Date(wonAt).toLocaleDateString(undefined, { dateStyle: 'long' }) : '',
+      ...(profile?.displayName ? { name: profile.displayName } : {}),
+      badgeId: badge.id,
+      badgeLabel: badge.label,
+    }, `I earned ${badge.label} on MaestroTrack`)
+    if (outcome === 'cancelled') return
+    setShareNote(outcome === 'failed' ? 'Could not publish the link.' : outcome === 'shared' ? 'Shared' : 'Link copied')
+    setTimeout(() => setShareNote(null), 2200)
+  }
   const { families, badgeCtx } = game
   const earnedAt = profile?.badgeEarnedAt ?? {}
 
@@ -228,8 +255,18 @@ export default function GoalsPanel() {
         earnedAt={earnedAt}
         onClose={() => setOpenFamily(null)}
         onTogglePin={togglePin}
-        onShare={(id) => console.log('share badge', id)}
+        onShare={(id) => void shareBadge(id)}
       />
+
+      {shareNote && (
+        <p
+          className="fixed inset-x-0 bottom-24 z-[70] mx-auto w-fit rounded-full px-4 py-2 text-[12.5px] font-semibold"
+          style={{ background: 'var(--clay-ink)', color: 'var(--clay-bg)' }}
+          role="status"
+        >
+          {shareNote}
+        </p>
+      )}
     </>
   )
 }

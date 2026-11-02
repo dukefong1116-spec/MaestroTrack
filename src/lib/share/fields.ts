@@ -25,6 +25,9 @@ export interface ShareFields {
   category?: string
   /** Minutes per day, Monday first, for the week strip. */
   week?: number[]
+  /** Set only when the share is a badge rather than a session. */
+  badgeId?: string
+  badgeLabel?: string
 }
 
 export interface ShareOptions {

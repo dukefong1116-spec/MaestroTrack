@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Download, Share2, X } from 'lucide-react'
+import { Check, Download, Link2, Share2, X } from 'lucide-react'
 import {
   buildShareFields, buildShareText, DEFAULT_SHARE_OPTIONS,
   type ShareOptions,
 } from '@/lib/share/fields'
 import { renderShareCard, CARD_LAYOUTS, type CardLayout } from '@/lib/share/card'
 import { canShareFiles, copyText, downloadCard, shareCard } from '@/lib/share/share'
+import { createShare } from '@/lib/share/link'
+import { useAuth } from '@/hooks/useAuth'
 import type { PracticeSession, UserProfile } from '@/types'
 
 /**
@@ -31,6 +33,8 @@ export default function ShareSheet({
   const [preview, setPreview] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState(false)
+  const { user } = useAuth()
 
   // Held as a ref as well as state: the Share button needs it synchronously.
   const blobRef = useRef<Blob | null>(null)
@@ -74,6 +78,43 @@ export default function ShareSheet({
       if (outcome === 'shared') flash('Shared')
       else if (outcome === 'downloaded') flash('Saved to your device')
     })
+  }
+
+  /**
+   * Publish the card as a link, then hand over the URL.
+   *
+   * A URL goes everywhere a message goes; a PNG only goes where
+   * navigator.share accepts files, which on a desktop is almost nowhere.
+   * On the platforms that unfurl it, this arrives as a card rather than
+   * an attachment — which is the whole point.
+   *
+   * Unlike the image path this one has to await before sharing, so the
+   * Safari gesture rule is lost and the native sheet may not open. The
+   * clipboard is the fallback, and the link is the thing either way.
+   */
+  async function onShareLink() {
+    const uid = user?.uid
+    if (!uid || publishing) return
+    setPublishing(true)
+    try {
+      const { url } = await createShare(uid, 'session', fields)
+      const payload = `${text}\n${url}`
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: 'MaestroTrack', text, url })
+          flash('Shared')
+          return
+        } catch (err) {
+          // Dismissing the sheet is a decision, not a failure.
+          if ((err as { name?: string })?.name === 'AbortError') return
+        }
+      }
+      flash(await copyText(payload) ? 'Link copied' : 'Could not copy the link')
+    } catch {
+      setError('Could not publish the link. Check your connection and try again.')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   const toggle = (key: keyof ShareOptions) =>
@@ -141,11 +182,15 @@ export default function ShareSheet({
           <Toggle on={options.includePiece} onClick={() => toggle('includePiece')} label="Piece" />
         </div>
 
+        {/* The link leads. It unfurls as a card in every messaging app and
+            most social ones; the image is kept beside it because Instagram
+            and TikTok do not unfurl links at all, and that is where this
+            gets posted. */}
         <div className="flex gap-2">
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={onShare}
-            disabled={!preview}
+            onClick={() => void onShareLink()}
+            disabled={!preview || publishing}
             className="flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-[13.5px] font-bold disabled:opacity-40"
             style={{
               background: 'var(--clay-accent)',
@@ -153,28 +198,41 @@ export default function ShareSheet({
               boxShadow: 'var(--clay-accent-shadow)',
             }}
           >
-            {native ? <Share2 size={15} /> : <Download size={15} />}
-            {native ? 'Share' : 'Save image'}
+            <Link2 size={15} />
+            {publishing ? 'Publishing…' : 'Share link'}
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => { if (blobRef.current) { downloadCard(blobRef.current); flash('Saved') } }}
+            onClick={onShare}
             disabled={!preview}
-            aria-label="Save image"
+            aria-label={native ? 'Share the image' : 'Save the image'}
             className="flex h-[46px] w-[46px] items-center justify-center rounded-full disabled:opacity-40"
             style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
           >
-            <Download size={15} />
+            {native ? <Share2 size={15} /> : <Download size={15} />}
           </motion.button>
         </div>
 
-        <button
-          onClick={() => void copyText(text).then((ok) => flash(ok ? 'Text copied' : 'Could not copy'))}
-          className="mt-2.5 w-full text-[11.5px]"
-          style={{ color: 'var(--clay-dim)' }}
-        >
-          or copy the caption
-        </button>
+        <div className="mt-2.5 flex items-center justify-center gap-3 text-[11.5px]">
+          <button
+            onClick={() => { if (blobRef.current) { downloadCard(blobRef.current); flash('Saved') } }}
+            style={{ color: 'var(--clay-dim)' }}
+          >
+            save image
+          </button>
+          <span style={{ color: 'var(--clay-faint)' }} aria-hidden="true">·</span>
+          <button
+            onClick={() => void copyText(text).then((ok) => flash(ok ? 'Text copied' : 'Could not copy'))}
+            style={{ color: 'var(--clay-dim)' }}
+          >
+            copy the caption
+          </button>
+        </div>
+
+        <p className="mt-2 text-center text-[10.5px] leading-snug" style={{ color: 'var(--clay-faint)' }}>
+          A link is public to anyone who gets it. Remove it any time in
+          Settings → Privacy &amp; Security.
+        </p>
 
         <AnimatePresence>
           {done && (

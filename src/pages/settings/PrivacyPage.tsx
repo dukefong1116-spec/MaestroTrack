@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Check, Download, Eye, EyeOff } from 'lucide-react'
+import { Check, Download, Eye, EyeOff, Link2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
 import { authErrorMessage } from '@/lib/firebase/account'
-import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
+import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 
 /**
@@ -106,6 +106,13 @@ export default function PrivacyPage() {
             <p className="mt-3 text-[13px] font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>
           )}
         </Block>
+
+        <NavRow
+          icon={<Link2 size={18} />}
+          label="Shared links"
+          value="Links you have published, and how to take them down"
+          to={isTeacher ? '/teacher/settings/privacy/links' : '/student/settings/privacy/links'}
+        />
 
         <Block>
           <Legend title="Sign-in" />

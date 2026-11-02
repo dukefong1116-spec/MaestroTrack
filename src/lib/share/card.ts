@@ -71,6 +71,104 @@ export async function renderShareCard(
   })
 }
 
+/**
+ * The same card again, landscape, for a share link's preview.
+ *
+ * Open Graph previews are 1.91:1 — a platform given the 1080x1350 card
+ * above either crops it to a band through the middle or shows it as a
+ * thumbnail the size of a stamp. So this is a separate composition at
+ * 1200x630 rather than the portrait card scaled.
+ *
+ * Drawn here, in the browser, from the same ShareFields and the same
+ * palette, so the picture a crawler fetches is the picture the person
+ * previewed. The alternative — generating it on a server from the stored
+ * document — means a second renderer that can disagree with this one
+ * about what a share looks like.
+ */
+export async function renderOgCard(fields: ShareFields): Promise<Blob> {
+  try { await document.fonts.ready } catch { /* older browsers: draw anyway */ }
+
+  const w = 1200
+  const h = 630
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas is unavailable in this browser')
+
+  ctx.fillStyle = C.bg
+  ctx.fillRect(0, 0, w, h)
+
+  // One panel, inset, the way every screen in the app is built.
+  ctx.fillStyle = C.surface
+  roundRect(ctx, 48, 48, w - 96, h - 96, 28)
+  ctx.fill()
+
+  const left = 108
+  let y = 150
+
+  if (fields.name) {
+    text(ctx, fields.name.toUpperCase(), left, y, 26, '700', C.dim, 'left', 3)
+    y += 52
+  }
+
+  if (fields.badgeLabel) {
+    // A badge share leads with what was won, not with a duration.
+    text(ctx, fields.badgeLabel, left, y + 54, 86, '700', C.ink)
+    text(ctx, 'Badge earned', left, y + 108, 30, '500', C.dim)
+  } else {
+    text(ctx, String(fields.minutes), left, y + 78, 150, '700', C.accent)
+    const nw = ctx.measureText(String(fields.minutes)).width
+    text(ctx, fields.minutes === 1 ? 'minute' : 'minutes', left + nw + 20, y + 78, 42, '600', C.ink)
+    text(ctx, 'of practice', left, y + 132, 42, '600', C.ink)
+  }
+
+  const footer = h - 112
+  if (fields.pieceTitle) {
+    text(ctx, fields.pieceTitle, left, footer - 56, 30, '500', C.dim)
+  }
+  if (fields.dateLabel) {
+    text(ctx, fields.dateLabel, left, footer - 14, 28, '500', C.faint)
+  }
+
+  wordmark(ctx, left, footer + 6)
+
+  // The right third carries the streak if there is one, the week if not.
+  const rx = w - 300
+  if (fields.streakDays) {
+    flame(ctx, rx, 176, 150, C.accent)
+    text(ctx, String(fields.streakDays), rx, 420, 116, '700', C.ink, 'center')
+    text(ctx, fields.streakDays === 1 ? 'day streak' : 'day streak', rx, 466, 30, '600', C.dim, 'center')
+  } else if (fields.week?.some((m) => m > 0)) {
+    weekStripSmall(ctx, rx, 420, fields.week)
+    text(ctx, 'this week', rx, 466, 30, '600', C.dim, 'center')
+  }
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Could not build the image'))),
+      'image/png'
+    )
+  })
+}
+
+/** The week strip again, scaled for the landscape card's right third. */
+function weekStripSmall(ctx: CanvasRenderingContext2D, cx: number, baseline: number, week?: number[]) {
+  const days = week && week.length === 7 ? week : [0, 0, 0, 0, 0, 0, 0]
+  const peak = Math.max(...days, 1)
+  const barW = 24
+  const gap = 14
+  const total = days.length * barW + (days.length - 1) * gap
+  let x = cx - total / 2
+  days.forEach((mins, i) => {
+    const bh = Math.max(14, Math.round((mins / peak) * 170))
+    ctx.fillStyle = mins === 0 ? C.bgDeep : i === days.length - 1 ? C.mint : C.accent
+    roundRect(ctx, x, baseline - bh, barW, bh, 9)
+    ctx.fill()
+    x += barW + gap
+  })
+}
+
 /* ── shared bits ──────────────────────────────────────────────────── */
 
 function roundRect(

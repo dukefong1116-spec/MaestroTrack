@@ -46,6 +46,7 @@ const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
 const NotificationsPage = lazy(() => import('@/pages/settings/NotificationsPage'))
 const AppearancePage = lazy(() => import('@/pages/settings/AppearancePage'))
 const PrivacyPage = lazy(() => import('@/pages/settings/PrivacyPage'))
+const SharedLinksPage = lazy(() => import('@/pages/settings/SharedLinksPage'))
 const AboutPage = lazy(() => import('@/pages/settings/AboutPage'))
 
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
@@ -125,6 +126,7 @@ function AppRoutes() {
         <Route path="settings/notifications" element={<NotificationsPage />} />
         <Route path="settings/appearance" element={<AppearancePage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
+        <Route path="settings/privacy/links" element={<SharedLinksPage />} />
         <Route path="settings/about" element={<AboutPage />} />
 
         {/* Retired routes — redirected so existing links and bookmarks
@@ -153,6 +155,7 @@ function AppRoutes() {
         <Route path="settings/notifications" element={<NotificationsPage />} />
         <Route path="settings/appearance" element={<AppearancePage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
+        <Route path="settings/privacy/links" element={<SharedLinksPage />} />
         <Route path="settings/about" element={<AboutPage />} />
       </Route>
 

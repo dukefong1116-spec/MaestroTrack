@@ -355,6 +355,76 @@ service cloud.firestore {
       allow update, delete: if signedIn() && resource.data.teacherId == uid();
     }
 
+    /* ── published share links ───────────────────────────────────── */
+    //
+    // A share link is public on purpose: it exists to be pasted into a
+    // chat, and the crawler that draws the preview is nobody, signed in as
+    // nobody. So `get` is open.
+    //
+    // `list` is not open. Open `get` plus open `list` would let anyone walk
+    // every share anyone has ever published. Listing is allowed only where
+    // the rule can prove every result belongs to the caller, which means a
+    // query filtered on ownerId — that is what the Shared links screen
+    // does. A stranger can only fetch a slug they were given, and the slug
+    // is 22 characters of crypto-random rather than a session id.
+    //
+    // The document holds a ShareFields object and nothing else — the same
+    // allowlist the image card has always been drawn from, which is what
+    // keeps session notes and studio codes out of it. The shape is checked
+    // here too, so a client cannot publish a field the type forbids.
+    match /shares/{slug} {
+      allow get: if true;
+      allow list: if isMe(resource.data.ownerId);
+
+      allow create: if isMe(request.resource.data.ownerId)
+                    && validShare(request.resource.data);
+
+      // Never. A share that could change after publication would let
+      // someone send an innocuous link and swap its contents afterwards,
+      // and every platform that cached the preview would still show the
+      // old one. Delete and publish again instead.
+      allow update: if false;
+
+      allow delete: if isMe(resource.data.ownerId);
+    }
+
+    function validShare(d) {
+      return d.keys().hasOnly(['ownerId', 'kind', 'fields', 'createdAt', 'image'])
+        && d.keys().hasAll(['ownerId', 'kind', 'fields', 'createdAt'])
+        && d.kind in ['session', 'badge', 'streak', 'week']
+        && d.createdAt is string
+        // The preview picture, which the share page renders. Pinned to
+        // this project's own bucket: the page puts this straight into an
+        // og:image tag, so an arbitrary URL here would be someone else's
+        // picture published under this person's name.
+        && (!('image' in d.keys())
+            || (d.image is string
+                && d.image.matches('https://firebasestorage.googleapis.com/.*')
+                && d.image.size() < 1000))
+        && validShareFields(d.fields);
+    }
+
+    /**
+     * The allowlist, restated where it is enforced.
+     *
+     * src/lib/share/fields.ts decides what may leave the device; this is
+     * the same list, checked by the server, because a rule that trusts the
+     * client to have used the right type is not a rule.
+     */
+    function validShareFields(f) {
+      return f.keys().hasOnly(['minutes', 'dateLabel', 'name', 'streakDays',
+                               'pieceTitle', 'category', 'week', 'badgeId', 'badgeLabel'])
+        && f.get('minutes', 0) is int
+        && f.get('dateLabel', '') is string
+        && f.get('name', '') is string
+        && f.get('name', '').size() <= 80
+        && f.get('pieceTitle', '') is string
+        && f.get('pieceTitle', '').size() <= 120
+        && f.get('category', '') is string
+        && f.get('badgeId', '') is string
+        && f.get('badgeLabel', '') is string;
+    }
+
     // Anything not named above is denied. New collections have to be
     // granted access deliberately rather than inheriting it.
     match /{document=**} {

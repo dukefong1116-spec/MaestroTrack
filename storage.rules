@@ -53,6 +53,30 @@ service firebase.storage {
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Share card images.
+    //
+    // The only publicly readable thing in this bucket, and deliberately
+    // so: this is the picture a platform's crawler fetches to draw the
+    // preview for a share link, and a crawler is nobody, signed in as
+    // nobody. Everything else here is owner-only.
+    //
+    // What makes that safe is what the picture is: a card drawn from
+    // ShareFields, which is the allowlist of what may leave the device.
+    // The person previewed this exact image before publishing it.
+    //
+    // Write stays owner-only and the slug is the file name, so one person
+    // cannot overwrite another's published card.
+    match /shares/{userId}/{slug} {
+      allow read: if true;
+
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 2 * 1024 * 1024
+                   && request.resource.contentType == 'image/png';
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Nothing else in the bucket is reachable.
     match /{allPaths=**} {
       allow read, write: if false;
