@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Minus, Check } from 'lucide-react'
+import { X, Minus, Check, Pencil, Trash2 } from 'lucide-react'
 import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -16,6 +16,7 @@ import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
 import { computeStreak } from '@/lib/utils/analytics'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
@@ -36,6 +37,8 @@ type Clip = {
   mimeType?: string
   /** Seconds of silence the take begins with, once measured. */
   leadIn?: number
+  /** What you called it, if you named it before finishing. */
+  title?: string
 }
 
 const CATEGORIES: PracticeCategory[] = [
@@ -119,6 +122,45 @@ export default function SessionPage() {
    */
   const [discarded, setDiscarded] = useState<Set<string>>(new Set())
   const discardedRef = useRef<Set<string>>(new Set())
+
+  /** The take being renamed in the list, and the one being deleted. */
+  const [renamingClip, setRenamingClip] = useState<string | null>(null)
+  const [clipDraft, setClipDraft] = useState('')
+  const [deletingClip, setDeletingClip] = useState<Clip | null>(null)
+
+  /**
+   * Naming a take mid-session.
+   *
+   * Written to the durable copy as well as the one on screen: the clip in
+   * IndexedDB is what actually gets uploaded, and a name that lived only
+   * in React state would be lost the moment the page reloaded.
+   */
+  function nameClip(id: string, title: string) {
+    const next = title.trim().slice(0, 80)
+    setClipsBoth((list) => list.map((c) => (c.id === id ? { ...c, title: next || undefined } : c)))
+    const clip = clipsRef.current.find((c) => c.id === id)
+    if (clip) {
+      void putClip({
+        id: clip.id, blob: clip.blob, seconds: clip.seconds, ext: clip.ext,
+        sessionId: null, date: format(new Date(), 'yyyy-MM-dd'),
+        pieceName: 'Practice session', title: next || undefined,
+        userId: profile?.uid ?? user?.uid ?? '', createdAt: Date.now(),
+      })
+    }
+  }
+
+  /**
+   * Dropping a take mid-session.
+   *
+   * Both copies go, and the object URL with them — the blob stays in
+   * memory for as long as something holds that URL, and a session with
+   * several discarded takes would otherwise sit on all of them.
+   */
+  function removeClip(clip: Clip) {
+    URL.revokeObjectURL(clip.url)
+    setClipsBoth((list) => list.filter((c) => c.id !== clip.id))
+    void deleteClip(clip.id)
+  }
   /** Held so a save retry reuses the answer rather than asking twice. */
   const answeredRef = useRef<number | null>(null)
   // The length is measured once, when Finish is tapped, and held until it
@@ -898,8 +940,50 @@ export default function SessionPage() {
 
                     {clips.length > 0 && (
                       <div className="mt-3 space-y-2">
+                        {/* Named and dropped here, while you can still hear
+                            what you are deciding about. Waiting until the
+                            session is over means doing it from memory. */}
                         {clips.map((c, i) => (
-                          <div key={i}>
+                          <div key={c.id}>
+                            <div className="mb-1 flex items-center gap-2">
+                              {renamingClip === c.id ? (
+                                <input
+                                  autoFocus
+                                  value={clipDraft}
+                                  aria-label="Name this take"
+                                  maxLength={80}
+                                  onChange={(e) => setClipDraft(e.target.value)}
+                                  onBlur={() => { nameClip(c.id, clipDraft); setRenamingClip(null) }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { e.preventDefault(); nameClip(c.id, clipDraft); setRenamingClip(null) }
+                                    if (e.key === 'Escape') setRenamingClip(null)
+                                  }}
+                                  className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none"
+                                  style={{ color: 'var(--clay-ink)', borderBottom: '1px solid var(--clay-accent)' }}
+                                />
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => { setClipDraft(c.title ?? ''); setRenamingClip(c.id) }}
+                                  className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                                  title="Name this take"
+                                >
+                                  <span className="truncate text-[12px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                                    {c.title?.trim() || `Take ${i + 1}`}
+                                  </span>
+                                  <Pencil size={10} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                aria-label={`Delete ${c.title?.trim() || `Take ${i + 1}`}`}
+                                onClick={() => setDeletingClip(c)}
+                                className="shrink-0"
+                                style={{ color: 'var(--clay-faint)' }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                             <audio src={c.url} controls className="w-full" style={{ height: 34 }} />
                             {/* Shown only when there is something to report, so
                                 it disappears the moment this is fixed rather
@@ -1077,8 +1161,8 @@ export default function SessionPage() {
                           >
                             {keep && <Check size={13} strokeWidth={3} />}
                           </span>
-                          <span className="min-w-0 flex-1 text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                            Take {i + 1}
+                          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                            {c.title?.trim() || `Take ${i + 1}`}
                           </span>
                           <span
                             className="shrink-0 text-[11.5px] tabular-nums"
@@ -1144,6 +1228,16 @@ export default function SessionPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmSheet
+        open={!!deletingClip}
+        title="Delete this take?"
+        body={deletingClip
+          ? `“${deletingClip.title?.trim() || 'This take'}” has not been saved yet, so it will be gone the moment you confirm.`
+          : undefined}
+        onCancel={() => setDeletingClip(null)}
+        onConfirm={() => { if (deletingClip) removeClip(deletingClip); setDeletingClip(null) }}
+      />
 
       <SessionCelebration
         reward={reward}

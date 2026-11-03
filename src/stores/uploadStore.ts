@@ -149,6 +149,7 @@ export const useUploadStore = create<UploadState>((set, get) => ({
           file,
           {
             pieceName: clip.pieceName,
+            title: clip.title,
             date: clip.date,
             notes: clip.notes,
             duration: clip.seconds,

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Pause, Pencil, Play, Trash2 } from 'lucide-react'
+import ConfirmSheet from '@/components/ui/ConfirmSheet'
 
 /**
  * A practice take.
@@ -61,11 +62,12 @@ export default function TakePlayer({
   const [draft, setDraft] = useState(label)
 
   /**
-   * Deleting asks once, in place.
+   * Deleting asks properly.
    *
    * A take is not recoverable — the document and the audio both go — and
-   * the control sits a thumb's width from Play. A second tap on the same
-   * spot confirms; moving away cancels.
+   * the control sits a thumb's width from Play. This was a second tap on
+   * the same spot, which is easy to do by accident and says nothing
+   * about what is about to happen.
    */
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
@@ -152,6 +154,7 @@ export default function TakePlayer({
   }
 
   return (
+    <>
     <div className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
       <audio ref={ref} src={src} preload="none" />
 
@@ -224,18 +227,12 @@ export default function TakePlayer({
             {onDelete && (
               <button
                 type="button"
-                aria-label={confirmingDelete ? `Delete ${label} for good` : `Delete ${label}`}
-                onClick={() => {
-                  if (!confirmingDelete) { setConfirmingDelete(true); return }
-                  setConfirmingDelete(false)
-                  onDelete()
-                }}
-                onBlur={() => setConfirmingDelete(false)}
-                onMouseLeave={() => setConfirmingDelete(false)}
-                className="shrink-0 text-[11px] font-semibold"
-                style={{ color: confirmingDelete ? 'var(--clay-danger)' : 'var(--clay-faint)' }}
+                aria-label={`Delete ${label}`}
+                onClick={() => setConfirmingDelete(true)}
+                className="shrink-0"
+                style={{ color: 'var(--clay-faint)' }}
               >
-                {confirmingDelete ? 'Delete?' : <Trash2 size={13} />}
+                <Trash2 size={13} />
               </button>
             )}
           </div>
@@ -271,5 +268,14 @@ export default function TakePlayer({
         </div>
       </div>
     </div>
+
+    <ConfirmSheet
+      open={confirmingDelete}
+      title="Delete this take?"
+      body={`“${label}” will be gone for good — the recording and its audio both. This cannot be undone.`}
+      onCancel={() => setConfirmingDelete(false)}
+      onConfirm={() => { setConfirmingDelete(false); onDelete?.() }}
+    />
+    </>
   )
 }

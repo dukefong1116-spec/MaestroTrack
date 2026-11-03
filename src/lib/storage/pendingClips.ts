@@ -27,6 +27,8 @@ export interface PendingClip {
   /** The session's own date, so a clip uploaded tomorrow is still dated today. */
   date: string
   pieceName: string
+  /** What the person called this take, if they named it during the session. */
+  title?: string
   notes?: string
   category?: PracticeCategory
   userId: string
