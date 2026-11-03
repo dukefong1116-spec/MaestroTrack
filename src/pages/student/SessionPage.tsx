@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Minus } from 'lucide-react'
+import { X, Minus, Check } from 'lucide-react'
 import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { addPracticeSession } from '@/lib/firebase/practice'
 import { pickRecorderFormat, recorderOptions } from '@/lib/audio/recorderFormat'
 import { openMic, micProcessingWarning, waitForSignal, leadingSilenceSeconds } from '@/lib/audio/mic'
-import { putClip, assignSession } from '@/lib/storage/pendingClips'
+import { putClip, assignSession, deleteClip } from '@/lib/storage/pendingClips'
 import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
@@ -106,6 +106,19 @@ export default function SessionPage() {
   const [saveError, setSaveError] = useState('')
   /** Finish is a two-beat flow now: capture the length, then ask how it went. */
   const [askingConfidence, setAskingConfidence] = useState(false)
+  /**
+   * Takes the person has decided not to keep, chosen on the way out.
+   *
+   * A session used to upload every clip it had recorded, and the only way
+   * to be rid of a bad one was to let it go up and delete it afterwards.
+   * Dropped here instead: an unticked take is removed from the local
+   * queue and never leaves the device at all.
+   *
+   * A ref as well as state, because finish() reads it after several
+   * awaits and a state value captured in that closure would be stale.
+   */
+  const [discarded, setDiscarded] = useState<Set<string>>(new Set())
+  const discardedRef = useRef<Set<string>>(new Set())
   /** Held so a save retry reuses the answer rather than asking twice. */
   const answeredRef = useRef<number | null>(null)
   // The length is measured once, when Finish is tapped, and held until it
@@ -536,7 +549,16 @@ export default function SessionPage() {
     // This used to be awaited, which is why finishing a session with a
     // recording felt broken: the row above was already written, but the
     // page sat on "Saving…" until tens of megabytes had transferred.
-    const clipIds = clipsRef.current.map((c) => c.id)
+    // Dropped first, so a discarded take is gone from the queue whether
+    // or not the upload that follows ever runs.
+    const dropped = [...discardedRef.current]
+    for (const id of dropped) {
+      try { await deleteClip(id) } catch { /* already gone; nothing to undo */ }
+    }
+
+    const clipIds = clipsRef.current
+      .map((c) => c.id)
+      .filter((id) => !discardedRef.current.has(id))
     if (clipIds.length) {
       const pieceTitle = pieces.find((p) => p.id === pieceId)?.title ?? 'Practice session'
       await assignSession(clipIds, id, {
@@ -1012,6 +1034,64 @@ export default function SessionPage() {
                   </button>
                 </div>
               ))}
+
+              {/* What to keep, asked once, here — rather than uploading
+                  everything and leaving you to delete the bad takes
+                  afterwards. An unticked take never leaves the device. */}
+              {clips.length > 0 && (
+                <div className="mt-5">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+                    Keep {clips.length === 1 ? 'this take' : 'these takes'}?
+                  </p>
+                  <div className="space-y-1.5">
+                    {clips.map((c, i) => {
+                      const keep = !discarded.has(c.id)
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          aria-pressed={keep}
+                          onClick={() => {
+                            setDiscarded((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(c.id)) next.delete(c.id)
+                              else next.add(c.id)
+                              discardedRef.current = next
+                              return next
+                            })
+                          }}
+                          className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-opacity"
+                          style={{
+                            borderRadius: 'var(--clay-r-sm)',
+                            background: 'var(--clay-bg)',
+                            opacity: keep ? 1 : 0.5,
+                          }}
+                        >
+                          <span
+                            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md"
+                            style={{
+                              background: keep ? 'var(--clay-accent)' : 'transparent',
+                              border: keep ? 'none' : '1.5px solid var(--clay-faint)',
+                              color: 'var(--clay-on-accent)',
+                            }}
+                          >
+                            {keep && <Check size={13} strokeWidth={3} />}
+                          </span>
+                          <span className="min-w-0 flex-1 text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                            Take {i + 1}
+                          </span>
+                          <span
+                            className="shrink-0 text-[11.5px] tabular-nums"
+                            style={{ color: keep ? 'var(--clay-dim)' : 'var(--clay-faint)' }}
+                          >
+                            {keep ? `${Math.round(c.seconds)}s` : 'discard'}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-5 space-y-2.5">
                 {CONFIDENCE_CHOICES.map((c) => (
