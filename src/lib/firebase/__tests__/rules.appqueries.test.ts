@@ -352,6 +352,21 @@ describe("the student's own writes", () => {
     await assertSucceeds(recordings.deleteRecording('r1', 'gs://nowhere/x'))
   })
 
+  it('renameRecording — naming your own take', async () => {
+    await seed('recordings', 'r1', { userId: ANA, date: '2026-03-01', audioUrl: 'x' })
+    asAna()
+    await assertSucceeds(recordings.renameRecording('r1', 'Slow run, bar 12 clean'))
+  })
+
+  it('renameRecording — but not somebody else’s', async () => {
+    // The rule that stops this is the same one that pins userId on every
+    // other recording write; said out loud because a title is the first
+    // field a reader might assume is harmless.
+    await seed('recordings', 'r1', { userId: BEN, date: '2026-03-01', audioUrl: 'x' })
+    asAna()
+    await assertFails(recordings.renameRecording('r1', 'mine now'))
+  })
+
   it('writeSummaries — both roll-ups, as the app writes them together', async () => {
     asAna()
     await assertSucceeds(summary.writeSummaries(
