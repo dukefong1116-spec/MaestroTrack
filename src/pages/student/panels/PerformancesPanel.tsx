@@ -18,7 +18,7 @@ import Textarea from '@/components/ui/Textarea'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/common/EmptyState'
-import type { InstrumentType, PerformanceType } from '@/types'
+import type { InstrumentType, Performance, PerformanceType } from '@/types'
 
 const TYPES: PerformanceType[] = ['Competition', 'Recital', 'Audition', 'Jury', 'Masterclass']
 
@@ -40,6 +40,7 @@ export default function PerformancesPanel() {
   const { performances } = usePracticeStore()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const [open, setOpen] = useState(false)
+  const [selected, setSelected] = useState<Performance | null>(null)
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -89,7 +90,14 @@ export default function PerformancesPanel() {
                   const daysLeft = differenceInDays(parseISO(perf.date), new Date())
                   return (
                     <motion.div key={perf.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                      <div className="p-4" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelected(perf)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(perf) } }}
+                        className="cursor-pointer p-4 transition-transform active:scale-[.99]"
+                        style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
+                      >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -104,7 +112,11 @@ export default function PerformancesPanel() {
                               {perf.location && <span className="flex items-center gap-1"><MapPin size={12} />{perf.location}</span>}
                             </div>
                           </div>
-                          <button onClick={() => deletePerformance(perf.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
+                          <button
+                            aria-label={`Delete ${perf.eventName}`}
+                            onClick={(e) => { e.stopPropagation(); void deletePerformance(perf.id) }}
+                            className="text-[var(--clay-dim)] transition-colors hover:text-[var(--clay-danger)]"
+                          >
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -119,10 +131,18 @@ export default function PerformancesPanel() {
                               <div className="h-full rounded-full transition-all" style={{ width: `${perf.preparationPercentage}%`, backgroundColor: theme.primary }} />
                             </div>
                             <div className="flex gap-1">
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) })} className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]">
+                              <button
+                                aria-label="More prepared"
+                                onClick={(e) => { e.stopPropagation(); void updatePerformance(perf.id, { preparationPercentage: Math.min(100, perf.preparationPercentage + 10) }) }}
+                                className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]"
+                              >
                                 <ChevronUp size={14} />
                               </button>
-                              <button onClick={() => updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) })} className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]">
+                              <button
+                                aria-label="Less prepared"
+                                onClick={(e) => { e.stopPropagation(); void updatePerformance(perf.id, { preparationPercentage: Math.max(0, perf.preparationPercentage - 10) }) }}
+                                className="text-[var(--clay-dim)] hover:text-[var(--clay-ink)]"
+                              >
                                 <ChevronDown size={14} />
                               </button>
                             </div>
@@ -143,7 +163,15 @@ export default function PerformancesPanel() {
               <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Past</p>
               <div className="space-y-2">
                 {past.map((perf) => (
-                  <div key={perf.id} className="p-4 opacity-70" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+                  <div
+                    key={perf.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelected(perf)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(perf) } }}
+                    className="cursor-pointer p-4 opacity-70 transition-transform active:scale-[.99]"
+                    style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
+                  >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">
                         <Badge variant={typeColors[perf.type]}>{perf.type}</Badge>
@@ -152,7 +180,11 @@ export default function PerformancesPanel() {
                           <p className="text-xs text-[var(--clay-dim)]">{format(parseISO(perf.date), 'MMM d, yyyy')}</p>
                         </div>
                       </div>
-                      <button onClick={() => deletePerformance(perf.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors shrink-0">
+                      <button
+                        aria-label={`Delete ${perf.eventName}`}
+                        onClick={(e) => { e.stopPropagation(); void deletePerformance(perf.id) }}
+                        className="shrink-0 text-[var(--clay-dim)] transition-colors hover:text-[var(--clay-danger)]"
+                      >
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -163,6 +195,86 @@ export default function PerformancesPanel() {
           )}
         </div>
       )}
+
+      {/* Everything about one date, in one place.
+          A row used to be read-only furniture: the location and notes you
+          typed in on the way in were shown in six-point italic or not at
+          all, and a past performance showed only its name and date. */}
+      {selected && (() => {
+        const days = differenceInDays(parseISO(selected.date), new Date())
+        const past = days < 0
+        return (
+          <Modal open onClose={() => setSelected(null)} title={selected.eventName} size="sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={typeColors[selected.type]}>{selected.type}</Badge>
+              <Badge variant={past ? 'info' : days <= 7 ? 'danger' : days <= 30 ? 'warning' : 'info'}>
+                {past
+                  ? `${Math.abs(days)} ${Math.abs(days) === 1 ? 'day' : 'days'} ago`
+                  : days === 0 ? 'Today!' : `${days} ${days === 1 ? 'day' : 'days'} away`}
+              </Badge>
+            </div>
+
+            <div className="mt-4 space-y-2.5 text-sm">
+              <p className="flex items-center gap-2" style={{ color: 'var(--clay-ink)' }}>
+                <Calendar size={14} style={{ color: 'var(--clay-dim)' }} />
+                {format(parseISO(selected.date), 'EEEE, d MMMM yyyy')}
+              </p>
+              {selected.location && (
+                <p className="flex items-center gap-2" style={{ color: 'var(--clay-ink)' }}>
+                  <MapPin size={14} style={{ color: 'var(--clay-dim)' }} />
+                  {selected.location}
+                </p>
+              )}
+            </div>
+
+            {selected.notes && (
+              <div className="mt-5">
+                <p className="mb-1.5 text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
+                  Your notes
+                </p>
+                <p className="whitespace-pre-line text-sm" style={{ color: 'var(--clay-ink)' }}>
+                  {selected.notes}
+                </p>
+              </div>
+            )}
+
+            {/* A slider, because ten-percent arrows take ten taps to get
+                from nothing to ready. */}
+            <div className="mt-5">
+              <div className="mb-2 flex items-baseline justify-between text-xs" style={{ color: 'var(--clay-dim)' }}>
+                <span className="font-bold uppercase tracking-widest">How prepared</span>
+                <span className="tabular-nums">{selected.preparationPercentage}%</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={selected.preparationPercentage}
+                aria-label="How prepared you are"
+                className="w-full accent-[var(--clay-accent)]"
+                onChange={(e) => {
+                  const next = Number(e.target.value)
+                  // Optimistic: the thumb has to follow your finger, and
+                  // the store catches up from the subscription.
+                  setSelected({ ...selected, preparationPercentage: next })
+                  void updatePerformance(selected.id, { preparationPercentage: next })
+                }}
+              />
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setSelected(null)}>Close</Button>
+              <Button
+                variant="danger"
+                onClick={() => { void deletePerformance(selected.id); setSelected(null) }}
+              >
+                <Trash2 size={15} /> Delete
+              </Button>
+            </div>
+          </Modal>
+        )
+      })()}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Add Performance">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
