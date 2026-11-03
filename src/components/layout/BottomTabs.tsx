@@ -17,12 +17,14 @@ import { homeFor, navFor, settingsFor, type NavItem } from './nav'
  * Hidden from `lg` up, where the sidebar takes over again — the desktop
  * layout is untouched by any of this.
  */
-function TabIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
+function TabIcon({ icon, active, raised }: { icon: NavItem['icon']; active: boolean; raised?: boolean }) {
   if (typeof icon === 'string') {
-    return <Sticker name={icon} size={21} tone={active ? 'accent' : 'ink'} className="shrink-0" />
+    // On the raised tab the ground is the accent itself, so the sticker's
+    // accent tone would be colour on colour.
+    return <Sticker name={icon} size={raised ? 24 : 21} tone={raised ? 'onAccent' : active ? 'accent' : 'ink'} className="shrink-0" />
   }
   const Icon = icon
-  return <Icon size={21} className="shrink-0" />
+  return <Icon size={raised ? 24 : 21} className="shrink-0" />
 }
 
 export default function BottomTabs() {
@@ -31,15 +33,34 @@ export default function BottomTabs() {
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
 
-  const tabs: NavItem[] = [
-    ...navFor(role),
-    { to: settingsFor(role), icon: Settings, label: 'Settings' },
-  ]
+  const home = homeFor(role)
+
+  /**
+   * Home sits in the middle, raised.
+   *
+   * navFor lists it first, which is right for the sidebar — a vertical
+   * list reads top down. A thumb does not: the centre of the bar is the
+   * easiest place on the screen to reach, and the one screen you return
+   * to between everything else belongs there rather than in the corner.
+   *
+   * Only the order shown here changes; navFor is untouched, so the
+   * sidebar still opens with it.
+   */
+  const rest = navFor(role).filter((t) => t.to !== home)
+  const homeTab = navFor(role).find((t) => t.to === home)
+  const settingsTab: NavItem = { to: settingsFor(role), icon: Settings, label: 'Settings' }
+  const after = [...rest, settingsTab]
+  const middle = Math.floor((after.length + 1) / 2)
+  const tabs: NavItem[] = homeTab
+    ? [...after.slice(0, middle), homeTab, ...after.slice(middle)]
+    : after
 
   return (
     <nav
       aria-label="Main"
-      className="grid shrink-0 grid-cols-5 lg:hidden"
+      // Not clipped: the raised tab breaks the top edge of the bar on
+      // purpose, which is the whole point of it.
+      className="relative grid shrink-0 grid-cols-5 lg:hidden"
       style={{
         background: 'var(--clay-surface)',
         borderTop: '1px solid var(--clay-line)',
@@ -47,36 +68,61 @@ export default function BottomTabs() {
         // without this the last row of labels lands underneath it.
         paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
         paddingTop: 7,
+        overflow: 'visible',
       }}
     >
-      {tabs.map(({ to, icon, label, short, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className={({ isActive }) => cn(
-            'relative flex min-h-[48px] flex-col items-center justify-center gap-[3px] px-1',
-            isActive ? 'font-semibold' : 'font-medium'
-          )}
-          style={({ isActive }) => ({ color: isActive ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' })}
-        >
-          {({ isActive }) => (
-            <>
-              <TabIcon icon={icon} active={isActive} />
-              <span className="text-[10px] leading-none tracking-[-.1px]">{short ?? label}</span>
-              {/* Same rule as the sidebar: a dot, not a number. The count
-                  belongs to the bell, and two counts disagreeing is worse
-                  than one. */}
-              {unread > 0 && to === homeFor(role) && (
+      {tabs.map(({ to, icon, label, short, end }) => {
+        const raised = to === home
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) => cn(
+              'relative flex min-h-[48px] flex-col items-center px-1',
+              raised ? 'justify-end' : 'justify-center gap-[3px]',
+              isActive ? 'font-semibold' : 'font-medium'
+            )}
+            style={({ isActive }) => ({
+              color: isActive && !raised ? 'var(--clay-accent-ink)' : raised ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+            })}
+          >
+            {({ isActive }) => raised ? (
+              <>
+                {/* Lifted clear of the bar and given a ring of the page's
+                    own ground, so it reads as cut out of the bar rather
+                    than sitting on top of it. */}
                 <span
-                  className="absolute right-[calc(50%-14px)] top-1.5 h-[7px] w-[7px] rounded-full"
-                  style={{ background: 'var(--clay-accent)' }}
-                />
-              )}
-            </>
-          )}
-        </NavLink>
-      ))}
+                  className="absolute left-1/2 flex h-[54px] w-[54px] -translate-x-1/2 items-center justify-center rounded-full transition-transform active:scale-95"
+                  style={{
+                    top: -22,
+                    background: 'var(--clay-accent)',
+                    color: 'var(--clay-on-accent)',
+                    boxShadow: 'var(--clay-accent-shadow)',
+                    border: '4px solid var(--clay-bg)',
+                  }}
+                >
+                  <TabIcon icon={icon} active={isActive} raised />
+                  {unread > 0 && (
+                    <span
+                      className="absolute right-0 top-0 h-[10px] w-[10px] rounded-full"
+                      style={{ background: 'var(--clay-ink)', border: '2px solid var(--clay-accent)' }}
+                    />
+                  )}
+                </span>
+                <span className="mt-[30px] text-[10px] leading-none tracking-[-.1px]">
+                  {short ?? label}
+                </span>
+              </>
+            ) : (
+              <>
+                <TabIcon icon={icon} active={isActive} />
+                <span className="text-[10px] leading-none tracking-[-.1px]">{short ?? label}</span>
+              </>
+            )}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
