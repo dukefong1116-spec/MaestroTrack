@@ -141,6 +141,15 @@ export interface Recording {
   id: string
   userId: string
   pieceId?: string
+  /**
+   * What you called this take.
+   *
+   * Separate from pieceName, which means "what piece this was" and is
+   * real data the Research page groups on. Overloading that field to
+   * carry a nickname would corrupt it. Absent on every take made before
+   * naming existed, hence optional and hence the fallback at display.
+   */
+  title?: string
   pieceName: string
   date: string
   audioUrl: string

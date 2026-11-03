@@ -183,3 +183,15 @@ export function subscribeRecordings(
     callback(sorted)
   }, onSnapshotError('recordings'))
 }
+
+/**
+ * Renames a take.
+ *
+ * No rules change was needed: the recordings rule already lets an owner
+ * update their own document and pins userId, so a title rides along with
+ * everything else. Trimmed and capped here because the value is drawn in
+ * a row that has to stay one line.
+ */
+export async function renameRecording(id: string, title: string): Promise<void> {
+  await updateDoc(doc(db, COL, id), { title: title.trim().slice(0, 80) })
+}

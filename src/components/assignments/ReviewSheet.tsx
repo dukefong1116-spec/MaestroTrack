@@ -91,7 +91,7 @@ export default function ReviewSheet({
             </p>
             <div className="space-y-2.5">
               {attached.map((r, i) => (
-                <TakePlayer key={r.id} src={r.audioUrl} label={`Take ${i + 1}`} storedDuration={r.duration} />
+                <TakePlayer key={r.id} src={r.audioUrl} label={r.title?.trim() || `Take ${i + 1}`} storedDuration={r.duration} />
               ))}
             </div>
           </>

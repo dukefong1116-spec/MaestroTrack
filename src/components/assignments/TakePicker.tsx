@@ -67,7 +67,7 @@ export default function TakePicker({
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                {r.pieceName}
+                {r.title?.trim() || r.pieceName}
               </span>
               <span className="block text-[11px]" style={{ color: 'var(--clay-dim)' }}>
                 {r.date ? format(parseISO(r.date.substring(0, 10)), 'MMM d') : ''}

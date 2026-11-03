@@ -22,6 +22,7 @@ import { useAssignments } from '@/hooks/useAssignments'
 import { isDailyToday } from '@/lib/utils/assignments'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
+import { deleteRecording, renameRecording } from '@/lib/firebase/recordings'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
@@ -134,8 +135,10 @@ function SessionDetailSheet({
                 <TakePlayer
                   key={r.id}
                   src={r.audioUrl}
-                  label={`Take ${i + 1}`}
+                  label={r.title?.trim() || `Take ${i + 1}`}
                   storedDuration={r.duration}
+                  onRename={(title) => { void renameRecording(r.id, title) }}
+                  onDelete={() => { void deleteRecording(r.id, r.audioUrl) }}
                 />
               ))}
           </div>

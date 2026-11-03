@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Play, Pause } from 'lucide-react'
+import { Pause, Pencil, Play, Trash2 } from 'lucide-react'
 
 /**
  * A practice take.
@@ -25,12 +25,20 @@ function clock(seconds: number): string {
 }
 
 export default function TakePlayer({
-  src, label, storedDuration,
+  src, label, storedDuration, onRename, onDelete,
 }: {
   src: string
   label: string
   /** Length measured while recording — shown before the file is fetched. */
   storedDuration?: number
+  /**
+   * Given only where the take is the viewer's own. Not everywhere this
+   * appears is: a teacher reads a student's takes in the review sheet,
+   * and a preview of something not yet uploaded has no document behind
+   * it to rename or delete.
+   */
+  onRename?: (title: string) => void
+  onDelete?: () => void
 }) {
   const ref = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
@@ -40,6 +48,33 @@ export default function TakePlayer({
   const [error, setError] = useState(false)
   /** The file arrived but this browser cannot decode it. */
   const [undecodable, setUndecodable] = useState(false)
+
+  /**
+   * Renaming happens in place.
+   *
+   * A take used to be called "Take 1", "Take 2" — its position in the
+   * list and nothing else, so a row told you nothing about what was on
+   * it. Editing here rather than behind a menu, because the name you
+   * want usually occurs to you while you are listening to it.
+   */
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(label)
+
+  /**
+   * Deleting asks once, in place.
+   *
+   * A take is not recoverable — the document and the audio both go — and
+   * the control sits a thumb's width from Play. A second tap on the same
+   * spot confirms; moving away cancels.
+   */
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  function commitName() {
+    setEditing(false)
+    const next = draft.trim()
+    if (next && next !== label) onRename?.(next)
+    else setDraft(label)
+  }
 
   const total = loaded ?? storedDuration ?? 0
   const pct = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0
@@ -149,14 +184,60 @@ export default function TakePlayer({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="truncate text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-              {label}
-            </span>
+            {editing ? (
+              <input
+                autoFocus
+                value={draft}
+                aria-label="Name this take"
+                maxLength={80}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitName}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitName() }
+                  if (e.key === 'Escape') { setDraft(label); setEditing(false) }
+                }}
+                className="min-w-0 flex-1 bg-transparent text-[12.5px] font-semibold outline-none"
+                style={{ color: 'var(--clay-ink)', borderBottom: '1px solid var(--clay-accent)' }}
+              />
+            ) : onRename ? (
+              <button
+                type="button"
+                onClick={() => { setDraft(label); setEditing(true) }}
+                className="flex min-w-0 items-center gap-1.5 text-left"
+                title="Rename this take"
+              >
+                <span className="truncate text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                  {label}
+                </span>
+                <Pencil size={11} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
+              </button>
+            ) : (
+              <span className="truncate text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+                {label}
+              </span>
+            )}
             <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
               {error
                 ? undecodable ? "can't play here" : 'unavailable'
                 : playing || elapsed > 0 ? `${clock(elapsed)} / ${clock(total)}` : clock(total)}
             </span>
+            {onDelete && (
+              <button
+                type="button"
+                aria-label={confirmingDelete ? `Delete ${label} for good` : `Delete ${label}`}
+                onClick={() => {
+                  if (!confirmingDelete) { setConfirmingDelete(true); return }
+                  setConfirmingDelete(false)
+                  onDelete()
+                }}
+                onBlur={() => setConfirmingDelete(false)}
+                onMouseLeave={() => setConfirmingDelete(false)}
+                className="shrink-0 text-[11px] font-semibold"
+                style={{ color: confirmingDelete ? 'var(--clay-danger)' : 'var(--clay-faint)' }}
+              >
+                {confirmingDelete ? 'Delete?' : <Trash2 size={13} />}
+              </button>
+            )}
           </div>
 
           {/* A take this browser cannot decode is not a lost take. Offer it
