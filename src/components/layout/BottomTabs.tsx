@@ -78,6 +78,7 @@ export default function BottomTabs() {
             key={to}
             to={to}
             end={end}
+            data-coach={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
             className={({ isActive }) => cn(
               'relative flex min-h-[48px] flex-col items-center px-1',
               raised ? 'justify-end' : 'justify-center gap-[3px]',

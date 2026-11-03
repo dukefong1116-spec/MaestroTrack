@@ -1,139 +1,90 @@
-import type { Piece, PracticeSession, Recording, UserProfile } from '@/types'
+import type { UserProfile } from '@/types'
 
 /**
- * The first five minutes, as five things to do rather than five things to
- * read.
+ * The guided first look.
  *
- * A step completes because the person did the thing, not because they
- * ticked a box — the same derived-not-stored rule the badges follow. Four
- * of the five leave evidence in the data, so they are computed from it and
- * cannot drift out of step with reality. Only "looked at Progress" leaves
- * nothing behind, so only that one is recorded, in profile.onboarding.seen.
+ * A new account lands on Today and is shown round it: the screen shades,
+ * one thing at a time is left lit, and a line explains what it is. Six
+ * steps, all on this one screen, because every tab is reachable from the
+ * bar at the bottom — so the tour never navigates, never loses its place
+ * on a reload, and never has to put itself back together on a page it did
+ * not open.
  *
- * The order follows the real journey. Recording used to be a step of its
- * own, which meant finishing a session, coming back here, and starting a
- * second one purely to press Record — so it is part of the first session
- * now, taught by the strip inside the session screen.
+ * Targets are found by `data-coach` rather than by ref, so a step can
+ * point at something several components away without threading a ref
+ * through all of them. A step whose target is not on the page is skipped
+ * rather than left pointing at nothing.
  */
 
-export type StepId = 'session' | 'logPast' | 'piece' | 'goal' | 'progress'
+export type TourStepId =
+  | 'week' | 'streak' | 'start' | 'practice' | 'library' | 'progress'
 
-/** Steps whose completion the app has to be told about. */
-export const RECORDED_STEPS: StepId[] = ['progress']
-
-export interface OnboardingStep {
-  id: StepId
-  /** What the card says. One sentence, and it says why. */
-  say: string
-  /** The button. */
-  action: string
-  to: string
-  done: (ctx: OnboardingContext) => boolean
+export interface TourStep {
+  id: TourStepId
+  /** Matched against `[data-coach="…"]`. */
+  target: string
+  title: string
+  body: string
+  /** Where the bubble sits relative to the lit element. */
+  place: 'above' | 'below'
 }
 
-export interface OnboardingContext {
-  sessions: PracticeSession[]
-  pieces: Piece[]
-  recordings: Recording[]
-  profile: UserProfile | null | undefined
-  seen: string[]
-  /** yyyy-MM-dd. Passed in rather than read, so the tests can fix it. */
-  today: string
-}
-
-/** The goal everybody starts with; changing it is what the step asks for. */
-export const DEFAULT_WEEKLY_GOAL = 300
-
-export const STEPS: OnboardingStep[] = [
+export const TOUR: TourStep[] = [
   {
-    id: 'session',
-    say: 'Press start — the timer runs while you play.',
-    action: 'Start a session',
-    to: '/student/session',
-    done: (c) => c.sessions.length > 0,
+    id: 'week',
+    target: 'week-ring',
+    title: 'This is your week',
+    body: 'It fills as you log practice, and resets every Monday. The number under it is how far you have to go.',
+    place: 'below',
   },
   {
-    id: 'logPast',
-    say: 'Practised before you found this? Log it after the fact.',
-    action: 'Log a past session',
-    to: '/student/practice',
-    // Dated before today, which is what "past" means. Logging today's
-    // practice through the same form is fine but teaches nothing about
-    // back-dating, which is the part people do not find on their own.
-    done: (c) => c.sessions.some((s) => dayOf(s.date) < c.today),
+    id: 'streak',
+    target: 'week-strip',
+    title: 'Seven days at a glance',
+    body: 'Each one fills in when you practise. Miss a day and the streak goes — though you get a freeze or two to spend.',
+    place: 'below',
   },
   {
-    id: 'piece',
-    say: 'Name what you’re working on, so your minutes attach to a piece.',
-    action: 'Add a piece',
-    to: '/student/library',
-    done: (c) => c.pieces.length > 0,
+    id: 'start',
+    target: 'start-practising',
+    title: 'Start here',
+    body: 'The timer runs while you play. Metronome, tuner and recording are all inside — you do not need to set anything up first.',
+    place: 'above',
   },
   {
-    id: 'goal',
-    say: `${DEFAULT_WEEKLY_GOAL} minutes a week is just a default. Make it yours.`,
-    action: 'Set your goal',
-    to: '/student/progress',
-    // A goal nobody has touched still reads as the default, so changing it
-    // is the evidence. Someone who genuinely wants 300 can tap through to
-    // Progress and the step stays open — which is the honest outcome, and
-    // the list can be dismissed.
-    done: (c) => (c.profile?.weeklyGoalMinutes ?? DEFAULT_WEEKLY_GOAL) !== DEFAULT_WEEKLY_GOAL,
+    id: 'practice',
+    target: 'tab-practice',
+    title: 'Practice',
+    body: 'Everything you have played, newest first. If you practised before you found this app, you can log it after the fact here.',
+    place: 'above',
+  },
+  {
+    id: 'library',
+    target: 'tab-library',
+    title: 'Library',
+    body: 'The pieces you are working on, performances you are preparing for, and anything your teacher has set you.',
+    place: 'above',
   },
   {
     id: 'progress',
-    say: 'Have a look at Progress — the badges have been tracking you already.',
-    action: 'See Progress',
-    to: '/student/progress',
-    done: (c) => c.seen.includes('progress'),
+    target: 'tab-progress',
+    title: 'Progress',
+    body: 'Badges, patterns in how you practise, and every day you have ever logged. Worth a look once you have a week behind you.',
+    place: 'above',
   },
 ]
 
 /**
- * A session's date is stored as an ISO instant on newer rows and as a bare
- * yyyy-MM-dd on older ones. Both compare correctly once cut to ten
- * characters, which is why this does not parse.
- */
-function dayOf(date: string): string {
-  return (date ?? '').slice(0, 10)
-}
-
-export interface OnboardingState {
-  steps: { step: OnboardingStep; done: boolean }[]
-  /** The first unfinished step, or null when there are none left. */
-  next: OnboardingStep | null
-  doneCount: number
-  total: number
-  complete: boolean
-  /** Offered once inside the first session, and ticked by recording. */
-  hasRecorded: boolean
-}
-
-export function onboardingState(ctx: OnboardingContext): OnboardingState {
-  const steps = STEPS.map((step) => ({ step, done: step.done(ctx) }))
-  const doneCount = steps.filter((s) => s.done).length
-  return {
-    steps,
-    next: steps.find((s) => !s.done)?.step ?? null,
-    doneCount,
-    total: steps.length,
-    complete: doneCount === steps.length,
-    hasRecorded: ctx.recordings.length > 0,
-  }
-}
-
-/**
- * Whether to show the card at all.
+ * Whether to show somebody round.
  *
- * Hidden once dismissed, once finished, and for anyone who was already
- * using the app before this existed — an account with a month of practice
- * behind it does not need telling to log its first session. The cutoff is
- * their own data rather than a date, so it needs no migration.
+ * Offered once, to an account that has not been through it and has not
+ * waved it away. Nothing about their data decides it: a tour of what the
+ * screen means is just as useful to someone who logged a session before
+ * reading anything.
  */
-export function shouldCoach(ctx: OnboardingContext): boolean {
-  if (ctx.profile?.onboarding?.dismissed) return false
-  if (ctx.profile?.onboarding?.completedAt) return false
-  // Four sessions in is past the point where a five-step list helps.
-  if (ctx.sessions.length > 3) return false
-  return !onboardingState(ctx).complete
+export function shouldTour(profile: UserProfile | null | undefined): boolean {
+  if (!profile) return false
+  if (profile.role === 'teacher') return false
+  const ob = profile.onboarding
+  return !ob?.dismissed && !ob?.completedAt
 }

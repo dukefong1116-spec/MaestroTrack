@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Mail, FileText, Shield, HelpCircle, ChevronDown, RotateCcw } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { useAuthStore } from '@/stores/authStore'
 import { useOnboarding } from '@/hooks/useOnboarding'
-import { updateUserProfile } from '@/lib/firebase/teacher'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 import licenses from '@/generated/licenses.json'
@@ -65,7 +63,6 @@ function NotWrittenYet({ what }: { what: string }) {
 
 export default function AboutPage() {
   const { profile } = useAuth()
-  const setProfile = useAuthStore((st) => st.setProfile)
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const isTeacher = profile?.role === 'teacher'
 
@@ -76,35 +73,9 @@ export default function AboutPage() {
    * somebody asking for it again wants it however it went away. The steps
    * themselves stay derived, so anything already done stays ticked.
    */
-  const [coachBusy, setCoachBusy] = useState(false)
   const [coachReset, setCoachReset] = useState(false)
-  const { complete: coachComplete } = useOnboarding()
+  const { replay } = useOnboarding()
 
-  async function replayCoach() {
-    const uid = profile?.uid
-    if (!uid || coachBusy) return
-    setCoachBusy(true)
-    // Every flag written back explicitly, not just left out.
-    // updateUserProfile is a setDoc with merge:true, and a merge does not
-    // remove keys it was not given — omitting `dismissed` left it set, so
-    // the list stayed hidden and the button did nothing.
-    const next = {
-      seen: profile?.onboarding?.seen ?? [],
-      dismissed: false,
-      celebrated: false,
-      completedAt: '',
-    }
-    try {
-      await updateUserProfile(uid, { onboarding: next })
-      const latest = useAuthStore.getState().profile
-      if (latest) setProfile({ ...latest, onboarding: next })
-      setCoachReset(true)
-    } catch {
-      // Left as it was; the button can be pressed again.
-    } finally {
-      setCoachBusy(false)
-    }
-  }
   const [showLicenses, setShowLicenses] = useState(false)
 
   return (
@@ -148,18 +119,16 @@ export default function AboutPage() {
         {!isTeacher && (
           <Block>
             <Legend
-              title="Getting started"
-              hint="The five-step list that appears on Today for a new account."
+              title="The quick look round"
+              hint="The six-step walk through Today that a new account is shown."
             />
-            {coachComplete ? (
-              <p className="text-sm" style={{ color: 'var(--clay-dim)' }}>
-                You've done all five. Nothing left to show.
-              </p>
-            ) : (
-              <Button variant="outline" size="sm" onClick={replayCoach} disabled={coachBusy}>
-                <RotateCcw size={15} /> {coachReset ? 'Back on Today' : 'Show it again'}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { replay(); setCoachReset(true) }}
+            >
+              <RotateCcw size={15} /> {coachReset ? 'Waiting on Today' : 'Show me again'}
+            </Button>
           </Block>
         )}
 

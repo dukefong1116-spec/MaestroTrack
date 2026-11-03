@@ -1,6 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useOnboarding } from '@/hooks/useOnboarding'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getHeatmapData } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
@@ -23,15 +22,6 @@ export default function ProgressPage() {
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
 
-  /**
-   * The one onboarding step the data cannot show.
-   *
-   * Looking at a page leaves nothing behind, so it is recorded — and
-   * recorded on arrival rather than after a timer, because the step asks
-   * you to have a look, and you have.
-   */
-  const { markSeen } = useOnboarding()
-  useEffect(() => { markSeen('progress') }, [markSeen])
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const heatmap = useMemo(() => getHeatmapData(sessions), [sessions])

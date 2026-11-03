@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import PinnedBadges from '@/components/badges/PinnedBadges'
-import CoachCard from '@/components/onboarding/CoachCard'
+import Spotlight from '@/components/onboarding/Spotlight'
+import { useOnboarding } from '@/hooks/useOnboarding'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -77,6 +78,8 @@ export default function StudentDashboard() {
       })[0]
     : null
 
+  const { show: showTour, finish: finishTour } = useOnboarding()
+
   const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
   const minutesLeft = Math.max(0, weeklyGoal - summary.totalMinutesThisWeek)
   // Days left in the week, today included — startOfWeek is Sunday, so
@@ -115,17 +118,10 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Above the week, because on a first visit the ring reads 0% and has
-          nothing to say yet. It brings its own panel and renders nothing at
-          all once the list is finished or dismissed — asking here as well
-          would mean two copies of the hook disagreeing about whether the
-          moment had already been had. */}
-      <CoachCard />
-
       {/* The week, made the subject: it is the question the page answers. */}
       <Panel>
         <Block first>
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center" data-coach="week-ring">
             <ProgressRing
               percentage={summary.weeklyGoalPercentage}
               size={178}
@@ -152,7 +148,9 @@ export default function StudentDashboard() {
 
         {/* The seven days, labelled, so a gap in them is legible. */}
         <Block>
-          <WeekStrip days={game.week} className="justify-between" />
+          <div data-coach="week-strip">
+            <WeekStrip days={game.week} className="justify-between" />
+          </div>
         </Block>
 
         {/* Streak and the badges you pinned share one line. */}
@@ -182,6 +180,7 @@ export default function StudentDashboard() {
         <Block>
           <button
             type="button"
+            data-coach="start-practising"
             onClick={() => navigate('/student/session')}
             className="flex min-h-[54px] w-full items-center justify-center gap-2.5 text-[16.5px] font-bold transition-transform active:scale-[.99]"
             style={{
@@ -256,6 +255,11 @@ export default function StudentDashboard() {
           </Block>
         </Panel>
       )}
+
+      {/* Mounted here rather than in the layout: every step points at
+          something on this screen or at the bar under it, so the tour
+          only exists where it has something to point at. */}
+      {showTour && <Spotlight onDone={finishTour} />}
 
       <SubmitSheet assignment={opened} open={!!opened} onClose={() => setOpened(null)} />
 
