@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import PinnedBadges from '@/components/badges/PinnedBadges'
+import CoachCard from '@/components/onboarding/CoachCard'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -113,6 +114,13 @@ export default function StudentDashboard() {
           <NotificationBell floating />
         </div>
       </div>
+
+      {/* Above the week, because on a first visit the ring reads 0% and has
+          nothing to say yet. It brings its own panel and renders nothing at
+          all once the list is finished or dismissed — asking here as well
+          would mean two copies of the hook disagreeing about whether the
+          moment had already been had. */}
+      <CoachCard />
 
       {/* The week, made the subject: it is the question the page answers. */}
       <Panel>

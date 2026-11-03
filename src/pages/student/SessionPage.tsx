@@ -9,6 +9,10 @@ import { addPracticeSession } from '@/lib/firebase/practice'
 import { pickRecorderFormat, recorderOptions } from '@/lib/audio/recorderFormat'
 import { openMic, micProcessingWarning, waitForSignal, leadingSilenceSeconds } from '@/lib/audio/mic'
 import { putClip, assignSession, deleteClip } from '@/lib/storage/pendingClips'
+import { addPiece } from '@/lib/firebase/pieces'
+import Modal from '@/components/ui/Modal'
+import Input from '@/components/ui/Input'
+import Button from '@/components/ui/Button'
 import { useUploadStore } from '@/stores/uploadStore'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
@@ -16,6 +20,7 @@ import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import SessionCoach, { type CoachTool } from '@/components/onboarding/SessionCoach'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
 import { computeStreak } from '@/lib/utils/analytics'
@@ -23,9 +28,12 @@ import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import DailyToday from '@/components/assignments/DailyToday'
 import { useAssignments } from '@/hooks/useAssignments'
 import { isDaily, awaitingStudent, sessionCounts } from '@/lib/utils/assignments'
-import type { InstrumentType, PracticeSession, PracticeCategory } from '@/types'
+import type { InstrumentType, PracticeCategory, PracticeSession } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
+
+/** Sentinel for the dropdown's own "add one" row. */
+const NEW_PIECE = '__new__'
 type Clip = {
   /** Also the IndexedDB key, so the durable copy and this one stay paired. */
   id: string
@@ -67,12 +75,67 @@ export default function SessionPage() {
   const navigate = useNavigate()
   const { profile, user } = useAuth()
   const {
-    pieces, addSession, timerRunning, timerStartedAt, timerAccumulatedSec,
+    pieces, addSession, addPiece: addPieceToStore,
+    timerRunning, timerStartedAt, timerAccumulatedSec,
     startTimer, pauseTimer, stopTimer, resetTimer,
   } = usePracticeStore()
   const sessions = usePracticeStore((s) => s.sessions)
 
+  /** Their own history decides this, so nothing has to be stored. */
+  const firstEver = sessions.length === 0
+
+  /** Adding a piece without leaving the session. */
+  const [addingPiece, setAddingPiece] = useState(false)
+  const [newPieceTitle, setNewPieceTitle] = useState('')
+  const [addingBusy, setAddingBusy] = useState(false)
+
+  async function createPiece() {
+    const uid = profile?.uid ?? user?.uid
+    const title = newPieceTitle.trim()
+    if (!uid || !title || addingBusy) return
+    setAddingBusy(true)
+    try {
+      // The same shape PiecesPanel writes, field for field. The cast this
+      // used to carry hid the fact that it was missing two required ones.
+      const pieceData = {
+        title,
+        difficulty: 3,
+        status: 'active' as const,
+        totalMinutes: 0,
+        sessionCount: 0,
+        completionPercentage: 0,
+        confidenceHistory: [],
+        startedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      const id = await addPiece(uid, pieceData)
+      // Into the store as well as Firestore, so the dropdown has it before
+      // the subscription catches up.
+      addPieceToStore({ id, userId: uid, ...pieceData })
+      // Selected straight away: adding one mid-session means you are
+      // playing it now.
+      setPieceId(id)
+      setAddingPiece(false)
+      setNewPieceTitle('')
+    } catch {
+      // Left open with the text still in it, so nothing is retyped.
+    } finally {
+      setAddingBusy(false)
+    }
+  }
+
   const [tool, setTool] = useState<Tool>(null)
+
+  /**
+   * Teaching the tools where they live.
+   *
+   * Only on a first session — `firstEver` is the person's own history, so
+   * no flag has to be stored and nobody who has been using the app gets
+   * coached. `coachUsed` advances the line when a tool is opened, so it
+   * reacts to what you did rather than counting Next taps.
+   */
+  const [coachUsed, setCoachUsed] = useState<CoachTool[]>([])
+  const [coachSkipped, setCoachSkipped] = useState(false)
   const [thoughts, setThoughts] = useState('')
   const [pieceId, setPieceId] = useState('')
   // Started from a scoped daily assignment, the category comes with it —
@@ -457,6 +520,9 @@ export default function SessionPage() {
 
   /* ── tool switching ────────────────────────────────────── */
   function pickTool(next: Tool) {
+    // Opening one is what moves the line on.
+    setCoachUsed((u) => (next && !u.includes(next as CoachTool) ? [...u, next as CoachTool] : u))
+
     const closing = tool === next
     const target = closing ? null : next
     if (tool === 'tuner' && target !== 'tuner') stopTuner()
@@ -657,7 +723,14 @@ export default function SessionPage() {
 
           <select
             value={pieceId}
-            onChange={(e) => setPieceId(e.target.value)}
+            onChange={(e) => {
+              // The dropdown listed existing pieces only, so a new account
+              // opened it to "What are you working on?" and nothing at all
+              // — a dead end you could only leave by abandoning the
+              // session, adding a piece in Library, and coming back.
+              if (e.target.value === NEW_PIECE) { setAddingPiece(true); return }
+              setPieceId(e.target.value)
+            }}
             className="min-w-0 flex-1 cursor-pointer truncate px-4 py-2.5 text-sm font-semibold outline-none"
             style={{
               ...surface,
@@ -671,6 +744,7 @@ export default function SessionPage() {
           >
             <option value="">What are you working on?</option>
             {activePieces.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            <option value={NEW_PIECE}>+ New piece…</option>
           </select>
 
           <button
@@ -749,6 +823,10 @@ export default function SessionPage() {
             </span>
           </motion.button>
         </div>
+
+        {firstEver && !coachSkipped && (
+          <SessionCoach used={coachUsed} onSkip={() => setCoachSkipped(true)} />
+        )}
 
         {/* tool dock */}
         <div className="mb-4 grid grid-cols-3 gap-3">
@@ -1228,6 +1306,28 @@ export default function SessionPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Asked here rather than sending you to Library: the whole point
+          is not to leave a running session to answer it. */}
+      <Modal open={addingPiece} onClose={() => setAddingPiece(false)} title="What are you playing?" size="sm">
+        <Input
+          label="Piece"
+          placeholder="Ballade No. 1"
+          value={newPieceTitle}
+          autoFocus
+          onChange={(e) => setNewPieceTitle(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void createPiece() } }}
+          hint="You can add the composer and a target date later, in Library."
+        />
+        <div className="mt-5 flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => setAddingPiece(false)}>
+            Cancel
+          </Button>
+          <Button className="flex-1" loading={addingBusy} disabled={!newPieceTitle.trim()} onClick={() => void createPiece()}>
+            Add it
+          </Button>
+        </div>
+      </Modal>
 
       <ConfirmSheet
         open={!!deletingClip}

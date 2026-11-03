@@ -5,6 +5,7 @@ import Sticker from '@/components/stickers/Sticker'
 import BadgeArt from '@/components/badges/BadgeArt'
 import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/authStore'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
 import type { BadgeFamily } from '@/lib/utils/progression'
@@ -37,6 +38,7 @@ function amountShort(value: number, unit: string): string {
  */
 export default function GoalsPanel() {
   const { profile } = useAuth()
+  const setProfile = useAuthStore((st) => st.setProfile)
   const { sessions } = usePracticeStore()
   const game = useGamification()
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
@@ -95,11 +97,28 @@ export default function GoalsPanel() {
   const weekPct = Math.min(100, Math.round((weekTotal / weeklyGoal) * 100))
   const monthPct = Math.min(100, Math.round((monthTotal / monthGoal) * 100))
 
+  /**
+   * Saving wrote to Firestore and stopped there.
+   *
+   * The profile is fetched once at sign-in, not subscribed, so nothing on
+   * the page noticed: you set a new weekly goal, pressed Save, and every
+   * ring carried on dividing by the old number until a reload. The write
+   * was never the problem — the copy everything reads from was.
+   */
   async function saveGoals() {
     if (!profile) return
     setSaving(true)
+    const goals = {
+      weeklyGoalMinutes: weeklyGoal,
+      dailyGoalMinutes: dailyGoal,
+      monthlyGoalMinutes: monthGoal,
+    }
     try {
-      await updateUserProfile(profile.uid, { weeklyGoalMinutes: weeklyGoal, dailyGoalMinutes: dailyGoal, monthlyGoalMinutes: monthGoal })
+      await updateUserProfile(profile.uid, goals)
+      // Against the live profile rather than this render's copy, so a
+      // second save cannot resolve over the first.
+      const latest = useAuthStore.getState().profile
+      if (latest) setProfile({ ...latest, ...goals, updatedAt: new Date().toISOString() })
     } finally {
       setSaving(false)
       setEditGoals(false)

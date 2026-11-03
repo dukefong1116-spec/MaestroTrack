@@ -98,6 +98,21 @@ export interface UserProfile {
   /** Piece ids already offered as "ready to call mastered?" — offered once each. */
   masteryPromptsSeen?: string[]
   /**
+   * The first-run checklist.
+   *
+   * Four of its five steps are derived from the data, so nothing is
+   * stored for them. `seen` carries only the steps that leave no evidence
+   * behind — visiting a page — and the flags are the ways the list ends:
+   * closed, finished, and whether the finish has been shown.
+   */
+  onboarding?: {
+    dismissed?: boolean
+    completedAt?: string
+    /** Set once the "that's the tour" card has actually been shown. */
+    celebrated?: boolean
+    seen?: string[]
+  }
+  /**
    * Everything that became true before this has been seen.
    *
    * A watermark rather than a list of ids: notifications are derived, so
