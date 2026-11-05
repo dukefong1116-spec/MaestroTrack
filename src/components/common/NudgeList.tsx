@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import Sticker from '@/components/stickers/Sticker'
 import { usePracticeNudges, type NudgeTone } from '@/hooks/usePracticeNudges'
 import { useAuth } from '@/hooks/useAuth'
@@ -31,11 +30,8 @@ export default function NudgeList({ limit = 3 }: { limit?: number }) {
       {nudges.map((n, i) => {
         const tone = TONE[n.tone]
         return (
-          <motion.div
+          <div
             key={n.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
             className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
             style={i === 0 ? undefined : { borderTop: '1px solid var(--clay-line)' }}
           >
@@ -48,7 +44,7 @@ export default function NudgeList({ limit = 3 }: { limit?: number }) {
             <p className="text-[13px] font-medium" style={{ color: 'var(--clay-ink)' }}>
               {n.text}
             </p>
-          </motion.div>
+          </div>
         )
       })}
     </div>

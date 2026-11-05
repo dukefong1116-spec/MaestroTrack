@@ -180,14 +180,8 @@ export default function GoalsPanel() {
             equal third the 96px ring was 3px wider than the 91px column it
             had to live in. */}
         <div className="grid grid-cols-[1fr_auto_1fr] gap-1">
-          {rings.map((ring, i) => (
-            <motion.div
-              key={ring.label}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-              className="flex min-w-0 flex-col items-center gap-2.5"
-            >
+          {rings.map((ring) => (
+            <div key={ring.label} className="flex min-w-0 flex-col items-center gap-2.5">
               <ProgressRing percentage={ring.pct} size={ring.size} strokeWidth={ring.size === 96 ? 9 : 7} color={theme.primary}>
                 <p className="text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>{ring.pct}%</p>
               </ProgressRing>
@@ -195,7 +189,7 @@ export default function GoalsPanel() {
                 <p className="text-[12.5px] font-semibold leading-tight" style={{ color: 'var(--clay-ink)' }}>{ring.label}</p>
                 <p className="text-[10.5px] tabular-nums leading-tight" style={{ color: 'var(--clay-dim)' }}>{ring.value}/{ring.goal} min</p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </Block>
@@ -220,17 +214,14 @@ export default function GoalsPanel() {
       <Block>
         <Legend title="Achievement badges" />
         <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3">
-          {families.map((fam, i) => {
+          {families.map((fam) => {
             const got = !!fam.highest
             const pct = Math.round(fam.progress * 100)
             return (
-              <motion.button
+              <button
                 key={fam.family}
                 type="button"
                 onClick={() => setOpenFamily(fam.family)}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
                 className="flex flex-col items-center text-center transition-transform active:scale-[.97]"
               >
                 {/* Art-forward: the badge IS the tile. Locked state is drawn,
@@ -261,7 +252,7 @@ export default function GoalsPanel() {
                     All tiers earned
                   </p>
                 )}
-              </motion.button>
+              </button>
             )
           })}
         </div>

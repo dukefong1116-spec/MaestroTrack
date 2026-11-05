@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import Card from '@/components/ui/Card'
 import Sticker from '@/components/stickers/Sticker'
 import DailyStrip from './DailyStrip'
@@ -25,7 +24,7 @@ const DUE_TONE: Record<Dueness, { bg: string; fg: string } | null> = {
  * situations and need to look different.
  */
 export default function AssignmentCard({
-  assignment, progress, daily, due, onOpen, actionLabel, index = 0,
+  assignment, progress, daily, due, onOpen, actionLabel,
 }: {
   assignment: Assignment
   progress: AssignmentProgress
@@ -35,7 +34,6 @@ export default function AssignmentCard({
   onOpen?: () => void
   /** Shown as a button when the student owes work. */
   actionLabel?: string
-  index?: number
 }) {
   const state = normaliseStatus(assignment.status)
   const tone = DUE_TONE[due]
@@ -48,10 +46,7 @@ export default function AssignmentCard({
     : null
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
+    <div
       // Handlers live here rather than on Card, which takes no DOM props —
       // and Card is existing shared furniture, not something to widen for
       // one caller.
@@ -146,6 +141,6 @@ export default function AssignmentCard({
           </p>
         )}
       </Card>
-    </motion.div>
+    </div>
   )
 }

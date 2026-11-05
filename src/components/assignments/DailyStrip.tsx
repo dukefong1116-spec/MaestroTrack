@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { parseISO, format } from 'date-fns'
 import type { DailyProgress } from '@/lib/utils/assignments'
 
@@ -23,7 +22,7 @@ export default function DailyStrip({
   return (
     <div>
       <div className="flex flex-wrap gap-1">
-        {progress.days.map((d, i) => {
+        {progress.days.map((d) => {
           const bg = d.met
             ? 'var(--clay-accent)'
             : d.isFuture
@@ -32,11 +31,8 @@ export default function DailyStrip({
                 ? 'var(--clay-accent-soft)'
                 : 'var(--clay-danger-bg)'          // a day that passed without the target
           return (
-            <motion.div
+            <div
               key={d.date}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.015 }}
               title={`${format(parseISO(d.date), 'EEE d MMM')} · ${d.minutes} min`}
               className="rounded-[4px]"
               style={{

@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
 import { Plus, Archive, Star, Crosshair } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -127,14 +126,11 @@ export default function PiecesPanel() {
         /* A library is a list, so these are rows divided by hairlines
            rather than a grid of floating cards. */
         <div>
-          {filtered.map((piece, i) => {
+          {filtered.map((piece) => {
             const stats = derivePieceStats(piece, sessions)
             return (
-              <motion.div
+              <div
                 key={piece.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
                 onClick={() => setSelected(piece)}
                 className="cursor-pointer px-5 py-4 transition-colors sm:px-6"
                 style={{ borderTop: '1px solid var(--clay-line)' }}
@@ -198,7 +194,7 @@ export default function PiecesPanel() {
                     </Button>
                   </span>
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>

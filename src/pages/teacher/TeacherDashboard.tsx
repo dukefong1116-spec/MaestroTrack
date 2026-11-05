@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { Copy } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useNavigate } from 'react-router-dom'
@@ -102,10 +101,10 @@ export default function TeacherDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Students" value={students.length} icon={<Sticker name="users" size={16} tone="accent" />} delay={0.05} />
-        <StatCard label="Studio Minutes" value={totalWeekMinutes} subtitle="this week" icon={<Sticker name="clock" size={16} tone="accent" />} delay={0.1} />
-        <StatCard label="Avg Consistency" value={`${avgConsistency}%`} icon={<Sticker name="trend" size={16} tone="accent" />} delay={0.15} />
-        <StatCard label="On Streak" value={studentsOnStreak} subtitle="3+ days" delay={0.2} />
+        <StatCard label="Students" value={students.length} icon={<Sticker name="users" size={16} tone="accent" />} />
+        <StatCard label="Studio Minutes" value={totalWeekMinutes} subtitle="this week" icon={<Sticker name="clock" size={16} tone="accent" />} />
+        <StatCard label="Avg Consistency" value={`${avgConsistency}%`} icon={<Sticker name="trend" size={16} tone="accent" />} />
+        <StatCard label="On Streak" value={studentsOnStreak} subtitle="3+ days" />
       </div>
 
       {/* Renders nothing when nobody is waiting, so it never costs space. */}
@@ -122,14 +121,14 @@ export default function TeacherDashboard() {
         <div>
           <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-3">Students</p>
           <div className="space-y-2">
-            {students.map((student, i) => (
-              <motion.div key={student.uid} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+            {students.map((student) => (
+              <div key={student.uid}>
                 <StudentRow
                   student={student}
                   sessions={summaries[student.uid] ?? getAnalyticsSummary([], 300)}
                   onClick={() => navigate(`/teacher/students/${student.uid}`)}
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

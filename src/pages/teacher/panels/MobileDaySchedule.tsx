@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import { addDays, format, isSameDay, startOfWeek } from 'date-fns'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
@@ -175,10 +174,8 @@ export default function MobileDaySchedule({
           const height = (slot.durationMinutes / 60) * HOUR_PX
           const tight = height < 54
           return (
-            <motion.div
+            <div
               key={slot.id}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
               className="absolute flex gap-2 overflow-hidden rounded-xl px-2 py-1.5"
               style={{
                 top: (start / 60 - startHour) * HOUR_PX,
@@ -214,7 +211,7 @@ export default function MobileDaySchedule({
                   <Trash2 size={13} className="mx-auto" />
                 </button>
               )}
-            </motion.div>
+            </div>
           )
         })}
 

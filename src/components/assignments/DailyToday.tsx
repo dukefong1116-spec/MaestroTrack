@@ -44,10 +44,8 @@ export default function DailyToday({
         const remaining = Math.max(0, target - done)
 
         return (
-          <motion.div
+          <div
             key={assignment.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
             className={compact ? 'px-3.5 py-3' : 'px-4 py-3.5'}
             style={{
               background: 'var(--clay-surface)',
@@ -107,7 +105,7 @@ export default function DailyToday({
                 Practise this now →
               </button>
             )}
-          </motion.div>
+          </div>
         )
       })}
     </div>

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
 import { Plus, Calendar, MapPin, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -86,10 +85,10 @@ export default function PerformancesPanel() {
             <div>
               <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Upcoming</p>
               <div className="space-y-3">
-                {upcoming.map((perf, i) => {
+                {upcoming.map((perf) => {
                   const daysLeft = differenceInDays(parseISO(perf.date), new Date())
                   return (
-                    <motion.div key={perf.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                    <div key={perf.id}>
                       <div
                         role="button"
                         tabIndex={0}
@@ -151,7 +150,7 @@ export default function PerformancesPanel() {
 
                         {perf.notes && <p className="text-xs text-[var(--clay-dim)] mt-3 italic">"{perf.notes}"</p>}
                       </div>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>

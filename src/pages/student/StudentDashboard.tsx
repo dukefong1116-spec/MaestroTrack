@@ -230,14 +230,13 @@ export default function StudentDashboard() {
                   submission and review entirely, so a student could mark work
                   done here while the other screen was still asking them to
                   hand it in. */}
-              {todo.slice(0, 4).map((x, i) => (
+              {todo.slice(0, 4).map((x) => (
                 <AssignmentCard
                   key={x.assignment.id}
                   assignment={x.assignment}
                   progress={x.progress}
                   daily={x.daily}
                   due={x.due}
-                  index={i}
                   onOpen={() => setOpened(x.assignment)}
                   actionLabel={normaliseStatus(x.assignment.status) === 'returned' ? 'Try again' : 'Hand in'}
                 />

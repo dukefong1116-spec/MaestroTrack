@@ -75,14 +75,13 @@ export default function AssignmentsPanel() {
             To do ({todo.length})
           </p>
           <div className="space-y-2.5">
-            {todo.map((x, i) => (
+            {todo.map((x) => (
               <AssignmentCard
                 key={x.assignment.id}
                 assignment={x.assignment}
                 progress={x.progress}
                 daily={x.daily}
                 due={x.due}
-                index={i}
                 onOpen={() => setSubmitting(x.assignment)}
                 actionLabel={normaliseStatus(x.assignment.status) === 'returned' ? 'Try again' : 'Hand in'}
               />
@@ -97,9 +96,9 @@ export default function AssignmentsPanel() {
             Handed in
           </p>
           <div className="space-y-2.5">
-            {waiting.map((x, i) => (
+            {waiting.map((x) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} daily={x.daily} due={x.due} index={i}
+                              progress={x.progress} daily={x.daily} due={x.due}
                               onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>
@@ -112,9 +111,9 @@ export default function AssignmentsPanel() {
             Done
           </p>
           <div className="space-y-2.5">
-            {done.slice(0, 20).map((x, i) => (
+            {done.slice(0, 20).map((x) => (
               <AssignmentCard key={x.assignment.id} assignment={x.assignment}
-                              progress={x.progress} daily={x.daily} due={x.due} index={i}
+                              progress={x.progress} daily={x.daily} due={x.due}
                               onOpen={() => setSubmitting(x.assignment)} />
             ))}
           </div>

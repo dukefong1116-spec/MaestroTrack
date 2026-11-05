@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { TrendingUp, AlertTriangle, Info } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
@@ -53,13 +52,7 @@ export default function PatternsPanel() {
               const Icon = iconMap[insight.type]
               const tone = TONE[insight.type]
               return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="flex gap-3.5"
-                >
+                <div key={i} className="flex gap-3.5">
                   <span
                     className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center"
                     style={{ background: tone.bg, color: tone.fg, borderRadius: 'var(--clay-r-sm)' }}
@@ -70,7 +63,7 @@ export default function PatternsPanel() {
                     <p className="font-semibold" style={{ color: 'var(--clay-ink)' }}>{insight.title}</p>
                     <p className="text-sm" style={{ color: 'var(--clay-dim)' }}>{insight.description}</p>
                   </div>
-                </motion.div>
+                </div>
               )
             })}
           </div>

@@ -1,5 +1,4 @@
 import { Outlet } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -29,15 +28,11 @@ export default function AppLayout() {
         that is overlapping it.
       */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <motion.main
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex-1 overflow-y-auto overscroll-contain"
-        >
+        <main className="flex-1 overflow-y-auto overscroll-contain">
           <div className="clay-zoom max-w-7xl mx-auto px-6 py-8">
             <Outlet />
           </div>
-        </motion.main>
+        </main>
         <BottomTabs />
       </div>
     </div>

@@ -65,10 +65,10 @@ export default function ResearchPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Total Students" value={students.length} icon={<Sticker name="users" size={16} tone="accent" />} delay={0} />
-        <StatCard label="Total Sessions" value={allSessions.length} icon={<Sticker name="chart" size={16} tone="accent" />} delay={0.05} />
-        <StatCard label="Total Hours" value={`${Math.round(totalMinutes / 60)}h`} icon={<Sticker name="trend" size={16} tone="accent" />} delay={0.1} />
-        <StatCard label="Avg Consistency" value={`${avgConsistency}%`} delay={0.15} />
+        <StatCard label="Total Students" value={students.length} icon={<Sticker name="users" size={16} tone="accent" />} />
+        <StatCard label="Total Sessions" value={allSessions.length} icon={<Sticker name="chart" size={16} tone="accent" />} />
+        <StatCard label="Total Hours" value={`${Math.round(totalMinutes / 60)}h`} icon={<Sticker name="trend" size={16} tone="accent" />} />
+        <StatCard label="Avg Consistency" value={`${avgConsistency}%`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">

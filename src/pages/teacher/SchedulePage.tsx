@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
 import { Plus, Trash2 } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
@@ -41,7 +40,7 @@ function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }
   const inst = student?.instrument as InstrumentType | undefined
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+    <div>
       <div className="bg-[var(--clay-surface)] border border-[var(--clay-line)] rounded-xl p-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="shrink-0" style={{ color: 'var(--clay-dim)' }}><InstrumentIcon instrument={inst} size={17} /></span>
@@ -54,7 +53,7 @@ function SlotCard({ slot, onDelete }: { slot: LessonSlot; onDelete: () => void }
           <Trash2 size={13} />
         </button>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO } from 'date-fns'
@@ -199,10 +198,10 @@ export default function StudentDetailPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="This Week" value={`${summary.totalMinutesThisWeek}m`} delay={0} />
-        <StatCard label="Streak" value={`${summary.currentStreak}d`} delay={0.05} />
-        <StatCard label="Consistency" value={`${summary.consistencyScore}%`} delay={0.1} />
-        <StatCard label="Goal" value={`${summary.weeklyGoalPercentage}%`} delay={0.15} />
+        <StatCard label="This Week" value={`${summary.totalMinutesThisWeek}m`} />
+        <StatCard label="Streak" value={`${summary.currentStreak}d`} />
+        <StatCard label="Consistency" value={`${summary.consistencyScore}%`} />
+        <StatCard label="Goal" value={`${summary.weeklyGoalPercentage}%`} />
       </div>
 
       {/* Charts */}
@@ -374,7 +373,7 @@ export default function StudentDetailPage() {
           {assignments
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
             .map((a) => (
-              <motion.div key={a.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+              <div key={a.id}>
                 <Card className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -441,7 +440,7 @@ export default function StudentDetailPage() {
                     </button>
                   </div>
                 </Card>
-              </motion.div>
+              </div>
             ))}
           {assignments.length === 0 && (
             <p className="text-sm text-[var(--clay-dim)] text-center py-4">No assignments yet.</p>
@@ -467,7 +466,7 @@ export default function StudentDetailPage() {
         </Card>
         <div className="space-y-3">
           {notes.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((note) => (
-            <motion.div key={note.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+            <div key={note.id}>
               <Card className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -479,7 +478,7 @@ export default function StudentDetailPage() {
                   </button>
                 </div>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

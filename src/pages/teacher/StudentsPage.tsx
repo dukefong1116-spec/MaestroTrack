@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { UserMinus } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
@@ -56,12 +55,12 @@ export default function StudentsPage() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((student, i) => {
+          {filtered.map((student) => {
             const sessions = studentSessions[student.uid] ?? []
             const summary = getAnalyticsSummary(sessions, student.weeklyGoalMinutes ?? 300)
 
             return (
-              <motion.div key={student.uid} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <div key={student.uid}>
                 <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -110,7 +109,7 @@ export default function StudentsPage() {
                     {student.experienceLevel ?? 'Student'}
                   </Badge>
                 </Card>
-              </motion.div>
+              </div>
             )
           })}
         </div>

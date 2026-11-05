@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react'
-import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 import Card from '@/components/ui/Card'
 
@@ -12,7 +11,6 @@ interface StatCardProps {
   trend?: { value: number; label: string }
   children?: ReactNode
   className?: string
-  delay?: number
 }
 
 export default function StatCard({
@@ -24,15 +22,9 @@ export default function StatCard({
   trend,
   children,
   className,
-  delay = 0,
 }: StatCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-    >
-      <Card className={cn('p-5 space-y-3', className)}>
+    <Card className={cn('p-5 space-y-3', className)}>
         <div className="flex items-start justify-between">
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>{label}</p>
           {icon && (
@@ -53,8 +45,7 @@ export default function StatCard({
             {trend.value >= 0 ? '↑' : '↓'} {Math.abs(trend.value)}% {trend.label}
           </div>
         )}
-        {children}
-      </Card>
-    </motion.div>
+      {children}
+    </Card>
   )
 }

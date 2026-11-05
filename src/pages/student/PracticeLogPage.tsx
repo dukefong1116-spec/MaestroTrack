@@ -294,7 +294,7 @@ export default function PracticeLogPage() {
       <div className="mx-auto w-full max-w-md">
 
         {/* heading, with the exception tucked beside it */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex items-end justify-between gap-3">
+        <div className="mb-5 flex items-end justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
             <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
@@ -304,13 +304,12 @@ export default function PracticeLogPage() {
           <Button variant="outline" size="sm" className="shrink-0" onClick={() => setOpen(true)}>
             <Sticker name="pencil" size={14} tone="accent" /> Log past
           </Button>
-        </motion.div>
+        </div>
 
         {/* session in progress */}
         {timerRunning && (
-          <motion.button
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
+          <button
+            type="button"
             onClick={() => navigate('/student/session')}
             className="mb-4 flex w-full items-center gap-3 px-4 py-3.5 text-left"
             style={{
@@ -326,7 +325,7 @@ export default function PracticeLogPage() {
             </span>
             <span className="text-[13px] font-semibold">Session in progress</span>
             <span className="ml-auto text-[13px] font-semibold opacity-90">Resume →</span>
-          </motion.button>
+          </button>
         )}
 
         {/* Anything asking for your attention, before the doing. Renders
@@ -445,13 +444,8 @@ export default function PracticeLogPage() {
                 {sessions.length} session{sessions.length === 1 ? '' : 's'}
               </p>
             </div>
-            {grouped.map(([date, day], gi) => (
-              <motion.div
-                key={date}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18 + gi * 0.04 }}
-              >
+            {grouped.map(([date, day]) => (
+              <div key={date}>
 
                 <div>
                   {day.map((s, si) => {
@@ -499,7 +493,7 @@ export default function PracticeLogPage() {
                     )
                   })}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </Panel>
         )}
