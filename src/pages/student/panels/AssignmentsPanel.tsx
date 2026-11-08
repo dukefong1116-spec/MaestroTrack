@@ -50,7 +50,7 @@ export default function AssignmentsPanel() {
     return (
       <div
         className="rounded-[var(--clay-r-md)] px-5 py-12 text-center"
-        style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+        style={{ background: 'var(--clay-surface)' }}
       >
         {/* text-center does not move a block-level sticker. */}
         <div className="flex justify-center" style={{ opacity: 0.55 }}>

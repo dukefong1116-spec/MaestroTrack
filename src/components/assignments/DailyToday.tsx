@@ -61,7 +61,6 @@ export default function DailyToday({
             style={{
               background: 'var(--clay-surface)',
               borderRadius: 'var(--clay-r-md)',
-              boxShadow: compact ? undefined : 'var(--clay-raised)',
             }}
           >
             <div className="flex items-start gap-3">

@@ -806,7 +806,7 @@ export default function SessionPage() {
         </div>
 
         {/* thoughts */}
-        <div className="mb-6 p-4" style={surface}>
+        <div className="mb-6 p-4" style={{ ...surface, boxShadow: 'none' }}>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
             Thoughts
           </p>

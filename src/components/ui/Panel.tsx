@@ -24,7 +24,6 @@ export function Panel({ children, className }: { children: ReactNode; className?
       style={{
         background: 'var(--clay-surface)',
         borderRadius: 'var(--clay-r-md)',
-        boxShadow: 'var(--clay-raised)',
       }}
     >
       {children}

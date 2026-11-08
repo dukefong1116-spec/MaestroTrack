@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--clay-ink)' }}>Reset Password</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>We'll send a reset link to your email</p>
         </div>
-        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none', boxShadow: 'var(--clay-raised)' }}>
+        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none' }}>
           {sent ? (
             <div className="text-center space-y-4">
               <div className="flex justify-center"><Sticker name="mail" size={44} tone="accent" /></div>

@@ -44,6 +44,8 @@
   /* supporting */
   --clay-mint: #6BCB9B;
   --clay-butter: #FFC85C;
+  /* the selected home tab — deep enough for a white icon in either theme */
+  --clay-green: #2E8B62;
   --clay-danger: #FF5C6E;
 
   /* form — squared off a little; 26/20/14 read as a toy, not a tool */

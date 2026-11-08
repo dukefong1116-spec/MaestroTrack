@@ -19,9 +19,9 @@ import { homeFor, navFor, settingsFor, type NavItem } from './nav'
  */
 function TabIcon({ icon, active, raised }: { icon: NavItem['icon']; active: boolean; raised?: boolean }) {
   if (typeof icon === 'string') {
-    // On the raised tab the ground is the accent itself, so the sticker's
-    // accent tone would be colour on colour.
-    return <Sticker name={icon} size={raised ? 24 : 21} tone={raised ? 'onAccent' : active ? 'accent' : 'ink'} className="shrink-0" />
+    // On the selected raised tab the ground is coloured itself, so the
+    // sticker's accent tone would be colour on colour.
+    return <Sticker name={icon} size={raised ? 24 : 21} tone={raised && active ? 'onAccent' : active ? 'accent' : 'ink'} className="shrink-0" />
   }
   const Icon = icon
   return <Icon size={raised ? 24 : 21} className="shrink-0" />
@@ -85,21 +85,21 @@ export default function BottomTabs() {
               isActive ? 'font-semibold' : 'font-medium'
             )}
             style={({ isActive }) => ({
-              color: isActive && !raised ? 'var(--clay-accent-ink)' : raised ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+              color: !isActive ? 'var(--clay-dim)' : raised ? 'var(--clay-success-fg)' : 'var(--clay-accent-ink)',
             })}
           >
             {({ isActive }) => raised ? (
               <>
                 {/* Lifted clear of the bar and given a ring of the page's
                     own ground, so it reads as cut out of the bar rather
-                    than sitting on top of it. */}
+                    than sitting on top of it. Neutral like every other
+                    tab until it is the one you are on; then green. */}
                 <span
-                  className="absolute left-1/2 flex h-[54px] w-[54px] -translate-x-1/2 items-center justify-center rounded-full transition-transform active:scale-95"
+                  className="absolute left-1/2 flex h-[54px] w-[54px] -translate-x-1/2 items-center justify-center rounded-full transition-[transform,background-color] active:scale-95"
                   style={{
                     top: -22,
-                    background: 'var(--clay-accent)',
-                    color: 'var(--clay-on-accent)',
-                    boxShadow: 'var(--clay-accent-shadow)',
+                    background: isActive ? 'var(--clay-green)' : 'var(--clay-bg-deep)',
+                    color: isActive ? '#fff' : 'var(--clay-dim)',
                     border: '4px solid var(--clay-bg)',
                   }}
                 >
@@ -107,7 +107,7 @@ export default function BottomTabs() {
                   {unread > 0 && (
                     <span
                       className="absolute right-0 top-0 h-[10px] w-[10px] rounded-full"
-                      style={{ background: 'var(--clay-ink)', border: '2px solid var(--clay-accent)' }}
+                      style={{ background: 'var(--clay-ink)', border: `2px solid ${isActive ? 'var(--clay-green)' : 'var(--clay-bg-deep)'}` }}
                     />
                   )}
                 </span>

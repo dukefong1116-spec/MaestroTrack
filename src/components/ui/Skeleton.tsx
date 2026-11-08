@@ -18,7 +18,7 @@ function shell(children: React.ReactNode) {
   return (
     <div
       className="rounded-[var(--clay-r-md)] p-5 space-y-3"
-      style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)' }}
+      style={{ background: 'var(--clay-surface)' }}
     >
       {children}
     </div>

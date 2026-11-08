@@ -85,7 +85,7 @@ export default function SignupPage() {
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>Your musical journey starts here</p>
         </div>
 
-        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none', boxShadow: 'var(--clay-raised)' }}>
+        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none' }}>
           {error && (
             <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'var(--clay-accent-soft)', border: 'none', color: 'var(--clay-danger)' }}>{error}</div>
           )}

@@ -70,7 +70,7 @@ export default function LoginPage() {
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>The practice intelligence platform for musicians</p>
         </div>
 
-        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none', boxShadow: 'var(--clay-raised)' }}>
+        <div className="rounded-2xl p-8" style={{ background: 'var(--clay-surface)', border: 'none' }}>
           <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--clay-ink)' }}>Welcome back</h2>
 
           {error && (

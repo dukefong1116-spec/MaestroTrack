@@ -55,7 +55,6 @@ export default function PendingRequests() {
         style={{
           background: 'var(--clay-surface)',
           borderRadius: 'var(--clay-r-md)',
-          boxShadow: 'var(--clay-raised)',
           overflow: 'hidden',
         }}
       >

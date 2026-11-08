@@ -26,15 +26,8 @@ export default function Card({ children, className, hover, onClick, style }: Car
       )}
       style={{
         background: 'var(--clay-surface)',
-        boxShadow: 'var(--clay-raised)',
         ...style,
       }}
-      onMouseEnter={hover ? (e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--clay-deep)'
-      } : undefined}
-      onMouseLeave={hover ? (e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'var(--clay-raised)'
-      } : undefined}
     >
       {children}
     </div>

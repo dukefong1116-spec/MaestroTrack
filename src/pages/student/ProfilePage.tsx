@@ -227,7 +227,6 @@ export default function ProfilePage() {
         style={{
           background: 'var(--clay-surface)',
           borderRadius: 'var(--clay-r-md)',
-          boxShadow: 'var(--clay-raised)',
         }}
       >
         {/* Photo — the camera badge is the way in, as on the phone */}

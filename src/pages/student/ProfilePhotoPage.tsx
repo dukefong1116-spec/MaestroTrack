@@ -148,7 +148,6 @@ export default function ProfilePhotoPage() {
         style={{
           background: 'var(--clay-surface)',
           borderRadius: 'var(--clay-r-md)',
-          boxShadow: 'var(--clay-raised)',
         }}
       >
         <div className="flex flex-col items-center px-5 py-8 sm:px-6">
