@@ -12,11 +12,14 @@ import { isStaleChunk, reloadForUpdate } from '@/lib/utils/reloadForUpdate'
  * by itself, once. Anything else shows a way out rather than nothing.
  */
 
-export default class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
+export default class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean; detail: string }> {
+  state = { failed: false, detail: '' }
 
-  static getDerivedStateFromError() {
-    return { failed: true }
+  static getDerivedStateFromError(error: unknown) {
+    // Shown small under the button: on a phone there is no console, and
+    // this line is what makes a screenshot of the screen enough to fix it.
+    const e = error as { name?: string; message?: string }
+    return { failed: true, detail: `${e?.name ?? 'Error'}: ${e?.message ?? String(error)}`.slice(0, 300) }
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
@@ -43,6 +46,11 @@ export default class AppErrorBoundary extends Component<{ children: ReactNode },
         >
           Reload
         </button>
+        {this.state.detail && (
+          <p className="mt-6 max-w-xs break-words text-[11px]" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+            {this.state.detail}
+          </p>
+        )}
       </div>
     )
   }
