@@ -132,6 +132,17 @@ service cloud.firestore {
      * evidence of what a teacher had already seen. A resubmission should
      * add to the record, not rewrite it.
      */
+    // A session's or take's `date` is the 'yyyy-MM-dd' string that every
+    // reader in the app takes the day from. One saved as a Timestamp, by
+    // code that never shipped, made those reads throw and took the whole
+    // app down. So a write must leave it a string — or, on an update,
+    // leave it as it was, so an older document stays editable.
+    function dateStaysAString() {
+      return request.resource.data.get('date', null) is string
+        || (resource != null
+            && request.resource.data.get('date', null) == resource.data.get('date', null));
+    }
+
     function appendsOne(field) {
       let before = resource.data.get(field, []);
       let after = request.resource.data.get(field, []);
@@ -353,11 +364,12 @@ service cloud.firestore {
     // all their charts ever used.
     match /practiceSessions/{id} {
       allow read: if isMe(resource.data.userId);
-      allow create: if isMe(request.resource.data.userId);
+      allow create: if isMe(request.resource.data.userId) && dateStaysAString();
       // userId is immutable: handing a record to someone else plants it in
       // their log, where it counts toward their streaks and their totals.
       allow update: if isMe(resource.data.userId)
-                    && request.resource.data.userId == resource.data.userId;
+                    && request.resource.data.userId == resource.data.userId
+                    && dateStaysAString();
       allow delete: if isMe(resource.data.userId);
     }
 
@@ -392,11 +404,12 @@ service cloud.firestore {
       allow read: if isMe(resource.data.userId)
                   || (resource.data.sharedWithTeacher == true
                       && teaches(resource.data.userId));
-      allow create: if isMe(request.resource.data.userId);
+      allow create: if isMe(request.resource.data.userId) && dateStaysAString();
       // userId is immutable: handing a record to someone else plants it in
       // their log, where it counts toward their streaks and their totals.
       allow update: if isMe(resource.data.userId)
-                    && request.resource.data.userId == resource.data.userId;
+                    && request.resource.data.userId == resource.data.userId
+                    && dateStaysAString();
       allow delete: if isMe(resource.data.userId);
     }
 

@@ -13,6 +13,7 @@ import { ref, uploadBytes, uploadBytesResumable, getBlob, deleteObject } from 'f
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
+import { withStoredDay } from './storedDay'
 import type { Recording } from '@/types'
 
 const COL = 'recordings'
@@ -190,7 +191,8 @@ export function subscribeSharedRecordings(
   return onSnapshot(q, (snap) => {
     callback(
       snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }) as Recording)
+        .map((d) => withStoredDay<Recording>(d.id, d.data(), 'recordings'))
+        .filter((r): r is Recording => r !== null)
         .sort((a, b) => b.date.localeCompare(a.date))
     )
   }, onSnapshotError('recordings'))
@@ -202,8 +204,10 @@ export function subscribeRecordings(
 ): Unsubscribe {
   const q = query(collection(db, COL), where('userId', '==', userId))
   return onSnapshot(q, (snap) => {
+    // Settled here, before anything sorts or reads it — see storedDay.
     const sorted = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as Recording)
+      .map((d) => withStoredDay<Recording>(d.id, d.data(), 'recordings'))
+      .filter((r): r is Recording => r !== null)
       .sort((a, b) => b.date.localeCompare(a.date))
     callback(sorted)
   }, onSnapshotError('recordings'))

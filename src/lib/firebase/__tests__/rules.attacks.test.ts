@@ -397,6 +397,37 @@ describe('data that is the right shape but nonsense', () => {
     }))
   })
 
+  // Every reader takes the day from `date` as a string. One session saved
+  // with a Timestamp there took the whole app down, so it is refused.
+  it('a session or take must be dated with the day as a string', async () => {
+    const stamped = Timestamp.fromDate(new Date('2026-10-06T00:00:00.000Z'))
+    await assertFails(setDoc(doc(as(ANA), 'practiceSessions', 'stamped'), {
+      userId: ANA, date: stamped, durationMinutes: 30, category: 'Scales',
+      difficultyRating: 3, confidenceRating: 7, createdAt: '',
+    }))
+    await assertFails(setDoc(doc(as(ANA), 'practiceSessions', 'undated'), {
+      userId: ANA, durationMinutes: 30, category: 'Scales',
+      difficultyRating: 3, confidenceRating: 7, createdAt: '',
+    }))
+    await assertFails(setDoc(doc(as(ANA), 'recordings', 'stamped-take'), {
+      userId: ANA, date: stamped, pieceName: 'x', storagePath: 'x', createdAt: '',
+    }))
+    await assertFails(updateDoc(doc(as(ANA), 'practiceSessions', 'ana-1'), { date: stamped }))
+    // The ordinary case is untouched.
+    await assertSucceeds(updateDoc(doc(as(ANA), 'practiceSessions', 'ana-1'), { date: '2026-10-05' }))
+  })
+
+  it('but one already saved the old way can still be edited, or fixed', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'practiceSessions', 'old-stamped'), {
+        userId: ANA, date: Timestamp.fromDate(new Date('2026-10-06T00:00:00.000Z')),
+        durationMinutes: 30, category: 'Scales', difficultyRating: 3, confidenceRating: 7, createdAt: '',
+      })
+    })
+    await assertSucceeds(updateDoc(doc(as(ANA), 'practiceSessions', 'old-stamped'), { notes: 'still mine' }))
+    await assertSucceeds(updateDoc(doc(as(ANA), 'practiceSessions', 'old-stamped'), { date: '2026-10-06' }))
+  })
+
   it('but a session still cannot be planted on someone else', async () => {
     await assertFails(setDoc(doc(as(BEN), 'practiceSessions', 'planted'), {
       userId: ANA, date: '2026-10-06', durationMinutes: 30, category: 'Scales',

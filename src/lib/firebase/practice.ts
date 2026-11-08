@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './config'
 import { cleanForFirestore } from './clean'
+import { withStoredDay } from './storedDay'
 import type { PracticeSession } from '@/types'
 
 const COL = 'practiceSessions'
@@ -45,7 +46,8 @@ export async function getPracticeSessions(userId: string): Promise<PracticeSessi
   const q = query(collection(db, COL), where('userId', '==', userId))
   const snap = await getDocs(q)
   return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }) as PracticeSession)
+    .map((d) => withStoredDay<PracticeSession>(d.id, d.data(), 'sessions'))
+    .filter((s): s is PracticeSession => s !== null)
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
@@ -70,7 +72,9 @@ export function subscribePracticeSessions(
 ): Unsubscribe {
   const toSessions = (snap: { docs: { id: string; data: () => unknown }[] }) =>
     snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as object) }) as PracticeSession)
+      // Settled here, before anything sorts or reads it — see storedDay.
+      .map((d) => withStoredDay<PracticeSession>(d.id, d.data() as Record<string, unknown>, 'sessions'))
+      .filter((s): s is PracticeSession => s !== null)
       .sort((a, b) => b.date.localeCompare(a.date))
 
   let fallback: Unsubscribe | null = null

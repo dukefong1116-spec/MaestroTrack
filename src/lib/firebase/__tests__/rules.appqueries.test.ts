@@ -190,6 +190,34 @@ describe("the student's own reads", () => {
     expect(await practice.getPracticeSessions(ANA)).toHaveLength(1)
   })
 
+  // A session whose date was saved as a Timestamp — by code that never
+  // shipped, run against the live database — made every `date.substring`
+  // in the app throw and took the whole app down. The reads now hand back
+  // the day as a string, mixed in with ordinary sessions, in order.
+  it('a session saved with a Timestamp date reads back as its day', async () => {
+    await seed('practiceSessions', 's1', { ...SESSION, userId: ANA, date: '2026-11-08' })
+    await seed('practiceSessions', 'stamped', {
+      ...SESSION, userId: ANA, date: Timestamp.fromDate(new Date('2026-11-07T00:00:00.000Z')),
+    })
+    await seed('practiceSessions', 's0', { ...SESSION, userId: ANA, date: '2026-11-06' })
+    asAna()
+    const live = await expectDelivered<{ id: string; date: string }[]>((cb) => practice.subscribePracticeSessions(ANA, cb))
+    expect(live.map((s) => [s.id, s.date])).toEqual([['s1', '2026-11-08'], ['stamped', '2026-11-07'], ['s0', '2026-11-06']])
+    const once = await practice.getPracticeSessions(ANA)
+    expect(once.map((s) => s.date)).toEqual(['2026-11-08', '2026-11-07', '2026-11-06'])
+  })
+
+  it('and so does a take, for the student and for their teacher', async () => {
+    const stamped = Timestamp.fromDate(new Date('2026-11-07T00:00:00.000Z'))
+    await seed('recordings', 'r1', { userId: ANA, date: stamped, storagePath: 'x', sharedWithTeacher: true })
+    asAna()
+    const mine = await expectDelivered<{ date: string }[]>((cb) => recordings.subscribeRecordings(ANA, cb))
+    expect(mine.map((r) => r.date)).toEqual(['2026-11-07'])
+    asTeacher()
+    const theirs = await expectDelivered<{ date: string }[]>((cb) => recordings.subscribeSharedRecordings(ANA, cb))
+    expect(theirs.map((r) => r.date)).toEqual(['2026-11-07'])
+  })
+
   it('subscribePieces', async () => {
     await seed('pieces', 'p1', { userId: ANA, title: 'Bach', updatedAt: '2026-03-01' })
     asAna()
