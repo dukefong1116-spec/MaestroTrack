@@ -1,5 +1,5 @@
 import { addDays, getDay, parseISO, set, startOfDay, differenceInCalendarDays } from 'date-fns'
-import type { Assignment, LessonSlot, NotifyKind, UserProfile } from '@/types'
+import type { Assignment, LessonSlot, NotifyKind, StudioRequest, UserProfile } from '@/types'
 import type { StickerName } from '@/components/stickers/Sticker'
 
 /**
@@ -23,6 +23,7 @@ export type NotificationKind =
   | 'lesson-tomorrow'
   | 'lesson-soon'
   | 'submission-received'
+  | 'join-request'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -44,6 +45,12 @@ export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> 
   feedback: ['assignment-returned', 'assignment-approved'],
   lessons: ['lesson-tomorrow', 'lesson-soon'],
   submissions: ['submission-received'],
+  // 'join-request' is deliberately absent, and so stays on whatever the
+  // Settings switches say. Somebody is standing at the door: a request
+  // nobody is told about is a student who thinks they were ignored. It
+  // is also rare — a handful a year for most studios. applyNotifyPrefs
+  // only drops kinds that appear here, so leaving it out is the switch
+  // being absent rather than a switch that does nothing.
   // Not a bell notification at all — the prompts on Today. Listed so the
   // categories are one set, and skipped by the filter below.
   nudges: [],
@@ -229,9 +236,10 @@ export function buildStudentNotifications(input: {
 export function buildTeacherNotifications(input: {
   assignments: Assignment[]
   students: UserProfile[]
+  requests?: StudioRequest[]
   options: BuildOptions
 }): AppNotification[] {
-  const { assignments, students } = input
+  const { assignments, students, requests = [] } = input
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const nameOf = new Map(students.map((s) => [s.uid, s.displayName]))
   const out: AppNotification[] = []
@@ -254,6 +262,22 @@ export function buildTeacherNotifications(input: {
         sticker: 'book',
       })
     }
+  }
+
+  // Above the handed-in work: somebody waiting to be let in is blocked
+  // on the teacher entirely, where a submission is only waiting to be read.
+  for (const r of requests) {
+    if (r.status !== 'pending') continue
+    out.push({
+      id: `join:${r.id}`,
+      kind: 'join-request',
+      title: `${r.studentName || 'Someone'} asked to join your studio`,
+      body: 'Accept or decline on your students page.',
+      at: r.createdAt,
+      to: '/teacher/students',
+      priority: 95,
+      sticker: 'users',
+    })
   }
 
   return finish(out, cap)

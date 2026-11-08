@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -51,7 +52,9 @@ export default function SignupPage() {
         weeklyGoalMinutes: data.weeklyGoalMinutes,
       })
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
-      navigate('/student')
+      // Came in through a teacher's link: send them back to finish it.
+      const invited = takePendingInvite()
+      navigate(invited ? `/join/${invited}` : '/student')
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/email-already-in-use') setError('Email already in use.')

@@ -15,29 +15,7 @@ import {
 import { db } from './config'
 import { onSnapshotError } from './snapshotError'
 import type { TeacherNote, UserProfile } from '@/types'
-
 const USERS = 'users'
-
-// Look up a teacher's UID given their studioCode.
-export async function getTeacherByStudioCode(code: string): Promise<string | null> {
-  try {
-    const q = query(
-      collection(db, USERS),
-      where('studioCode', '==', code.toUpperCase()),
-      where('role', '==', 'teacher')
-    )
-    const snap = await getDocs(q)
-    if (!snap.empty) {
-      console.log('[Teacher] Found teacher for code', code, '→', snap.docs[0].id)
-      return snap.docs[0].id
-    }
-    console.warn('[Teacher] No teacher found for code:', code)
-    return null
-  } catch (e) {
-    console.warn('[Teacher] getTeacherByStudioCode error:', e)
-    return null
-  }
-}
 
 export function subscribeStudents(
   teacherId: string,
@@ -66,7 +44,14 @@ export async function getStudentsForTeacher(teacherId: string): Promise<UserProf
 }
 
 export async function removeStudentFromStudio(studentId: string): Promise<void> {
-  await updateDoc(doc(db, USERS, studentId), { teacherId: null })
+  // studioName goes with teacherId. Accepting a student writes both, so
+  // releasing one has to take both back — otherwise their Settings keeps
+  // naming a studio they are no longer in.
+  await updateDoc(doc(db, USERS, studentId), {
+    teacherId: null,
+    studioName: '',
+    updatedAt: new Date().toISOString(),
+  })
 }
 
 export async function addTeacherNote(

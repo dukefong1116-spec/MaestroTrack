@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,7 +39,11 @@ export default function LoginPage() {
       if (!role) role = localStorage.getItem(`maestro_role_${user.uid}`)
       role = role ?? 'student'
       localStorage.setItem(`maestro_role_${user.uid}`, role)
-      navigate(role === 'teacher' ? '/teacher' : '/student')
+      // Signed in from a teacher's invitation: finish that, not the
+      // usual landing page. Teachers are sent on as normal — a teaching
+      // account has no business claiming an invitation.
+      const invited = role === 'teacher' ? null : takePendingInvite()
+      navigate(invited ? `/join/${invited}` : role === 'teacher' ? '/teacher' : '/student')
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {

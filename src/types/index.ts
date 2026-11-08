@@ -296,12 +296,67 @@ export interface Assignment {
   feedback?: TeacherFeedback[]
 }
 
+/**
+ * One invitation to one student.
+ *
+ * The document id is the token — 16 random bytes, base64url — and the
+ * token is the whole secret, so the document is readable by anyone
+ * holding it and listable by nobody. That is what lets the link work
+ * before the person it was sent to has an account.
+ *
+ * It therefore carries nothing private. The teacher does not name the
+ * invite; the student's name arrives on the request, once they claim it.
+ *
+ * `expiresAt` is a Firestore Timestamp while every other date in this
+ * file is an ISO string. Security rules cannot parse an ISO string, and
+ * the expiry has to be enforced in the rules rather than only in the
+ * client — so this one field is stored in the type the rules can compare
+ * against `request.time`.
+ */
 export interface StudioInvite {
-  code: string
+  /** The document id, and the secret. */
+  token: string
   teacherId: string
   teacherName: string
   studioName: string
   createdAt: string
+  updatedAt?: string
+  /** Firestore Timestamp. See the note above. */
+  expiresAt: Date
+  status: 'open' | 'claimed' | 'revoked'
+}
+
+/**
+ * The short code a teacher can read out in a lesson, pointing at an
+ * invite. A pointer document rather than a field, so resolving a code is
+ * one read by id and never a query over invitations.
+ */
+export interface InviteCode {
+  /** The document id: six characters, no I/O/0/1. */
+  code: string
+  token: string
+  teacherId: string
+  expiresAt: Date
+}
+
+/**
+ * A student asking to join a studio, waiting on the teacher's answer.
+ *
+ * The document id is always `${studentId}_${teacherId}`. That is load
+ * bearing twice over: a rule can fetch the request by id when the teacher
+ * accepts, with no query, and a student can have only one open request
+ * per teacher, so the collection cannot be flooded.
+ */
+export interface StudioRequest {
+  id: string
+  studentId: string
+  teacherId: string
+  studentName: string
+  instrument?: InstrumentType
+  inviteToken: string
+  createdAt: string
+  status: 'pending' | 'accepted' | 'declined'
+  decidedAt?: string
 }
 
 export interface AnalyticsSummary {

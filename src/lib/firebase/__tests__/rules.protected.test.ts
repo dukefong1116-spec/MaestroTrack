@@ -42,6 +42,8 @@ beforeEach(async () => {
     const db = ctx.firestore()
     await setDoc(doc(db, 'users', TEACHER), { role: 'teacher', displayName: 'Dr Chen', studioCode: CODE })
     await setDoc(doc(db, 'users', OTHER_TEACHER), { role: 'teacher', displayName: 'Mr Diaz', studioCode: OTHER_CODE })
+    await setDoc(doc(db, 'studioInvites', CODE), { code: CODE, teacherId: TEACHER, active: true })
+    await setDoc(doc(db, 'studioInvites', OTHER_CODE), { code: OTHER_CODE, teacherId: OTHER_TEACHER, active: true })
     await setDoc(doc(db, 'users', ANA), { role: 'student', displayName: 'Ana', teacherId: TEACHER, studioCode: CODE })
     await setDoc(doc(db, 'users', BEN), { role: 'student', displayName: 'Ben', teacherId: TEACHER, studioCode: CODE })
   })
@@ -110,8 +112,11 @@ describe('teacherId', () => {
     await assertFails(updateDoc(doc(as(ANA), 'users', BEN), { teacherId: null }))
   })
 
-  it('moving studios with the right code is allowed — this is the join screen', async () => {
-    await assertSucceeds(
+  // Was "moving studios with the right code is allowed — this is the join
+  // screen". It no longer is: holding a code buys a request the teacher
+  // has to accept, and the acceptance is the teacher's write, not this one.
+  it('moving studios is refused even holding the other studio’s code', async () => {
+    await assertFails(
       setDoc(doc(as(ANA), 'users', ANA), { teacherId: OTHER_TEACHER, studioCode: OTHER_CODE }, { merge: true })
     )
   })

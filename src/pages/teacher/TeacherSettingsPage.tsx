@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Copy, Bell, Palette, ShieldCheck, LifeBuoy } from 'lucide-react'
+import { Bell, Palette, ShieldCheck, LifeBuoy, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
+import InviteSheet from '@/components/teacher/InviteSheet'
 import { Panel, Block, Legend, NavRow, FactRow } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -22,7 +23,7 @@ export default function TeacherSettingsPage() {
   const { profile, user } = useAuth()
   const { setProfile } = useAuthStore()
   const [saving, setSaving] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [inviting, setInviting] = useState(false)
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,13 +44,6 @@ export default function TeacherSettingsPage() {
     }
   }
 
-  async function copyCode() {
-    if (profile?.studioCode) {
-      await navigator.clipboard.writeText(profile.studioCode)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
 
   return (
     <div>
@@ -71,18 +65,13 @@ export default function TeacherSettingsPage() {
           <NavRow icon={<ShieldCheck size={19} />} label="Privacy & Security" to="/teacher/settings/privacy" />
 
           <Block>
-            <Legend title="Studio Code" hint="Share this code with students to invite them to your studio." />
-            <div className="flex items-center gap-3">
-              <div
-                className="flex-1 rounded-[var(--clay-r-sm)] px-4 py-3 font-mono text-2xl font-bold tracking-widest"
-                style={{ background: 'var(--clay-bg-deep)', color: 'var(--clay-ink)' }}
-              >
-                {profile?.studioCode ?? '—'}
-              </div>
-              <Button size="sm" variant="outline" onClick={copyCode}>
-                <Copy size={14} /> {copied ? 'Copied!' : 'Copy'}
-              </Button>
-            </div>
+            <Legend
+              title="Students"
+              hint="Each invitation is for one student and lasts a week. They join when you accept them, not when they open the link."
+            />
+            <Button size="sm" variant="outline" onClick={() => setInviting(true)}>
+              <UserPlus size={14} /> Invite a student
+            </Button>
           </Block>
 
           <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/teacher/settings/about" />
@@ -90,6 +79,10 @@ export default function TeacherSettingsPage() {
           <FactRow label="Email" value={user?.email ?? '—'} />
           <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
         </Panel>
+
+        {profile && (
+          <InviteSheet open={inviting} onClose={() => setInviting(false)} profile={profile} />
+        )}
 
         {/* Outside, deliberately: the only destructive action on the page. */}
         <MobileLogOut />

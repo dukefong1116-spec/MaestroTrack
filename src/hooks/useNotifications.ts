@@ -31,6 +31,7 @@ export function useNotifications(): {
 
   const lessons = usePracticeStore((s) => s.lessons)
   const students = useTeacherStore((s) => s.students)
+  const requests = useTeacherStore((s) => s.requests)
   const [assignments, setAssignments] = useState<Assignment[]>([])
 
   useEffect(() => {
@@ -63,10 +64,10 @@ export function useNotifications(): {
   const items = useMemo(() => {
     if (!uid) return []
     const all = isTeacher
-      ? buildTeacherNotifications({ assignments, students, options: { now } })
+      ? buildTeacherNotifications({ assignments, students, requests, options: { now } })
       : buildStudentNotifications({ assignments, lessons, options: { now } })
     return applyNotifyPrefs(all, notify ?? {})
-  }, [uid, isTeacher, assignments, students, lessons, now, notify])
+  }, [uid, isTeacher, assignments, students, requests, lessons, now, notify])
 
   const markAllRead = useCallback(() => {
     if (!uid) return

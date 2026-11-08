@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, Timestamp } from 'firebase/firestore'
 
 /**
  * Adversarial tests: what a determined user can do, rather than what the
@@ -82,9 +82,12 @@ describe('a student editing their own profile', () => {
     await assertFails(updateDoc(doc(as(ANA), 'users', ANA), { studioCode: 'FAKE01' }))
   })
 
-  it('CAN still join a studio with the real code — the flow must not break', async () => {
-    // Exactly what the join screen sends: the teacher's uid and their code.
-    await assertSucceeds(setDoc(doc(as(CLARE), 'users', CLARE), {
+  // Was "CAN still join a studio with the real code — the flow must not
+  // break". That flow is gone: holding a code no longer attaches anybody,
+  // because joining is a request the teacher accepts. See
+  // rules.join.test.ts for what replaced it.
+  it('cannot join even with a code that genuinely is that teacher’s', async () => {
+    await assertFails(setDoc(doc(as(CLARE), 'users', CLARE), {
       role: 'student', teacherId: TEACHER, studioCode: 'CHEN01', updatedAt: 'now',
     }, { merge: true }))
   })
@@ -403,6 +406,245 @@ describe('changing who owns a record', () => {
       })
     })
     await assertFails(updateDoc(doc(as(ANA), 'practiceSessions', 'mine'), { userId: BEN }))
+  })
+})
+
+/* ── 13. the invitation system, under attack ──────────────────────── */
+//
+// The attacker is CLARE: a real, signed-in student with an account of her
+// own, in another teacher's studio. Everything below is something she —
+// or a passer-by with no account — might try against TEACHER's studio.
+
+describe('the invitation system', () => {
+  const TOKEN = 'chen_invite_token_aaa'
+  const CODE = 'K7PQ2M'
+  const week = () => Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const rid = (student: string, teacher: string) => `${student}_${teacher}`
+
+  const liveInvite = (teacherId: string) => ({
+    teacherId, teacherName: 'Dr Chen', studioName: 'Chen Music',
+    createdAt: new Date().toISOString(), expiresAt: week(), status: 'open',
+  })
+
+  const body = (studentId: string, teacherId: string, token = TOKEN) => ({
+    studentId, teacherId, studentName: 'Clare', inviteToken: token,
+    createdAt: new Date().toISOString(), status: 'pending',
+  })
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'studioInvites', TOKEN), liveInvite(TEACHER))
+      await setDoc(doc(db, 'inviteCodes', CODE), { token: TOKEN, teacherId: TEACHER, expiresAt: week() })
+    })
+  })
+
+  /* finding invitations you were never sent */
+
+  it('invitations cannot be enumerated, with or without an account', async () => {
+    await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), 'studioInvites')))
+    await assertFails(getDocs(collection(as(CLARE), 'studioInvites')))
+    await assertFails(getDocs(query(collection(as(CLARE), 'studioInvites'), where('status', '==', 'open'))))
+  })
+
+  it('codes cannot be enumerated either, which is what keeps six characters viable', async () => {
+    await assertFails(getDocs(collection(as(CLARE), 'inviteCodes')))
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'inviteCodes', CODE)))
+  })
+
+  it('requests cannot be swept up across studios', async () => {
+    await assertFails(getDocs(collection(as(CLARE), 'studioRequests')))
+    await assertFails(getDocs(query(collection(as(CLARE), 'studioRequests'), where('teacherId', '==', TEACHER))))
+  })
+
+  it('somebody else’s request cannot be read by id', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(ANA, TEACHER)), body(ANA, TEACHER))
+    })
+    await assertFails(getDoc(doc(as(CLARE), 'studioRequests', rid(ANA, TEACHER))))
+  })
+
+  /* minting invitations you have no right to */
+
+  it('a student cannot mint an invitation, for anyone', async () => {
+    await assertFails(setDoc(doc(as(CLARE), 'studioInvites', 'forged_1'), liveInvite(CLARE)))
+    await assertFails(setDoc(doc(as(CLARE), 'studioInvites', 'forged_2'), liveInvite(TEACHER)))
+  })
+
+  it('a teacher cannot mint one in another teacher’s name', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'studioInvites', 'forged_3'), liveInvite(TEACHER)))
+  })
+
+  it('an invitation cannot be minted without a real expiry', async () => {
+    const base = liveInvite(TEACHER)
+    await assertFails(setDoc(doc(as(TEACHER), 'studioInvites', 'string_expiry'),
+      { ...base, expiresAt: new Date().toISOString() }))
+    await assertFails(setDoc(doc(as(TEACHER), 'studioInvites', 'past_expiry'),
+      { ...base, expiresAt: Timestamp.fromMillis(Date.now() - 1000) }))
+  })
+
+  /* spending one twice */
+
+  it('a spent invitation cannot be put back', async () => {
+    await assertSucceeds(updateDoc(doc(as(CLARE), 'studioInvites', TOKEN), { status: 'claimed' }))
+    await assertFails(updateDoc(doc(as(CLARE), 'studioInvites', TOKEN), { status: 'open' }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'studioInvites', TOKEN), { status: 'open' }))
+  })
+
+  it('an invitation cannot be deleted to cover tracks', async () => {
+    await assertFails(deleteDoc(doc(as(TEACHER), 'studioInvites', TOKEN)))
+    await assertFails(deleteDoc(doc(as(CLARE), 'studioInvites', TOKEN)))
+  })
+
+  it('somebody else’s invitation cannot be revoked out of spite', async () => {
+    await assertFails(updateDoc(doc(as(OTHER_TEACHER), 'studioInvites', TOKEN), { status: 'revoked' }))
+    await assertFails(updateDoc(doc(as(CLARE), 'studioInvites', TOKEN), { status: 'revoked' }))
+  })
+
+  it('an invitation cannot be re-pointed at a different studio', async () => {
+    await assertFails(updateDoc(doc(as(TEACHER), 'studioInvites', TOKEN), { teacherId: OTHER_TEACHER }))
+    await assertFails(updateDoc(doc(as(OTHER_TEACHER), 'studioInvites', TOKEN), { teacherId: OTHER_TEACHER }))
+  })
+
+  it('a code document is write-once — nobody re-points it at their own token', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'inviteCodes', CODE), {
+      token: 'attacker_token_xxxxx', teacherId: OTHER_TEACHER, expiresAt: week(),
+    }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'inviteCodes', CODE), { token: 'elsewhere' }))
+    await assertFails(deleteDoc(doc(as(TEACHER), 'inviteCodes', CODE)))
+  })
+
+
+  /*
+   * A known gap, written down rather than left to be rediscovered.
+   *
+   * The create rule on inviteCodes pins `teacherId` to the caller but says
+   * nothing about `token`, so a teacher can mint a code pointing at
+   * somebody else's invitation. It is not worth closing: doing it needs
+   * the victim's 22-character token already, and it yields the attacker
+   * nothing — the request that follows names the *invitation's* teacher,
+   * so the student lands in the victim's studio, which is where that
+   * invitation was always going to send them.
+   *
+   * Closing it would mean checking the invitation exists when the code is
+   * written, and the two are written in one batch — where rules see the
+   * state from before the batch, so the invitation is not there yet. The
+   * fix would cost atomicity to buy nothing.
+   */
+  it('a teacher can point a code at another teacher’s invitation — and gains nothing by it', async () => {
+    await assertSucceeds(setDoc(doc(as(OTHER_TEACHER), 'inviteCodes', 'SNE4KY'), {
+      token: TOKEN, teacherId: OTHER_TEACHER, expiresAt: week(),
+    }))
+    // The payoff would be a student in OTHER_TEACHER's studio. There is none:
+    // the invitation still belongs to TEACHER, so a request naming
+    // OTHER_TEACHER is refused outright.
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, OTHER_TEACHER)),
+      body(CLARE, OTHER_TEACHER, TOKEN)))
+  })
+
+  /* forging the request itself */
+
+  it('a request cannot be raised in another student’s name', async () => {
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(ANA, TEACHER)), body(ANA, TEACHER)))
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, TEACHER)), body(ANA, TEACHER)))
+  })
+
+  it('a request id cannot be bent out of shape to dodge the check', async () => {
+    for (const id of [CLARE, `${CLARE}_`, `_${TEACHER}`, `${CLARE}__${TEACHER}`, `${CLARE}_${TEACHER}_x`]) {
+      await assertFails(setDoc(doc(as(CLARE), 'studioRequests', id), body(CLARE, TEACHER)))
+    }
+  })
+
+  it('a request needs a real invitation, not just a teacher’s name', async () => {
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, TEACHER)),
+      body(CLARE, TEACHER, 'invented_token_xxxxx')))
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, TEACHER)),
+      { ...body(CLARE, TEACHER), inviteToken: '' }))
+  })
+
+  it('an invitation for one studio cannot buy a place in another', async () => {
+    // CLARE holds TEACHER's token but names OTHER_TEACHER, hoping the rule
+    // checks only that *some* invitation exists.
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, OTHER_TEACHER)),
+      body(CLARE, OTHER_TEACHER, TOKEN)))
+  })
+
+  it('a student cannot answer their own request', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    })
+    await assertFails(updateDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, TEACHER)), {
+      status: 'accepted', decidedAt: new Date().toISOString(),
+    }))
+  })
+
+  it('an unrelated teacher cannot answer a request addressed elsewhere', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    })
+    await assertFails(updateDoc(doc(as(OTHER_TEACHER), 'studioRequests', rid(CLARE, TEACHER)), {
+      status: 'accepted', decidedAt: new Date().toISOString(),
+    }))
+  })
+
+  /* the acceptance write — the only cross-account write in the whole app */
+
+  it('a teacher cannot take on a student who never asked', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', 'loner'), { role: 'student', displayName: 'Lo' })
+    })
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', 'loner'), {
+      teacherId: TEACHER, studioName: 'Chen Music', updatedAt: '',
+    }))
+  })
+
+  it('a teacher cannot poach a student out of another studio', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    })
+    await assertFails(updateDoc(doc(as(TEACHER), 'users', CLARE), {
+      teacherId: TEACHER, studioName: 'Chen Music', updatedAt: '',
+    }))
+  })
+
+  it('accepting cannot smuggle any other field through', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'users', 'loner'), { role: 'student', displayName: 'Lo' })
+      await setDoc(doc(db, 'studioRequests', rid('loner', TEACHER)), body('loner', TEACHER))
+    })
+    for (const extra of [
+      { role: 'teacher' }, { displayName: 'Renamed' }, { email: 'x@y.z' },
+      { weeklyGoalMinutes: 9999 }, { notificationsReadAt: '2030-01-01' },
+    ]) {
+      await assertFails(updateDoc(doc(as(TEACHER), 'users', 'loner'), {
+        teacherId: TEACHER, updatedAt: '', ...extra,
+      }))
+    }
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'users', 'loner'), {
+      teacherId: TEACHER, studioName: 'Chen Music', updatedAt: '',
+    }))
+  })
+
+  /* what asking actually buys you, which must be nothing */
+
+  it('a pending request is not a key to the studio’s data', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    })
+    await assertFails(getDoc(doc(as(CLARE), 'users', ANA)))
+    await assertFails(getDoc(doc(as(CLARE), 'studioStats', ANA)))
+    await assertFails(getDoc(doc(as(CLARE), 'practiceSummary', ANA)))
+    await assertFails(getDoc(doc(as(CLARE), 'practiceSessions', 'ana-1')))
+  })
+
+  it('a declined request is not one either', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'studioRequests', rid(CLARE, TEACHER)),
+        { ...body(CLARE, TEACHER), status: 'declined' })
+    })
+    await assertFails(getDoc(doc(as(CLARE), 'users', ANA)))
+    await assertFails(getDoc(doc(as(CLARE), 'studioStats', ANA)))
   })
 })
 

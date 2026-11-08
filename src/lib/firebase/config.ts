@@ -2,11 +2,31 @@ import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { initializeFirestore, getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
+
+const USING_EMULATOR =
+  import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === '1'
+
+/**
+ * The project the emulators actually run as — `.firebaserc`'s default.
+ *
+ * The app must use this id, not the real one, whenever it is pointed at
+ * the emulators. The emulator watches firestore.rules and reloads it for
+ * the project it was configured with, and *only* that one. Connecting
+ * under any other id gets a ruleset snapshotted the first time that id is
+ * seen, which then never updates — so every later edit to firestore.rules
+ * is silently ignored while the tests, which run as this project, pass.
+ *
+ * That cost half an evening once: a rules fix verified green by the suite
+ * and still failing in the browser, because the browser was the only
+ * thing running the stale copy.
+ */
+const EMULATOR_PROJECT_ID = 'demo-maestrotrack'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  projectId: USING_EMULATOR ? EMULATOR_PROJECT_ID : import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
@@ -26,6 +46,7 @@ try {
 
 export const db = getFirestore(app)
 export const storage = getStorage(app)
+export const functions = getFunctions(app)
 
 /**
  * Fail in a reasonable time rather than hanging.
@@ -58,13 +79,14 @@ storage.maxOperationRetryTime = 30_000
  * opens it over Wi-Fi. A literal 127.0.0.1 pointed the phone at itself, so
  * testing on a real device was impossible.
  */
-if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === '1') {
+if (USING_EMULATOR) {
   const host = window.location.hostname
   try {
     connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true })
     connectFirestoreEmulator(db, host, 8085) // 8080 is commonly taken; see firebase.json
     connectStorageEmulator(storage, host, 9199)
-    console.info(`[firebase] using local emulators at ${host}`)
+    connectFunctionsEmulator(functions, host, 5001)
+    console.info(`[firebase] using local emulators at ${host} as ${EMULATOR_PROJECT_ID}`)
   } catch (e) {
     console.warn('[firebase] emulator connection failed', e)
   }

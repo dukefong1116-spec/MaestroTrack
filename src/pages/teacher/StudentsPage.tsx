@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserMinus } from 'lucide-react'
+import { UserMinus, UserPlus } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -12,6 +12,8 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/common/EmptyState'
+import PendingRequests from '@/components/teacher/PendingRequests'
+import InviteSheet from '@/components/teacher/InviteSheet'
 import type { UserProfile, InstrumentType } from '@/types'
 
 export default function StudentsPage() {
@@ -19,6 +21,7 @@ export default function StudentsPage() {
   const { students, studentSessions } = useTeacherStore()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [inviting, setInviting] = useState(false)
 
   const filtered = useMemo(() =>
     students.filter((s) =>
@@ -37,7 +40,30 @@ export default function StudentsPage() {
 
   return (
     <div>
-      <PageHeader title="My Students" subtitle={`${students.length} students in your studio`} />
+      <PageHeader
+        title="My Students"
+        subtitle={`${students.length} students in your studio`}
+        actions={
+          <button
+            type="button"
+            onClick={() => setInviting(true)}
+            className="flex items-center gap-2 px-3.5 py-2 text-sm font-bold transition-transform active:scale-95"
+            style={{
+              background: 'var(--clay-accent)',
+              color: 'var(--clay-on-accent)',
+              borderRadius: 'var(--clay-r-sm)',
+            }}
+          >
+            <UserPlus size={15} /> Invite
+          </button>
+        }
+      />
+
+      {profile && (
+        <InviteSheet open={inviting} onClose={() => setInviting(false)} profile={profile} />
+      )}
+
+      <PendingRequests />
 
       <div className="mb-6">
         <Input
@@ -51,7 +77,7 @@ export default function StudentsPage() {
         <EmptyState
           icon={<Sticker name="users" size={36} tone="accent" />}
           title={search ? 'No students match your search' : 'No students yet'}
-          description={`Studio code: ${profile?.studioCode ?? '—'}`}
+          description={search ? 'Try a different name or instrument.' : 'Tap Invite to send one a link, or show them the code in person.'}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

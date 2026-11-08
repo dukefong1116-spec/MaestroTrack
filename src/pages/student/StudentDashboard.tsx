@@ -192,9 +192,6 @@ export default function StudentDashboard() {
             <Sticker name="note" size={20} tone="onAccent" />
             {summary.currentStreak > 0 ? 'Keep it going' : 'Start practising'}
           </button>
-          <p className="mt-2.5 text-center text-xs" style={{ color: 'var(--clay-dim)' }}>
-            Timer · metronome · tuner · record
-          </p>
         </Block>
       </Panel>
 

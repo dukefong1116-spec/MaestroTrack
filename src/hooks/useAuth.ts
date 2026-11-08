@@ -1,13 +1,15 @@
 import { useEffect } from 'react'
-import { onAuthChange, getUserProfile } from '@/lib/firebase/auth'
+import { onAuthChange, getUserProfile, saveRebuiltProfile } from '@/lib/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
-import { cleanForFirestore } from '@/lib/firebase/clean'
 
 export function useAuthInit() {
   const { setUser, setProfile, setLoading } = useAuthStore()
 
   useEffect(() => {
+    let generation = 0
     const unsub = onAuthChange(async (user) => {
+      const currentGeneration = ++generation
+      setLoading(true)
       setUser(user)
       if (user) {
         try {
@@ -42,30 +44,31 @@ export function useAuthInit() {
               updatedAt: now,
             }
             try {
-              const { doc, setDoc } = await import('firebase/firestore')
-              const { db } = await import('@/lib/firebase/config')
               // Firestore rejects the entire document for a single
               // undefined field, and most of these are optional: a profile
               // with no instrument set failed to save at all, silently.
-              await setDoc(doc(db, 'users', user.uid), cleanForFirestore(rebuilt))
+              await saveRebuiltProfile(rebuilt)
               console.log('[Auth] Rebuilt Firestore doc with role:', role)
             } catch (writeErr) {
               console.error('[Auth] Failed to write rebuilt profile:', writeErr)
             }
             profile = rebuilt
           }
+          if (currentGeneration !== generation) return
           localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(profile))
           localStorage.setItem(`maestro_role_${user.uid}`, profile.role)
-          setProfile(profile)
+          if (currentGeneration === generation) setProfile(profile)
         } catch (e) {
           console.error('[Auth] Failed to load Firestore profile:', e)
-          setProfile(null)
+          if (currentGeneration === generation) setProfile(null)
         } finally {
-          setLoading(false)
+          if (currentGeneration === generation) setLoading(false)
         }
       } else {
-        setProfile(null)
-        setLoading(false)
+        if (currentGeneration === generation) {
+          setProfile(null)
+          setLoading(false)
+        }
       }
     })
     return unsub

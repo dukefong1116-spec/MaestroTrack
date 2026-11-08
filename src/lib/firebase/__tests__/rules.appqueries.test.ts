@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment, type RulesTestContext,
 } from '@firebase/rules-unit-testing'
-import { addDoc, collection, doc, setDoc, updateDoc, type Firestore, type Unsubscribe } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, doc, setDoc, updateDoc, type Firestore, type Unsubscribe } from 'firebase/firestore'
 
 /**
  * The app's own queries, run against the rules.
@@ -46,6 +46,8 @@ const assignments = await import('../assignments')
 const schedule = await import('../schedule')
 const teacher = await import('../teacher')
 const summary = await import('../summary')
+const invites = await import('../invites')
+const requests = await import('../requests')
 
 const PROJECT = 'demo-maestrotrack'
 
@@ -55,6 +57,9 @@ const ANA = 'student-ana'       // taught by TEACHER
 const BEN = 'student-ben'       // taught by TEACHER — Ana's classmate
 const CLARE = 'student-clare'   // taught by OTHER_TEACHER
 const CODE = 'CHEN42'
+const TOKEN = 'tok_chen_invite_abcde'
+/** Invitation expiry is a Timestamp so the rules can compare it; see StudioInvite. */
+const WEEK = Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
 let env: RulesTestEnvironment
 
@@ -143,6 +148,11 @@ beforeEach(async () => {
     const db = ctx.firestore()
     await setDoc(doc(db, 'users', TEACHER), { role: 'teacher', displayName: 'Dr Chen', studioCode: CODE })
     await setDoc(doc(db, 'users', OTHER_TEACHER), { role: 'teacher', displayName: 'Mr Diaz', studioCode: 'DIAZ77' })
+    await setDoc(doc(db, 'studioInvites', TOKEN), {
+      teacherId: TEACHER, teacherName: 'Dr Chen', studioName: 'Chen Music',
+      createdAt: new Date().toISOString(), expiresAt: WEEK, status: 'open',
+    })
+    await setDoc(doc(db, 'inviteCodes', CODE), { token: TOKEN, teacherId: TEACHER, expiresAt: WEEK })
     await setDoc(doc(db, 'users', ANA), { role: 'student', displayName: 'Ana', teacherId: TEACHER, studioCode: CODE })
     await setDoc(doc(db, 'users', BEN), { role: 'student', displayName: 'Ben', teacherId: TEACHER, studioCode: CODE })
     await setDoc(doc(db, 'users', CLARE), { role: 'student', displayName: 'Clare', teacherId: OTHER_TEACHER })
@@ -157,7 +167,10 @@ async function seed(col: string, id: string, data: Record<string, unknown>) {
   return id
 }
 
-const SESSION = { date: '2026-03-01', durationMin: 30, category: 'technique', pieceIds: [] }
+const SESSION = {
+  date: '2026-03-01', durationMinutes: 30, category: 'Technique',
+  difficultyRating: 3, confidenceRating: 7, createdAt: new Date().toISOString(),
+}
 
 /* ══════════════════════════════════════════════════════════════════════
  * A student's own data — the screens they open every day
@@ -245,9 +258,70 @@ describe("the teacher's reads", () => {
     expect(await teacher.getStudentsForTeacher(TEACHER)).toHaveLength(2)
   })
 
-  it('getTeacherByStudioCode — the join screen, run by a signed-in student', async () => {
+  it('getInvite / resolveInviteCode — the two ways a student reaches an invitation', async () => {
     asClare()
-    expect(await teacher.getTeacherByStudioCode(CODE)).toBe(TEACHER)
+    expect((await invites.getInvite(TOKEN)).invite?.teacherId).toBe(TEACHER)
+    expect((await invites.resolveInviteCode(CODE)).invite?.token).toBe(TOKEN)
+    // The spoken code is forgiving about case and stray punctuation.
+    expect((await invites.resolveInviteCode(` ${CODE.toLowerCase()} `)).invite?.token).toBe(TOKEN)
+    expect((await invites.getInvite('nothing-here')).problem).toBe('not-found')
+  })
+
+  it('createInvite / revokeInvite — minting and burning, as the teacher does', async () => {
+    asTeacher()
+    const minted = await invites.createInvite({
+      uid: TEACHER, role: 'teacher', displayName: 'Dr Chen', studioName: 'Chen Music',
+    } as never)
+    expect(minted.token).toHaveLength(22)
+    expect(minted.code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/)
+    expect(invites.inviteUrl(minted.token)).toBe(`/join/${minted.token}`)
+    expect(invites.generateInviteToken()).not.toBe(invites.generateInviteCode())
+
+    asClare()
+    expect((await invites.resolveInviteCode(minted.code)).invite?.token).toBe(minted.token)
+    asTeacher()
+    await invites.revokeInvite(minted.token)
+    expect((await invites.getInvite(minted.token)).problem).toBe('revoked')
+  })
+
+  it('requestToJoin / accept — the whole handshake through the real functions', async () => {
+    await seed('users', 'loner', { role: 'student', displayName: 'Lo' })
+    as(env.authenticatedContext('loner'), 'loner')
+
+    const { invite } = await invites.getInvite(TOKEN)
+    const raised = await invites.requestToJoin(
+      { uid: 'loner', role: 'student', displayName: 'Lo' } as never,
+      invite!
+    )
+    expect(raised.id).toBe(invites.requestId('loner', TEACHER))
+    // Spending it closes it, so the same link cannot be used twice.
+    expect((await invites.getInvite(TOKEN)).problem).toBe('claimed')
+    expect(await expectDelivered((cb) => requests.subscribeMyStudioRequest('loner', cb))).toBeTruthy()
+
+    asTeacher()
+    const waiting = await expectDelivered<unknown[]>((cb) => requests.subscribeStudioRequests(TEACHER, cb))
+    expect(waiting, 'the teacher sees it waiting').toHaveLength(1)
+    await assertSucceeds(requests.acceptStudioRequest(raised, 'Chen Music'))
+  })
+
+  it('declineStudioRequest / withdrawStudioRequest — the other two endings', async () => {
+    await seed('users', 'loner', { role: 'student', displayName: 'Lo' })
+    await seed('studioRequests', invites.requestId('loner', TEACHER), {
+      studentId: 'loner', teacherId: TEACHER, studentName: 'Lo',
+      inviteToken: TOKEN, createdAt: new Date().toISOString(), status: 'pending',
+    })
+    asTeacher()
+    await assertSucceeds(requests.declineStudioRequest({
+      id: invites.requestId('loner', TEACHER), studentId: 'loner', teacherId: TEACHER,
+      studentName: 'Lo', inviteToken: TOKEN, createdAt: '', status: 'pending',
+    }))
+
+    await seed('studioRequests', invites.requestId('loner', OTHER_TEACHER), {
+      studentId: 'loner', teacherId: OTHER_TEACHER, studentName: 'Lo',
+      inviteToken: TOKEN, createdAt: new Date().toISOString(), status: 'pending',
+    })
+    as(env.authenticatedContext('loner'), 'loner')
+    await assertSucceeds(requests.withdrawStudioRequest('loner', OTHER_TEACHER))
   })
 
   it('subscribeSharedRecordings — handed-in takes only (the query that broke once)', async () => {
@@ -320,7 +394,7 @@ describe("the student's own writes", () => {
   it('addPracticeSession / updatePracticeSession / deletePracticeSession', async () => {
     asAna()
     const id = await assertSucceeds(practice.addPracticeSession(ANA, SESSION as never))
-    await assertSucceeds(practice.updatePracticeSession(id, { durationMin: 45 } as never))
+    await assertSucceeds(practice.updatePracticeSession(id, { durationMinutes: 45 }))
     await assertSucceeds(practice.deletePracticeSession(id))
   })
 
@@ -535,9 +609,9 @@ describe('signing up and joining a studio', () => {
     await assertSucceeds(setDoc(doc(db, 'users', 'newcomer'), signupProfile('student', 'Nia')))
   })
 
-  it("a new teacher's profile, with the studio code signUp generates", async () => {
+  it("a new teacher's profile — no studio code, signUp no longer mints one", async () => {
     const db = env.authenticatedContext('new-teacher').firestore()
-    await assertSucceeds(setDoc(doc(db, 'users', 'new-teacher'), signupProfile('teacher', 'Eve', 'QX7T2P')))
+    await assertSucceeds(setDoc(doc(db, 'users', 'new-teacher'), signupProfile('teacher', 'Eve')))
   })
 
   it('nobody can sign up as somebody else', async () => {
@@ -550,17 +624,17 @@ describe('signing up and joining a studio', () => {
     role: 'student', studioCode: code, teacherId, updatedAt: new Date().toISOString(),
   })
 
-  it('joining with a real code, as the join screen writes it', async () => {
+  it('a student can no longer write themselves into a studio, code or no code', async () => {
     await seed('users', 'loner', { role: 'student', displayName: 'Lo' })
     const db = env.authenticatedContext('loner').firestore()
-    await assertSucceeds(
-      setDoc(doc(db, 'users', 'loner'), joinPatch(CODE, TEACHER), { merge: true })
+    await assertFails(
+      setDoc(doc(db, 'users', 'loner'), joinPatch(TOKEN, TEACHER), { merge: true })
     )
   })
 
-  it('a student leaving one studio for another, code and all', async () => {
+  it('a student can no longer move themselves between studios either', async () => {
     const db = env.authenticatedContext(ANA).firestore()
-    await assertSucceeds(
+    await assertFails(
       setDoc(doc(db, 'users', ANA), joinPatch('DIAZ77', OTHER_TEACHER), { merge: true })
     )
   })
@@ -664,7 +738,7 @@ describe('this suite itself', () => {
   it('calls every function the Firestore modules export', () => {
     const modules = [
       'assignments', 'practice', 'pieces', 'performances',
-      'recordings', 'schedule', 'teacher', 'summary',
+      'recordings', 'schedule', 'teacher', 'summary', 'invites', 'requests',
     ]
     const self = readFileSync(__filename, 'utf8')
     const missing: string[] = []
@@ -674,7 +748,7 @@ describe('this suite itself', () => {
       for (const match of src.matchAll(/^export (?:async )?function (\w+)/gm)) {
         const name = match[1]
         // uploadRecording needs a live bucket; its row write is mirrored above.
-        if (name === 'uploadRecording') continue
+        if (name === 'uploadRecording' || name === 'getRecordingPlaybackUrl') continue
         if (!self.includes(`.${name}(`)) missing.push(`${m}.${name}`)
       }
     }

@@ -285,9 +285,14 @@ describe('profiles', () => {
     await assertFails(getDoc(doc(as(OTHER_TEACHER), 'users', ANA)))
   })
 
-  it('a student can find a teacher by studio code, which is how joining works', async () => {
+  // Was "a student can find a teacher by studio code, which is how joining
+  // works" — and it worked by letting any signed-in user list every teacher
+  // profile, studio code included. That is the enumeration the invitation
+  // flow exists to remove, so the query is now refused and nothing in the
+  // app makes it.
+  it('a student cannot enumerate teacher profiles any more', async () => {
     const q = query(collection(as(ANA), 'users'), where('role', '==', 'teacher'))
-    await assertSucceeds(getDocs(q))
+    await assertFails(getDocs(q))
   })
 
   it('nobody edits anyone else’s profile', async () => {

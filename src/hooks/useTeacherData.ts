@@ -1,16 +1,20 @@
 import { useEffect } from 'react'
 import { subscribeStudents } from '@/lib/firebase/teacher'
 import { subscribeTeacherSchedule } from '@/lib/firebase/schedule'
+import { subscribeStudioRequests } from '@/lib/firebase/requests'
 import { getPracticeSummary } from '@/lib/firebase/summary'
 import { sessionsFromSummary } from '@/lib/utils/summary'
 import { useTeacherStore } from '@/stores/teacherStore'
 
 export function useTeacherData(teacherId: string | undefined) {
-  const { setStudents, setStudentSessions, setSchedule } = useTeacherStore()
+  const { setStudents, setStudentSessions, setSchedule, setRequests, resetTeacherData } = useTeacherStore()
 
   useEffect(() => {
+    resetTeacherData()
     if (!teacherId) return
+    let active = true
     const unsubStudents = subscribeStudents(teacherId, async (students) => {
+      if (!active) return
       setStudents(students)
 
       // One summary document per student instead of their entire practice
@@ -26,11 +30,19 @@ export function useTeacherData(teacherId: string | undefined) {
       const summaries = await Promise.all(
         students.map((s) => getPracticeSummary(s.uid).catch(() => null))
       )
+      if (!active) return
       students.forEach((student, i) => {
         setStudentSessions(student.uid, sessionsFromSummary(summaries[i]))
       })
     })
     const unsubSchedule = subscribeTeacherSchedule(teacherId, setSchedule)
-    return () => { unsubStudents(); unsubSchedule() }
-  }, [teacherId, setStudents, setStudentSessions, setSchedule])
+    const unsubRequests = subscribeStudioRequests(teacherId, setRequests)
+    return () => {
+      active = false
+      unsubStudents()
+      unsubSchedule()
+      unsubRequests()
+      resetTeacherData()
+    }
+  }, [teacherId, setStudents, setStudentSessions, setSchedule, setRequests, resetTeacherData])
 }

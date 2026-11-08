@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Copy } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { UserPlus } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +12,8 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import StatCard from '@/components/common/StatCard'
 import SubmissionsWaiting from '@/components/assignments/SubmissionsWaiting'
+import PendingRequests from '@/components/teacher/PendingRequests'
+import InviteSheet from '@/components/teacher/InviteSheet'
 import EmptyState from '@/components/common/EmptyState'
 import type { UserProfile } from '@/types'
 
@@ -52,6 +54,7 @@ export default function TeacherDashboard() {
   const { profile } = useAuth()
   const { students, studentSessions } = useTeacherStore()
   const navigate = useNavigate()
+  const [inviting, setInviting] = useState(false)
 
   const summaries = useMemo(() =>
     Object.fromEntries(students.map((s) => [
@@ -74,10 +77,6 @@ export default function TeacherDashboard() {
     [summaries]
   )
 
-  async function copyCode() {
-    if (profile?.studioCode) await navigator.clipboard.writeText(profile.studioCode)
-  }
-
   return (
     <div>
       <PageHeader
@@ -88,16 +87,33 @@ export default function TeacherDashboard() {
         actions={<div className="lg:hidden"><NotificationBell floating /></div>}
       />
 
-      {/* Studio code */}
-      <Card className="p-4 mb-6 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-[var(--clay-dim)]">Studio Code</p>
-          <p className="text-2xl font-mono font-bold text-[var(--clay-ink)] tracking-widest">{profile?.studioCode ?? '—'}</p>
+      {/* Inviting somebody is an act, not a code sitting on the screen
+          waiting to be read over a shoulder. */}
+      <Card className="p-4 mb-6 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[var(--clay-ink)]">Add a student</p>
+          <p className="text-xs text-[var(--clay-dim)]">A link, a QR code or six characters — they join once you accept.</p>
         </div>
-        <button onClick={copyCode} className="flex items-center gap-2 text-sm text-[var(--clay-accent)] hover:text-[var(--clay-accent-hover)] transition-colors">
-          <Copy size={14} /> Copy
+        <button
+          type="button"
+          onClick={() => setInviting(true)}
+          className="flex shrink-0 items-center gap-2 px-3.5 py-2 text-sm font-bold transition-transform active:scale-95"
+          style={{
+            background: 'var(--clay-accent)',
+            color: 'var(--clay-on-accent)',
+            borderRadius: 'var(--clay-r-sm)',
+          }}
+        >
+          <UserPlus size={15} /> Invite
         </button>
       </Card>
+
+      {profile && (
+        <InviteSheet open={inviting} onClose={() => setInviting(false)} profile={profile} />
+      )}
+
+      {/* Renders nothing when nobody is waiting. */}
+      <PendingRequests />
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -115,7 +131,7 @@ export default function TeacherDashboard() {
         <EmptyState
           icon={<Sticker name="users" size={36} tone="accent" />}
           title="No students yet"
-          description={`Share your studio code with students: ${profile?.studioCode ?? '—'}`}
+          description="Tap Invite above to send a student a link, or show them the code in person."
         />
       ) : (
         <div>

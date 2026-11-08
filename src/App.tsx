@@ -29,6 +29,7 @@ import LoginPage from '@/pages/auth/LoginPage'
  */
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
+const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
 const PracticeLogPage = lazy(() => import('@/pages/student/PracticeLogPage'))
@@ -36,6 +37,7 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
 
 const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
@@ -92,6 +94,10 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      {/* A teacher's invitation. Public on purpose: the person it was sent
+          to very often has no account yet, and the page is what tells them
+          whose studio they are being asked into. */}
+      <Route path="/join/:token" element={<JoinPage />} />
 
       {/*
         Full-screen practice session. Deliberately a sibling of /student
@@ -121,6 +127,7 @@ function AppRoutes() {
         {/* Nested under settings on purpose: the Settings tab and the
             sidebar item match by prefix, so they stay lit while you are
             in here. */}
+        <Route path="settings/join" element={<JoinStudioPage />} />
         <Route path="settings/profile" element={<ProfilePage />} />
         <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
         <Route path="settings/notifications" element={<NotificationsPage />} />

@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './config'
+import { cleanForFirestore } from './clean'
 import type { UserProfile, UserRole, InstrumentType, ExperienceLevel } from '@/types'
 
 export async function signUp(
@@ -26,9 +27,6 @@ export async function signUp(
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   await updateProfile(credential.user, { displayName })
 
-  const studioCode =
-    role === 'teacher' ? Math.random().toString(36).substring(2, 8).toUpperCase() : undefined
-
   const profile: Omit<UserProfile, 'uid'> = {
     email,
     role,
@@ -39,7 +37,6 @@ export async function signUp(
     dailyGoalMinutes: Math.round((options.weeklyGoalMinutes ?? 300) / 7),
     monthlyGoalMinutes: (options.weeklyGoalMinutes ?? 300) * 4,
     studioName: options.studioName,
-    studioCode,
     reminderEnabled: false,
     theme: 'light',
     createdAt: new Date().toISOString(),
@@ -57,6 +54,11 @@ export async function signUp(
     throw new Error('Account created but profile could not be saved to the database. Please try signing in — if that fails, contact support.')
   }
   return credential.user
+}
+
+/** Rebuilds a missing profile through the same service boundary as other writes. */
+export async function saveRebuiltProfile(profile: UserProfile): Promise<void> {
+  await setDoc(doc(db, 'users', profile.uid), cleanForFirestore(profile))
 }
 
 export async function signIn(email: string, password: string): Promise<User> {
