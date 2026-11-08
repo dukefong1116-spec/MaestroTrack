@@ -1,13 +1,13 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Keyboard, QrCode } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getInvite, requestToJoin, resolveInviteCode, type InviteProblem } from '@/lib/firebase/invites'
-import { subscribeMyStudioRequest, withdrawStudioRequest } from '@/lib/firebase/requests'
+import { leaveStudio, subscribeMyStudioRequest, withdrawStudioRequest } from '@/lib/firebase/requests'
 import { Panel, Block, Legend, SettingsScreen } from '@/components/ui/Panel'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Sticker from '@/components/stickers/Sticker'
+import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import { tokenFromScan } from '@/lib/utils/inviteLink'
 import type { StudioInvite } from '@/types'
 
@@ -31,13 +31,13 @@ const EXCUSE: Record<InviteProblem, string> = {
  */
 export default function JoinStudioPage() {
   const { profile } = useAuth()
-  const navigate = useNavigate()
 
   const [mode, setMode] = useState<'choose' | 'code' | 'scan'>('choose')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [waiting, setWaiting] = useState<{ teacherId: string } | null>(null)
+  const [leaving, setLeaving] = useState(false)
 
   const uid = profile?.uid
   const joined = Boolean(profile?.teacherId)
@@ -93,6 +93,19 @@ export default function JoinStudioPage() {
     }
   }
 
+  async function leave() {
+    if (!uid) return
+    setLeaving(false)
+    try {
+      await leaveStudio(uid)
+      // No local profile patch: the profile is a live subscription now,
+      // so the write comes back on its own.
+    } catch (e) {
+      console.error('[JoinStudio] leave failed', e)
+      setError('Could not leave the studio. Try again.')
+    }
+  }
+
   async function withdraw() {
     if (!uid || !waiting) return
     try {
@@ -113,15 +126,34 @@ export default function JoinStudioPage() {
       */}
       <Panel>
         {joined ? (
-          <Settled
-            title="You're in a studio"
-            body={`${profile?.studioName || 'Your teacher'} has you on their roster.`}
-            action={
-              <Button variant="outline" onClick={() => navigate('/student/settings')}>
-                Back to settings
-              </Button>
-            }
-          />
+          <>
+            <Block first>
+              <Legend title="Your studio" />
+              <p className="text-[19px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+                {profile?.studioName || 'Your studio'}
+              </p>
+              {profile?.teacherName && (
+                <p className="mt-0.5 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>
+                  Taught by {profile.teacherName}
+                </p>
+              )}
+            </Block>
+            <Block>
+              <p className="mb-3 text-[13px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
+                Leaving stops your teacher seeing your practice. Your own
+                history stays exactly as it is.
+              </p>
+              <Button variant="outline" onClick={() => setLeaving(true)}>Leave this studio</Button>
+            </Block>
+            <ConfirmSheet
+              open={leaving}
+              onCancel={() => setLeaving(false)}
+              onConfirm={leave}
+              title="Leave this studio?"
+              body={`${profile?.teacherName || 'Your teacher'} will no longer see your practice. You can be invited back later.`}
+              confirmLabel="Leave"
+            />
+          </>
         ) : waiting ? (
           <Settled
             title="Waiting on your teacher"

@@ -15,7 +15,7 @@ import ReviewSheet from '@/components/assignments/ReviewSheet'
 import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
 import { getInstrumentTheme } from '@/lib/utils/instruments'
-import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import Avatar from '@/components/profile/Avatar'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
@@ -169,9 +169,12 @@ export default function StudentDetailPage() {
       </button>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: `linear-gradient(135deg, ${theme.primary}40, ${theme.secondary}20)` }}>
-          <InstrumentIcon instrument={student?.instrument as InstrumentType | undefined} size={26} style={{ color: theme.primary }} />
-        </div>
+        <Avatar
+          src={student.avatar}
+          name={student.displayName}
+          instrument={student?.instrument as InstrumentType | undefined}
+          size={56}
+        />
         <div>
           <h1 className="text-2xl font-bold text-[var(--clay-ink)]">{student.displayName}</h1>
           <p className="text-[var(--clay-dim)] text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>

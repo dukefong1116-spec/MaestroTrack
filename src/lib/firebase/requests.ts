@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, doc, onSnapshot, query, where, writeBatch,
+  collection, deleteDoc, doc, onSnapshot, query, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
 import { auth, db } from './config'
 import { requestId } from './invites'
@@ -67,7 +67,8 @@ export function subscribeStudioRequests(
  */
 export async function acceptStudioRequest(
   request: StudioRequest,
-  studioName?: string
+  studioName?: string,
+  teacherName?: string
 ): Promise<void> {
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('You are not signed in.')
@@ -77,6 +78,7 @@ export async function acceptStudioRequest(
   batch.update(doc(db, USERS, request.studentId), {
     teacherId: uid,
     studioName: studioName ?? '',
+    teacherName: teacherName ?? '',
     updatedAt: new Date().toISOString(),
   })
   batch.update(doc(db, REQUESTS, request.id), {
@@ -125,4 +127,21 @@ export function subscribeMyStudioRequest(
       onChange(null)
     }
   )
+}
+
+/**
+ * Leaving, by the student's own hand.
+ *
+ * The mirror of removeStudentFromStudio, and the only studio field a
+ * student may write: the rule lets teacherId be cleared but never set,
+ * so this walks out and cannot walk in.
+ */
+export async function leaveStudio(studentId: string): Promise<void> {
+  if (auth.currentUser?.uid !== studentId) throw new Error('That is not your studio to leave.')
+  await updateDoc(doc(db, USERS, studentId), {
+    teacherId: null,
+    studioName: '',
+    teacherName: '',
+    updatedAt: new Date().toISOString(),
+  })
 }

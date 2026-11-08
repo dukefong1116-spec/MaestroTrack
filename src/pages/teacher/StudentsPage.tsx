@@ -7,7 +7,7 @@ import { useTeacherStore } from '@/stores/teacherStore'
 import { removeStudentFromStudio } from '@/lib/firebase/teacher'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import PageHeader from '@/components/common/PageHeader'
-import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import Avatar from '@/components/profile/Avatar'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Badge from '@/components/ui/Badge'
@@ -90,9 +90,12 @@ export default function StudentsPage() {
                 <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--clay-accent) 15%, transparent)', color: 'var(--clay-accent)' }}>
-                        <InstrumentIcon instrument={student.instrument as InstrumentType | undefined} size={19} />
-                      </div>
+                      <Avatar
+                        src={student.avatar}
+                        name={student.displayName}
+                        instrument={student.instrument as InstrumentType | undefined}
+                        size={40}
+                      />
                       <div>
                         <p className="font-semibold text-[var(--clay-ink)]">{student.displayName}</p>
                         <p className="text-xs text-[var(--clay-dim)] capitalize">{student.instrument ?? 'Unknown'}</p>

@@ -304,6 +304,14 @@ describe("the teacher's reads", () => {
     await assertSucceeds(requests.acceptStudioRequest(raised, 'Chen Music'))
   })
 
+  it('leaveStudio — a student walking out of their own accord', async () => {
+    asAna()
+    await assertSucceeds(requests.leaveStudio(ANA))
+    // Somebody else's is refused by the function before Firestore is even
+    // asked — the rule refuses it too, which rules.join.test.ts covers.
+    await expect(requests.leaveStudio(BEN)).rejects.toThrow(/not your studio/i)
+  })
+
   it('declineStudioRequest / withdrawStudioRequest — the other two endings', async () => {
     await seed('users', 'loner', { role: 'student', displayName: 'Lo' })
     await seed('studioRequests', invites.requestId('loner', TEACHER), {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { onAuthChange, getUserProfile, saveRebuiltProfile } from '@/lib/firebase/auth'
+import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile } from '@/lib/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
 
 export function useAuthInit() {
@@ -7,8 +7,14 @@ export function useAuthInit() {
 
   useEffect(() => {
     let generation = 0
+    // Torn down and replaced whenever the signed-in account changes, so a
+    // sign-out never leaves somebody's profile still being watched.
+    let unsubProfile: (() => void) | null = null
+    const dropProfileWatch = () => { unsubProfile?.(); unsubProfile = null }
+
     const unsub = onAuthChange(async (user) => {
       const currentGeneration = ++generation
+      dropProfileWatch()
       setLoading(true)
       setUser(user)
       if (user) {
@@ -58,6 +64,19 @@ export function useAuthInit() {
           localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(profile))
           localStorage.setItem(`maestro_role_${user.uid}`, profile.role)
           if (currentGeneration === generation) setProfile(profile)
+
+          // From here it stays live. The read above is what handles a
+          // missing document; this is what notices somebody else changing
+          // it — which, since accepting a student is a write to *their*
+          // profile, is the only way the student learns they are in.
+          if (currentGeneration === generation) {
+            unsubProfile = subscribeUserProfile(user.uid, (fresh) => {
+              if (currentGeneration !== generation) return
+              localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(fresh))
+              localStorage.setItem(`maestro_role_${user.uid}`, fresh.role)
+              setProfile(fresh)
+            })
+          }
         } catch (e) {
           console.error('[Auth] Failed to load Firestore profile:', e)
           if (currentGeneration === generation) setProfile(null)
@@ -71,7 +90,10 @@ export function useAuthInit() {
         }
       }
     })
-    return unsub
+    return () => {
+      dropProfileWatch()
+      unsub()
+    }
   }, [setUser, setProfile, setLoading])
 }
 

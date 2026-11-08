@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './config'
 import { cleanForFirestore } from './clean'
 import type { UserProfile, UserRole, InstrumentType, ExperienceLevel } from '@/types'
@@ -78,6 +78,29 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, 'users', uid))
   if (!snap.exists()) return null
   return { uid, ...snap.data() } as UserProfile
+}
+
+/**
+ * Watch your own profile, rather than reading it once at sign-in.
+ *
+ * It used to be a single read, which was fine while nothing but you could
+ * change it. Accepting a student broke that: the teacher writes teacherId
+ * onto the student's document, and the student's app had no way of
+ * hearing about it — they sat on "waiting on your teacher" until they
+ * signed out and back in.
+ *
+ * Latency compensation means the optimistic setProfile calls elsewhere
+ * still show instantly; the snapshot simply confirms them.
+ */
+export function subscribeUserProfile(
+  uid: string,
+  onChange: (profile: UserProfile) => void
+): () => void {
+  return onSnapshot(
+    doc(db, 'users', uid),
+    (snap) => { if (snap.exists()) onChange({ uid, ...snap.data() } as UserProfile) },
+    (e) => console.error('[Auth] profile subscription failed', e)
+  )
 }
 
 export function onAuthChange(callback: (user: User | null) => void) {

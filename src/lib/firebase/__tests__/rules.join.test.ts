@@ -413,11 +413,34 @@ describe('a student can no longer walk in', () => {
 /* ── leaving ─────────────────────────────────────────────────────── */
 
 describe('leaving a studio', () => {
-  it('is the teacher’s to do, still', async () => {
+  it('is the teacher’s to do', async () => {
     await assertSucceeds(updateDoc(doc(as(OTHER_TEACHER), 'users', BEN), { teacherId: null }))
   })
 
-  it('is not the student’s, still', async () => {
-    await assertFails(updateDoc(doc(as(BEN), 'users', BEN), { teacherId: null }))
+  it('is now also the student’s own, which it was not before', async () => {
+    await assertSucceeds(updateDoc(doc(as(BEN), 'users', BEN), {
+      teacherId: null, studioName: '', teacherName: '', updatedAt: new Date().toISOString(),
+    }))
+  })
+
+  it('but only outwards — clearing is allowed, setting still is not', async () => {
+    await assertFails(updateDoc(doc(as(ANA), 'users', ANA), { teacherId: TEACHER }))
+    await assertFails(updateDoc(doc(as(BEN), 'users', BEN), { teacherId: TEACHER }))
+  })
+
+  it('and never on somebody else', async () => {
+    await assertFails(updateDoc(doc(as(ANA), 'users', BEN), { teacherId: null }))
+  })
+
+  it('a student who left can be invited back', async () => {
+    await assertSucceeds(updateDoc(doc(as(BEN), 'users', BEN), { teacherId: null }))
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', BEN), { role: 'student', displayName: 'Ben' })
+    })
+    const db = as(BEN)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'studioRequests', reqId(BEN, TEACHER)), requestBody(BEN, TEACHER))
+    batch.update(doc(db, 'studioInvites', TOKEN), { status: 'claimed' })
+    await assertSucceeds(batch.commit())
   })
 })

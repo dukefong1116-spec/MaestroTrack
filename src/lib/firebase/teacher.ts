@@ -50,6 +50,7 @@ export async function removeStudentFromStudio(studentId: string): Promise<void> 
   await updateDoc(doc(db, USERS, studentId), {
     teacherId: null,
     studioName: '',
+    teacherName: '',
     updatedAt: new Date().toISOString(),
   })
 }

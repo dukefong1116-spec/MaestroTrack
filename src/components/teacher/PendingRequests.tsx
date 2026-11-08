@@ -25,7 +25,7 @@ export default function PendingRequests() {
     setBusy(request.id)
     setError('')
     try {
-      if (accept) await acceptStudioRequest(request, profile?.studioName)
+      if (accept) await acceptStudioRequest(request, profile?.studioName, profile?.displayName)
       else await declineStudioRequest(request)
       // No local removal: the subscription is filtered to pending, so the
       // row leaves on its own once the write lands. Removing it here as

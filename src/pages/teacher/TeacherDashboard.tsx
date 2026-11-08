@@ -15,15 +15,20 @@ import SubmissionsWaiting from '@/components/assignments/SubmissionsWaiting'
 import PendingRequests from '@/components/teacher/PendingRequests'
 import InviteSheet from '@/components/teacher/InviteSheet'
 import EmptyState from '@/components/common/EmptyState'
-import type { UserProfile } from '@/types'
+import Avatar from '@/components/profile/Avatar'
+import type { UserProfile, InstrumentType } from '@/types'
 
 function StudentRow({ student, sessions, onClick }: { student: UserProfile; sessions: ReturnType<typeof getAnalyticsSummary>; onClick: () => void }) {
   return (
     <Card hover className="p-4 flex items-center justify-between gap-4" onClick={onClick}>
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 rounded-full bg-[var(--clay-accent-soft)] flex items-center justify-center text-sm font-bold text-[var(--clay-accent-hover)] shrink-0">
-          {(student.displayName ?? student.email ?? '?').charAt(0).toUpperCase()}
-        </div>
+        <Avatar
+          src={student.avatar}
+          name={student.displayName ?? student.email}
+          instrument={student.instrument as InstrumentType | undefined}
+          size={36}
+          className="shrink-0"
+        />
         <div className="min-w-0">
           <p className="font-semibold text-[var(--clay-ink)] text-sm truncate">{student.displayName}</p>
           <p className="text-xs text-[var(--clay-dim)]">{student.instrument ?? 'Unknown'} · {student.experienceLevel ?? '—'}</p>

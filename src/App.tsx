@@ -56,6 +56,7 @@ const StudentsPage = lazy(() => import('@/pages/teacher/StudentsPage'))
 const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage'))
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
+const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
 const SchedulePage = lazy(() => import('@/pages/teacher/SchedulePage'))
 
 function RouteLoading() {
@@ -159,6 +160,10 @@ function AppRoutes() {
         <Route path="schedule" element={<SchedulePage />} />
         <Route path="research" element={<ResearchPage />} />
         <Route path="settings" element={<TeacherSettingsPage />} />
+        <Route path="settings/profile" element={<TeacherProfilePage />} />
+        {/* The same photo screen the student uses; it knows which Settings
+            to send you back to from the signed-in role. */}
+        <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
         <Route path="settings/notifications" element={<NotificationsPage />} />
         <Route path="settings/appearance" element={<AppearancePage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />

@@ -112,7 +112,7 @@ export default function ProfilePhotoPage() {
     <div className="max-w-2xl">
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
-          to="/student/settings/profile"
+          to={`/${profile?.role === 'teacher' ? 'teacher' : 'student'}/settings/profile`}
           aria-label="Back to Edit Profile"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
           style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}

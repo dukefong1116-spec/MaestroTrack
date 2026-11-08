@@ -64,6 +64,10 @@ export interface UserProfile {
   studioName?: string
   studioCode?: string
   teacherId?: string
+  /** Written when a teacher accepts, so a student can be told whose
+   *  studio they are in without reading the teacher's profile — which
+   *  the rules do not permit. */
+  teacherName?: string
   createdAt: string
   updatedAt: string
   reminderTime?: string

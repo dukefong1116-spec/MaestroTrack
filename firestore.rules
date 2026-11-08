@@ -80,7 +80,12 @@ service cloud.firestore {
         // student set teacherId as long as they could produce a matching
         // code, which is precisely the "anyone holding the code walks in"
         // behaviour the invitation flow replaces.
-        && d.get('teacherId', null) == before.get('teacherId', null)
+        //
+        // Walking out is the exception, and only ever outwards: teacherId
+        // may be cleared by its owner but never set, so leaving is yours
+        // and joining still is not.
+        && (d.get('teacherId', null) == before.get('teacherId', null)
+            || d.get('teacherId', null) == null)
         && d.get('studioCode', '') == before.get('studioCode', '');
     }
 
@@ -198,7 +203,7 @@ service cloud.firestore {
                     && resource.data.get('teacherId', null) == null
                     && request.resource.data.get('teacherId', '') == uid()
                     && request.resource.data.diff(resource.data)
-                         .affectedKeys().hasOnly(['teacherId', 'studioName', 'updatedAt'])
+                         .affectedKeys().hasOnly(['teacherId', 'studioName', 'teacherName', 'updatedAt'])
                     && pendingRequestFrom(userId);
 
       // A teacher letting a student go.
@@ -221,7 +226,7 @@ service cloud.firestore {
                     && resource.data.get('teacherId', '') == uid()
                     && request.resource.data.get('teacherId', null) == null
                     && request.resource.data.diff(resource.data)
-                         .affectedKeys().hasOnly(['teacherId', 'studioCode', 'studioName', 'updatedAt']);
+                         .affectedKeys().hasOnly(['teacherId', 'studioCode', 'studioName', 'teacherName', 'updatedAt']);
 
       allow delete: if false;
     }
