@@ -77,13 +77,17 @@ describe('uploadRecording, with what the recorder really produces', () => {
   })
 
   it('the row written points at the audio and belongs to the uploader', async () => {
-    await recordings.uploadRecording(ANA, take('video/mp4', 'mp4'), META as never)
+    const id = await recordings.uploadRecording(ANA, take('video/mp4', 'mp4'), META as never)
     const snap = await getDocs(query(
       collection(live.db!, 'recordings'), where('userId', '==', ANA)))
     expect(snap.size).toBe(1)
     const row = snap.docs[0].data()
     expect(row.userId).toBe(ANA)
-    expect(String(row.audioUrl)).toContain(`recordings%2F${ANA}%2F`)
+    // Filed under the take's own id, which is what lets the Storage rules
+    // find its document — and with no download URL, which would play for
+    // anyone holding it.
+    expect(String(row.storagePath)).toMatch(new RegExp(`^recordings/${ANA}/${id}/`))
+    expect(row.audioUrl, 'no shareable link is saved').toBeUndefined()
   })
 
   it('a file that is genuinely not audio is still refused', async () => {
@@ -106,6 +110,6 @@ describe('uploadRecording, with what the recorder really produces', () => {
     const snap = await getDocs(query(
       collection(live.db!, 'recordings'), where('userId', '==', ANA)))
     expect(snap.size, 'the row belongs to the signed-in user').toBe(1)
-    expect(String(snap.docs[0].data().audioUrl)).toContain(`recordings%2F${ANA}%2F`)
+    expect(String(snap.docs[0].data().storagePath)).toMatch(new RegExp(`^recordings/${ANA}/`))
   })
 })

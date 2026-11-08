@@ -181,7 +181,12 @@ export interface Recording {
   title?: string
   pieceName: string
   date: string
-  audioUrl: string
+  /** Where the audio is in Storage. Every take saved since recordings
+   *  became private; played through recordingAudio. */
+  storagePath?: string
+  /** A download URL, on takes saved before that. Plays for anyone who
+   *  has it — kept only so those older takes still play. */
+  audioUrl?: string
   notes?: string
   duration?: number
   createdAt: string

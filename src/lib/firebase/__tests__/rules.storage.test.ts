@@ -5,6 +5,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
 import { ref, uploadBytes, getBytes, deleteObject } from 'firebase/storage'
+import { doc, setDoc, updateDoc } from 'firebase/firestore'
 
 /**
  * The Storage rules, which nothing had tested.
@@ -27,6 +28,9 @@ beforeAll(async () => {
   env = await initializeTestEnvironment({
     projectId: PROJECT,
     storage: { rules: readFileSync('storage.rules', 'utf8'), host: '127.0.0.1', port: 9199 },
+    // The Storage rules look up a take's document to decide whether a
+    // teacher may hear it, so the documents have to be there to find.
+    firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8085 },
   })
 })
 afterAll(async () => { await env?.cleanup() })
@@ -104,10 +108,10 @@ describe('reading and deleting a take', () => {
     await assertFails(getBytes(ref(as(BEN), `recordings/${ANA}/take-1.webm`)))
   })
 
-  it('a teacher cannot read it through Storage', async () => {
-    // Deliberate, and worth stating: a teacher hears a submitted take via
-    // the download URL stored on the Firestore document, not through the
-    // SDK. This path stays closed.
+  it('a teacher cannot read a take saved the old way', async () => {
+    // No take id in the path, so nothing to check a hand-in against. Takes
+    // saved like this still carry their old download URL, which is how
+    // they are played.
     await assertFails(getBytes(ref(as(TEACHER), `recordings/${ANA}/take-1.webm`)))
   })
 
@@ -122,6 +126,101 @@ describe('reading and deleting a take', () => {
   it('nobody else can delete it', async () => {
     await assertFails(deleteObject(ref(as(BEN), `recordings/${ANA}/take-1.webm`)))
     await assertFails(deleteObject(ref(as(TEACHER), `recordings/${ANA}/take-1.webm`)))
+  })
+})
+
+/* ══════════════════════════════════════════════════════════════════════
+ * Private playback: who may hear a take
+ *
+ * A take is saved at recordings/{student}/{takeId}/{file}, with no
+ * download URL. The only way to hear it is through the SDK, as someone
+ * these rules let in — so every play is decided here, at the time of
+ * playing, by the take's document and the student's profile.
+ * ════════════════════════════════════════════════════════════════════ */
+
+describe('hearing a take that was handed in', () => {
+  const OTHER_TEACHER = 'teacher-2'
+  const path = (owner: string, id: string) => `recordings/${owner}/${id}/session.webm`
+
+  beforeEach(async () => {
+    await env.clearFirestore()
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'users', TEACHER), { role: 'teacher' })
+      await setDoc(doc(db, 'users', OTHER_TEACHER), { role: 'teacher' })
+      await setDoc(doc(db, 'users', ANA), { role: 'student', teacherId: TEACHER })
+      await setDoc(doc(db, 'users', BEN), { role: 'student', teacherId: TEACHER })
+      await setDoc(doc(db, 'recordings', 'shared'), { userId: ANA, sharedWithTeacher: true, storagePath: path(ANA, 'shared') })
+      await setDoc(doc(db, 'recordings', 'private'), { userId: ANA, storagePath: path(ANA, 'private') })
+      await setDoc(doc(db, 'recordings', 'bens'), { userId: BEN, sharedWithTeacher: true, storagePath: path(BEN, 'bens') })
+      const st = ctx.storage()
+      await uploadBytes(ref(st, path(ANA, 'shared')), audio(), asAudio)
+      await uploadBytes(ref(st, path(ANA, 'private')), audio(), asAudio)
+      await uploadBytes(ref(st, path(BEN, 'bens')), audio(), asAudio)
+      // A file in Ana's folder filed under Ben's take: a student cannot
+      // borrow someone else's hand-in to open their own file.
+      await uploadBytes(ref(st, path(ANA, 'bens')), audio(), asAudio)
+    })
+  })
+
+  it('the student hears their own, handed in or not', async () => {
+    await assertSucceeds(getBytes(ref(as(ANA), path(ANA, 'shared'))))
+    await assertSucceeds(getBytes(ref(as(ANA), path(ANA, 'private'))))
+  })
+
+  it('their teacher hears a take once it is handed in', async () => {
+    await assertSucceeds(getBytes(ref(as(TEACHER), path(ANA, 'shared'))))
+  })
+
+  it('their teacher cannot hear one that was not handed in', async () => {
+    await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'private'))))
+  })
+
+  it('another teacher cannot hear it, handed in or not', async () => {
+    await assertFails(getBytes(ref(as(OTHER_TEACHER), path(ANA, 'shared'))))
+  })
+
+  it('a classmate cannot hear it', async () => {
+    await assertFails(getBytes(ref(as(BEN), path(ANA, 'shared'))))
+  })
+
+  it('nobody signed out can hear it', async () => {
+    await assertFails(getBytes(ref(anon(), path(ANA, 'shared'))))
+  })
+
+  it('the teacher loses it the moment the student leaves the studio', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'users', ANA), { teacherId: null })
+    })
+    await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'shared'))))
+  })
+
+  it('or the moment the take stops being handed in', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'recordings', 'shared'), { sharedWithTeacher: false })
+    })
+    await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'shared'))))
+  })
+
+  it('a hand-in only opens files in its own student’s folder', async () => {
+    // Ben's take is handed in, but this file is in Ana's folder.
+    await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'bens'))))
+    // While Ben's own file under it is fine.
+    await assertSucceeds(getBytes(ref(as(TEACHER), path(BEN, 'bens'))))
+  })
+
+  it('a path naming a take that does not exist opens nothing', async () => {
+    await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'no-such-take'))))
+  })
+
+  it('hearing it is all a teacher may do', async () => {
+    await assertFails(deleteObject(ref(as(TEACHER), path(ANA, 'shared'))))
+    await assertFails(uploadBytes(ref(as(TEACHER), path(ANA, 'shared')), audio(), asAudio))
+  })
+
+  it('the student still uploads and deletes in the new layout', async () => {
+    await assertSucceeds(uploadBytes(ref(as(ANA), path(ANA, 'new-take')), audio(), asAudio))
+    await assertSucceeds(deleteObject(ref(as(ANA), path(ANA, 'private'))))
   })
 })
 

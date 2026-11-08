@@ -431,7 +431,7 @@ describe("the student's own writes", () => {
   it('deleteRecording — the row goes even when the storage object is unreachable', async () => {
     await seed('recordings', 'r1', { userId: ANA, date: '2026-03-01', audioUrl: 'x' })
     asAna()
-    await assertSucceeds(recordings.deleteRecording('r1', 'gs://nowhere/x'))
+    await assertSucceeds(recordings.deleteRecording('r1', { audioUrl: 'gs://nowhere/x' }))
   })
 
   it('renameRecording — naming your own take', async () => {
@@ -718,7 +718,7 @@ describe('the remaining two', () => {
       date: '2026-03-01',
       pieceId: 'p1',
       durationSec: 95,
-      audioUrl: 'https://storage.example/recordings/student-ana/x.webm',
+      storagePath: 'recordings/student-ana/take-id/x.webm',
       sharedWithTeacher: false,
       createdAt: new Date().toISOString(),
     }))
@@ -756,7 +756,9 @@ describe('this suite itself', () => {
       for (const match of src.matchAll(/^export (?:async )?function (\w+)/gm)) {
         const name = match[1]
         // uploadRecording needs a live bucket; its row write is mirrored above.
-        if (name === 'uploadRecording' || name === 'getRecordingPlaybackUrl') continue
+        // recordingAudio reads only Storage, which rules.storage.test.ts
+        // covers — who may hear a take is decided there, not here.
+        if (name === 'uploadRecording' || name === 'recordingAudio') continue
         if (!self.includes(`.${name}(`)) missing.push(`${m}.${name}`)
       }
     }

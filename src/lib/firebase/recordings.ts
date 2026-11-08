@@ -1,6 +1,6 @@
 import {
   collection,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   doc,
@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getBlob, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -47,7 +47,7 @@ function audioContentType(blobType: string | undefined): string {
 export async function uploadRecording(
   userId: string,
   file: File,
-  metadata: Omit<Recording, 'id' | 'userId' | 'audioUrl' | 'createdAt'>,
+  metadata: Omit<Recording, 'id' | 'userId' | 'audioUrl' | 'storagePath' | 'createdAt'>,
   onProgress?: (pct: number) => void
 ): Promise<string> {
   // The path must be built from the *authenticated* uid, because that is
@@ -61,7 +61,11 @@ export async function uploadRecording(
   if (authUid !== userId) {
     console.warn('[recordings] profile uid', userId, 'differs from auth uid', authUid, '— using auth uid')
   }
-  const path = `recordings/${authUid}/${Date.now()}_${file.name}`
+  // The document's id is chosen first and becomes part of the path, so
+  // the Storage rules can find this take's document from the file alone
+  // and let a teacher hear it only while it is handed in to them.
+  const docRef = doc(collection(db, COL))
+  const path = `recordings/${authUid}/${docRef.id}/${file.name}`
   const storageRef = ref(storage, path)
   // Say what this is, rather than hoping the blob still knows.
   //
@@ -108,15 +112,18 @@ export async function uploadRecording(
     })
   }
 
-  const audioUrl = await getDownloadURL(storageRef)
+  // Only the path is stored — no download URL. A download URL plays for
+  // anyone holding it and cannot be taken back; a path plays only through
+  // the SDK, as someone the Storage rules let in. See recordingAudio.
+  //
   // Stripped, not spread: a take with no notes carries `notes: undefined`,
   // which Firestore refuses with `invalid-argument`. That rejection came
   // *after* the audio had already uploaded, so the file sat in the bucket
   // with no row pointing at it and the app reported the take as failed.
-  const docRef = await addDoc(collection(db, COL), cleanForFirestore({
+  await setDoc(docRef, cleanForFirestore({
     ...metadata,
     userId: authUid,
-    audioUrl,
+    storagePath: path,
     createdAt: new Date().toISOString(),
   }))
   return docRef.id
@@ -133,10 +140,28 @@ export async function shareRecordings(ids: string[]): Promise<void> {
   )
 }
 
-export async function deleteRecording(id: string, audioUrl: string): Promise<void> {
+/**
+ * A take's audio, as a local blob: URL to hand to an <audio>.
+ *
+ * Fetched through the SDK as the signed-in person, so the Storage rules
+ * decide on every play — the owner always, a teacher only while the take
+ * is handed in to them. Takes saved before paths were stored have only
+ * their old download URL, which is used as it is.
+ *
+ * The caller owns the URL and revokes it when done with it.
+ */
+export async function recordingAudio(r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<string> {
+  if (r.storagePath) return URL.createObjectURL(await getBlob(ref(storage, r.storagePath)))
+  if (r.audioUrl) return r.audioUrl
+  throw new Error('This take has no audio')
+}
+
+export async function deleteRecording(id: string, r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<void> {
   await deleteDoc(doc(db, COL, id))
+  const where = r.storagePath ?? r.audioUrl
+  if (!where) return
   try {
-    const storageRef = ref(storage, audioUrl)
+    const storageRef = ref(storage, where)
     await deleteObject(storageRef)
   } catch {
     // storage object may already be gone

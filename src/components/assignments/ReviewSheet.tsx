@@ -7,6 +7,7 @@ import Textarea from '@/components/ui/Textarea'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
 import { reviewAssignment } from '@/lib/firebase/assignments'
+import { recordingAudio } from '@/lib/firebase/recordings'
 import { latestSubmission } from '@/lib/utils/assignments'
 import type { Assignment, Recording } from '@/types'
 
@@ -97,7 +98,7 @@ export default function ReviewSheet({
             </p>
             <div className="space-y-2.5">
               {attached.map((r, i) => (
-                <TakePlayer key={r.id} src={r.audioUrl} label={r.title?.trim() || takeNames.get(r.id) || takeLabel(r.date, i + 1)} storedDuration={r.duration} />
+                <TakePlayer key={r.id} load={() => recordingAudio(r)} label={r.title?.trim() || takeNames.get(r.id) || takeLabel(r.date, i + 1)} storedDuration={r.duration} />
               ))}
             </div>
           </>

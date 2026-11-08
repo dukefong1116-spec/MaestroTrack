@@ -2,17 +2,39 @@ rules_version = '2';
 
 // MaestroTrack Storage rules.
 //
-// Only the owner reads or writes through the SDK. Note that this is not
-// what lets a teacher hear a submitted take: getDownloadURL() returns a
-// URL carrying its own access token, which works for anyone holding it and
-// bypasses these rules entirely. The real gate on a recording is the
-// Firestore rule covering the /recordings document that holds that URL.
+// Recordings are private, and these rules are what keeps them so.
 //
-// Keep that in mind before treating a download URL as private — it is a
-// capability, and forwarding one forwards the audio.
+// A take used to be saved with a download URL — a link carrying its own
+// access token, which plays for anyone holding it, signed in or not, for
+// ever, and bypasses everything written here. Takes are now saved with
+// only their path, and played by fetching through the SDK as the signed-in
+// person, so every play is checked against the rules below, at the time
+// of playing: a take that is un-shared, or a student who leaves the
+// studio, is unplayable to the teacher from that moment.
+//
+// Takes saved before that change still carry their URL in Firestore, and
+// those links keep working until their tokens are revoked.
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // A take handed in to a teacher. New takes live at
+    // recordings/{student}/{recordingId}/{file}, so the recording's own
+    // document can be looked up from the path: the teacher may read the
+    // file while that document says it was handed in, belongs to this
+    // folder's student, and the student is still in their studio — the
+    // same three things the Firestore rule on the document asks.
+    match /recordings/{userId}/{recordingId}/{fileName} {
+      allow read: if request.auth != null
+                  && handedInTo(request.auth.uid, userId, recordingId);
+    }
+
+    function handedInTo(teacher, student, recordingId) {
+      let rec = firestore.get(/databases/(default)/documents/recordings/$(recordingId)).data;
+      return rec.userId == student
+        && rec.sharedWithTeacher == true
+        && firestore.get(/databases/(default)/documents/users/$(student)).data.teacherId == teacher;
+    }
+
     match /recordings/{userId}/{allPaths=**} {
       allow read: if request.auth != null && request.auth.uid == userId;
 
@@ -33,8 +55,7 @@ service firebase.storage {
     // changing your picture cannot leave the old one behind and the bucket
     // does not grow a file per change.
     //
-    // Read is owner-only, like recordings. That is a narrower gate than it
-    // looks: getDownloadURL() hands back a URL carrying its own token, which
+    // Read is owner-only. That is a narrower gate than it looks: getDownloadURL() hands back a URL carrying its own token, which
     // works for anyone holding it regardless of what is written here. The
     // rule stops someone walking the bucket by path; it does not make a URL
     // you have shared private again.

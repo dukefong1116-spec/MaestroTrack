@@ -19,6 +19,31 @@ import ConfirmSheet from '@/components/ui/ConfirmSheet'
 
 const CURRENT = { el: null as HTMLAudioElement | null }
 
+/**
+ * A twentieth of a second of silence, played inside the tap.
+ *
+ * A private take has to be fetched before it can play, and iOS refuses
+ * play() once the tap has been awaited past. Playing something — anything
+ * — from the tap itself unlocks the element, and the real take can then
+ * play on it when it arrives.
+ */
+let silence: string | null = null
+function silentClip(): string {
+  if (silence) return silence
+  const rate = 8000
+  const samples = rate / 20
+  const bytes = new Uint8Array(44 + samples)
+  const view = new DataView(bytes.buffer)
+  const text = (at: number, s: string) => { for (let i = 0; i < s.length; i++) bytes[at + i] = s.charCodeAt(i) }
+  text(0, 'RIFF'); view.setUint32(4, 36 + samples, true); text(8, 'WAVE')
+  text(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true)
+  view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true)
+  text(36, 'data'); view.setUint32(40, samples, true)
+  bytes.fill(128, 44) // 8-bit PCM is unsigned: 128 is silence
+  silence = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
+  return silence
+}
+
 function clock(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const m = Math.floor(seconds / 60)
@@ -27,9 +52,16 @@ function clock(seconds: number): string {
 }
 
 export default function TakePlayer({
-  src, label, storedDuration, onRename, onDelete,
+  src, load, label, storedDuration, onRename, onDelete,
 }: {
-  src: string
+  /** The audio, where it is already at hand — a take just recorded. */
+  src?: string
+  /**
+   * Or how to fetch it, for a saved take: called on the first play, so a
+   * list of takes costs nothing until one is played. A blob: URL it
+   * returns is revoked when the player goes.
+   */
+  load?: () => Promise<string>
   label: string
   /** Length measured while recording — shown before the file is fetched. */
   storedDuration?: number
@@ -43,6 +75,10 @@ export default function TakePlayer({
   onDelete?: () => void
 }) {
   const ref = useRef<HTMLAudioElement | null>(null)
+  const fetched = useRef<string | null>(null)
+  useEffect(() => () => {
+    if (fetched.current?.startsWith('blob:')) URL.revokeObjectURL(fetched.current)
+  }, [])
   const [playing, setPlaying] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [loaded, setLoaded] = useState<number | null>(null)
@@ -100,7 +136,8 @@ export default function TakePlayer({
       setPlaying(false)
       setBusy(false)
     }
-    const onPlaying = () => setBusy(false)
+    // Not for the unlocking silence: the take itself may still be on its way.
+    const onPlaying = () => { if (el.currentSrc !== silence) setBusy(false) }
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('loadedmetadata', onMeta)
     el.addEventListener('ended', onEnd)
@@ -138,6 +175,13 @@ export default function TakePlayer({
     wakeAudio()
     setBusy(true)
     try {
+      if (load && !fetched.current) {
+        // Unlock inside the tap, then fetch — see silentClip.
+        el.src = silentClip()
+        el.play().catch(() => {})
+        fetched.current = await load()
+        el.src = fetched.current
+      }
       boost(el) // louder, the way Voice Memos is — see lib/audio/loudness
       await el.play()
       setPlaying(true)
