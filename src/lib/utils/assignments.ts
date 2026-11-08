@@ -1,5 +1,24 @@
 import { differenceInCalendarDays, parseISO, format, addDays } from 'date-fns'
 import type { Assignment, PracticeSession, Submission, TeacherFeedback } from '@/types'
+import { minutesIn, type CategoryMinutes } from '@/lib/utils/categories'
+
+/**
+ * Minutes a session gives an assignment.
+ *
+ * A piece assignment takes the whole session: the piece was what was
+ * played. A category assignment takes only that category's *share* — a
+ * 30-minute session split 20 scales / 10 repertoire gives a Scales target
+ * 20, not 30. Counting the whole length would let tagging extra
+ * categories quietly inflate assignment progress.
+ */
+function credited(
+  a: Assignment,
+  s: Pick<PracticeSession, 'category' | 'durationMinutes' | 'pieceName'> & { categoryMinutes?: CategoryMinutes }
+): number {
+  if (a.pieceId) return s.pieceName === a.pieceId ? s.durationMinutes : 0
+  if (a.category) return minutesIn(s, a.category)
+  return s.durationMinutes
+}
 
 /**
  * Assignment logic, with no I/O so it can be tested directly.
@@ -98,14 +117,9 @@ export function deriveProgress(a: Assignment, sessions: PracticeSession[]): Assi
   }
 
   const since = a.createdAt.substring(0, 10)
-  const relevant = sessions.filter((s) => {
-    if (s.date.substring(0, 10) < since) return false
-    if (a.pieceId) return s.pieceName === a.pieceId
-    if (a.category) return s.category === a.category
-    return true
-  })
-
-  const minutesDone = relevant.reduce((sum, s) => sum + s.durationMinutes, 0)
+  const minutesDone = sessions
+    .filter((s) => s.date.substring(0, 10) >= since)
+    .reduce((sum, s) => sum + credited(a, s), 0)
   return {
     minutesDone,
     percent: Math.min(100, Math.round((minutesDone / target) * 100)),
@@ -224,10 +238,10 @@ export function deriveDailyProgress(
   // Minutes per day, filtered to the assigned piece or category when set.
   const byDay = new Map<string, number>()
   for (const s of sessions) {
-    if (a.pieceId && s.pieceName !== a.pieceId) continue
-    if (!a.pieceId && a.category && s.category !== a.category) continue
+    const minutes = credited(a, s)
+    if (minutes <= 0) continue
     const day = s.date.substring(0, 10)
-    byDay.set(day, (byDay.get(day) ?? 0) + s.durationMinutes)
+    byDay.set(day, (byDay.get(day) ?? 0) + minutes)
   }
 
   const today = format(now, 'yyyy-MM-dd')
@@ -300,10 +314,16 @@ export function isDaily(a: Assignment): boolean {
  */
 export function sessionCounts(
   a: Assignment,
-  session: { category?: string; pieceName?: string }
+  session: { category?: string; pieceName?: string; categoryMinutes?: CategoryMinutes }
 ): boolean {
   if (a.pieceId) return session.pieceName === a.pieceId
-  if (a.category) return session.category === a.category
+  if (a.category) {
+    // Any time in the category counts; a split session with none does not.
+    if (session.categoryMinutes && Object.keys(session.categoryMinutes).length) {
+      return (session.categoryMinutes[a.category as keyof CategoryMinutes] ?? 0) > 0
+    }
+    return session.category === a.category
+  }
   return true
 }
 
@@ -315,8 +335,8 @@ export function minutesToday(
 ): number {
   const today = format(now, 'yyyy-MM-dd')
   return sessions
-    .filter((s) => s.date.substring(0, 10) === today && sessionCounts(a, s))
-    .reduce((sum, s) => sum + s.durationMinutes, 0)
+    .filter((s) => s.date.substring(0, 10) === today)
+    .reduce((sum, s) => sum + credited(a, s), 0)
 }
 
 export interface TodayStanding {

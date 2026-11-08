@@ -16,6 +16,7 @@ import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
+import StarRating from '@/components/ui/StarRating'
 import EmptyState from '@/components/common/EmptyState'
 import type { InstrumentType, Piece } from '@/types'
 
@@ -36,7 +37,7 @@ export default function PiecesPanel() {
   const [filter, setFilter] = useState<'active' | 'archived' | 'mastered'>('active')
   const [selected, setSelected] = useState<Piece | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: { difficulty: 3 }
   })
@@ -204,16 +205,14 @@ export default function PiecesPanel() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Piece Title" placeholder="Moonlight Sonata" error={errors.title?.message} {...register('title')} />
           <Input label="Composer (optional)" placeholder="Ludwig van Beethoven" {...register('composer')} />
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[var(--clay-faint)]">Difficulty (1–5)</label>
-            <input type="range" min={1} max={5} step={1} className="w-full accent-[var(--clay-accent)]" {...register('difficulty')} />
-          </div>
+          <StarRating
+            label="Difficulty"
+            value={watch('difficulty')}
+            onChange={(n) => setValue('difficulty', n, { shouldDirty: true })}
+          />
           <Input label="Target Date (optional)" type="date" {...register('targetDate')} />
           <Textarea label="Notes (optional)" placeholder="Goals for this piece..." {...register('notes')} />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1" loading={isSubmitting}>Add Piece</Button>
-          </div>
+          <Button type="submit" className="w-full" loading={isSubmitting}>Add piece</Button>
         </form>
       </Modal>
 

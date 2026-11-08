@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { CategoryMinutes } from '@/lib/utils/categories'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
@@ -20,9 +21,16 @@ import { isDailyToday } from '@/lib/utils/assignments'
 export default function DailyToday({
   /** Minutes of a session in progress, so the figure moves while you play. */
   liveMinutes = 0,
+  /**
+   * The same, per category. A category assignment's bar moves only with
+   * time in its own category — practising Repertoire used to move a Scales
+   * bar too, then the saved session did not count toward it.
+   */
+  liveByCategory,
   compact = false,
 }: {
   liveMinutes?: number
+  liveByCategory?: CategoryMinutes
   compact?: boolean
 }) {
   const navigate = useNavigate()
@@ -38,7 +46,10 @@ export default function DailyToday({
         // The strip already holds today's figure, scoped and filtered, so
         // read it from there rather than recomputing against the log.
         const todayCell = daily.days.find((d) => d.isToday)
-        const done = (todayCell?.minutes ?? 0) + Math.max(0, liveMinutes)
+        const live = assignment.category && !assignment.pieceId && liveByCategory
+          ? (liveByCategory[assignment.category as keyof CategoryMinutes] ?? 0)
+          : liveMinutes
+        const done = (todayCell?.minutes ?? 0) + Math.max(0, live)
         const target = assignment.dailyTargetMinutes ?? 0
         const met = target > 0 && done >= target
         const remaining = Math.max(0, target - done)

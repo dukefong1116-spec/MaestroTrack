@@ -190,10 +190,7 @@ export default function SchedulePage() {
             error={errors.durationMinutes?.message}
             {...register('durationMinutes')}
           />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => { setOpen(false); reset() }} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1" loading={isSubmitting}>Add Lesson</Button>
-          </div>
+          <Button type="submit" className="w-full" loading={isSubmitting}>Add lesson</Button>
         </form>
       </Modal>
     </div>

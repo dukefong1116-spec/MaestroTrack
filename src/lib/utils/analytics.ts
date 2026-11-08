@@ -1,5 +1,6 @@
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, differenceInDays } from 'date-fns'
 import type { PracticeSession, DailyPracticeData, CategoryData, AnalyticsSummary, PracticeCategory } from '@/types'
+import { minutesByCategory } from '@/lib/utils/categories'
 
 export function getDailyData(sessions: PracticeSession[], days = 30): DailyPracticeData[] {
   const end = new Date()
@@ -55,8 +56,13 @@ export function getMonthlyData(sessions: PracticeSession[], months = 6) {
 export function getCategoryData(sessions: PracticeSession[]): CategoryData[] {
   const totals: Partial<Record<PracticeCategory, number>> = {}
   let totalMinutes = 0
+  // Each session's share per category, so a split session is drawn as it
+  // was practised — and the parts still sum to the whole, since a split
+  // always adds up to the session's length.
   for (const s of sessions) {
-    totals[s.category] = (totals[s.category] ?? 0) + s.durationMinutes
+    for (const [c, m] of Object.entries(minutesByCategory(s)) as [PracticeCategory, number][]) {
+      totals[c] = (totals[c] ?? 0) + m
+    }
     totalMinutes += s.durationMinutes
   }
   return Object.entries(totals).map(([category, minutes]) => ({
@@ -172,7 +178,9 @@ export function getAnalyticsSummary(
 
   const categoryTotals: Partial<Record<PracticeCategory, number>> = {}
   for (const s of sessions) {
-    categoryTotals[s.category] = (categoryTotals[s.category] ?? 0) + s.durationMinutes
+    for (const [c, m] of Object.entries(minutesByCategory(s)) as [PracticeCategory, number][]) {
+      categoryTotals[c] = (categoryTotals[c] ?? 0) + m
+    }
   }
   const mostPracticedCategory = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)[0]?.[0] as PracticeCategory | null
 

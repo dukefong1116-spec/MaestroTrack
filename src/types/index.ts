@@ -131,7 +131,17 @@ export interface PracticeSession {
   userId: string
   date: string
   durationMinutes: number
+  /** The category with the most minutes — the whole session, when there
+   *  is only one. Kept on every session so everything that reads a single
+   *  category still works unchanged. */
   category: PracticeCategory
+  /**
+   * Minutes per category, when a session covered more than one. Absent on
+   * single-category sessions and on everything saved before this existed;
+   * read it through minutesByCategory, which treats both the same. The
+   * values always sum exactly to durationMinutes.
+   */
+  categoryMinutes?: Partial<Record<PracticeCategory, number>>
   pieceName?: string
   difficultyRating: number
   confidenceRating: number

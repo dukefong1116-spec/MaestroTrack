@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { boost, wakeAudio } from '@/lib/audio/loudness'
 import { motion } from 'framer-motion'
 import { Pause, Pencil, Play, Trash2 } from 'lucide-react'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
@@ -133,8 +134,11 @@ export default function TakePlayer({
     }
     if (CURRENT.el && CURRENT.el !== el) CURRENT.el.pause()
     CURRENT.el = el
+    // Before anything is awaited: Safari only resumes audio inside the tap.
+    wakeAudio()
     setBusy(true)
     try {
+      boost(el) // louder, the way Voice Memos is — see lib/audio/loudness
       await el.play()
       setPlaying(true)
     } catch {

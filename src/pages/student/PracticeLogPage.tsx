@@ -4,7 +4,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Share2, Trash2, ChevronRight } from 'lucide-react'
+import { Share2, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -28,18 +28,39 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
+import { CONFIDENCE_CHOICES, DEFAULT_CONFIDENCE, confidenceLabel } from '@/lib/utils/confidence'
+import { categoryFields, categoryLabel, minutesByCategory, splitEvenly } from '@/lib/utils/categories'
+import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
 ]
 
+/** Today, as the yyyy-MM-dd string sessions are dated with. Read at the
+ *  moment it is needed, not once: the page can be left open past midnight. */
+const today = () => format(new Date(), 'yyyy-MM-dd')
+
+/** How many days of history show before "Show more". */
+const DAYS_PER_PAGE = 7
+
+/** Ten hours. Generous enough for a rehearsal day, small enough to catch a typo. */
+const MAX_MINUTES = 600
+
 const schema = z.object({
-  date: z.string(),
-  durationMinutes: z.coerce.number().min(1).max(600),
-  category: z.enum(['Scales','Technique','Sight Reading','Repertoire','Memorization','Ear Training','Improvisation'] as [PracticeCategory, ...PracticeCategory[]]),
+  // ISO dates compare correctly as strings, so this is the whole check.
+  date: z.string()
+    .min(1, 'Pick a day')
+    .refine((d) => d <= today(), 'You can only log practice that has already happened'),
+  durationMinutes: z.coerce.number()
+    .min(1, 'At least a minute')
+    .max(MAX_MINUTES, `Up to ${MAX_MINUTES} minutes — ten hours`),
+  // Any number of them: the minutes are shared evenly on save, since a
+  // logged session has no clock to say how they divided.
+  categories: z.array(
+    z.enum(['Scales','Technique','Sight Reading','Repertoire','Memorization','Ear Training','Improvisation'] as [PracticeCategory, ...PracticeCategory[]])
+  ).min(1, 'Pick at least one'),
   pieceName: z.string().optional(),
-  difficultyRating: z.coerce.number().min(1).max(5),
   confidenceRating: z.coerce.number().min(1).max(10),
   notes: z.string().optional(),
 })
@@ -61,11 +82,13 @@ const CATEGORY_STICKER: Record<PracticeCategory, 'note' | 'pencil' | 'clock'> = 
 
 /** Read-only view of one logged session: its data, notes and any takes. */
 function SessionDetailSheet({
-  session, pieces, recordings, deleting, onDelete, onShare, onClose,
+  session, pieces, recordings, takeNames, deleting, onDelete, onShare, onClose,
 }: {
   session: PracticeSession | null
   pieces: Piece[]
   recordings: Recording[]
+  /** Fallback names for every take, numbered across the day. */
+  takeNames: Map<string, string>
   deleting: boolean
   onDelete: () => void
   onShare: () => void
@@ -74,10 +97,13 @@ function SessionDetailSheet({
   if (!session) return null
   const title = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
 
+  // Difficulty is not shown. A live session never asks for it and stores
+  // 3 every time, so it read "3/5" on nearly every row — a number nobody
+  // chose. Confidence is shown as the word it was chosen as.
+  const split = Object.entries(minutesByCategory(session)).filter(([, m]) => (m ?? 0) > 0)
   const stats = [
     { label: 'Duration', value: `${session.durationMinutes} min` },
-    { label: 'Difficulty', value: `${session.difficultyRating}/5` },
-    { label: 'Confidence', value: `${session.confidenceRating}/10` },
+    { label: 'How it went', value: confidenceLabel(session.confidenceRating) },
   ]
 
   return (
@@ -87,18 +113,28 @@ function SessionDetailSheet({
         <div className="mb-4 flex items-center gap-3">
           <Sticker name={CATEGORY_STICKER[session.category] ?? 'note'} size={26} tone="accent" />
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-semibold">{title || session.category}</p>
-            <p className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{session.category}</p>
+            <p className="truncate text-[16px] font-semibold">{title || categoryLabel(session)}</p>
+            <p className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{categoryLabel(session)}</p>
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-3 gap-2.5">
+        <div className="mb-4 grid grid-cols-2 gap-2.5">
           {stats.map((s) => (
             <div key={s.label} className="px-3 py-2.5 text-center" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
               <p className="text-[15px] font-semibold tabular-nums">{s.value}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>{s.label}</p>
             </div>
           ))}
+          {/* Only for a session that covered more than one category, and
+              across the full width: a split does not fit a third of it. */}
+          {split.length > 1 && (
+            <div className="col-span-2 px-3 py-2.5 text-center" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+              <p className="text-[14px] font-semibold tabular-nums">
+                {split.map(([c, m]) => `${m}m ${c}`).join(' · ')}
+              </p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>Split</p>
+            </div>
+          )}
         </div>
 
         {/* notes, in the same hand as the session's thoughts pad */}
@@ -126,16 +162,17 @@ function SessionDetailSheet({
           </p>
         ) : (
           <div className="mb-5 space-y-2.5">
-            {/* Oldest first, so "Take 1" is the one recorded first. Every take
-                otherwise carried the same fallback name and they were
-                impossible to tell apart. */}
+            {/* Oldest first. A take nobody has named is called by its day —
+                "Nov 5, 2026", "Nov 5, 2026 2" — numbered across every
+                session that day, which is why the names come in from the
+                page rather than being counted here from this one session. */}
             {[...recordings]
               .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
               .map((r, i) => (
                 <TakePlayer
                   key={r.id}
                   src={r.audioUrl}
-                  label={r.title?.trim() || `Take ${i + 1}`}
+                  label={r.title?.trim() || takeNames.get(r.id) || takeLabel(r.date, i + 1)}
                   storedDuration={r.duration}
                   onRename={(title) => { void renameRecording(r.id, title) }}
                   onDelete={() => { void deleteRecording(r.id, r.audioUrl) }}
@@ -166,6 +203,8 @@ export default function PracticeLogPage() {
   const { profile, user } = useAuth()
 
   const { sessions, pieces, recordings, addSession, timerRunning, resetTimer } = usePracticeStore()
+  // Every take, not one session's: the numbering runs across the whole day.
+  const takeNames = useMemo(() => takeNamesByDay(recordings), [recordings])
   const [sharing, setSharing] = useState<PracticeSession | null>(null)
 
   /**
@@ -191,13 +230,13 @@ export default function PracticeLogPage() {
   const [reward, setReward] = useState<SessionReward | null>(null)
   const [saveError, setSaveError] = useState('')
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
-      date: format(new Date(), 'yyyy-MM-dd'),
+      date: today(),
       durationMinutes: 30,
-      difficultyRating: 3,
-      confidenceRating: 7,
+      categories: [],
+      confidenceRating: DEFAULT_CONFIDENCE,
     },
   })
 
@@ -233,6 +272,10 @@ export default function PracticeLogPage() {
   const weekPeak = useMemo(() => Math.max(30, ...week.map((d) => d.minutes)), [week])
   const weekTotal = useMemo(() => week.reduce((a, d) => a + d.minutes, 0), [week])
 
+  // Days, not sessions: a page boundary should never split one day's
+  // practice across a "Show more".
+  const [shownDays, setShownDays] = useState(DAYS_PER_PAGE)
+
   const grouped = useMemo(() => {
     const map: Record<string, typeof sessions> = {}
     for (const s of sessions) {
@@ -250,16 +293,27 @@ export default function PracticeLogPage() {
     if (!uid) return
     const sessionsBefore = sessions
 
+    // Shaped exactly as SessionPage writes one, so a logged session and a
+    // timed one are the same kind of thing in the history. Difficulty is 3
+    // because that is what a live session always records; the categories
+    // share the minutes evenly, the one thing a logged session cannot time.
+    const { categories, ...rest } = data
+    const payload = {
+      ...rest,
+      ...categoryFields(splitEvenly(categories, rest.durationMinutes), categories[0]),
+      difficultyRating: 3,
+    }
+
     let id: string
     try {
       setSaveError('')
-      id = await addPracticeSession(uid, data)
+      id = await addPracticeSession(uid, payload)
     } catch {
       setSaveError('Could not save the session. Check your connection and try again.')
       return
     }
 
-    const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...data } as PracticeSession
+    const newSession = { id, userId: uid, createdAt: new Date().toISOString(), ...payload } as PracticeSession
     addSession(newSession as never)
 
     // Piece totals are derived from the session log (see derivePieceStats),
@@ -444,7 +498,7 @@ export default function PracticeLogPage() {
                 {sessions.length} session{sessions.length === 1 ? '' : 's'}
               </p>
             </div>
-            {grouped.map(([date, day]) => (
+            {grouped.slice(0, shownDays).map(([date, day]) => (
               <div key={date}>
 
                 <div>
@@ -475,14 +529,14 @@ export default function PracticeLogPage() {
                           )}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13.5px] font-semibold capitalize">{title || s.category}</p>
+                          <p className="truncate text-[13.5px] font-semibold capitalize">{title || categoryLabel(s)}</p>
                           <p className="flex items-center gap-1.5 text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
                             {clipCount > 0 && (
                               <span className="inline-flex shrink-0 items-center gap-1">
                                 <Sticker name="mic" size={11} tone="accent" /> {clipCount} ·
                               </span>
                             )}
-                            <span className="truncate">{s.notes || s.category}</span>
+                            <span className="truncate">{s.notes || categoryLabel(s)}</span>
                           </p>
                         </div>
                         <span className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>
@@ -495,6 +549,34 @@ export default function PracticeLogPage() {
                 </div>
               </div>
             ))}
+
+            {/* A line across with the button sitting on it — the
+                Google-images "Show more" shape. A week at a time: the
+                history is a log, and nobody scrolls a year of it to find
+                last Tuesday. */}
+            {grouped.length > shownDays && (
+              <div className="relative flex items-center justify-center px-5 py-4">
+                {/* The line runs behind the button, not above it. */}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-5 top-1/2 h-px"
+                  style={{ background: 'var(--clay-line)' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShownDays((n) => n + DAYS_PER_PAGE)}
+                  className="relative flex items-center gap-1.5 px-6 py-2.5 text-[13px] font-semibold transition-transform active:scale-95"
+                  style={{
+                    borderRadius: 999,
+                    background: 'var(--clay-bg)',
+                    color: 'var(--clay-ink)',
+                  }}
+                >
+                  Show more
+                  <ChevronDown size={15} style={{ color: 'var(--clay-dim)' }} />
+                </button>
+              </div>
+            )}
           </Panel>
         )}
       </div>
@@ -503,6 +585,7 @@ export default function PracticeLogPage() {
         session={detail}
         pieces={pieces}
         recordings={recordings.filter((r) => detail && r.sessionId === detail.id)}
+        takeNames={takeNames}
         deleting={deleting === detail?.id}
         onDelete={async () => {
           if (!detail) return
@@ -533,21 +616,63 @@ export default function PracticeLogPage() {
       />
 
       <Modal open={open} onClose={() => { setOpen(false); setSaveError('') }} title="Log Practice Session">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* noValidate: the browser's own check on max= fired first and
+            showed its native bubble — different in every browser, often
+            missing entirely on iOS — so the app's message never ran. The
+            schema does all of it; max= stays only to grey out the picker. */}
+        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {saveError && (
             <div className="rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--clay-accent-soft)', border: 'none', color: 'var(--clay-danger)' }}>
               {saveError}
             </div>
           )}
-          <Input label="Date" type="date" error={errors.date?.message} {...register('date')} />
-          <Input label="Duration (minutes)" type="number" placeholder="30" error={errors.durationMinutes?.message} {...register('durationMinutes')} />
-          <Select
-            label="Category"
-            options={CATEGORIES.map((c) => ({ value: c, label: c }))}
-            placeholder="Select category"
-            error={errors.category?.message}
-            {...register('category')}
+          {/* max= stops the picker offering tomorrow; the schema is what
+              actually refuses it, since a typed date skips the picker. */}
+          <Input label="Date" type="date" max={today()} error={errors.date?.message} {...register('date')} />
+          <Input
+            label="Duration (minutes)"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={MAX_MINUTES}
+            placeholder="30"
+            error={errors.durationMinutes?.message}
+            {...register('durationMinutes')}
           />
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>What did you work on?</p>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((c) => {
+                const picked = watch('categories').includes(c)
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-pressed={picked}
+                    onClick={() => {
+                      const now = watch('categories')
+                      setValue('categories', picked ? now.filter((x) => x !== c) : [...now, c], { shouldValidate: true })
+                    }}
+                    className="px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-95"
+                    style={{
+                      borderRadius: 999,
+                      background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
+                      color: picked ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                      boxShadow: picked ? 'inset 0 0 0 1.5px var(--clay-accent)' : undefined,
+                    }}
+                  >
+                    {c}
+                  </button>
+                )
+              })}
+            </div>
+            {errors.categories && (
+              <p className="text-xs" style={{ color: 'var(--clay-danger)' }}>{errors.categories.message}</p>
+            )}
+            {watch('categories').length > 1 && (
+              <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>The minutes are shared evenly between them.</p>
+            )}
+          </div>
           <Select
             label="Piece (optional)"
             options={[
@@ -556,21 +681,37 @@ export default function PracticeLogPage() {
             ]}
             {...register('pieceName')}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[var(--clay-faint)]">Difficulty (1–5)</label>
-              <input type="range" min={1} max={5} step={1} className="w-full accent-[var(--clay-accent)]" {...register('difficultyRating')} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[var(--clay-faint)]">Confidence (1–10)</label>
-              <input type="range" min={1} max={10} step={1} className="w-full accent-[var(--clay-accent)]" {...register('confidenceRating')} />
+          {/* The same three a live session ends with, asked the same way,
+              so the two kinds of entry say the same thing in the history. */}
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>How did it go?</p>
+            <div className="grid grid-cols-3 gap-2">
+              {CONFIDENCE_CHOICES.map((c) => {
+                const on = watch('confidenceRating') === c.value
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setValue('confidenceRating', c.value, { shouldDirty: true })}
+                    className="flex flex-col items-center gap-1.5 px-2 py-3 transition-transform active:scale-95"
+                    style={{
+                      borderRadius: 'var(--clay-r-sm)',
+                      background: on ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
+                      boxShadow: on ? 'inset 0 0 0 2px var(--clay-accent)' : undefined,
+                    }}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: c.tint }}>
+                      <Sticker name={c.sticker} size={16} tone="onAccent" />
+                    </span>
+                    <span className="text-[12.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>{c.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
           <Textarea label="Notes (optional)" placeholder="What went well? What needs work?" {...register('notes')} />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1" loading={isSubmitting}>Save Session</Button>
-          </div>
+          <Button type="submit" className="w-full" loading={isSubmitting}>Save session</Button>
         </form>
       </Modal>
     </div>

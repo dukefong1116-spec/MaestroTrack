@@ -288,10 +288,7 @@ export default function PerformancesPanel() {
           <Input label="Date" type="date" error={errors.date?.message} {...register('date')} />
           <Input label="Location (optional)" placeholder="Carnegie Hall, New York" {...register('location')} />
           <Textarea label="Notes (optional)" placeholder="Pieces to perform, goals..." {...register('notes')} />
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1" loading={isSubmitting}>Add Performance</Button>
-          </div>
+          <Button type="submit" className="w-full" loading={isSubmitting}>Add performance</Button>
         </form>
       </Modal>
     </Block>

@@ -346,3 +346,65 @@ describe('todayStanding', () => {
     expect(todayStanding(scoped, s, 0, now).done).toBe(0)
   })
 })
+
+/**
+ * A session can cover several categories now. A category assignment takes
+ * only that category's share of it — otherwise tagging extra categories
+ * would quietly inflate a student's progress toward work they were set.
+ */
+describe('a session split across categories', () => {
+  const split = (date: string) => sess(date, 30, {
+    category: 'Scales',
+    categoryMinutes: { Scales: 20, Repertoire: 10 },
+  })
+
+  it('gives a Scales assignment the 20 minutes of scales, not all 30', () => {
+    const scales = a({ category: 'Scales', targetMinutes: 60 })
+    expect(deriveProgress(scales, [split('2026-09-02')]).minutesDone).toBe(20)
+  })
+
+  it('gives a Repertoire assignment its 10 — the smaller share still counts', () => {
+    const rep = a({ category: 'Repertoire', targetMinutes: 60 })
+    expect(deriveProgress(rep, [split('2026-09-02')]).minutesDone).toBe(10)
+  })
+
+  it('gives a category it never touched nothing', () => {
+    const tech = a({ category: 'Technique', targetMinutes: 60 })
+    expect(deriveProgress(tech, [split('2026-09-02')]).minutesDone).toBe(0)
+  })
+
+  it('still gives a piece assignment the whole session', () => {
+    const piece = a({ pieceId: 'p1', targetMinutes: 60 })
+    const played = sess('2026-09-02', 30, {
+      pieceName: 'p1', category: 'Scales', categoryMinutes: { Scales: 20, Repertoire: 10 },
+    })
+    expect(deriveProgress(piece, [played]).minutesDone).toBe(30)
+  })
+
+  it('fills the daily squares with the share too', () => {
+    const daily = a({
+      category: 'Scales', dailyTargetMinutes: 15,
+      createdAt: '2026-09-02T00:00:00.000Z', dueDate: '2026-09-03',
+    })
+    const days = deriveDailyProgress(daily, [split('2026-09-02')], new Date('2026-09-03T12:00:00Z'))
+    expect(days.days.find((d) => d.date === '2026-09-02')?.minutes).toBe(20)
+  })
+
+  it('counts toward today with the share', () => {
+    const daily = a({ category: 'Repertoire', dailyTargetMinutes: 15 })
+    const today = '2026-09-02'
+    expect(todayStanding(daily, [split(today)], 0, new Date(`${today}T12:00:00Z`)).done).toBe(10)
+  })
+
+  it('warns before saving only when the split has none of the category', () => {
+    const scales = a({ category: 'Scales' })
+    expect(sessionCounts(scales, { category: 'Repertoire', categoryMinutes: { Repertoire: 20, Scales: 10 } })).toBe(true)
+    expect(sessionCounts(scales, { category: 'Repertoire', categoryMinutes: { Repertoire: 20, Technique: 10 } })).toBe(false)
+  })
+
+  it('leaves old single-category sessions counting exactly as before', () => {
+    const scales = a({ category: 'Scales', targetMinutes: 60 })
+    expect(deriveProgress(scales, [sess('2026-09-02', 30, { category: 'Scales' })]).minutesDone).toBe(30)
+    expect(deriveProgress(scales, [sess('2026-09-02', 30, { category: 'Repertoire' })]).minutesDone).toBe(0)
+  })
+})

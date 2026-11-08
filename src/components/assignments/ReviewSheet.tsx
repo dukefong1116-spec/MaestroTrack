@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import { format, parseISO } from 'date-fns'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
@@ -36,6 +37,11 @@ export default function ReviewSheet({
   const attached = (submission?.recordingIds ?? [])
     .map((id) => recordings.find((r) => r.id === id))
     .filter((r): r is Recording => !!r)
+  // Numbered across the takes this teacher can see. Usually the student
+  // sees the same name, but not always: a take they kept to themselves
+  // earlier that day counts on their side and not on this one. A name
+  // they chose themselves is the same everywhere.
+  const takeNames = takeNamesByDay(recordings)
 
   async function respond(verdict: 'approved' | 'returned') {
     if (!assignment) return
@@ -91,7 +97,7 @@ export default function ReviewSheet({
             </p>
             <div className="space-y-2.5">
               {attached.map((r, i) => (
-                <TakePlayer key={r.id} src={r.audioUrl} label={r.title?.trim() || `Take ${i + 1}`} storedDuration={r.duration} />
+                <TakePlayer key={r.id} src={r.audioUrl} label={r.title?.trim() || takeNames.get(r.id) || takeLabel(r.date, i + 1)} storedDuration={r.duration} />
               ))}
             </div>
           </>

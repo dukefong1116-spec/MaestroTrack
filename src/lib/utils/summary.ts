@@ -3,6 +3,7 @@ import { computeStreak } from './analytics'
 import type {
   PracticeSession, PracticeSummary, StudioStats, UserProfile, PracticeCategory,
 } from '@/types'
+import { minutesByCategory } from '@/lib/utils/categories'
 
 /**
  * Rolled-up practice, so nobody has to read the raw sessions.
@@ -39,7 +40,9 @@ export function buildSummaries(
     if (day < cutoff) continue
     dailyMinutes[day] = (dailyMinutes[day] ?? 0) + s.durationMinutes
     const cats = (dailyCategories[day] ??= {})
-    cats[s.category] = (cats[s.category] ?? 0) + s.durationMinutes
+    for (const [c, m] of Object.entries(minutesByCategory(s)) as [PracticeCategory, number][]) {
+      cats[c] = (cats[c] ?? 0) + m
+    }
   }
 
   const { current } = computeStreak(sessions)

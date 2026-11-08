@@ -24,10 +24,15 @@ import SessionCoach, { type CoachTool } from '@/components/onboarding/SessionCoa
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
 import { computeStreak } from '@/lib/utils/analytics'
-import Sticker, { type StickerName } from '@/components/stickers/Sticker'
+import Sticker from '@/components/stickers/Sticker'
 import DailyToday from '@/components/assignments/DailyToday'
 import { useAssignments } from '@/hooks/useAssignments'
 import { isDaily, awaitingStudent, sessionCounts } from '@/lib/utils/assignments'
+import { CONFIDENCE_CHOICES } from '@/lib/utils/confidence'
+import { boost } from '@/lib/audio/loudness'
+import { takeLabel } from '@/lib/utils/takeNames'
+import { useCategoryTimer } from '@/stores/categoryTimerStore'
+import { apportion, categoryFields, type CategoryMinutes } from '@/lib/utils/categories'
 import type { InstrumentType, PracticeCategory, PracticeSession } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
@@ -53,17 +58,6 @@ const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
 ]
 
-/**
- * Three points on the 1-10 confidence scale the rest of the app already
- * stores. Three, not ten: a slider at the end of a session asks someone to
- * be precise about a feeling, and they answer 7 every time.
- */
-const CONFIDENCE_CHOICES = [
-  { value: 4, label: 'Rough', hint: 'Fought me the whole way', sticker: 'footprints', tint: '#9AA6B8' },
-  { value: 7, label: 'Okay', hint: 'Steady, nothing surprising', sticker: 'note', tint: '#7CA9E8' },
-  { value: 9, label: 'Really good', hint: 'It clicked', sticker: 'bolt', tint: '#FF7A5C' },
-] as const satisfies readonly { value: number; label: string; hint: string; sticker: StickerName; tint: string }[]
-
 /* ── shared clay styles ─────────────────────────────────── */
 const surface: React.CSSProperties = {
   background: 'var(--clay-surface)',
@@ -80,6 +74,18 @@ export default function SessionPage() {
     startTimer, pauseTimer, stopTimer, resetTimer,
   } = usePracticeStore()
   const sessions = usePracticeStore((s) => s.sessions)
+  const recordings = usePracticeStore((s) => s.recordings)
+
+  // A take not yet named is called by today's date, carrying on from any
+  // takes already recorded today in earlier sessions — so this session's
+  // first take is "Nov 5, 2026 2" if the morning already had one, matching
+  // what it will be called in the history once saved.
+  const todayISO = format(new Date(), 'yyyy-MM-dd')
+  const takenEarlierToday = useMemo(
+    () => recordings.filter((r) => r.date.substring(0, 10) === todayISO).length,
+    [recordings, todayISO]
+  )
+  const clipName = (i: number) => takeLabel(todayISO, takenEarlierToday + i + 1)
 
   /** Their own history decides this, so nothing has to be stored. */
   const firstEver = sessions.length === 0
@@ -247,11 +253,47 @@ export default function SessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /* ── which category the clock is running in ───────────── */
+  // Subscribed, so tapping a chip re-renders even while paused.
+  const clock = useCategoryTimer()
+
+  // A fresh session starts the category clock where the timer starts. A
+  // resumed one — you left through the bar and came back — picks up the
+  // category you were in rather than the default. The `elapsed > 0` test
+  // is what tells them apart, and also discards a clock left over from a
+  // session that never finished saving.
+  useEffect(() => {
+    const c = useCategoryTimer.getState()
+    const elapsed = usePracticeStore.getState().elapsedSeconds()
+    if (c.current && elapsed > 0) setCategory(c.current)
+    else c.begin(category, elapsed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Moving on to another category: the time so far stays where it was spent. */
+  function pickCategory(next: PracticeCategory) {
+    useCategoryTimer.getState().switchTo(next, usePracticeStore.getState().elapsedSeconds())
+    setCategory(next)
+  }
+
+  /** "It was Scales" — the whole session, not just from here on. */
+  function relabelSession(to: PracticeCategory) {
+    useCategoryTimer.getState().relabelAll(to)
+    setCategory(to)
+  }
+
   const elapsedSec = measuredSecRef.current ?? Math.floor(
     timerAccumulatedSec + (timerRunning && timerStartedAt ? (Date.now() - timerStartedAt) / 1000 : 0)
   )
   const mm = String(Math.floor(elapsedSec / 60)).padStart(2, '0')
   const ss = String(elapsedSec % 60).padStart(2, '0')
+
+  // Seconds per category so far, the live stretch included.
+  const liveSecByCategory = clock.secondsAt(elapsedSec)
+  // As whole minutes summing to the clock: what an assignment bar adds while you play.
+  const liveSplit: CategoryMinutes = apportion(liveSecByCategory, Math.floor(elapsedSec / 60))
+  // And exactly as finish() will save it, for the "won't count" check.
+  const savingSplit: CategoryMinutes = apportion(liveSecByCategory, Math.max(1, Math.round(elapsedSec / 60)))
 
   /* ── metronome ─────────────────────────────────────────── */
   const [bpm, setBpm] = useState(92)
@@ -543,9 +585,11 @@ export default function SessionPage() {
   const missed = useMemo(
     () => openAssignments
       .filter((x) => isDaily(x.assignment) && awaitingStudent(x.assignment) && x.assignment.category)
-      .filter((x) => !sessionCounts(x.assignment, { category, pieceName: pieceId || undefined }))
+      .filter((x) => !sessionCounts(x.assignment, {
+        category, pieceName: pieceId || undefined, categoryMinutes: savingSplit,
+      }))
       .map((x) => x.assignment),
-    [openAssignments, category, pieceId]
+    [openAssignments, category, pieceId, savingSplit]
   )
 
   /* ── finish ────────────────────────────────────────────── */
@@ -622,10 +666,12 @@ export default function SessionPage() {
     const sessionsBefore = sessions
     const date = format(new Date(), 'yyyy-MM-dd')
 
+    // Whole minutes per category, summing exactly to the session.
+    const split = apportion(useCategoryTimer.getState().secondsAt(measuredSecRef.current), minutes)
     const payload = {
       date,
       durationMinutes: minutes,
-      category,
+      ...categoryFields(split, category),
       pieceName: pieceId || undefined,
       difficultyRating: 3,
       confidenceRating,
@@ -673,7 +719,7 @@ export default function SessionPage() {
         date,
         pieceName: pieceTitle,
         notes: thoughts.trim() || undefined,
-        category,
+        category: payload.category,
       })
       void useUploadStore.getState().drain(uid)
     }
@@ -686,6 +732,7 @@ export default function SessionPage() {
 
     setSaving(false)
     resetTimer()
+    useCategoryTimer.getState().reset()
     // The gesture that started all this is long gone by now — several
     // awaits back — so the context must already be running. It is, because
     // beginFinish() and this handler both unlocked it at tap time, and
@@ -748,7 +795,7 @@ export default function SessionPage() {
           </select>
 
           <button
-            onClick={() => { resetTimer(); navigate('/student/practice') }}
+            onClick={() => { resetTimer(); useCategoryTimer.getState().reset(); navigate('/student/practice') }}
             className="flex h-10 w-10 items-center justify-center rounded-full transition-transform active:scale-90"
             style={{ ...surface, borderRadius: 999, color: 'var(--clay-dim)' }}
             aria-label="Discard session"
@@ -1047,14 +1094,14 @@ export default function SessionPage() {
                                   title="Name this take"
                                 >
                                   <span className="truncate text-[12px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                                    {c.title?.trim() || `Take ${i + 1}`}
+                                    {c.title?.trim() || clipName(i)}
                                   </span>
                                   <Pencil size={10} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
                                 </button>
                               )}
                               <button
                                 type="button"
-                                aria-label={`Delete ${c.title?.trim() || `Take ${i + 1}`}`}
+                                aria-label={`Delete ${c.title?.trim() || clipName(i)}`}
                                 onClick={() => setDeletingClip(c)}
                                 className="shrink-0"
                                 style={{ color: 'var(--clay-faint)' }}
@@ -1062,7 +1109,17 @@ export default function SessionPage() {
                                 <Trash2 size={12} />
                               </button>
                             </div>
-                            <audio src={c.url} controls className="w-full" style={{ height: 34 }} />
+                            {/* Native controls, so no tap of ours to wake audio in —
+                                but a session has already woken it to record, so
+                                boost only if it is running and otherwise play as
+                                before. */}
+                            <audio
+                              src={c.url}
+                              controls
+                              className="w-full"
+                              style={{ height: 34 }}
+                              onPlay={(e) => boost(e.currentTarget, { onlyIfRunning: true })}
+                            />
                             {/* Shown only when there is something to report, so
                                 it disappears the moment this is fixed rather
                                 than becoming another number nobody reads. */}
@@ -1095,26 +1152,35 @@ export default function SessionPage() {
             without the live figure it would sit frozen for exactly as long
             as someone is practising and looking at it. */}
         <div className="mb-5">
-          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} compact />
+          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} compact />
         </div>
 
         {/* category */}
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className="shrink-0 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
-              style={{
-                borderRadius: 999,
-                background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
-                color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
-                boxShadow: category === c ? 'none' : 'var(--clay-raised)',
-              }}
-            >
-              {c}
-            </button>
-          ))}
+          {CATEGORIES.map((c) => {
+            const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
+            return (
+              <button
+                key={c}
+                onClick={() => pickCategory(c)}
+                aria-pressed={category === c}
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
+                style={{
+                  borderRadius: 999,
+                  background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
+                  color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                  boxShadow: category === c ? 'none' : 'var(--clay-raised)',
+                }}
+              >
+                {c}
+                {/* The split as it forms: every category with a minute in it
+                    says how many, so moving on is visibly not losing time. */}
+                {spent > 0 && (
+                  <span className="tabular-nums" style={{ opacity: 0.75 }}>{spent}m</span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {saveError && (
@@ -1188,7 +1254,7 @@ export default function SessionPage() {
                     That one asks for {a.category}; you've logged this as {category}.
                   </p>
                   <button
-                    onClick={() => setCategory(a.category as PracticeCategory)}
+                    onClick={() => relabelSession(a.category as PracticeCategory)}
                     className="mt-2 rounded-full px-3 py-1.5 text-[12px] font-semibold"
                     style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
                   >
@@ -1240,7 +1306,7 @@ export default function SessionPage() {
                             {keep && <Check size={13} strokeWidth={3} />}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                            {c.title?.trim() || `Take ${i + 1}`}
+                            {c.title?.trim() || clipName(i)}
                           </span>
                           <span
                             className="shrink-0 text-[11.5px] tabular-nums"

@@ -1,6 +1,7 @@
 import { startOfWeek, parseISO, format } from 'date-fns'
 import type { PracticeSession } from '@/types'
 import { computeStreak } from './analytics'
+import { categoriesOf } from '@/lib/utils/categories'
 
 /**
  * XP and levels — entirely derived from the session log, so there is
@@ -207,7 +208,7 @@ function variedWeeks(sessions: PracticeSession[]): number {
     // exact shape of two date bugs this codebase has already paid for.
     const week = format(startOfWeek(parseISO(s.date.substring(0, 10))), 'yyyy-MM-dd')
     if (!byWeek.has(week)) byWeek.set(week, new Set())
-    byWeek.get(week)!.add(s.category)
+    for (const c of categoriesOf(s)) byWeek.get(week)!.add(c)
   }
   return [...byWeek.values()].filter((cats) => cats.size >= 3).length
 }
