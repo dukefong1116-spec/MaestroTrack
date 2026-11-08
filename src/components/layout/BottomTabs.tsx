@@ -85,7 +85,7 @@ export default function BottomTabs() {
               isActive ? 'font-semibold' : 'font-medium'
             )}
             style={({ isActive }) => ({
-              color: !isActive ? 'var(--clay-dim)' : raised ? 'var(--clay-success-fg)' : 'var(--clay-accent-ink)',
+              color: isActive ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
             })}
           >
             {({ isActive }) => raised ? (
@@ -93,13 +93,13 @@ export default function BottomTabs() {
                 {/* Lifted clear of the bar and given a ring of the page's
                     own ground, so it reads as cut out of the bar rather
                     than sitting on top of it. Neutral like every other
-                    tab until it is the one you are on; then green. */}
+                    tab until it is the one you are on; then the accent. */}
                 <span
                   className="absolute left-1/2 flex h-[54px] w-[54px] -translate-x-1/2 items-center justify-center rounded-full transition-[transform,background-color] active:scale-95"
                   style={{
                     top: -22,
-                    background: isActive ? 'var(--clay-green)' : 'var(--clay-bg-deep)',
-                    color: isActive ? '#fff' : 'var(--clay-dim)',
+                    background: isActive ? 'var(--clay-accent)' : 'var(--clay-bg-deep)',
+                    color: isActive ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
                     border: '4px solid var(--clay-bg)',
                   }}
                 >
@@ -107,7 +107,7 @@ export default function BottomTabs() {
                   {unread > 0 && (
                     <span
                       className="absolute right-0 top-0 h-[10px] w-[10px] rounded-full"
-                      style={{ background: 'var(--clay-ink)', border: `2px solid ${isActive ? 'var(--clay-green)' : 'var(--clay-bg-deep)'}` }}
+                      style={{ background: 'var(--clay-ink)', border: `2px solid ${isActive ? 'var(--clay-accent)' : 'var(--clay-bg-deep)'}` }}
                     />
                   )}
                 </span>
