@@ -8,21 +8,28 @@ import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import { usePracticeStore } from '@/stores/practiceStore'
 
 export function useStudentData(userId: string | undefined) {
-  const { setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons } = usePracticeStore()
+  const { setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons, resetUserData } = usePracticeStore()
 
   useEffect(() => {
+    resetUserData()
     if (!userId) return
+    let active = true
+    const guarded = <T,>(set: (value: T) => void) => (value: T) => { if (active) set(value) }
     const unsubs = [
-      subscribePracticeSessions(userId, setSessions),
-      subscribePieces(userId, setPieces),
-      subscribePerformances(userId, setPerformances),
-      subscribeRecordings(userId, setRecordings),
-      subscribeTeacherNotes(userId, setTeacherNotes),
+      subscribePracticeSessions(userId, guarded(setSessions)),
+      subscribePieces(userId, guarded(setPieces)),
+      subscribePerformances(userId, guarded(setPerformances)),
+      subscribeRecordings(userId, guarded(setRecordings)),
+      subscribeTeacherNotes(userId, guarded(setTeacherNotes)),
       // Lessons recur weekly and change rarely, but the schedule is what
       // "your lesson is tomorrow" is derived from, and nothing else
       // subscribed to it.
-      subscribeStudentSchedule(userId, setLessons),
+      subscribeStudentSchedule(userId, guarded(setLessons)),
     ]
-    return () => unsubs.forEach((u) => u())
-  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons])
+    return () => {
+      active = false
+      unsubs.forEach((u) => u())
+      resetUserData()
+    }
+  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons, resetUserData])
 }

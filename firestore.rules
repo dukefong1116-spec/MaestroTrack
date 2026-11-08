@@ -136,7 +136,7 @@ service cloud.firestore {
       let before = resource.data.get(field, []);
       let after = request.resource.data.get(field, []);
       return after.size() == before.size() + 1
-        && (before.size() == 0 || before[before.size() - 1] in after);
+        && after.hasAll(before);
     }
 
     /**
@@ -453,8 +453,13 @@ service cloud.firestore {
                     && request.resource.data.teacherId == uid()
                     && teaches(request.resource.data.studentId);
 
-      // The teacher who set it may change anything about it.
-      allow update: if signedIn() && resource.data.teacherId == uid();
+      // The teacher who set it may change anything about it — except
+      // whose it is: moving it to another student would plant it in a
+      // stranger's list, and moving it to another teacher hands it away.
+      allow update: if signedIn()
+                    && resource.data.teacherId == uid()
+                    && request.resource.data.teacherId == resource.data.teacherId
+                    && request.resource.data.studentId == resource.data.studentId;
 
       // The student may hand work in — and nothing else.
       //
@@ -491,7 +496,11 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.teacherId == uid()
                     && teaches(request.resource.data.studentId);
-      allow update, delete: if signedIn() && resource.data.teacherId == uid();
+      allow update: if signedIn()
+                    && resource.data.teacherId == uid()
+                    && request.resource.data.teacherId == resource.data.teacherId
+                    && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if signedIn() && resource.data.teacherId == uid();
     }
 
     /* ── lesson schedule ─────────────────────────────────────────── */
@@ -503,7 +512,11 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.teacherId == uid()
                     && teaches(request.resource.data.studentId);
-      allow update, delete: if signedIn() && resource.data.teacherId == uid();
+      allow update: if signedIn()
+                    && resource.data.teacherId == uid()
+                    && request.resource.data.teacherId == resource.data.teacherId
+                    && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if signedIn() && resource.data.teacherId == uid();
     }
 
     /* ── published share links ───────────────────────────────────── */

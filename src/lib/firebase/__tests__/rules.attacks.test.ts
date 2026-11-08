@@ -342,6 +342,28 @@ describe('a student rewriting their own submission history', () => {
     }))
   })
 
+  it('must not rewrite an earlier attempt while appending a new one', async () => {
+    // Appending used to check only that the *last* earlier entry survived,
+    // so with two attempts on file the first could be quietly reworded.
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'assignments', 'hist'), {
+        submissions: [
+          { at: '2026-10-01T10:00:00.000Z', note: 'first attempt, went badly' },
+          { at: '2026-10-03T10:00:00.000Z', note: 'second go' },
+        ],
+      })
+    })
+    await assertFails(updateDoc(doc(as(ANA), 'assignments', 'hist'), {
+      status: 'submitted',
+      submissions: [
+        { at: '2026-10-01T10:00:00.000Z', note: 'first attempt, went perfectly' },
+        { at: '2026-10-03T10:00:00.000Z', note: 'second go' },
+        { at: '2026-10-05T10:00:00.000Z', note: 'third go' },
+      ],
+      updatedAt: '2026-10-05T10:00:00.000Z',
+    }))
+  })
+
   it('may append a new attempt', async () => {
     await assertSucceeds(updateDoc(doc(as(ANA), 'assignments', 'hist'), {
       status: 'submitted',
@@ -406,6 +428,36 @@ describe('changing who owns a record', () => {
       })
     })
     await assertFails(updateDoc(doc(as(ANA), 'practiceSessions', 'mine'), { userId: BEN }))
+  })
+
+  // A teacher may edit what they set, but not whose it is. Moving a note or
+  // an assignment to another student plants it in a stranger's list —
+  // CLARE is not even in this studio — and moving it to another teacher
+  // hands it to someone who never wrote it.
+  it('a teacher must not move an assignment to another student or teacher', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'assignments', 'set'), {
+        teacherId: TEACHER, studentId: ANA, title: 'Scales', status: 'assigned', createdAt: '', updatedAt: '',
+      })
+    })
+    await assertFails(updateDoc(doc(as(TEACHER), 'assignments', 'set'), { studentId: CLARE }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'assignments', 'set'), { teacherId: OTHER_TEACHER }))
+    // Editing it in place still works.
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'assignments', 'set'), { title: 'Scales, slower' }))
+  })
+
+  it('a teacher must not move a note to another student or teacher', async () => {
+    await assertFails(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { studentId: CLARE }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { teacherId: OTHER_TEACHER }))
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { content: 'Rhythm is better' }))
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teacherNotes', 'n1')))
+  })
+
+  it('a teacher must not move a lesson to another student or teacher', async () => {
+    await assertFails(updateDoc(doc(as(TEACHER), 'lessonSlots', 'l1'), { studentId: CLARE }))
+    await assertFails(updateDoc(doc(as(TEACHER), 'lessonSlots', 'l1'), { teacherId: OTHER_TEACHER }))
+    await assertSucceeds(updateDoc(doc(as(TEACHER), 'lessonSlots', 'l1'), { startTime: '17:00' }))
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'lessonSlots', 'l1')))
   })
 })
 

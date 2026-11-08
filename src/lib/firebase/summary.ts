@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, writeBatch, type Unsubscribe } from 'firebase/firestore'
 import { db } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -21,10 +21,10 @@ export async function writeSummaries(
   studio: StudioStats,
   summary: PracticeSummary
 ): Promise<void> {
-  await Promise.all([
-    setDoc(doc(db, STUDIO, studio.uid), cleanForFirestore(studio)),
-    setDoc(doc(db, SUMMARY, summary.uid), cleanForFirestore(summary)),
-  ])
+  const batch = writeBatch(db)
+  batch.set(doc(db, STUDIO, studio.uid), cleanForFirestore(studio))
+  batch.set(doc(db, SUMMARY, summary.uid), cleanForFirestore(summary))
+  await batch.commit()
 }
 
 export async function getPracticeSummary(uid: string): Promise<PracticeSummary | null> {

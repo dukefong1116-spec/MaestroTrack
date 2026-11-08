@@ -30,14 +30,20 @@ export function summaryWriteError(): string | null {
 export function useSummarySync() {
   const { profile } = useAuth()
   const sessions = usePracticeStore((s) => s.sessions)
-  const loading = usePracticeStore((s) => s.sessions.length)
+  const sessionsLoaded = usePracticeStore((s) => s.sessionsLoaded)
   const lastWritten = useRef<string>('')
+  const lastUid = useRef<string>('')
+  const writeQueue = useRef<Promise<void>>(Promise.resolve())
 
   useEffect(() => {
     if (!profile?.uid || profile.role !== 'student') return
+    if (lastUid.current !== profile.uid) {
+      lastUid.current = profile.uid
+      lastWritten.current = ''
+    }
     // Nothing loaded yet — writing now would publish an empty summary over
     // a good one.
-    if (loading === 0) return
+    if (!sessionsLoaded) return
 
     const { studio, summary } = buildSummaries(sessions, {
       uid: profile.uid,
@@ -59,7 +65,8 @@ export function useSummarySync() {
     if (fingerprint === lastWritten.current) return
     lastWritten.current = fingerprint
 
-    void writeSummaries(studio, summary)
+    writeQueue.current = writeQueue.current.catch(() => {}).then(() => writeSummaries(studio, summary))
+    void writeQueue.current
       .then(() => { lastError = null })
       .catch((err: { code?: string }) => {
         // Swallowing this was wrong. A denied write means a teacher sees an
@@ -74,5 +81,5 @@ export function useSummarySync() {
         lastWritten.current = ''
       })
   }, [profile?.uid, profile?.role, profile?.displayName, profile?.instrument,
-      profile?.teacherId, sessions, loading])
+      profile?.teacherId, sessions, sessionsLoaded])
 }

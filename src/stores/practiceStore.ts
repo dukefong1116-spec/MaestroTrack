@@ -8,6 +8,9 @@ interface PracticeState {
   recordings: Recording[]
   teacherNotes: TeacherNote[]
   lessons: LessonSlot[]
+  /** True after the current user's first practice-session snapshot arrives. */
+  sessionsLoaded: boolean
+  resetUserData: () => void
   setSessions: (sessions: PracticeSession[]) => void
   setPieces: (pieces: Piece[]) => void
   setPerformances: (performances: Performance[]) => void
@@ -56,7 +59,12 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   recordings: [],
   teacherNotes: [],
   lessons: [],
-  setSessions: (sessions) => set({ sessions }),
+  sessionsLoaded: false,
+  resetUserData: () => set({
+    sessions: [], pieces: [], performances: [], recordings: [], teacherNotes: [], lessons: [],
+    sessionsLoaded: false, timerRunning: false, timerStartedAt: null, timerAccumulatedSec: 0,
+  }),
+  setSessions: (sessions) => set({ sessions, sessionsLoaded: true }),
   setPieces: (pieces) => set({ pieces }),
   setPerformances: (performances) => set({ performances }),
   setRecordings: (recordings) => set({ recordings }),
