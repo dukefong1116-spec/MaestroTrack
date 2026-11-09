@@ -32,6 +32,8 @@ export function useNotifications(): {
   const lessons = usePracticeStore((s) => s.lessons)
   const students = useTeacherStore((s) => s.students)
   const requests = useTeacherStore((s) => s.requests)
+  const teacherMessages = useTeacherStore((s) => s.messages)
+  const studentMessages = usePracticeStore((s) => s.messages)
   const [assignments, setAssignments] = useState<Assignment[]>([])
 
   useEffect(() => {
@@ -61,13 +63,26 @@ export function useNotifications(): {
   // build rather than inside it, so the builders stay about what is true
   // and this stays about what you asked to see.
   const notify = profile?.notify
+  const threadsReadAt = profile?.threadsReadAt
+  const messagesReadAt = profile?.messagesReadAt
+  const teacherId = profile?.teacherId
+  const teacherName = profile?.teacherName
   const items = useMemo(() => {
     if (!uid) return []
+    // Only messages not yet read in the conversation itself: reading them
+    // there is reading them.
     const all = isTeacher
-      ? buildTeacherNotifications({ assignments, students, requests, options: { now } })
-      : buildStudentNotifications({ assignments, lessons, options: { now } })
+      ? buildTeacherNotifications({
+          assignments, students, requests, options: { now },
+          messages: teacherMessages.filter((m) => m.from === 'student' && m.createdAt > (threadsReadAt?.[m.studentId] ?? '')),
+        })
+      : buildStudentNotifications({
+          assignments, lessons, options: { now }, teacherName,
+          messages: studentMessages.filter((m) => m.from === 'teacher' && m.teacherId === teacherId && m.createdAt > (messagesReadAt ?? '')),
+        })
     return applyNotifyPrefs(all, notify ?? {})
-  }, [uid, isTeacher, assignments, students, requests, lessons, now, notify])
+  }, [uid, isTeacher, assignments, students, requests, lessons, now, notify,
+      teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName])
 
   const markAllRead = useCallback(() => {
     if (!uid) return

@@ -5,9 +5,10 @@ import { subscribeStudioRequests } from '@/lib/firebase/requests'
 import { getPracticeSummary } from '@/lib/firebase/summary'
 import { sessionsFromSummary } from '@/lib/utils/summary'
 import { useTeacherStore } from '@/stores/teacherStore'
+import { subscribeTeacherMessages } from '@/lib/firebase/messages'
 
 export function useTeacherData(teacherId: string | undefined) {
-  const { setStudents, setStudentSessions, setSchedule, setRequests, resetTeacherData } = useTeacherStore()
+  const { setStudents, setStudentSessions, setSchedule, setRequests, setMessages, resetTeacherData } = useTeacherStore()
 
   useEffect(() => {
     resetTeacherData()
@@ -37,12 +38,14 @@ export function useTeacherData(teacherId: string | undefined) {
     })
     const unsubSchedule = subscribeTeacherSchedule(teacherId, setSchedule)
     const unsubRequests = subscribeStudioRequests(teacherId, setRequests)
+    const unsubMessages = subscribeTeacherMessages(teacherId, (m) => { if (active) setMessages(m) })
     return () => {
       active = false
       unsubStudents()
       unsubSchedule()
       unsubRequests()
+      unsubMessages()
       resetTeacherData()
     }
-  }, [teacherId, setStudents, setStudentSessions, setSchedule, setRequests, resetTeacherData])
+  }, [teacherId, setStudents, setStudentSessions, setSchedule, setRequests, setMessages, resetTeacherData])
 }

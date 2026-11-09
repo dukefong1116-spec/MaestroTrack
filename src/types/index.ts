@@ -108,6 +108,10 @@ export interface UserProfile {
    * `completedAt` and `celebrated` are from the tour before this one and
    * are only ever read back as history now.
    */
+  /** Student: messages from the teacher up to here have been read. */
+  messagesReadAt?: string
+  /** Teacher: per student, messages up to here have been read. */
+  threadsReadAt?: Record<string, string>
   onboarding?: {
     dismissed?: boolean
     completedAt?: string
@@ -240,6 +244,28 @@ export interface Performance {
   preparationPercentage: number
   notes?: string
   createdAt: string
+}
+
+/**
+ * Something a message is about, shown as a card in the chat — the way a
+ * shared post appears in a DM. Only the id is stored; the card reads the
+ * item itself, so a rename shows and a deleted one says so.
+ */
+export interface MessageAttachment {
+  kind: 'recording' | 'assignment'
+  id: string
+}
+
+/** One message between a teacher and a student. One thread per pair. */
+export interface Message {
+  id: string
+  teacherId: string
+  studentId: string
+  from: 'teacher' | 'student'
+  /** May be empty when the message is only a shared item. */
+  text: string
+  createdAt: string
+  attachment?: MessageAttachment
 }
 
 export interface TeacherNote {

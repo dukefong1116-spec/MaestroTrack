@@ -1,5 +1,5 @@
 import { addDays, getDay, parseISO, set, startOfDay, differenceInCalendarDays } from 'date-fns'
-import type { Assignment, LessonSlot, NotifyKind, StudioRequest, UserProfile } from '@/types'
+import type { Assignment, LessonSlot, Message, NotifyKind, StudioRequest, UserProfile } from '@/types'
 import type { StickerName } from '@/components/stickers/Sticker'
 
 /**
@@ -24,6 +24,7 @@ export type NotificationKind =
   | 'lesson-soon'
   | 'submission-received'
   | 'join-request'
+  | 'message-new'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -45,6 +46,7 @@ export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> 
   feedback: ['assignment-returned', 'assignment-approved'],
   lessons: ['lesson-tomorrow', 'lesson-soon'],
   submissions: ['submission-received'],
+  // 'message-new' is absent too: a message is a person talking to you.
   // 'join-request' is deliberately absent, and so stays on whatever the
   // Settings switches say. Somebody is standing at the door: a request
   // nobody is told about is a student who thinks they were ignored. It
@@ -81,7 +83,7 @@ export function applyNotifyPrefs(
  * lesson is shown on Today, so that is already where the answer is.
  */
 function assignmentHref(assignmentId: string): string {
-  return `/student/library?tab=assignments&open=${encodeURIComponent(assignmentId)}`
+  return `/student/studio?open=${encodeURIComponent(assignmentId)}`
 }
 
 export interface BuildOptions {
@@ -153,12 +155,21 @@ function finish(out: AppNotification[], cap: number): AppNotification[] {
 
 /* ── the student's side ───────────────────────────────────────────── */
 
+/** What a message says in a notification: its words, or what it shared. */
+function messagePreview(m: Message): string {
+  if (m.text) return m.text.length > 90 ? `${m.text.slice(0, 89)}…` : m.text
+  return m.attachment?.kind === 'recording' ? 'Shared a recording' : 'Shared an assignment'
+}
+
 export function buildStudentNotifications(input: {
   assignments: Assignment[]
   lessons: LessonSlot[]
+  /** From the current teacher, not yet read in the conversation. */
+  messages?: Message[]
+  teacherName?: string
   options: BuildOptions
 }): AppNotification[] {
-  const { assignments, lessons } = input
+  const { assignments, lessons, messages = [], teacherName } = input
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const out: AppNotification[] = []
 
@@ -228,6 +239,20 @@ export function buildStudentNotifications(input: {
     }
   }
 
+  for (const m of messages) {
+    if (!withinHorizon(m.createdAt, now, sinceDays)) continue
+    out.push({
+      id: `message:${m.id}`,
+      kind: 'message-new',
+      title: `${teacherName || 'Your teacher'} sent a message`,
+      body: messagePreview(m),
+      at: m.createdAt,
+      to: '/student/studio',
+      priority: 80,
+      sticker: 'message',
+    })
+  }
+
   return finish(out, cap)
 }
 
@@ -237,9 +262,11 @@ export function buildTeacherNotifications(input: {
   assignments: Assignment[]
   students: UserProfile[]
   requests?: StudioRequest[]
+  /** From students, not yet read in each conversation. */
+  messages?: Message[]
   options: BuildOptions
 }): AppNotification[] {
-  const { assignments, students, requests = [] } = input
+  const { assignments, students, requests = [], messages = [] } = input
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const nameOf = new Map(students.map((s) => [s.uid, s.displayName]))
   const out: AppNotification[] = []
@@ -277,6 +304,20 @@ export function buildTeacherNotifications(input: {
       to: '/teacher/students',
       priority: 95,
       sticker: 'users',
+    })
+  }
+
+  for (const m of messages) {
+    if (!withinHorizon(m.createdAt, now, sinceDays)) continue
+    out.push({
+      id: `message:${m.id}`,
+      kind: 'message-new',
+      title: `${nameOf.get(m.studentId) ?? 'A student'} sent a message`,
+      body: messagePreview(m),
+      at: m.createdAt,
+      to: `/teacher/students/${m.studentId}`,
+      priority: 85,
+      sticker: 'message',
     })
   }
 

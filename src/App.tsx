@@ -37,6 +37,7 @@ const PracticeLogPage = lazy(() => import('@/pages/student/PracticeLogPage'))
 const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
+const StudioPage = lazy(() => import('@/pages/student/StudioPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
 const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
@@ -128,6 +129,7 @@ function AppRoutes() {
         <Route path="practice" element={<PracticeLogPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="progress" element={<ProgressPage />} />
+        <Route path="studio" element={<StudioPage />} />
         <Route path="settings" element={<SettingsPage />} />
         {/* Nested under settings on purpose: the Settings tab and the
             sidebar item match by prefix, so they stay lit while you are

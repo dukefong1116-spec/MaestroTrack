@@ -3,12 +3,12 @@ import { subscribePracticeSessions } from '@/lib/firebase/practice'
 import { subscribePieces } from '@/lib/firebase/pieces'
 import { subscribePerformances } from '@/lib/firebase/performances'
 import { subscribeRecordings } from '@/lib/firebase/recordings'
-import { subscribeTeacherNotes } from '@/lib/firebase/teacher'
+import { subscribeStudentMessages } from '@/lib/firebase/messages'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import { usePracticeStore } from '@/stores/practiceStore'
 
 export function useStudentData(userId: string | undefined) {
-  const { setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons, resetUserData } = usePracticeStore()
+  const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, resetUserData } = usePracticeStore()
 
   useEffect(() => {
     resetUserData()
@@ -20,7 +20,7 @@ export function useStudentData(userId: string | undefined) {
       subscribePieces(userId, guarded(setPieces)),
       subscribePerformances(userId, guarded(setPerformances)),
       subscribeRecordings(userId, guarded(setRecordings)),
-      subscribeTeacherNotes(userId, guarded(setTeacherNotes)),
+      subscribeStudentMessages(userId, guarded(setMessages)),
       // Lessons recur weekly and change rarely, but the schedule is what
       // "your lesson is tomorrow" is derived from, and nothing else
       // subscribed to it.
@@ -31,5 +31,5 @@ export function useStudentData(userId: string | undefined) {
       unsubs.forEach((u) => u())
       resetUserData()
     }
-  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setTeacherNotes, setLessons, resetUserData])
+  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, resetUserData])
 }

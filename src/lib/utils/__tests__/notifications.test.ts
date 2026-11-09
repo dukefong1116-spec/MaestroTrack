@@ -197,3 +197,24 @@ describe('read state', () => {
     expect(isUnread(items[0], '2026-10-01T00:00:00.000Z')).toBe(true)
   })
 })
+
+describe('messages', () => {
+  const at = '2026-10-18T09:00:00.000Z'
+  const fromTeacher = { id: 'm1', teacherId: 't1', studentId: 's1', from: 'teacher' as const, text: 'Lovely tone today', createdAt: at }
+
+  it('tells a student their teacher wrote, with what they said', () => {
+    const [n] = buildStudentNotifications({
+      assignments: [], lessons: [], messages: [fromTeacher], teacherName: 'Ms. Harper', options: { now: NOW },
+    })
+    expect(n).toMatchObject({ kind: 'message-new', title: 'Ms. Harper sent a message', body: 'Lovely tone today', to: '/student/studio' })
+  })
+
+  it('tells a teacher which student wrote, and links to that student', () => {
+    const students = [{ uid: 's1', displayName: 'Ana' }] as UserProfile[]
+    const [n] = buildTeacherNotifications({
+      assignments: [], students, options: { now: NOW },
+      messages: [{ ...fromTeacher, from: 'student', text: '', attachment: { kind: 'recording', id: 'r1' } }],
+    })
+    expect(n).toMatchObject({ title: 'Ana sent a message', body: 'Shared a recording', to: '/teacher/students/s1' })
+  })
+})

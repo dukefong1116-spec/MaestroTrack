@@ -29,8 +29,12 @@ export const teacherNav: NavItem[] = [
   { to: '/teacher/research', icon: 'chart', label: 'Research' },
 ]
 
-export function navFor(role: string | null | undefined): NavItem[] {
-  return role === 'teacher' ? teacherNav : studentNav
+/** Only for a student in a studio: assignments, messages, the next lesson. */
+export const studioNav: NavItem = { to: '/student/studio', icon: 'gradcap', label: 'Studio' }
+
+export function navFor(role: string | null | undefined, inStudio = false): NavItem[] {
+  if (role === 'teacher') return teacherNav
+  return inStudio ? [...studentNav, studioNav] : studentNav
 }
 
 export function settingsFor(role: string | null | undefined): string {

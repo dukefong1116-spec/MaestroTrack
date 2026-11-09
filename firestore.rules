@@ -494,6 +494,49 @@ service cloud.firestore {
     /* ── teacher's notes about a student ─────────────────────────── */
     // The student can read what is written about them. Deliberate: notes a
     // student may not see belong somewhere other than the app they log in to.
+    /* ── messages between a teacher and a student ─────────────────── */
+    //
+    // Each side reads its own: the student by studentId, the teacher by
+    // teacherId — the conversation stays readable to both after a student
+    // leaves. Sending is where the relationship is checked: a student only
+    // to their current teacher, a teacher only to their own students, each
+    // only as themselves. Messages are never edited; the sender may delete
+    // their own. A message is text, a shared item, or both.
+    function validMessage(d) {
+      return d.keys().hasAll(['teacherId', 'studentId', 'from', 'text', 'createdAt'])
+        && d.keys().hasOnly(['teacherId', 'studentId', 'from', 'text', 'createdAt', 'attachment'])
+        && d.teacherId is string && d.studentId is string
+        && d.from in ['teacher', 'student']
+        && d.text is string && d.text.size() <= 2000
+        && d.createdAt is string
+        && (('attachment' in d
+              && d.attachment is map
+              && d.attachment.keys().hasAll(['kind', 'id'])
+              && d.attachment.keys().hasOnly(['kind', 'id'])
+              && d.attachment.kind in ['recording', 'assignment']
+              && d.attachment.id is string
+              && d.attachment.id.size() > 0 && d.attachment.id.size() <= 128)
+            || (!('attachment' in d) && d.text.size() > 0));
+    }
+
+    match /messages/{id} {
+      allow read: if signedIn()
+                  && (resource.data.studentId == uid() || resource.data.teacherId == uid());
+      allow create: if signedIn()
+                    && validMessage(request.resource.data)
+                    && ((request.resource.data.from == 'student'
+                          && request.resource.data.studentId == uid()
+                          && get(/databases/$(database)/documents/users/$(uid())).data.get('teacherId', null)
+                               == request.resource.data.teacherId)
+                        || (request.resource.data.from == 'teacher'
+                          && request.resource.data.teacherId == uid()
+                          && teaches(request.resource.data.studentId)));
+      allow update: if false;
+      allow delete: if signedIn()
+                    && ((resource.data.from == 'student' && resource.data.studentId == uid())
+                        || (resource.data.from == 'teacher' && resource.data.teacherId == uid()));
+    }
+
     match /teacherNotes/{id} {
       // The app queries these by studentId alone, so a teacher reading a
       // student's notes is not identifiable from the query's filters. The

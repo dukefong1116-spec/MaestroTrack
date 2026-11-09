@@ -23,7 +23,7 @@ export default function AssignmentsPanel() {
   /**
    * Opened straight from a notification.
    *
-   * The bell sends you to ?tab=assignments&open=<id>; this finds that one
+   * The bell sends you to the Studio page with ?open=<id>; this finds that one
    * and opens it. The parameter is stripped once it has been acted on, so
    * closing the sheet does not immediately reopen it on the next render,
    * and a reload does not drag you back in.

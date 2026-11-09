@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
 import Sticker from '@/components/stickers/Sticker'
 import { cn } from '@/lib/utils/cn'
-import { homeFor, navFor, settingsFor, type NavItem } from './nav'
+import { homeFor, navFor, settingsFor, studioNav, type NavItem } from './nav'
+import { useStudio } from '@/hooks/useStudio'
 
 /**
  * The sidebar, rethought for a thumb.
@@ -46,10 +47,14 @@ export default function BottomTabs() {
    * Only the order shown here changes; navFor is untouched, so the
    * sidebar still opens with it.
    */
-  const rest = navFor(role).filter((t) => t.to !== home)
-  const homeTab = navFor(role).find((t) => t.to === home)
+  // In a studio, Studio takes Settings' slot — five is all a phone holds —
+  // and Settings opens from the photo on Today instead.
+  const { inStudio, unreadMessages } = useStudio()
+  const items = navFor(role, inStudio)
+  const rest = items.filter((t) => t.to !== home)
+  const homeTab = items.find((t) => t.to === home)
   const settingsTab: NavItem = { to: settingsFor(role), icon: Settings, label: 'Settings' }
-  const after = [...rest, settingsTab]
+  const after = inStudio ? rest : [...rest, settingsTab]
   const middle = Math.floor((after.length + 1) / 2)
   const tabs: NavItem[] = homeTab
     ? [...after.slice(0, middle), homeTab, ...after.slice(middle)]
@@ -117,7 +122,16 @@ export default function BottomTabs() {
               </>
             ) : (
               <>
-                <TabIcon icon={icon} active={isActive} />
+                <span className="relative">
+                  <TabIcon icon={icon} active={isActive} />
+                  {to === studioNav.to && unreadMessages > 0 && (
+                    <span
+                      aria-label={`${unreadMessages} unread`}
+                      className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
+                      style={{ background: 'var(--clay-accent)' }}
+                    />
+                  )}
+                </span>
                 <span className="text-[10px] leading-none tracking-[-.1px]">{short ?? label}</span>
               </>
             )}

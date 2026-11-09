@@ -23,6 +23,7 @@ export type SessionSub = 'category' | 'tools' | 'finish' | 'saving'
 export type ShowId =
   | 'welcome' | 'today' | 'start' | 'category' | 'tools' | 'finish' | 'streak' | 'history'
   | 'intro-library' | 'intro-progress' | 'piece-prompt'
+  | 'studio-welcome' | 'studio-settings' | 'studio-tab' | 'studio-page'
 
 export interface Show {
   id: ShowId
@@ -44,7 +45,11 @@ export interface Show {
 }
 
 const HOME = '/student'
+const STUDIO = '/student/studio'
 const SESSION = '/student/session'
+
+/** Where the joined-a-studio walk is, before the Studio page: in memory. */
+export type StudioStep = 'welcome' | 'settings' | 'tab'
 
 export interface TourInput {
   tour?: TourCheckpoint
@@ -54,6 +59,13 @@ export interface TourInput {
   /** The student has at least one active piece to pick. */
   hasPieces: boolean
   firstName: string
+  /** In a studio — Studio replaces Settings in the bar. */
+  inStudio?: boolean
+  studioName?: string
+  teacherName?: string
+  studioStep?: StudioStep
+  /** The bottom bar is showing (a phone), so Settings has really moved. */
+  compact?: boolean
 }
 
 export type Decision =
@@ -73,12 +85,45 @@ const step = (s: Omit<Show, 'progress'>): Decision =>
 export function whatToShow(i: TourInput): Decision {
   const path = i.path.replace(/\/+$/, '') || '/'
 
-  // Accounts made before the tour existed have no checkpoint at all, and
-  // are never shown any of it.
-  if (!i.tour) return NONE
   // Only inside the student app. A new student arriving through a
   // teacher's invite lands on /join first, and must be left to finish it.
   if (path !== HOME && !path.startsWith(HOME + '/')) return NONE
+
+  // Joining a studio changes the app — a Studio tab, and Settings moved
+  // behind the photo — so it is walked through once. For everyone in a
+  // studio, accounts from before the tour included, since their bar changed
+  // too; but never in the middle of a new account's first-run tour.
+  const seenStudio = (i.seen ?? []).includes('studio')
+  if (i.inStudio && !seenStudio && (!i.tour || i.tour === 'done')) {
+    const studio = i.studioName || 'your studio'
+    // Three steps on a desktop, where Settings stays in the sidebar; four
+    // on a phone, where it moves behind the photo.
+    const of = i.compact ? 4 : 3
+    const dots = (n: number): [number, number] => [i.compact || n === 1 ? n : n - 1, of]
+    if (path === STUDIO) return show({
+      id: 'studio-page', button: 'Got it', block: true, progress: dots(4),
+      text: `Assignments, messages from ${i.teacherName || 'your teacher'}, and your next lesson — all here. Say hi! 💬`,
+    })
+    if (path !== HOME) return NONE // waits for Today; nobody is pulled away mid-task
+    const at = i.studioStep ?? 'welcome'
+    if (at === 'welcome') return show({
+      id: 'studio-welcome', button: 'Next', block: true, big: true, progress: dots(1),
+      title: `Welcome to ${studio}! 🎉`,
+      text: "You're in. Here's what changed.",
+    })
+    if (at === 'settings' && i.compact) return show({
+      id: 'studio-settings', target: 'settings-photo', button: 'Next', block: true, progress: dots(2),
+      text: 'Settings moved here ⚙️ Tap your photo anytime to open it.',
+    })
+    return show({
+      id: 'studio-tab', target: 'tab-studio', mustTap: true, block: true, progress: dots(3),
+      text: 'Your assignments and messages live here 🎓 Tap Studio.',
+    })
+  }
+
+  // Accounts made before the tour existed have no checkpoint at all, and
+  // are never shown the rest of it.
+  if (!i.tour) return NONE
 
   if (i.tour !== 'done') {
     // The first session. Its steps live in memory; none of them is saved.
@@ -151,4 +196,5 @@ export const INTRO_SEEN: Partial<Record<ShowId, string>> = {
   'intro-library': 'library',
   'intro-progress': 'progress',
   'piece-prompt': 'piece-prompt',
+  'studio-page': 'studio',
 }

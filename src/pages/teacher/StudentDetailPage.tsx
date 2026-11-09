@@ -7,7 +7,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { subscribePracticeSummary } from '@/lib/firebase/summary'
 import { sessionsFromSummary } from '@/lib/utils/summary'
-import { addTeacherNote, deleteTeacherNote, subscribeTeacherNotes } from '@/lib/firebase/teacher'
+import { updateUserProfile } from '@/lib/firebase/teacher'
+import MessageThread from '@/components/messages/MessageThread'
+import { useAuthStore } from '@/stores/authStore'
 import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
 import { normaliseStatus, needsReview, deriveDailyProgress, deriveProgress } from '@/lib/utils/assignments'
 import DailyStrip from '@/components/assignments/DailyStrip'
@@ -26,7 +28,7 @@ import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
 import StatCard from '@/components/common/StatCard'
-import type { PracticeSession, TeacherNote, Assignment, InstrumentType, Recording, PracticeCategory } from '@/types'
+import type { PracticeSession, Assignment, InstrumentType, Recording, PracticeCategory } from '@/types'
 
 const CATEGORY_OPTIONS: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
@@ -39,9 +41,6 @@ export default function StudentDetailPage() {
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { students, studentSessions, setStudentSessions } = useTeacherStore()
-  const [notes, setNotes] = useState<TeacherNote[]>([])
-  const [newNote, setNewNote] = useState('')
-  const [saving, setSaving] = useState(false)
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [assignTitle, setAssignTitle] = useState('')
   const [assignDesc, setAssignDesc] = useState('')
@@ -98,19 +97,33 @@ export default function StudentDetailPage() {
       setSummaryExists(!!summary)
       setStudentSessions(studentId, sessionsFromSummary(summary))
     })
-    const unsub = subscribeTeacherNotes(studentId, setNotes)
     const unsubA = profile?.uid
       ? subscribeTeacherStudentAssignments(profile.uid, studentId, setAssignments)
       : undefined
-    return () => { unsubSummary(); unsub(); unsubA?.() }
+    return () => { unsubSummary(); unsubA?.() }
   }, [studentId, setStudentSessions, profile?.uid])
 
-  // Fetched only while a submission is actually open — a teacher browsing
-  // a student has no need to hold their audio in memory.
+  // The takes this student has handed in — the documents only, no audio.
+  // The review sheet plays them, and the conversation shares and plays them.
   useEffect(() => {
-    if (!reviewing) { setStudentRecordings([]); return }
-    return subscribeSharedRecordings(reviewing.studentId, setStudentRecordings)
-  }, [reviewing])
+    if (!studentId) { setStudentRecordings([]); return }
+    return subscribeSharedRecordings(studentId, setStudentRecordings)
+  }, [studentId])
+
+  // The conversation with this student, and reading it: opening the page
+  // marks it read, written only when something newer has arrived.
+  const allMessages = useTeacherStore((s) => s.messages)
+  const thread = useMemo(() => allMessages.filter((m) => m.studentId === studentId), [allMessages, studentId])
+  const latestFromStudent = thread.filter((m) => m.from === 'student').at(-1)?.createdAt ?? ''
+  const threadReadAt = (studentId && profile?.threadsReadAt?.[studentId]) || ''
+  useEffect(() => {
+    const uid = profile?.uid
+    if (!uid || !studentId || !latestFromStudent || latestFromStudent <= threadReadAt) return
+    const live = useAuthStore.getState().profile
+    const threadsReadAt = { ...(live?.threadsReadAt ?? {}), [studentId]: new Date().toISOString() }
+    if (live) useAuthStore.getState().setProfile({ ...live, threadsReadAt })
+    void updateUserProfile(uid, { threadsReadAt }).catch(() => {})
+  }, [profile?.uid, studentId, latestFromStudent, threadReadAt])
 
   const summary = useMemo(() => getAnalyticsSummary(sessions, student?.weeklyGoalMinutes ?? 300), [sessions, student])
   const dailyData = useMemo(() => getDailyData(sessions, 14), [sessions])
@@ -144,17 +157,6 @@ export default function StudentDetailPage() {
       setComposing(false)
     } finally {
       setAssigning(false)
-    }
-  }
-
-  async function addNote() {
-    if (!profile || !studentId || !newNote.trim()) return
-    setSaving(true)
-    try {
-      await addTeacherNote(profile.uid, studentId, newNote.trim())
-      setNewNote('')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -451,39 +453,27 @@ export default function StudentDetailPage() {
         </div>
       </div>
 
-      {/* Teacher notes */}
+      {/* Messages with this student — what Teacher Notes used to be, now a
+          conversation they can answer. */}
       <div>
         <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4 flex items-center gap-2">
-          <Sticker name="message" size={14} tone="ink" /> Teacher Notes
+          <Sticker name="message" size={14} tone="ink" /> Messages
         </p>
-        <Card className="p-5 mb-4">
-          <Textarea
-            placeholder="Leave a note for this student..."
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            rows={3}
-          />
-          <Button size="sm" className="mt-3" onClick={addNote} loading={saving} disabled={!newNote.trim()}>
-            <Plus size={14} /> Add Note
-          </Button>
+        <Card className="p-5">
+          {profile && studentId && (
+            <MessageThread
+              me="teacher"
+              teacherId={profile.uid}
+              studentId={studentId}
+              otherName={student.displayName?.split(' ')[0] || 'your student'}
+              messages={thread}
+              recordings={studentRecordings}
+              assignments={assignments}
+              onOpenAssignment={(a) => setReviewing(a)}
+              canSend={student.teacherId === profile.uid}
+            />
+          )}
         </Card>
-        <div className="space-y-3">
-          {notes.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((note) => (
-            <div key={note.id}>
-              <Card className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-sm text-slate-200">{note.content}</p>
-                    <p className="text-xs text-[var(--clay-dim)] mt-2">{format(parseISO(note.createdAt), 'MMMM d, yyyy · h:mm a')}</p>
-                  </div>
-                  <button onClick={() => deleteTeacherNote(note.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </Card>
-            </div>
-          ))}
-        </div>
       </div>
 
       <ReviewSheet

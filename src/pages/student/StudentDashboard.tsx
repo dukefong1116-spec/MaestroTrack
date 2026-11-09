@@ -96,12 +96,22 @@ export default function StudentDashboard() {
       {/* Who you are is one line. It was a third of the screen, spent on a
           greeting nobody needs told twice. */}
       <div className="flex items-center gap-3 px-1">
-        <Avatar
-          src={profile?.avatar}
-          name={profile?.displayName}
-          instrument={profile?.instrument as InstrumentType | undefined}
-          size={40}
-        />
+        {/* Your photo opens Settings — for a student in a studio, the Studio
+            tab has Settings' place in the bar. */}
+        <button
+          type="button"
+          onClick={() => navigate('/student/settings')}
+          aria-label="Settings"
+          data-coach="settings-photo"
+          className="shrink-0 rounded-full transition-transform active:scale-95"
+        >
+          <Avatar
+            src={profile?.avatar}
+            name={profile?.displayName}
+            instrument={profile?.instrument as InstrumentType | undefined}
+            size={40}
+          />
+        </button>
         <div className="min-w-0 flex-1">
           <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{greeting}</p>
           <p className="truncate text-[16px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
@@ -238,7 +248,7 @@ export default function StudentDashboard() {
             </div>
             {todo.length > 4 && (
               <button
-                onClick={() => navigate('/student/library?tab=assignments')}
+                onClick={() => navigate('/student/studio')}
                 className="mt-2.5 text-[12.5px] font-semibold"
                 style={{ color: 'var(--clay-accent)' }}
               >

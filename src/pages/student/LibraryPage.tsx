@@ -1,36 +1,38 @@
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import PageHeader from '@/components/common/PageHeader'
 import Sticker, { type StickerName } from '@/components/stickers/Sticker'
 import { Panel } from '@/components/ui/Panel'
 import PiecesPanel from './panels/PiecesPanel'
 import PerformancesPanel from './panels/PerformancesPanel'
-import AssignmentsPanel from './panels/AssignmentsPanel'
 
 const TABS: { id: string; label: string; sticker: StickerName }[] = [
   { id: 'pieces', label: 'Pieces', sticker: 'book' },
   { id: 'performances', label: 'Performances', sticker: 'trophy' },
-  { id: 'assignments', label: 'Assignments', sticker: 'clipboard' },
 ]
 
 /**
  * Your repertoire and the things you're preparing it for. Tab lives in the
  * URL so it survives a refresh and the back button behaves.
  *
- * The tabs are the top of the panel rather than three pills floating above
- * it: they select what the panel shows, so they belong to it.
+ * The tabs are the top of the panel rather than pills floating above it:
+ * they select what the panel shows, so they belong to it.
+ *
+ * Assignments moved to the Studio page, which only a student in a studio
+ * has; an old link to the tab here goes there.
  */
 export default function LibraryPage() {
   const [params, setParams] = useSearchParams()
   const raw = params.get('tab')
-  const tab = raw === 'performances' || raw === 'assignments' ? raw : 'pieces'
+  if (raw === 'assignments') return <Navigate to="/student/studio" replace />
+  const tab = raw === 'performances' ? raw : 'pieces'
 
   return (
     <div>
       <PageHeader title="Library" subtitle="What you're working on, and what you're working toward." />
 
       <Panel>
-        <div className="grid grid-cols-3" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        <div className="grid grid-cols-2" style={{ borderBottom: '1px solid var(--clay-line)' }}>
           {TABS.map((t, i) => {
             const active = tab === t.id
             return (
@@ -61,7 +63,6 @@ export default function LibraryPage() {
 
         {tab === 'pieces' && <PiecesPanel />}
         {tab === 'performances' && <PerformancesPanel />}
-        {tab === 'assignments' && <AssignmentsPanel />}
       </Panel>
     </div>
   )

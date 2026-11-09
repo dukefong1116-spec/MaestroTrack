@@ -53,6 +53,11 @@ export default function TourLayer() {
   const pieces = usePracticeStore((s) => s.pieces)
   const sub = useTourStore((s) => s.sub)
   const setSub = useTourStore((s) => s.setSub)
+  const studioStep = useTourStore((s) => s.studioStep)
+  const setStudioStep = useTourStore((s) => s.setStudioStep)
+  // The bottom bar shows below the lg breakpoint — only there has Settings
+  // actually moved behind the photo.
+  const compact = typeof window !== 'undefined' && window.innerWidth < 1024
   const { setTour, markSeen } = useTour()
 
   const onboarding = profile?.role === 'student' ? profile.onboarding : undefined
@@ -63,7 +68,13 @@ export default function TourLayer() {
     sub,
     hasPieces: pieces.some((p) => !p.status || p.status === 'active'),
     firstName: (profile?.displayName ?? '').trim().split(/\s+/)[0] || 'there',
-  }), [onboarding?.tour, onboarding?.seen, pathname, sub, pieces, profile?.displayName])
+    inStudio: profile?.role === 'student' && !!profile.teacherId,
+    studioName: profile?.studioName,
+    teacherName: profile?.teacherName,
+    studioStep,
+    compact,
+  }), [onboarding?.tour, onboarding?.seen, pathname, sub, pieces, profile?.displayName,
+      profile?.role, profile?.teacherId, profile?.studioName, profile?.teacherName, studioStep, compact])
 
   const show: Show | null = decision.kind === 'show' ? decision.show : null
 
@@ -89,6 +100,9 @@ export default function TourLayer() {
       case 'streak': return setTour('history')
       case 'history': return setTour('done')
       case 'start': return // Start itself opens the session, where the tour carries on
+      case 'studio-welcome': return setStudioStep(compact ? 'settings' : 'tab')
+      case 'studio-settings': return setStudioStep('tab')
+      case 'studio-tab': return // the tab itself opens the Studio page, where it carries on
       default: {
         const seenId = INTRO_SEEN[id]
         if (seenId) markSeen(seenId)
@@ -309,6 +323,7 @@ export default function TourLayer() {
                     // made, so it does what that tap would have done.
                     if (fallback && show.id === 'start') return navigate('/student/session')
                     if (fallback && show.id === 'history') navigate('/student/practice')
+                    if (fallback && show.id === 'studio-tab') return navigate('/student/studio')
                     advance.current(show.id)
                   }}
                   className={`${show.big ? 'px-5 py-2.5 text-[15px]' : 'px-4 py-2 text-[14px]'} font-semibold`}

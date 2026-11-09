@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore'
 
 /**
  * The security rules, actually executed.
@@ -307,5 +307,80 @@ describe('collections nobody granted', () => {
   it('are denied, rather than inheriting access', async () => {
     await assertFails(getDoc(doc(as(ANA), 'somethingNew', 'x')))
     await assertFails(setDoc(doc(as(ANA), 'somethingNew', 'x'), { a: 1 }))
+  })
+})
+
+/* ── messages between a teacher and a student ───────────────────────── */
+
+describe('messages', () => {
+  const msg = (over: Record<string, unknown> = {}) => ({
+    teacherId: TEACHER, studentId: ANA, from: 'student', text: 'Hi!', createdAt: '2026-11-09T10:00:00.000Z', ...over,
+  })
+  const seed = async (id: string, data: Record<string, unknown>) =>
+    env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'messages', id), data) })
+
+  it('a student writes to their own teacher, as themselves', async () => {
+    await assertSucceeds(setDoc(doc(as(ANA), 'messages', 'm1'), msg()))
+  })
+
+  it('a student cannot write to another teacher, or pose as the teacher, or as another student', async () => {
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'm1'), msg({ teacherId: OTHER_TEACHER })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'm2'), msg({ from: 'teacher' })))
+    await assertFails(setDoc(doc(as(BEN), 'messages', 'm3'), msg()))
+  })
+
+  it('a student who has left the studio cannot keep writing to that teacher', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'users', ANA), { teacherId: null })
+    })
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'm1'), msg()))
+  })
+
+  it('a teacher writes to their own student, as themselves', async () => {
+    await assertSucceeds(setDoc(doc(as(TEACHER), 'messages', 'm1'), msg({ from: 'teacher' })))
+  })
+
+  it('a teacher cannot write to someone else\'s student, or pose as the student', async () => {
+    await assertFails(setDoc(doc(as(TEACHER), 'messages', 'm1'), msg({ from: 'teacher', studentId: CLARE })))
+    await assertFails(setDoc(doc(as(TEACHER), 'messages', 'm2'), msg({ from: 'student' })))
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'messages', 'm3'), msg({ from: 'teacher', teacherId: OTHER_TEACHER })))
+  })
+
+  it('a message is text, a shared item, or both — and nothing else', async () => {
+    const share = { kind: 'recording', id: 'take-1' }
+    await assertSucceeds(setDoc(doc(as(ANA), 'messages', 'a'), msg({ text: '', attachment: share })))
+    await assertSucceeds(setDoc(doc(as(ANA), 'messages', 'b'), msg({ text: 'listen to bar 12', attachment: { kind: 'assignment', id: 'a1' } })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'c'), msg({ text: '' })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'd'), msg({ text: 'x'.repeat(2001) })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'e'), msg({ attachment: { kind: 'photo', id: 'p' } })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'f'), msg({ attachment: { kind: 'recording', id: 'r', url: 'x' } })))
+    await assertFails(setDoc(doc(as(ANA), 'messages', 'g'), msg({ read: true })))
+  })
+
+  it('each side reads its own conversation, and nobody else does', async () => {
+    await seed('m1', msg())
+    await assertSucceeds(getDoc(doc(as(ANA), 'messages', 'm1')))
+    await assertSucceeds(getDoc(doc(as(TEACHER), 'messages', 'm1')))
+    await assertFails(getDoc(doc(as(BEN), 'messages', 'm1')))
+    await assertFails(getDoc(doc(as(OTHER_TEACHER), 'messages', 'm1')))
+    await assertFails(getDoc(doc(anon(), 'messages', 'm1')))
+  })
+
+  it('the app\'s own queries are allowed, and a sweep is not', async () => {
+    await seed('m1', msg())
+    await assertSucceeds(getDocs(query(collection(as(ANA), 'messages'), where('studentId', '==', ANA))))
+    await assertSucceeds(getDocs(query(collection(as(TEACHER), 'messages'), where('teacherId', '==', TEACHER))))
+    await assertFails(getDocs(query(collection(as(BEN), 'messages'), where('studentId', '==', ANA))))
+    await assertFails(getDocs(collection(as(ANA), 'messages')))
+  })
+
+  it('messages are never edited; only the sender deletes', async () => {
+    await seed('m1', msg())
+    await seed('m2', msg({ from: 'teacher' }))
+    await assertFails(updateDoc(doc(as(ANA), 'messages', 'm1'), { text: 'edited' }))
+    await assertFails(deleteDoc(doc(as(TEACHER), 'messages', 'm1')))
+    await assertFails(deleteDoc(doc(as(ANA), 'messages', 'm2')))
+    await assertSucceeds(deleteDoc(doc(as(ANA), 'messages', 'm1')))
+    await assertSucceeds(deleteDoc(doc(as(TEACHER), 'messages', 'm2')))
   })
 })

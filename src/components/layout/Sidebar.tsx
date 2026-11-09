@@ -12,7 +12,8 @@ import { useGamification } from '@/hooks/useGamification'
 import { useLogOutConfirm } from './useLogOut'
 import LogOutSheet from './LogOutSheet'
 import { cn } from '@/lib/utils/cn'
-import { homeFor, navFor, settingsFor, type NavItem } from './nav'
+import { homeFor, navFor, settingsFor, studioNav, type NavItem } from './nav'
+import { useStudio } from '@/hooks/useStudio'
 import type { InstrumentType } from '@/types'
 
 function NavIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
@@ -36,7 +37,8 @@ export default function Sidebar() {
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
-  const nav = navFor(role)
+  const { inStudio, unreadMessages } = useStudio()
+  const nav = navFor(role, inStudio)
   const { unread } = useNotifications()
 
   const logout = useLogOutConfirm()
@@ -123,7 +125,7 @@ export default function Sidebar() {
                 {/* Something on this page wants attention. A dot rather
                     than a number: the count belongs on the bell, and two
                     counts disagreeing is worse than one. */}
-                {unread > 0 && to === homeFor(role) && (
+                {((unread > 0 && to === homeFor(role)) || (unreadMessages > 0 && to === studioNav.to)) && (
                   <span
                     className="ml-auto h-2 w-2 shrink-0 rounded-full"
                     style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent)' }}

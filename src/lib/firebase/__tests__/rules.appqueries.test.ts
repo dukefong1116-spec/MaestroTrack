@@ -48,6 +48,7 @@ const teacher = await import('../teacher')
 const summary = await import('../summary')
 const invites = await import('../invites')
 const requests = await import('../requests')
+const messages = await import('../messages')
 
 const PROJECT = 'demo-maestrotrack'
 
@@ -273,6 +274,23 @@ describe("the student's own reads", () => {
 /* ══════════════════════════════════════════════════════════════════════
  * The teacher's screens
  * ════════════════════════════════════════════════════════════════════ */
+
+describe('messages, through the real functions', () => {
+  it('sendMessage / subscribeStudentMessages — a student writes to their teacher and reads it back', async () => {
+    asAna()
+    await assertSucceeds(messages.sendMessage({ teacherId: TEACHER, studentId: ANA, from: 'student', text: 'Hi!' }))
+    const got = await expectDelivered<{ text: string }[]>((cb) => messages.subscribeStudentMessages(ANA, cb))
+    expect(got.map((m) => m.text)).toEqual(['Hi!'])
+  })
+
+  it('subscribeTeacherMessages / deleteMessage — the teacher reads every thread, and removes their own', async () => {
+    await seed('messages', 'm1', { teacherId: TEACHER, studentId: ANA, from: 'teacher', text: 'Hello', createdAt: '2026-11-09T10:00:00.000Z' })
+    asTeacher()
+    const got = await expectDelivered<{ id: string }[]>((cb) => messages.subscribeTeacherMessages(TEACHER, cb))
+    expect(got).toHaveLength(1)
+    await assertSucceeds(messages.deleteMessage('m1'))
+  })
+})
 
 describe("the teacher's reads", () => {
   it('subscribeStudents — the roster, by role and teacherId', async () => {
@@ -774,7 +792,7 @@ describe('this suite itself', () => {
   it('calls every function the Firestore modules export', () => {
     const modules = [
       'assignments', 'practice', 'pieces', 'performances',
-      'recordings', 'schedule', 'teacher', 'summary', 'invites', 'requests',
+      'recordings', 'schedule', 'teacher', 'summary', 'invites', 'requests', 'messages',
     ]
     const self = readFileSync(__filename, 'utf8')
     const missing: string[] = []

@@ -104,3 +104,43 @@ describe('after the tour', () => {
     }
   })
 })
+
+describe('joining a studio', () => {
+  const joined = { inStudio: true, studioName: 'Harper Strings', teacherName: 'Ms. Harper', compact: true }
+
+  it('walks a phone through welcome, the moved Settings, then the Studio tab', () => {
+    const welcome = at({ ...joined, tour: 'done' })
+    expect(id(welcome)).toBe('studio-welcome')
+    if (welcome.kind === 'show') expect(welcome.show.title).toContain('Harper Strings')
+    const settings = at({ ...joined, tour: 'done', studioStep: 'settings' })
+    expect(id(settings)).toBe('studio-settings')
+    if (settings.kind === 'show') expect(settings.show.target).toBe('settings-photo')
+    const tab = at({ ...joined, tour: 'done', studioStep: 'tab' })
+    expect(id(tab)).toBe('studio-tab')
+    if (tab.kind === 'show') expect(tab.show).toMatchObject({ mustTap: true, target: 'tab-studio' })
+    expect(id(at({ ...joined, tour: 'done', path: '/student/studio' }))).toBe('studio-page')
+  })
+
+  it('skips the Settings step on a desktop, where Settings stays in the sidebar', () => {
+    expect(id(at({ ...joined, compact: false, tour: 'done', studioStep: 'settings' }))).toBe('studio-tab')
+  })
+
+  it('reaches accounts from before the tour, since their bar changed too', () => {
+    expect(id(at({ ...joined, tour: undefined }))).toBe('studio-welcome')
+  })
+
+  it('never interrupts a new account’s first-run tour', () => {
+    expect(id(at({ ...joined, tour: 'welcome' }))).toBe('welcome')
+    expect(id(at({ ...joined, tour: 'start', path: '/student/session' }))).toBe('category')
+  })
+
+  it('waits for Today rather than pulling anyone away mid-task', () => {
+    expect(at({ ...joined, tour: 'done', path: '/student/library' })).toEqual({ kind: 'none' })
+    expect(at({ ...joined, tour: 'done', path: '/student/session' })).toEqual({ kind: 'none' })
+  })
+
+  it('is shown once, and never to a solo musician', () => {
+    expect(at({ ...joined, tour: 'done', seen: ['studio'] })).toEqual({ kind: 'none' })
+    expect(at({ tour: 'done', inStudio: false })).toEqual({ kind: 'none' })
+  })
+})
