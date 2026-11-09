@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { ref, uploadBytes, getBytes, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, getBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { doc, setDoc, updateDoc } from 'firebase/firestore'
 
 /**
@@ -211,6 +211,17 @@ describe('hearing a take that was handed in', () => {
 
   it('a path naming a take that does not exist opens nothing', async () => {
     await assertFails(getBytes(ref(as(TEACHER), path(ANA, 'no-such-take'))))
+  })
+
+  // Playback streams from a link asked for at the moment of playing. The
+  // same rules decide who gets one as who may read the file.
+  it('the playback link is given only to those who may hear it', async () => {
+    await assertSucceeds(getDownloadURL(ref(as(ANA), path(ANA, 'private'))))
+    await assertSucceeds(getDownloadURL(ref(as(TEACHER), path(ANA, 'shared'))))
+    await assertFails(getDownloadURL(ref(as(TEACHER), path(ANA, 'private'))))
+    await assertFails(getDownloadURL(ref(as(OTHER_TEACHER), path(ANA, 'shared'))))
+    await assertFails(getDownloadURL(ref(as(BEN), path(ANA, 'shared'))))
+    await assertFails(getDownloadURL(ref(anon(), path(ANA, 'shared'))))
   })
 
   it('hearing it is all a teacher may do', async () => {

@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytes, uploadBytesResumable, getBlob, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -142,17 +142,24 @@ export async function shareRecordings(ids: string[]): Promise<void> {
 }
 
 /**
- * A take's audio, as a local blob: URL to hand to an <audio>.
+ * Where to play a take from.
  *
- * Fetched through the SDK as the signed-in person, so the Storage rules
- * decide on every play — the owner always, a teacher only while the take
- * is handed in to them. Takes saved before paths were stored have only
- * their old download URL, which is used as it is.
+ * Asked for at the moment of playing, as the signed-in person, so the
+ * Storage rules decide every time — the owner always, a teacher only while
+ * the take is handed in to them. The answer is handed straight to the
+ * <audio>, which streams it: playback starts after the first few seconds
+ * arrive, not after the whole file has.
  *
- * The caller owns the URL and revokes it when done with it.
+ * It used to fetch the whole file first (getBlob) and play it from memory,
+ * which made a long take — or any take on a slow connection — sit on a
+ * spinner, or fail. The link is never saved anywhere: not on the take, not
+ * shared, so it is no more a standing capability than a file the person
+ * could save while they had access.
+ *
+ * Takes saved before paths were stored have only their old link.
  */
 export async function recordingAudio(r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<string> {
-  if (r.storagePath) return URL.createObjectURL(await getBlob(ref(storage, r.storagePath)))
+  if (r.storagePath) return getDownloadURL(ref(storage, r.storagePath))
   if (r.audioUrl) return r.audioUrl
   throw new Error('This take has no audio')
 }
