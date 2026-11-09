@@ -32,15 +32,9 @@ export default function TakePlayer({
   /** The audio, where it is already at hand — a take just recorded. */
   src?: string
   /**
-   * Or how to get it, for a saved take: asked for as soon as the row
-   * appears, so the link is already on the player when it is tapped.
-   *
-   * That matters on an iPhone. Every iPhone browser — Chrome included — is
-   * Safari underneath, and it only lets a tap start sound if the tap goes
-   * straight to play(). Fetching the link inside the tap, then playing,
-   * was refused ("a format this browser can't play"); with the link
-   * already in place, the tap does exactly what it did before takes were
-   * private.
+   * Or how to get its link, for a saved take. Fetched as soon as the row
+   * appears, so everything is ready before the tap — an iPhone only lets a
+   * tap start sound if it goes straight to play().
    */
   load?: () => Promise<string>
   label: string
@@ -94,16 +88,42 @@ export default function TakePlayer({
     else setDraft(label)
   }
 
-  // The link, fetched in the background the moment this row appears.
+  /**
+   * A saved take is downloaded to the device the moment its row appears,
+   * and played from there.
+   *
+   * The loudness boost runs the audio through Web Audio. For a file on the
+   * device that is fine everywhere — it is how a take just recorded plays,
+   * on an iPhone too. For a stream from Firebase it forces a cross-origin
+   * load that every iPhone browser (Chrome included — all are Safari
+   * underneath) refuses: "a format this browser can't play", or a spinner
+   * that never ends. Takes played fine until the boost was added, as a
+   * plain stream; that is what happens if the download cannot be made —
+   * quieter, but it plays. A stream is never routed through Web Audio.
+   */
   const loadRef = useRef(load)
   loadRef.current = load
   useEffect(() => {
     if (src || !loadRef.current) return
     let live = true
-    loadRef.current()
-      .then((url) => { if (live) setResolved(url) })
-      .catch(() => { if (live) setError(true) })
-    return () => { live = false }
+    let made: string | null = null
+    void (async () => {
+      let url: string
+      try { url = await loadRef.current!() } catch { if (live) setError(true); return }
+      try {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`download ${res.status}`)
+        made = URL.createObjectURL(await res.blob())
+        if (live) setResolved(made)
+        else URL.revokeObjectURL(made)
+      } catch {
+        if (live) setResolved(url)
+      }
+    })()
+    return () => {
+      live = false
+      if (made) URL.revokeObjectURL(made)
+    }
   }, [src])
   /** Still waiting on the link: shown as busy, and a tap does nothing yet. */
   const waiting = !audioSrc && !error
@@ -167,7 +187,9 @@ export default function TakePlayer({
     wakeAudio()
     setBusy(true)
     try {
-      boost(el) // louder, the way Voice Memos is — see lib/audio/loudness
+      // Louder, the way Voice Memos is (lib/audio/loudness) — but only a file
+      // on the device: a stream through Web Audio is what iPhones refuse.
+      if (audioSrc.startsWith('blob:')) boost(el)
       await el.play()
       setPlaying(true)
     } catch {
