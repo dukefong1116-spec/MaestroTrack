@@ -43,14 +43,6 @@ const MIN_BOOST_DB = 0
 /** What to apply while the measurement is still in flight, on a first play. */
 const PRIOR_BOOST_DB = 9
 
-/**
- * Takes larger than this are not measured: the whole file would have to be
- * downloaded a second time and decoded in memory, which on a phone is slow
- * and can stall playback. About twelve minutes at the 64kbps the app
- * records. They keep the default boost instead.
- */
-const MEASURE_MAX_BYTES = 6 * 1024 * 1024
-
 const dbToGain = (db: number) => Math.pow(10, db / 20)
 
 /** Measured boost per source, so a second play starts at the right level. */
@@ -155,12 +147,6 @@ async function measure(ctx: AudioContext, src: string): Promise<number> {
   if (cached !== undefined) return cached
   const res = await fetch(src)
   if (!res.ok) throw new Error(`fetch ${res.status}`)
-  const size = Number(res.headers.get('content-length') ?? 0)
-  if (size > MEASURE_MAX_BYTES) {
-    void res.body?.cancel()
-    measuredDb.set(src, PRIOR_BOOST_DB)
-    return PRIOR_BOOST_DB
-  }
   const decoded = await ctx.decodeAudioData(await res.arrayBuffer())
   const channels = Array.from({ length: decoded.numberOfChannels }, (_, i) => decoded.getChannelData(i))
   const db = boostFor(integratedLoudness(channels, decoded.sampleRate))
@@ -189,12 +175,7 @@ export function wakeAudio(): void {
  * element has already loaded without CORS (routing it then would silence it).
  */
 export function boost(el: HTMLMediaElement, opts: { onlyIfRunning?: boolean } = {}): void {
-  // The attribute first: it changes the moment a new source is set, while
-  // currentSrc keeps naming the old one until the browser starts loading.
-  // Reading the stale one routed a take as if it were the previous source
-  // — the unlocking silence, a local blob — so it skipped CORS, and Web
-  // Audio silenced the real, cross-origin take.
-  const src = el.getAttribute('src') || el.currentSrc || ''
+  const src = el.currentSrc || el.getAttribute('src') || ''
   if (!canBoost(src)) return
 
   let route = routes.get(el)

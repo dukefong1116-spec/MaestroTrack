@@ -19,31 +19,6 @@ import ConfirmSheet from '@/components/ui/ConfirmSheet'
 
 const CURRENT = { el: null as HTMLAudioElement | null }
 
-/**
- * A twentieth of a second of silence, played inside the tap.
- *
- * A private take has to be fetched before it can play, and iOS refuses
- * play() once the tap has been awaited past. Playing something — anything
- * — from the tap itself unlocks the element, and the real take can then
- * play on it when it arrives.
- */
-let silence: string | null = null
-function silentClip(): string {
-  if (silence) return silence
-  const rate = 8000
-  const samples = rate / 20
-  const bytes = new Uint8Array(44 + samples)
-  const view = new DataView(bytes.buffer)
-  const text = (at: number, s: string) => { for (let i = 0; i < s.length; i++) bytes[at + i] = s.charCodeAt(i) }
-  text(0, 'RIFF'); view.setUint32(4, 36 + samples, true); text(8, 'WAVE')
-  text(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true)
-  view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true)
-  text(36, 'data'); view.setUint32(40, samples, true)
-  bytes.fill(128, 44) // 8-bit PCM is unsigned: 128 is silence
-  silence = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }))
-  return silence
-}
-
 function clock(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
   const m = Math.floor(seconds / 60)
@@ -52,21 +27,22 @@ function clock(seconds: number): string {
 }
 
 export default function TakePlayer({
-  src, load, loadFallback, label, storedDuration, onRename, onDelete,
+  src, load, label, storedDuration, onRename, onDelete,
 }: {
   /** The audio, where it is already at hand — a take just recorded. */
   src?: string
   /**
-   * Or how to fetch it, for a saved take: called on the first play, so a
-   * list of takes costs nothing until one is played. A blob: URL it
-   * returns is revoked when the player goes.
+   * Or how to get it, for a saved take: asked for as soon as the row
+   * appears, so the link is already on the player when it is tapped.
+   *
+   * That matters on an iPhone. Every iPhone browser — Chrome included — is
+   * Safari underneath, and it only lets a tap start sound if the tap goes
+   * straight to play(). Fetching the link inside the tap, then playing,
+   * was refused ("a format this browser can't play"); with the link
+   * already in place, the tap does exactly what it did before takes were
+   * private.
    */
   load?: () => Promise<string>
-  /**
-   * A second way to get the audio, tried once if the first will not play
-   * — downloading the whole take where streaming is refused.
-   */
-  loadFallback?: () => Promise<string>
   label: string
   /** Length measured while recording — shown before the file is fetched. */
   storedDuration?: number
@@ -80,57 +56,8 @@ export default function TakePlayer({
   onDelete?: () => void
 }) {
   const ref = useRef<HTMLAudioElement | null>(null)
-  const fetched = useRef<string | null>(null)
-  const fallbackRef = useRef(loadFallback)
-  fallbackRef.current = loadFallback
-  /** The one fallback attempt, shared by whoever notices the failure first. */
-  const fallbackRun = useRef<Promise<boolean> | null>(null)
-  /** While the switch is under way, the failed stream's notices are moot. */
-  const switching = useRef(false)
-
-  /**
-   * Streaming failed: download the whole take and play that instead.
-   *
-   * Some browsers refuse a streamed take once the loudness boost has asked
-   * for it cross-origin, and say so as "a format this browser cannot
-   * play" — of a file they would play perfectly well from a download. The
-   * element was unlocked by the first tap, so playing again here is
-   * allowed without another one.
-   */
-  function fallBack(el: HTMLAudioElement): Promise<boolean> {
-    if (fallbackRun.current) return fallbackRun.current
-    const get = fallbackRef.current
-    if (!get) return Promise.resolve(false)
-    fallbackRun.current = (async () => {
-      switching.current = true
-      setError(false)
-      setUndecodable(false)
-      setBusy(true)
-      try {
-        const url = await get()
-        if (fetched.current?.startsWith('blob:')) URL.revokeObjectURL(fetched.current)
-        fetched.current = url
-        el.src = url
-        boost(el)
-        await el.play()
-        setPlaying(true)
-        return true
-      } catch {
-        // Downloaded and still not playable: now it really is the format.
-        setUndecodable(el.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
-        setError(true)
-        setPlaying(false)
-        return false
-      } finally {
-        switching.current = false
-        setBusy(false)
-      }
-    })()
-    return fallbackRun.current
-  }
-  useEffect(() => () => {
-    if (fetched.current?.startsWith('blob:')) URL.revokeObjectURL(fetched.current)
-  }, [])
+  const [resolved, setResolved] = useState<string | null>(null)
+  const audioSrc = src ?? resolved ?? undefined
   const [playing, setPlaying] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [loaded, setLoaded] = useState<number | null>(null)
@@ -167,6 +94,20 @@ export default function TakePlayer({
     else setDraft(label)
   }
 
+  // The link, fetched in the background the moment this row appears.
+  const loadRef = useRef(load)
+  loadRef.current = load
+  useEffect(() => {
+    if (src || !loadRef.current) return
+    let live = true
+    loadRef.current()
+      .then((url) => { if (live) setResolved(url) })
+      .catch(() => { if (live) setError(true) })
+    return () => { live = false }
+  }, [src])
+  /** Still waiting on the link: shown as busy, and a tap does nothing yet. */
+  const waiting = !audioSrc && !error
+
   const total = loaded ?? storedDuration ?? 0
   const pct = total > 0 ? Math.min(100, (elapsed / total) * 100) : 0
 
@@ -177,13 +118,6 @@ export default function TakePlayer({
     const onMeta = () => { if (Number.isFinite(el.duration)) setLoaded(el.duration) }
     const onEnd = () => { setPlaying(false); setElapsed(0); el.currentTime = 0 }
     const onErr = () => {
-      // A late notice about a source already replaced — the stream that
-      // failed, after the fallback has taken over. Starting a new load
-      // clears el.error, so a stale one finds nothing to report.
-      if (!el.error || switching.current) return
-      // The stream failed and there is another way to get it: try that
-      // before saying anything. If it fails too, this runs again for it.
-      if (fallbackRef.current && !fallbackRun.current) { void fallBack(el); return }
       // Why it failed decides what to offer. A take recorded in Chrome is
       // Opus in WebM, which Safari cannot decode however intact the file
       // is — so "unavailable" was telling someone their recording was
@@ -195,8 +129,7 @@ export default function TakePlayer({
       setPlaying(false)
       setBusy(false)
     }
-    // Not for the unlocking silence: the take itself may still be on its way.
-    const onPlaying = () => { if (el.currentSrc !== silence) setBusy(false) }
+    const onPlaying = () => setBusy(false)
     el.addEventListener('timeupdate', onTime)
     el.addEventListener('loadedmetadata', onMeta)
     el.addEventListener('ended', onEnd)
@@ -222,7 +155,7 @@ export default function TakePlayer({
 
   async function toggle() {
     const el = ref.current
-    if (!el || error) return
+    if (!el || error || !audioSrc) return
     if (playing) {
       el.pause()
       setPlaying(false)
@@ -234,18 +167,10 @@ export default function TakePlayer({
     wakeAudio()
     setBusy(true)
     try {
-      if (load && !fetched.current) {
-        // Unlock inside the tap, then fetch — see silentClip.
-        el.src = silentClip()
-        el.play().catch(() => {})
-        fetched.current = await load()
-        el.src = fetched.current
-      }
       boost(el) // louder, the way Voice Memos is — see lib/audio/loudness
       await el.play()
       setPlaying(true)
     } catch {
-      if (await fallBack(el)) return
       setError(true)
     } finally {
       setBusy(false)
@@ -264,7 +189,7 @@ export default function TakePlayer({
   return (
     <>
     <div className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
-      <audio ref={ref} src={src} preload="none" />
+      <audio ref={ref} src={audioSrc} preload="none" />
 
       <div className="flex items-center gap-3">
         <motion.button
@@ -279,7 +204,7 @@ export default function TakePlayer({
             boxShadow: 'var(--clay-accent-shadow)',
           }}
         >
-          {busy ? (
+          {busy || waiting ? (
             <motion.span
               className="block h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent"
               animate={{ rotate: 360 }}
@@ -353,7 +278,7 @@ export default function TakePlayer({
             <p className="mt-1 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
               Recorded in a format this browser can’t play.{' '}
               <a
-                href={src}
+                href={audioSrc}
                 download
                 className="font-semibold underline"
                 style={{ color: 'var(--clay-accent)' }}

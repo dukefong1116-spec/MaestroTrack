@@ -786,7 +786,7 @@ describe('this suite itself', () => {
         // uploadRecording needs a live bucket; its row write is mirrored above.
         // recordingAudio reads only Storage, which rules.storage.test.ts
         // covers — who may hear a take is decided there, not here.
-        if (name === 'uploadRecording' || name === 'recordingAudio' || name === 'recordingDownload') continue
+        if (name === 'uploadRecording' || name === 'recordingAudio') continue
         if (!self.includes(`.${name}(`)) missing.push(`${m}.${name}`)
       }
     }

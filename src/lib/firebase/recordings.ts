@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, getBlob, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -142,19 +142,14 @@ export async function shareRecordings(ids: string[]): Promise<void> {
 }
 
 /**
- * Where to play a take from.
+ * Where to play a take from: the same kind of link takes were played from
+ * before they were private, but asked for when the take is shown rather
+ * than kept on the take.
  *
- * Asked for at the moment of playing, as the signed-in person, so the
- * Storage rules decide every time — the owner always, a teacher only while
- * the take is handed in to them. The answer is handed straight to the
- * <audio>, which streams it: playback starts after the first few seconds
- * arrive, not after the whole file has.
- *
- * It used to fetch the whole file first (getBlob) and play it from memory,
- * which made a long take — or any take on a slow connection — sit on a
- * spinner, or fail. The link is never saved anywhere: not on the take, not
- * shared, so it is no more a standing capability than a file the person
- * could save while they had access.
+ * Asked for as the signed-in person, so the Storage rules decide — the
+ * owner always, a teacher only while the take is handed in to them. The
+ * link is never saved anywhere. The player fetches it as soon as the row
+ * appears, so a tap goes straight to play() (see TakePlayer).
  *
  * Takes saved before paths were stored have only their old link.
  */
@@ -162,21 +157,6 @@ export async function recordingAudio(r: Pick<Recording, 'storagePath' | 'audioUr
   if (r.storagePath) return getDownloadURL(ref(storage, r.storagePath))
   if (r.audioUrl) return r.audioUrl
   throw new Error('This take has no audio')
-}
-
-/**
- * The whole take, downloaded first, as a local blob: URL.
- *
- * Slower to start than streaming, but it is what playback did before and
- * it plays wherever a browser refuses the stream: a local file needs no
- * cross-origin permission for the loudness boost to hear it. The player
- * falls back to this, once, when streaming fails. The same Storage rules
- * decide who may download it.
- */
-export async function recordingDownload(r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<string> {
-  const where = r.storagePath ?? r.audioUrl
-  if (!where) throw new Error('This take has no audio')
-  return URL.createObjectURL(await getBlob(ref(storage, where)))
 }
 
 export async function deleteRecording(id: string, r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<void> {
