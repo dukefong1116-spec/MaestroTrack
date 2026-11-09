@@ -1,4 +1,5 @@
 import type { Piece, PracticeSession } from '@/types'
+import { onPiece, minutesOnPiece } from './sessionPieces'
 
 export interface PieceStats {
   totalMinutes: number
@@ -25,9 +26,10 @@ export interface PieceStats {
  * Sessions reference their piece by *id*, stored in the `pieceName` field.
  */
 export function derivePieceStats(piece: Piece, sessions: PracticeSession[]): PieceStats {
-  const mine = sessions.filter((s) => s.pieceName === piece.id)
+  const mine = sessions.filter((s) => onPiece(s, piece.id))
 
-  const totalMinutes = mine.reduce((sum, s) => sum + s.durationMinutes, 0)
+  // Its share of each session, not the whole length of one it shared.
+  const totalMinutes = mine.reduce((sum, s) => sum + minutesOnPiece(s, piece.id), 0)
 
   const confidenceHistory = mine
     .map((s) => ({ date: s.date, value: s.confidenceRating }))

@@ -106,7 +106,7 @@ export default function PiecesPanel() {
               </button>
             ))}
           </div>
-          <Button className="shrink-0" onClick={() => setOpen(true)}>
+          <Button className="shrink-0" data-coach="add-piece" onClick={() => setOpen(true)}>
             <Plus size={16} />
             <span className="hidden sm:inline">Add piece</span>
             <span className="sr-only sm:hidden">Add piece</span>

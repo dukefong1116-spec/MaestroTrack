@@ -260,3 +260,13 @@ select option {
 input[type="range"] {
   accent-color: var(--clay-accent);
 }
+
+/* The tour's ripple round whatever it is pointing at. */
+@keyframes tour-ripple {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--clay-accent) 55%, transparent); }
+  to   { box-shadow: 0 0 0 16px color-mix(in srgb, var(--clay-accent) 0%, transparent); }
+}
+.tour-ripple { animation: tour-ripple 1.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-ripple { animation: none; box-shadow: 0 0 0 3px var(--clay-accent); }
+}

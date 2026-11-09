@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, parseISO, format, addDays } from 'date-fns'
 import type { Assignment, PracticeSession, Submission, TeacherFeedback } from '@/types'
 import { minutesIn, type CategoryMinutes } from '@/lib/utils/categories'
+import { onPiece, minutesOnPiece } from './sessionPieces'
 
 /**
  * Minutes a session gives an assignment.
@@ -13,9 +14,13 @@ import { minutesIn, type CategoryMinutes } from '@/lib/utils/categories'
  */
 function credited(
   a: Assignment,
-  s: Pick<PracticeSession, 'category' | 'durationMinutes' | 'pieceName'> & { categoryMinutes?: CategoryMinutes }
+  s: Pick<PracticeSession, 'category' | 'durationMinutes' | 'pieceName'> & {
+    categoryMinutes?: CategoryMinutes
+    pieceMinutes?: Record<string, number>
+  }
 ): number {
-  if (a.pieceId) return s.pieceName === a.pieceId ? s.durationMinutes : 0
+  // A piece's share of a session it shared, the same as a category's.
+  if (a.pieceId) return minutesOnPiece(s, a.pieceId)
   if (a.category) return minutesIn(s, a.category)
   return s.durationMinutes
 }
@@ -314,9 +319,9 @@ export function isDaily(a: Assignment): boolean {
  */
 export function sessionCounts(
   a: Assignment,
-  session: { category?: string; pieceName?: string; categoryMinutes?: CategoryMinutes }
+  session: { category?: string; pieceName?: string; categoryMinutes?: CategoryMinutes; pieceMinutes?: Record<string, number> }
 ): boolean {
-  if (a.pieceId) return session.pieceName === a.pieceId
+  if (a.pieceId) return onPiece({ durationMinutes: 0, ...session }, a.pieceId)
   if (a.category) {
     // Any time in the category counts; a split session with none does not.
     if (session.categoryMinutes && Object.keys(session.categoryMinutes).length) {

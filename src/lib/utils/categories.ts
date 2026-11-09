@@ -46,8 +46,12 @@ export function categoriesOf(s: SessionLike): PracticeCategory[] {
  * it disagree with the history. Categories that come out at nothing are
  * dropped: they were tapped, not practised.
  */
-export function apportion(weights: Partial<Record<PracticeCategory, number>>, total: number): CategoryMinutes {
-  const entries = (Object.entries(weights) as [PracticeCategory, number][]).filter(([, w]) => w > 0)
+export function apportion<K extends string = PracticeCategory>(
+  weights: Partial<Record<K, number>>,
+  total: number
+): Partial<Record<K, number>> {
+  // Generic so a session's pieces split the same way its categories do.
+  const entries = (Object.entries(weights) as [K, number][]).filter(([, w]) => w > 0)
   const sum = entries.reduce((n, [, w]) => n + w, 0)
   if (entries.length === 0 || sum <= 0 || total <= 0) return {}
 
@@ -61,16 +65,16 @@ export function apportion(weights: Partial<Record<PracticeCategory, number>>, to
     left -= 1
   }
 
-  const result: CategoryMinutes = {}
+  const result: Partial<Record<K, number>> = {}
   for (const e of out) if (e.n > 0) result[e.c] = e.n
   return result
 }
 
 /** The even split a logged session gets: there is no clock to say otherwise. */
-export function splitEvenly(categories: PracticeCategory[], total: number): CategoryMinutes {
-  const weights: Partial<Record<PracticeCategory, number>> = {}
-  for (const c of categories) weights[c] = 1
-  return apportion(weights, total)
+export function splitEvenly<K extends string = PracticeCategory>(keys: K[], total: number): Partial<Record<K, number>> {
+  const weights: Partial<Record<K, number>> = {}
+  for (const k of keys) weights[k] = 1
+  return apportion<K>(weights, total)
 }
 
 /** The category with the most minutes; on a tie, the one listed first. */

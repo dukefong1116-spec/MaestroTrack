@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
 import PendingUploads from '@/components/common/PendingUploads'
+import TourLayer from '@/components/onboarding/TourLayer'
 
 /**
  * Login is loaded eagerly — it is the first thing anyone sees, and making
@@ -83,6 +84,9 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       {/* Global, so a take left over from a closed tab is picked up on any
           page — including the session page itself. */}
       <PendingUploads />
+      {/* Global for the same reason: the first session, which the tour
+          walks through, runs outside the main layout. */}
+      <TourLayer />
     </>
   )
 }

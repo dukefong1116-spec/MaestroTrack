@@ -27,10 +27,13 @@ export default function DailyToday({
    * bar too, then the saved session did not count toward it.
    */
   liveByCategory,
+  livePieceIds,
   compact = false,
 }: {
   liveMinutes?: number
   liveByCategory?: CategoryMinutes
+  /** The pieces the session in progress is on, which share its minutes. */
+  livePieceIds?: string[]
   compact?: boolean
 }) {
   const navigate = useNavigate()
@@ -46,9 +49,12 @@ export default function DailyToday({
         // The strip already holds today's figure, scoped and filtered, so
         // read it from there rather than recomputing against the log.
         const todayCell = daily.days.find((d) => d.isToday)
-        const live = assignment.category && !assignment.pieceId && liveByCategory
-          ? (liveByCategory[assignment.category as keyof CategoryMinutes] ?? 0)
-          : liveMinutes
+        const live = assignment.pieceId && livePieceIds
+          // A piece's even share of the session — and nothing if it is not on it.
+          ? (livePieceIds.includes(assignment.pieceId) ? Math.floor((liveMinutes ?? 0) / livePieceIds.length) : 0)
+          : assignment.category && !assignment.pieceId && liveByCategory
+            ? (liveByCategory[assignment.category as keyof CategoryMinutes] ?? 0)
+            : liveMinutes
         const done = (todayCell?.minutes ?? 0) + Math.max(0, live)
         const target = assignment.dailyTargetMinutes ?? 0
         const met = target > 0 && done >= target

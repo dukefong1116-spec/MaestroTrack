@@ -41,6 +41,9 @@ export async function signUp(
     theme: 'light',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    // The first-run tour starts here, and only here: an account made
+    // before it existed never has this, so it is never marched through it.
+    ...(role === 'student' ? { onboarding: { tour: 'welcome' as const } } : {}),
   }
 
   // Cache profile locally so the app works even if Firestore is offline

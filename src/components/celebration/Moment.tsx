@@ -53,6 +53,8 @@ export default function Moment({
       {open && (
         <motion.div
           className="fixed inset-0 z-[60] flex cursor-pointer items-center justify-center p-4"
+          // The tour waits while a celebration has the screen.
+          data-tour-wait
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

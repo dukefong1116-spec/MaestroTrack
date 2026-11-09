@@ -75,6 +75,7 @@ export default function SessionCelebration({
       <motion.div
         key="celebration"
         className="fixed inset-0 z-[60] flex items-center justify-center p-4 cursor-pointer"
+        data-tour-wait
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

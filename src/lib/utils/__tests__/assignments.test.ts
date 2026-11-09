@@ -408,3 +408,21 @@ describe('a session split across categories', () => {
     expect(deriveProgress(scales, [sess('2026-09-02', 30, { category: 'Repertoire' })]).minutesDone).toBe(0)
   })
 })
+
+/* ── sessions on more than one piece ─────────────────────────────── */
+
+describe('a session shared between pieces', () => {
+  // 30 minutes on two pieces: 15 each.
+  const shared = sess('2026-09-02', 30, { pieceName: 'p1', pieceMinutes: { p1: 15, p2: 15 } })
+
+  it('gives each piece assignment its share, not the whole session', () => {
+    expect(deriveProgress(a({ pieceId: 'p1', targetMinutes: 60 }), [shared]).minutesDone).toBe(15)
+    expect(deriveProgress(a({ pieceId: 'p2', targetMinutes: 60 }), [shared]).minutesDone).toBe(15)
+    expect(deriveProgress(a({ pieceId: 'p3', targetMinutes: 60 }), [shared]).minutesDone).toBe(0)
+  })
+
+  it('counts toward both pieces, including the one that is not the main piece', () => {
+    expect(sessionCounts(a({ pieceId: 'p2' }), shared)).toBe(true)
+    expect(sessionCounts(a({ pieceId: 'p3' }), shared)).toBe(false)
+  })
+})

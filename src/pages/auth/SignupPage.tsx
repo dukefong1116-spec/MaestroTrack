@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { uploadAvatar, checkAvatarFile, AVATAR_ACCEPT_ATTR } from '@/lib/firebase/avatar'
+import Avatar from '@/components/profile/Avatar'
 import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -32,13 +34,55 @@ const teacherSchema = z.object({
   studioName: z.string().min(2, 'Studio name required'),
 })
 
-type Step = 'role' | 'info'
+type Step = 'role' | 'info' | 'photo'
+
+/** The two doors in, and who each is for. */
+const ROLES: { role: UserRole; title: string; line: string }[] = [
+  { role: 'student', title: 'Student / Solo musician', line: 'Learning an instrument' },
+  { role: 'teacher', title: 'Teacher', line: 'Running a studio' },
+]
 
 export default function SignupPage() {
   const navigate = useNavigate()
   const [role, setRole] = useState<UserRole | null>(null)
   const [step, setStep] = useState<Step>('role')
   const [error, setError] = useState('')
+  /** Where to go once the photo step is done — set when the account exists. */
+  const [next, setNext] = useState('')
+  const [account, setAccount] = useState<{ name: string; instrument?: InstrumentType } | null>(null)
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  /** The account exists now; ask for a face before letting them in. */
+  function toPhoto(destination: string, name: string, instrument?: InstrumentType) {
+    setNext(destination)
+    setAccount({ name, instrument })
+    setError('')
+    setStep('photo')
+  }
+
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const problem = checkAvatarFile(file)
+    if (problem) { setError(problem); return }
+    setError('')
+    setUploading(true)
+    const local = URL.createObjectURL(file)
+    setPhoto(local)
+    try {
+      // The saved photo's own address from here on: the local preview is
+      // released just below.
+      setPhoto(await uploadAvatar(file))
+    } catch {
+      setPhoto(null)
+      setError('That photo did not upload. Try another, or skip for now.')
+    } finally {
+      URL.revokeObjectURL(local)
+      setUploading(false)
+    }
+  }
 
   const studentForm = useForm({ resolver: zodResolver(studentSchema), defaultValues: { weeklyGoalMinutes: 300 } })
   const teacherForm = useForm({ resolver: zodResolver(teacherSchema) })
@@ -54,7 +98,7 @@ export default function SignupPage() {
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
       // Came in through a teacher's link: send them back to finish it.
       const invited = takePendingInvite()
-      navigate(invited ? `/join/${invited}` : '/student')
+      toPhoto(invited ? `/join/${invited}` : '/student', data.displayName, data.instrument)
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/email-already-in-use') setError('Email already in use.')
@@ -67,7 +111,7 @@ export default function SignupPage() {
     try {
       const user = await signUp(data.email, data.password, data.displayName, 'teacher', { studioName: data.studioName })
       localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
-      navigate('/teacher')
+      toPhoto('/teacher', data.displayName)
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/email-already-in-use') setError('Email already in use.')
@@ -95,7 +139,7 @@ export default function SignupPage() {
               <motion.div key="role" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--clay-ink)' }}>I am a…</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  {(['student', 'teacher'] as UserRole[]).map((r) => (
+                  {ROLES.map(({ role: r, title, line }) => (
                     <button
                       key={r}
                       onClick={() => { setRole(r); setStep('info') }}
@@ -105,7 +149,8 @@ export default function SignupPage() {
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--clay-line)'; (e.currentTarget as HTMLElement).style.background = '' }}
                     >
                       <span>{r === 'student' ? <Sticker name="gradcap" size={38} tone="accent" /> : <Sticker name="clipboard" size={38} tone="accent" />}</span>
-                      <span className="font-semibold capitalize">{r}</span>
+                      <span className="text-center font-semibold leading-tight">{title}</span>
+                      <span className="-mt-1.5 text-center text-xs" style={{ color: 'var(--clay-dim)' }}>{line}</span>
                     </button>
                   ))}
                 </div>
@@ -164,6 +209,30 @@ export default function SignupPage() {
                   <Input label="Password" type="password" placeholder="••••••••" error={teacherForm.formState.errors.password?.message} {...teacherForm.register('password')} />
                   <Button type="submit" className="w-full" size="lg" loading={teacherForm.formState.isSubmitting}>Create Teacher Account</Button>
                 </form>
+              </motion.div>
+            )}
+            {step === 'photo' && account && (
+              <motion.div key="photo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col items-center text-center">
+                <h2 className="mb-1 text-xl font-semibold" style={{ color: 'var(--clay-ink)' }}>Add a profile photo</h2>
+                <p className="mb-6 text-sm" style={{ color: 'var(--clay-dim)' }}>Optional, and it only takes a second.</p>
+                <Avatar src={photo} name={account.name} instrument={account.instrument} size={104} />
+                <label
+                  className="mt-6 flex w-full cursor-pointer items-center justify-center rounded-[var(--clay-r-md)] py-3 text-[15px] font-semibold"
+                  style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', opacity: uploading ? 0.6 : 1 }}
+                >
+                  {uploading ? 'Uploading…' : photo ? 'Choose another' : 'Choose photo'}
+                  <input type="file" accept={AVATAR_ACCEPT_ATTR} className="sr-only" disabled={uploading} onChange={onPhoto} />
+                </label>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => navigate(next)}
+                  className="mt-3 w-full py-2.5 text-[15px] font-semibold disabled:opacity-50"
+                  style={{ color: photo ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' }}
+                >
+                  {photo ? 'Continue' : 'Skip for now'}
+                </button>
+                <p className="mt-4 text-xs" style={{ color: 'var(--clay-dim)' }}>You can change any of this later in Settings.</p>
               </motion.div>
             )}
           </AnimatePresence>

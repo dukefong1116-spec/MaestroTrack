@@ -51,6 +51,8 @@ export type PerformanceType =
   | 'Jury'
   | 'Masterclass'
 
+export type TourCheckpoint = 'welcome' | 'today' | 'start' | 'streak' | 'history' | 'done'
+
 export interface UserProfile {
   uid: string
   email: string
@@ -102,19 +104,28 @@ export interface UserProfile {
   /** Piece ids already offered as "ready to call mastered?" — offered once each. */
   masteryPromptsSeen?: string[]
   /**
-   * The first-run checklist.
-   *
-   * Four of its five steps are derived from the data, so nothing is
-   * stored for them. `seen` carries only the steps that leave no evidence
-   * behind — visiting a page — and the flags are the ways the list ends:
-   * closed, finished, and whether the finish has been shown.
+   * The first-run tour and the one-time intros after it. `dismissed`,
+   * `completedAt` and `celebrated` are from the tour before this one and
+   * are only ever read back as history now.
    */
   onboarding?: {
     dismissed?: boolean
     completedAt?: string
     /** Set once the "that's the tour" card has actually been shown. */
     celebrated?: boolean
+    /** One-time intros already shown: 'library', 'progress', 'piece-prompt'. */
     seen?: string[]
+    /**
+     * Where a new student is in the first-run tour. Written at sign-up as
+     * 'welcome', so only accounts made since the tour existed are ever
+     * walked through it; 'done' when it is over. Only checkpoints are kept
+     * here — the steps inside the first session live in memory, so a
+     * reload mid-session falls back to "tap Start" rather than stranding
+     * anyone. See lib/utils/tour.
+     */
+    tour?: TourCheckpoint
+    /** Started again from Settings, so it can be skipped. */
+    replay?: boolean
   }
   /**
    * Everything that became true before this has been seen.
@@ -142,6 +153,12 @@ export interface PracticeSession {
    * values always sum exactly to durationMinutes.
    */
   categoryMinutes?: Partial<Record<PracticeCategory, number>>
+  /**
+   * Minutes per piece (by piece id), when a session covered more than one.
+   * `pieceName` still holds the main piece's id, so everything that reads
+   * one piece works unchanged; read both through lib/utils/sessionPieces.
+   */
+  pieceMinutes?: Record<string, number>
   pieceName?: string
   difficultyRating: number
   confidenceRating: number

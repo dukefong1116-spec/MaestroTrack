@@ -2,6 +2,7 @@ import { startOfWeek, parseISO, format } from 'date-fns'
 import type { PracticeSession } from '@/types'
 import { computeStreak } from './analytics'
 import { categoriesOf } from '@/lib/utils/categories'
+import { piecesOf } from './sessionPieces'
 
 /**
  * XP and levels — entirely derived from the session log, so there is
@@ -179,20 +180,22 @@ function returnDays(sessions: PracticeSession[]): number {
   let returns = 0
 
   for (const s of [...sessions].sort((a, b) => a.date.localeCompare(b.date))) {
-    const piece = s.pieceName
-    if (!piece) continue
     const day = s.date.substring(0, 10)
-    const first = firstDay.get(piece)
-    if (first === undefined) {
-      firstDay.set(piece, day)
-      continue
-    }
-    // One bonus per piece per day, so three sessions in an evening are not
-    // three returns.
-    const key = `${piece}|${day}`
-    if (day !== first && !counted.has(key)) {
-      counted.add(key)
-      returns++
+    // Every piece a session was on, so one shared between two still
+    // counts as coming back to each.
+    for (const piece of piecesOf(s)) {
+      const first = firstDay.get(piece)
+      if (first === undefined) {
+        firstDay.set(piece, day)
+        continue
+      }
+      // One bonus per piece per day, so three sessions in an evening are not
+      // three returns.
+      const key = `${piece}|${day}`
+      if (day !== first && !counted.has(key)) {
+        counted.add(key)
+        returns++
+      }
     }
   }
   return returns

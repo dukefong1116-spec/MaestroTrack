@@ -1,4 +1,5 @@
 import type { Piece, PracticeSession } from '@/types'
+import { onPiece } from './sessionPieces'
 
 /**
  * When to suggest calling a piece mastered.
@@ -30,7 +31,7 @@ export function isMasteryCandidate(piece: Piece, sessions: PracticeSession[]): b
   if (piece.status !== 'active') return false
 
   const mine = sessions
-    .filter((s) => s.pieceName === piece.id)
+    .filter((s) => onPiece(s, piece.id))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   if (mine.length < MIN_SESSIONS) return false
@@ -56,7 +57,7 @@ export function findMasteryCandidate(
     if (!isMasteryCandidate(piece, sessions)) continue
 
     const mine = sessions
-      .filter((s) => s.pieceName === piece.id)
+      .filter((s) => onPiece(s, piece.id))
       .sort((a, b) => a.date.localeCompare(b.date))
 
     return {

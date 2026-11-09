@@ -7,6 +7,7 @@ import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { streakRisk, riskCopy } from '@/lib/utils/streakRisk'
 import { freezesAvailable } from '@/lib/utils/streakFreeze'
 import type { StickerName } from '@/components/stickers/Sticker'
+import { onPiece } from '@/lib/utils/sessionPieces'
 
 export type NudgeTone = 'info' | 'warning' | 'success'
 
@@ -93,7 +94,7 @@ export function usePracticeNudges(limit = 3): Nudge[] {
     const neglected = pieces.filter((p) => {
       if (p.status !== 'active') return false
       const last = sessions
-        .filter((s) => s.pieceName === p.id)
+        .filter((s) => onPiece(s, p.id))
         .sort((a, b) => b.date.localeCompare(a.date))[0]
       if (!last) return false // never started — that's not neglect
       // parseISO + calendar days: new Date('yyyy-MM-dd') is UTC midnight, so

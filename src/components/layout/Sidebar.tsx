@@ -103,6 +103,9 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={end}
+            // Same names as the bottom tabs, so the tour can point at
+            // whichever of the two is on screen.
+            data-coach={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
             className={({ isActive }) => cn(
               'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
               !isActive && 'hover:bg-[var(--clay-bg)]'

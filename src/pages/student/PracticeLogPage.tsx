@@ -25,11 +25,11 @@ import TakePlayer from '@/components/recordings/TakePlayer'
 import { deleteRecording, recordingAudio, renameRecording } from '@/lib/firebase/recordings'
 import Modal from '@/components/ui/Modal'
 import Input from '@/components/ui/Input'
-import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
 import Button from '@/components/ui/Button'
 import { CONFIDENCE_CHOICES, DEFAULT_CONFIDENCE, confidenceLabel } from '@/lib/utils/confidence'
 import { categoryFields, categoryLabel, minutesByCategory, splitEvenly } from '@/lib/utils/categories'
+import { pieceFields, pieceLabel } from '@/lib/utils/sessionPieces'
 import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
 
@@ -60,7 +60,7 @@ const schema = z.object({
   categories: z.array(
     z.enum(['Scales','Technique','Sight Reading','Repertoire','Memorization','Ear Training','Improvisation'] as [PracticeCategory, ...PracticeCategory[]])
   ).min(1, 'Pick at least one'),
-  pieceName: z.string().optional(),
+  pieces: z.array(z.string()),
   confidenceRating: z.coerce.number().min(1).max(10),
   notes: z.string().optional(),
 })
@@ -95,7 +95,7 @@ function SessionDetailSheet({
   onClose: () => void
 }) {
   if (!session) return null
-  const title = pieces.find((p) => p.id === session.pieceName)?.title ?? session.pieceName
+  const title = pieceLabel(session, pieces)
 
   // Difficulty is not shown. A live session never asks for it and stores
   // 3 every time, so it read "3/5" on nearly every row — a number nobody
@@ -236,6 +236,7 @@ export default function PracticeLogPage() {
       date: today(),
       durationMinutes: 30,
       categories: [],
+      pieces: [],
       confidenceRating: DEFAULT_CONFIDENCE,
     },
   })
@@ -297,10 +298,12 @@ export default function PracticeLogPage() {
     // timed one are the same kind of thing in the history. Difficulty is 3
     // because that is what a live session always records; the categories
     // share the minutes evenly, the one thing a logged session cannot time.
-    const { categories, ...rest } = data
+    const { categories, pieces: pieceIds, ...rest } = data
     const payload = {
       ...rest,
       ...categoryFields(splitEvenly(categories, rest.durationMinutes), categories[0]),
+      // Pieces share the minutes evenly too.
+      ...pieceFields(pieceIds, rest.durationMinutes),
       difficultyRating: 3,
     }
 
@@ -503,7 +506,7 @@ export default function PracticeLogPage() {
 
                 <div>
                   {day.map((s, si) => {
-                    const title = pieces.find((p) => p.id === s.pieceName)?.title ?? s.pieceName
+                    const title = pieceLabel(s, pieces)
                     const clipCount = recordings.filter((r) => r.sessionId === s.id).length
                     return (
                       <motion.button
@@ -673,14 +676,36 @@ export default function PracticeLogPage() {
               <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>The minutes are shared evenly between them.</p>
             )}
           </div>
-          <Select
-            label="Piece (optional)"
-            options={[
-              { value: '', label: '— None —' },
-              ...pieces.filter((p) => p.status === 'active').map((p) => ({ value: p.id, label: p.title })),
-            ]}
-            {...register('pieceName')}
-          />
+          {pieces.some((p) => p.status === 'active') && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>Pieces (optional)</p>
+              <div className="flex flex-wrap gap-2">
+                {pieces.filter((p) => p.status === 'active').map((p) => {
+                  const picked = watch('pieces').includes(p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      aria-pressed={picked}
+                      onClick={() => {
+                        const now = watch('pieces')
+                        setValue('pieces', picked ? now.filter((x) => x !== p.id) : [...now, p.id])
+                      }}
+                      className="px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-95"
+                      style={{
+                        borderRadius: 999,
+                        background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
+                        color: picked ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                        boxShadow: picked ? 'inset 0 0 0 1.5px var(--clay-accent)' : undefined,
+                      }}
+                    >
+                      {p.title}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {/* The same three a live session ends with, asked the same way,
               so the two kinds of entry say the same thing in the history. */}
           <div className="space-y-1.5">

@@ -20,7 +20,9 @@ import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
-import SessionCoach, { type CoachTool } from '@/components/onboarding/SessionCoach'
+import { useTour } from '@/hooks/useTour'
+import { useTourStore } from '@/stores/tourStore'
+import { useAuthStore } from '@/stores/authStore'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
 import { computeStreak } from '@/lib/utils/analytics'
@@ -33,12 +35,11 @@ import { boost } from '@/lib/audio/loudness'
 import { takeLabel } from '@/lib/utils/takeNames'
 import { useCategoryTimer } from '@/stores/categoryTimerStore'
 import { apportion, categoryFields, type CategoryMinutes } from '@/lib/utils/categories'
+import { pieceFields } from '@/lib/utils/sessionPieces'
 import type { InstrumentType, PracticeCategory, PracticeSession } from '@/types'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
 
-/** Sentinel for the dropdown's own "add one" row. */
-const NEW_PIECE = '__new__'
 type Clip = {
   /** Also the IndexedDB key, so the durable copy and this one stay paired. */
   id: string
@@ -87,8 +88,13 @@ export default function SessionPage() {
   )
   const clipName = (i: number) => takeLabel(todayISO, takenEarlierToday + i + 1)
 
-  /** Their own history decides this, so nothing has to be stored. */
-  const firstEver = sessions.length === 0
+  /**
+   * The first-run tour is walking them through this session: no leaving
+   * it half-way — Minimise and Discard are hidden — and saving it moves
+   * the tour on. See lib/utils/tour.
+   */
+  const inTour = profile?.onboarding?.tour === 'start'
+  const { setTour } = useTour()
 
   /** Adding a piece without leaving the session. */
   const [addingPiece, setAddingPiece] = useState(false)
@@ -120,7 +126,7 @@ export default function SessionPage() {
       addPieceToStore({ id, userId: uid, ...pieceData })
       // Selected straight away: adding one mid-session means you are
       // playing it now.
-      setPieceId(id)
+      setPieceIds((ids) => (ids.includes(id) ? ids : [...ids, id]))
       setAddingPiece(false)
       setNewPieceTitle('')
     } catch {
@@ -132,18 +138,9 @@ export default function SessionPage() {
 
   const [tool, setTool] = useState<Tool>(null)
 
-  /**
-   * Teaching the tools where they live.
-   *
-   * Only on a first session — `firstEver` is the person's own history, so
-   * no flag has to be stored and nobody who has been using the app gets
-   * coached. `coachUsed` advances the line when a tool is opened, so it
-   * reacts to what you did rather than counting Next taps.
-   */
-  const [coachUsed, setCoachUsed] = useState<CoachTool[]>([])
-  const [coachSkipped, setCoachSkipped] = useState(false)
   const [thoughts, setThoughts] = useState('')
-  const [pieceId, setPieceId] = useState('')
+  /** Pieces this session is on. More than one shares the minutes evenly. */
+  const [pieceIds, setPieceIds] = useState<string[]>([])
   // Started from a scoped daily assignment, the category comes with it —
   // the surest way to stop a session quietly not counting is for it never
   // to have the wrong category in the first place.
@@ -562,8 +559,6 @@ export default function SessionPage() {
 
   /* ── tool switching ────────────────────────────────────── */
   function pickTool(next: Tool) {
-    // Opening one is what moves the line on.
-    setCoachUsed((u) => (next && !u.includes(next as CoachTool) ? [...u, next as CoachTool] : u))
 
     const closing = tool === next
     const target = closing ? null : next
@@ -586,10 +581,13 @@ export default function SessionPage() {
     () => openAssignments
       .filter((x) => isDaily(x.assignment) && awaitingStudent(x.assignment) && x.assignment.category)
       .filter((x) => !sessionCounts(x.assignment, {
-        category, pieceName: pieceId || undefined, categoryMinutes: savingSplit,
+        category, categoryMinutes: savingSplit,
+        // Only which pieces matters here, not how the minutes divide.
+        pieceName: pieceIds[0],
+        pieceMinutes: pieceIds.length > 1 ? Object.fromEntries(pieceIds.map((id) => [id, 1])) : undefined,
       }))
       .map((x) => x.assignment),
-    [openAssignments, category, pieceId, savingSplit]
+    [openAssignments, category, pieceIds, savingSplit]
   )
 
   /* ── finish ────────────────────────────────────────────── */
@@ -627,6 +625,8 @@ export default function SessionPage() {
   /** Tapped Finish by mistake — give the session back, clock intact. */
   function cancelFinish() {
     setAskingConfidence(false)
+    // Back to "tap Finish" if the tour was waiting on this one.
+    if (useTourStore.getState().sub === 'saving') useTourStore.getState().setSub('finish')
     const banked = measuredSecRef.current
     measuredSecRef.current = null
     if (banked !== null) {
@@ -672,7 +672,7 @@ export default function SessionPage() {
       date,
       durationMinutes: minutes,
       ...categoryFields(split, category),
-      pieceName: pieceId || undefined,
+      ...pieceFields(pieceIds, minutes),
       difficultyRating: 3,
       confidenceRating,
       notes: thoughts.trim() || undefined,
@@ -714,7 +714,7 @@ export default function SessionPage() {
       .map((c) => c.id)
       .filter((id) => !discardedRef.current.has(id))
     if (clipIds.length) {
-      const pieceTitle = pieces.find((p) => p.id === pieceId)?.title ?? 'Practice session'
+      const pieceTitle = pickedTitles || 'Practice session'
       await assignSession(clipIds, id, {
         date,
         pieceName: pieceTitle,
@@ -741,9 +741,16 @@ export default function SessionPage() {
     // how the sound used to vanish with nothing reported.
     playSessionChime(profile?.instrument as InstrumentType | undefined, minutes)
     setReward(earned)
+    // The tour's first session is in: the next step waits on Today, once
+    // the celebration has had its moment.
+    if (inTour) { setTour('streak'); useTourStore.getState().setSub(null) }
   }
 
   const activePieces = useMemo(() => pieces.filter((p) => p.status === 'active'), [pieces])
+  const pickedTitles = pieceIds
+    .map((id) => pieces.find((p) => p.id === id)?.title)
+    .filter(Boolean)
+    .join(' + ')
 
   /* ── render ────────────────────────────────────────────── */
   return (
@@ -758,6 +765,7 @@ export default function SessionPage() {
 
         {/* header */}
         <div className="mb-5 flex items-center justify-between gap-3">
+          {inTour ? <span className="h-10 w-10 shrink-0" aria-hidden /> : (
           <button
             onClick={() => navigate('/student/practice')}
             className="flex h-10 w-10 items-center justify-center rounded-full transition-transform active:scale-90"
@@ -767,33 +775,16 @@ export default function SessionPage() {
           >
             <Minus size={18} />
           </button>
+          )}
 
-          <select
-            value={pieceId}
-            onChange={(e) => {
-              // The dropdown listed existing pieces only, so a new account
-              // opened it to "What are you working on?" and nothing at all
-              // — a dead end you could only leave by abandoning the
-              // session, adding a piece in Library, and coming back.
-              if (e.target.value === NEW_PIECE) { setAddingPiece(true); return }
-              setPieceId(e.target.value)
-            }}
-            className="min-w-0 flex-1 cursor-pointer truncate px-4 py-2.5 text-sm font-semibold outline-none"
-            style={{
-              ...surface,
-              borderRadius: 999,
-              color: pieceId ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
-              background: pieceId ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
-              border: 'none',
-              appearance: 'none',
-              textAlign: 'center',
-            }}
+          <p
+            className="min-w-0 flex-1 truncate text-center text-sm font-semibold"
+            style={{ color: pickedTitles ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' }}
           >
-            <option value="">What are you working on?</option>
-            {activePieces.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-            <option value={NEW_PIECE}>+ New piece…</option>
-          </select>
+            {pickedTitles || 'Practice session'}
+          </p>
 
+          {inTour ? <span className="h-10 w-10 shrink-0" aria-hidden /> : (
           <button
             onClick={() => { resetTimer(); useCategoryTimer.getState().reset(); navigate('/student/practice') }}
             className="flex h-10 w-10 items-center justify-center rounded-full transition-transform active:scale-90"
@@ -802,6 +793,45 @@ export default function SessionPage() {
             title="Discard session"
           >
             <X size={18} />
+          </button>
+          )}
+        </div>
+
+        {/* Pieces: tap any you are working on. More than one shares the
+            session's minutes evenly. A row of chips rather than a dropdown,
+            because a dropdown picks one. */}
+        <div className="mb-5 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          {activePieces.length > 0 && (
+            <div className="flex shrink-0 gap-2" data-coach="session-pieces">
+              {activePieces.map((p) => {
+                const on = pieceIds.includes(p.id)
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setPieceIds((ids) => (on ? ids.filter((x) => x !== p.id) : [...ids, p.id]))}
+                    aria-pressed={on}
+                    className="shrink-0 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
+                    style={{
+                      borderRadius: 999,
+                      background: on ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
+                      color: on ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                      boxShadow: on ? 'none' : 'var(--clay-raised)',
+                    }}
+                  >
+                    {p.title}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {/* A new account has no pieces, and adding one should not mean
+              abandoning the session for the Library and coming back. */}
+          <button
+            onClick={() => setAddingPiece(true)}
+            className="shrink-0 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
+            style={{ borderRadius: 999, color: 'var(--clay-dim)', border: '1.5px dashed var(--clay-line)' }}
+          >
+            + New piece
           </button>
         </div>
 
@@ -871,12 +901,8 @@ export default function SessionPage() {
           </motion.button>
         </div>
 
-        {firstEver && !coachSkipped && (
-          <SessionCoach used={coachUsed} onSkip={() => setCoachSkipped(true)} />
-        )}
-
         {/* tool dock */}
-        <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="mb-4 grid grid-cols-3 gap-3" data-coach="session-tools">
           {([
             { id: 'metro', label: 'Metronome', on: metroOn },
             { id: 'tuner', label: 'Tuner', on: tool === 'tuner' },
@@ -1152,11 +1178,11 @@ export default function SessionPage() {
             without the live figure it would sit frozen for exactly as long
             as someone is practising and looking at it. */}
         <div className="mb-5">
-          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} compact />
+          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} livePieceIds={pieceIds} compact />
         </div>
 
         {/* category */}
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }} data-coach="session-categories">
           {CATEGORIES.map((c) => {
             const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
             return (
@@ -1193,6 +1219,7 @@ export default function SessionPage() {
           <motion.button
             onClick={beginFinish}
             disabled={saving}
+            data-coach="session-finish"
             whileTap={{ scale: 0.96 }}
             className="w-full py-4 text-[16px] font-semibold disabled:opacity-60"
             style={{
@@ -1236,7 +1263,7 @@ export default function SessionPage() {
                 How did that go?
               </p>
               <p className="mt-1 text-center text-[13px]" style={{ color: 'var(--clay-dim)' }}>
-                {mm}:{ss} of practice{pieceId ? ` · ${activePieces.find((p) => p.id === pieceId)?.title ?? ''}` : ''}
+                {mm}:{ss} of practice{pickedTitles ? ` · ${pickedTitles}` : ''}
               </p>
 
               {/* Asked rather than assumed. Changing the category is a tap;
@@ -1408,7 +1435,11 @@ export default function SessionPage() {
       <SessionCelebration
         reward={reward}
         instrument={profile?.instrument as InstrumentType | undefined}
-        onDismiss={() => { setReward(null); navigate('/student/practice') }}
+        // In the tour, Today is next — the streak step waits there.
+        onDismiss={() => {
+          setReward(null)
+          navigate(useAuthStore.getState().profile?.onboarding?.tour === 'streak' ? '/student' : '/student/practice')
+        }}
         onShare={justSaved ? () => { setReward(null); setSharing(justSaved) } : undefined}
       />
 

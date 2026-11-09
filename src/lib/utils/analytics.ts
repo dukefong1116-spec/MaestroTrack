@@ -1,6 +1,7 @@
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, differenceInDays } from 'date-fns'
 import type { PracticeSession, DailyPracticeData, CategoryData, AnalyticsSummary, PracticeCategory } from '@/types'
 import { minutesByCategory } from '@/lib/utils/categories'
+import { onPiece } from './sessionPieces'
 
 export function getDailyData(sessions: PracticeSession[], days = 30): DailyPracticeData[] {
   const end = new Date()
@@ -241,7 +242,7 @@ export function generateInsights(sessions: PracticeSession[], pieces: { id: stri
   const neglected = pieces.filter((p) => {
     if (p.status && p.status !== 'active') return false
     const last = sessions
-      .filter((s) => s.pieceName === p.id)
+      .filter((s) => onPiece(s, p.id))
       .reduce<string | null>((latest, s) => (latest === null || s.date > latest ? s.date : latest), null)
     if (last === null) return false // never started isn't neglect
     return differenceInDays(now, parseISO(last)) > 5

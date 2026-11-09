@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import PinnedBadges from '@/components/badges/PinnedBadges'
-import Spotlight from '@/components/onboarding/Spotlight'
-import { useOnboarding } from '@/hooks/useOnboarding'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -78,7 +76,6 @@ export default function StudentDashboard() {
       })[0]
     : null
 
-  const { show: showTour, finish: finishTour } = useOnboarding()
 
   const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
   const minutesLeft = Math.max(0, weeklyGoal - summary.totalMinutesThisWeek)
@@ -158,7 +155,7 @@ export default function StudentDashboard() {
           <div className="flex items-center gap-2.5">
             <StreakFlame streak={game.streak} size={18} />
             <span className="min-w-0 flex-1 text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-              {game.streak > 0 ? `${game.streak} days` : 'No streak yet'}
+              {game.streak > 0 ? `${game.streak} ${game.streak === 1 ? 'day' : 'days'}` : 'No streak yet'}
               {game.freezesLeft > 0 && (
                 <span style={{ color: 'var(--clay-faint)', fontWeight: 500 }}>
                   {'  ·  '}{game.freezesLeft} freeze{game.freezesLeft === 1 ? '' : 's'}
@@ -255,7 +252,6 @@ export default function StudentDashboard() {
       {/* Mounted here rather than in the layout: every step points at
           something on this screen or at the bar under it, so the tour
           only exists where it has something to point at. */}
-      {showTour && <Spotlight onDone={finishTour} />}
 
       <SubmitSheet assignment={opened} open={!!opened} onClose={() => setOpened(null)} />
 

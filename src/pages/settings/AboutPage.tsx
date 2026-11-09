@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Mail, FileText, Shield, HelpCircle, ChevronDown, RotateCcw } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { useOnboarding } from '@/hooks/useOnboarding'
+import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 import licenses from '@/generated/licenses.json'
@@ -66,15 +66,9 @@ export default function AboutPage() {
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const isTeacher = profile?.role === 'teacher'
 
-  /**
-   * Puts the checklist back.
-   *
-   * Clears both the ways it ends — dismissed and completedAt — because
-   * somebody asking for it again wants it however it went away. The steps
-   * themselves stay derived, so anything already done stays ticked.
-   */
-  const [coachReset, setCoachReset] = useState(false)
-  const { replay } = useOnboarding()
+  // The first-run tour again, from the top — skippable this time, since
+  // they asked for it rather than being new.
+  const { replay } = useTour()
 
   const [showLicenses, setShowLicenses] = useState(false)
 
@@ -111,23 +105,15 @@ export default function AboutPage() {
           <NotWrittenYet what="terms of service" />
         </Placeholder>
 
-        {/* Dismissing the checklist should not be a trapdoor. Teachers do
-            not get one yet, so this is offered to students only — and only
-            while there is something left to show: on an account that has
-            been through all five, the button would promise the list back
-            and deliver a two-line congratulation. */}
+        {/* Students only, for now: the teacher tour comes later. */}
         {!isTeacher && (
           <Block>
             <Legend
-              title="The quick look round"
-              hint="The six-step walk through Today that a new account is shown."
+              title="The tour"
+              hint="The walk-through a new account gets. You can skip it this time."
             />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => { replay(); setCoachReset(true) }}
-            >
-              <RotateCcw size={15} /> {coachReset ? 'Waiting on Today' : 'Show me again'}
+            <Button variant="outline" size="sm" onClick={replay}>
+              <RotateCcw size={15} /> Show me again
             </Button>
           </Block>
         )}
