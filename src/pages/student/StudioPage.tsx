@@ -1,41 +1,40 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { format } from 'date-fns'
-import PageHeader from '@/components/common/PageHeader'
-import { Panel, Block, Legend } from '@/components/ui/Panel'
-import Button from '@/components/ui/Button'
-import ConfirmSheet from '@/components/ui/ConfirmSheet'
-import Sticker from '@/components/stickers/Sticker'
-import MessageThread from '@/components/messages/MessageThread'
-import AssignmentsPanel from './panels/AssignmentsPanel'
+import { useMemo } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { format, formatDistanceToNowStrict, parseISO } from 'date-fns'
+import { Send } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignments } from '@/hooks/useAssignments'
+import { useStudio } from '@/hooks/useStudio'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { useAuthStore } from '@/stores/authStore'
-import { leaveStudio } from '@/lib/firebase/requests'
-import { updateUserProfile } from '@/lib/firebase/teacher'
+import AssignmentRow from '@/components/assignments/AssignmentRow'
 import { nextOccurrence } from '@/lib/utils/notifications'
+import { organise } from '@/lib/utils/assignmentGroups'
 
 /**
- * A student's studio: what their teacher has set them, their conversation
- * with their teacher, and their next lesson.
+ * A student's studio, at a glance: one panel, top to bottom — who it is,
+ * the conversation with the teacher, and what is most pressing.
  *
- * Only for a student in a studio — a solo musician has no teacher, so has
- * no such page, and is sent to Today. Assignments live here rather than in
- * the Library for the same reason.
+ * The conversation shows its last few messages as a little chat, and
+ * tapping it (or the box under it) opens the whole thing full-screen.
+ * Assignments show the three most pressing; the full, organised list is
+ * one tap away. Leaving the studio lives in Settings → Your studio, not
+ * here: nobody needs to see it every day.
+ *
+ * The panel reaches the tab bar however little is in it, so the page never
+ * ends in a band of empty background.
  */
+
+const PREVIEW_MESSAGES = 3
+const PREVIEW_ASSIGNMENTS = 3
+
 export default function StudioPage() {
   const { profile } = useAuth()
   const navigate = useNavigate()
-  const [, setParams] = useSearchParams()
+  const { unreadMessages } = useStudio()
   const messages = usePracticeStore((s) => s.messages)
-  const recordings = usePracticeStore((s) => s.recordings)
   const lessons = usePracticeStore((s) => s.lessons)
   const { all } = useAssignments()
-  const [leaving, setLeaving] = useState(false)
-  const [leaveError, setLeaveError] = useState('')
 
-  const uid = profile?.uid
   const teacherId = profile?.role === 'student' ? profile.teacherId : undefined
   const teacher = profile?.teacherName || 'your teacher'
 
@@ -43,22 +42,11 @@ export default function StudioPage() {
     () => (teacherId ? messages.filter((m) => m.teacherId === teacherId) : []),
     [messages, teacherId]
   )
-  const mine = useMemo(
-    () => all.map((x) => x.assignment).filter((a) => a.teacherId === teacherId),
-    [all, teacherId]
-  )
-
-  // Opening the conversation reads it. Written only when something newer
-  // than the last read has arrived, not on every render.
-  const latestFromTeacher = thread.filter((m) => m.from === 'teacher').at(-1)?.createdAt ?? ''
-  const readAt = profile?.messagesReadAt ?? ''
-  useEffect(() => {
-    if (!uid || !latestFromTeacher || latestFromTeacher <= readAt) return
-    const at = new Date().toISOString()
-    const live = useAuthStore.getState().profile
-    if (live) useAuthStore.getState().setProfile({ ...live, messagesReadAt: at })
-    void updateUserProfile(uid, { messagesReadAt: at }).catch(() => {})
-  }, [uid, latestFromTeacher, readAt])
+  const mine = useMemo(() => all.filter((x) => x.assignment.teacherId === teacherId), [all, teacherId])
+  // The same order as the full list: overdue, today (a daily target is
+  // today's work), then soonest due. Work handed in or finished never
+  // makes the top three.
+  const top = useMemo(() => organise(mine, new Date()).mostPressing.slice(0, PREVIEW_ASSIGNMENTS), [mine])
 
   const next = useMemo(() => {
     const now = new Date()
@@ -70,74 +58,108 @@ export default function StudioPage() {
   if (!profile) return null
   if (!teacherId) return <Navigate to="/student" replace />
 
-  async function leave() {
-    if (!uid) return
-    setLeaving(false)
-    try {
-      await leaveStudio(uid)
-      navigate('/student', { replace: true })
-    } catch (e) {
-      console.error('[Studio] leave failed', e)
-      setLeaveError('Could not leave the studio. Try again.')
-    }
-  }
+  const recent = thread.slice(-PREVIEW_MESSAGES)
+  const last = thread.at(-1)
+  const initial = (profile.studioName || teacher).trim().charAt(0).toUpperCase()
 
   return (
-    <div className="space-y-5">
-      <PageHeader title={profile.studioName || 'Your studio'} subtitle={`Taught by ${teacher}`} />
+    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-col lg:min-h-[calc(100dvh-4rem)]">
+      <h1 className="mb-4 text-[26px] font-bold" style={{ color: 'var(--clay-ink)' }}>Studio</h1>
 
-      <Panel>
-        <Block first>
-          <Legend title="Assignments" />
-        </Block>
-        <AssignmentsPanel />
-      </Panel>
+      <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>
+        {/* Who */}
+        <div className="flex items-center gap-3 px-5 py-4">
+          <span
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[17px] font-bold"
+            style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }}
+          >
+            {initial}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{profile.studioName || 'Your studio'}</p>
+            <p className="truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
+              {profile.teacherName || 'Your teacher'}
+              {next ? ` · Next lesson ${format(next.when, 'EEE h:mm a')}` : ''}
+            </p>
+          </div>
+        </div>
 
-      <Panel>
-        <Block first>
-          <Legend title={`Messages with ${teacher}`} />
-          <MessageThread
-            me="student"
-            teacherId={teacherId}
-            studentId={profile.uid}
-            otherName={teacher}
-            messages={thread}
-            recordings={recordings}
-            assignments={mine}
-            onOpenAssignment={(a) => setParams({ open: a.id })}
-          />
-        </Block>
-      </Panel>
-
-      <Panel>
-        <Block first>
-          <Legend title="Next lesson" />
-          {next ? (
-            <div className="flex items-center gap-3">
-              <Sticker name="calendar" size={22} tone="accent" />
-              <p className="text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                {format(next.when, 'EEE, MMM d')} · {format(next.when, 'h:mm a')}
-                <span className="font-normal" style={{ color: 'var(--clay-dim)' }}> · {next.slot.durationMinutes} min</span>
-              </p>
-            </div>
+        {/* The conversation, as a little chat */}
+        <Link to="/student/studio/messages" className="block px-5 py-4" style={{ borderTop: '1px solid var(--clay-line)' }}>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10.5px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+              Messages
+            </span>
+            <span className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--clay-faint)' }}>
+              {last && formatDistanceToNowStrict(parseISO(last.createdAt), { addSuffix: true })}
+              {unreadMessages > 0 && <span className="h-2 w-2 rounded-full" style={{ background: 'var(--clay-accent)' }} />}
+            </span>
+          </div>
+          {recent.length === 0 ? (
+            <p className="py-2 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>Say hi to {teacher} 👋</p>
           ) : (
-            <p className="text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>No lesson scheduled yet.</p>
+            <div className="space-y-1.5">
+              {recent.map((m) => {
+                const fromMe = m.from === 'student'
+                const words = m.text || (m.attachment?.kind === 'recording' ? '🎙️ Shared a recording' : '📋 Shared an assignment')
+                return (
+                  <div key={m.id} className={`flex ${fromMe ? 'justify-end' : 'justify-start'}`}>
+                    <p
+                      className="max-w-[80%] truncate px-3 py-1.5 text-[13px]"
+                      style={{
+                        background: fromMe ? 'var(--clay-accent-soft)' : 'var(--clay-bg-deep)',
+                        color: 'var(--clay-ink)',
+                        borderRadius: 14,
+                        borderBottomRightRadius: fromMe ? 4 : 14,
+                        borderBottomLeftRadius: fromMe ? 14 : 4,
+                      }}
+                    >
+                      {m.attachment && m.text ? (m.attachment.kind === 'recording' ? '🎙️ ' : '📋 ') : ''}{words}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
           )}
-        </Block>
-        <Block>
-          <Button variant="outline" size="sm" onClick={() => setLeaving(true)}>Leave this studio</Button>
-          {leaveError && <p className="mt-2 text-[12.5px]" style={{ color: 'var(--clay-danger)' }}>{leaveError}</p>}
-        </Block>
-      </Panel>
+          <span
+            className="mt-3 flex h-10 items-center justify-between px-4 text-[13px]"
+            style={{ background: 'var(--clay-bg)', color: 'var(--clay-faint)', borderRadius: 20 }}
+          >
+            Message {teacher}…
+            <Send size={15} style={{ color: 'var(--clay-accent)' }} />
+          </span>
+        </Link>
 
-      <ConfirmSheet
-        open={leaving}
-        onCancel={() => setLeaving(false)}
-        onConfirm={leave}
-        title="Leave this studio?"
-        body={`${profile.teacherName || 'Your teacher'} will no longer see your practice. You can be invited back later.`}
-        confirmLabel="Leave"
-      />
+        {/* What is most pressing; the rest one tap away. Grows to fill. */}
+        <div className="flex-1 px-5 pb-2 pt-4" style={{ borderTop: '1px solid var(--clay-line)' }}>
+          <div className="flex items-center justify-between">
+            <span className="text-[10.5px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+              Assignments
+            </span>
+            {mine.length > 0 && (
+              <Link to="/student/studio/assignments" className="text-[12.5px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>
+                See all ({mine.length}) ›
+              </Link>
+            )}
+          </div>
+          {top.length === 0 ? (
+            <p className="py-4 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>
+              {mine.length ? 'All caught up ✨' : `Nothing set yet. ${teacher} will add assignments here.`}
+            </p>
+          ) : (
+            <div className="mt-1">
+              {top.map((x, i) => (
+                <div key={x.assignment.id} style={i ? { borderTop: '1px solid var(--clay-line)' } : undefined}>
+                  <AssignmentRow
+                    item={x}
+                    onOpen={() => navigate(`/student/studio/assignments?open=${encodeURIComponent(x.assignment.id)}`)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

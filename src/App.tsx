@@ -38,6 +38,8 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
 const StudioPage = lazy(() => import('@/pages/student/StudioPage'))
+const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
+const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
 const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
 const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
@@ -114,6 +116,23 @@ function AppRoutes() {
         <ProtectedRoute role="student">
           <DataProvider>
             <SessionPage />
+          </DataProvider>
+        </ProtectedRoute>
+      } />
+
+      {/* The studio's chat and full assignment list: full-screen too, like
+          any messaging app's conversation, so outside AppLayout. */}
+      <Route path="/student/studio/messages" element={
+        <ProtectedRoute role="student">
+          <DataProvider>
+            <StudioMessagesPage />
+          </DataProvider>
+        </ProtectedRoute>
+      } />
+      <Route path="/student/studio/assignments" element={
+        <ProtectedRoute role="student">
+          <DataProvider>
+            <StudioAssignmentsPage />
           </DataProvider>
         </ProtectedRoute>
       } />

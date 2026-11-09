@@ -206,7 +206,7 @@ describe('messages', () => {
     const [n] = buildStudentNotifications({
       assignments: [], lessons: [], messages: [fromTeacher], teacherName: 'Ms. Harper', options: { now: NOW },
     })
-    expect(n).toMatchObject({ kind: 'message-new', title: 'Ms. Harper sent a message', body: 'Lovely tone today', to: '/student/studio' })
+    expect(n).toMatchObject({ kind: 'message-new', title: 'Ms. Harper sent a message', body: 'Lovely tone today', to: '/student/studio/messages' })
   })
 
   it('tells a teacher which student wrote, and links to that student', () => {

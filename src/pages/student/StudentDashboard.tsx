@@ -248,7 +248,7 @@ export default function StudentDashboard() {
             </div>
             {todo.length > 4 && (
               <button
-                onClick={() => navigate('/student/studio')}
+                onClick={() => navigate('/student/studio/assignments')}
                 className="mt-2.5 text-[12.5px] font-semibold"
                 style={{ color: 'var(--clay-accent)' }}
               >

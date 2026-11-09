@@ -26,11 +26,11 @@ import type { Assignment, Message, MessageAttachment, Recording } from '@/types'
  */
 
 const STATUS: Record<string, string> = {
-  active: 'To do', submitted: 'Handed in', returned: 'Another go', approved: 'Approved', completed: 'Approved',
+  assigned: 'To do', submitted: 'Handed in', returned: 'Another go', approved: 'Done', cancelled: 'Withdrawn',
 }
 
 export default function MessageThread({
-  me, teacherId, studentId, otherName, messages, recordings, assignments, onOpenAssignment, canSend = true,
+  me, teacherId, studentId, otherName, messages, recordings, assignments, onOpenAssignment, canSend = true, full = false,
 }: {
   me: 'teacher' | 'student'
   teacherId: string
@@ -46,6 +46,8 @@ export default function MessageThread({
   onOpenAssignment: (a: Assignment) => void
   /** False once a student has left: the history stays, the box goes. */
   canSend?: boolean
+  /** A full-screen chat: the messages scroll, the box stays at the bottom. */
+  full?: boolean
 }) {
   const [text, setText] = useState('')
   const [attachment, setAttachment] = useState<MessageAttachment | null>(null)
@@ -117,8 +119,8 @@ export default function MessageThread({
   const shareable = picking === 'recording' ? recordings : picking === 'assignment' ? assignments : []
 
   return (
-    <div>
-      <div className="space-y-2.5">
+    <div className={full ? 'flex h-full min-h-0 flex-col' : ''}>
+      <div className={full ? 'min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4' : 'space-y-2.5'}>
         {messages.length === 0 && (
           <p className="py-6 text-center text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>
             {canSend ? `Say hi to ${otherName} 👋` : 'No messages.'}
@@ -164,7 +166,14 @@ export default function MessageThread({
       </div>
 
       {canSend && (
-        <div className="mt-4">
+        <div
+          className={full ? 'shrink-0 px-3 pt-3' : 'mt-4'}
+          style={full ? {
+            background: 'var(--clay-surface)',
+            borderTop: '1px solid var(--clay-line)',
+            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+          } : undefined}
+        >
           {attachment && (
             <div className="mb-2 flex items-start gap-2">
               <div className="min-w-0 flex-1">{card(attachment)}</div>

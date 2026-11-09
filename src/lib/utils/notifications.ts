@@ -83,7 +83,7 @@ export function applyNotifyPrefs(
  * lesson is shown on Today, so that is already where the answer is.
  */
 function assignmentHref(assignmentId: string): string {
-  return `/student/studio?open=${encodeURIComponent(assignmentId)}`
+  return `/student/studio/assignments?open=${encodeURIComponent(assignmentId)}`
 }
 
 export interface BuildOptions {
@@ -247,7 +247,7 @@ export function buildStudentNotifications(input: {
       title: `${teacherName || 'Your teacher'} sent a message`,
       body: messagePreview(m),
       at: m.createdAt,
-      to: '/student/studio',
+      to: '/student/studio/messages',
       priority: 80,
       sticker: 'message',
     })
