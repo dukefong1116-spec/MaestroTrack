@@ -9,7 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, getBlob, deleteObject } from 'firebase/storage'
 import { db, storage, auth } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
@@ -162,6 +162,21 @@ export async function recordingAudio(r: Pick<Recording, 'storagePath' | 'audioUr
   if (r.storagePath) return getDownloadURL(ref(storage, r.storagePath))
   if (r.audioUrl) return r.audioUrl
   throw new Error('This take has no audio')
+}
+
+/**
+ * The whole take, downloaded first, as a local blob: URL.
+ *
+ * Slower to start than streaming, but it is what playback did before and
+ * it plays wherever a browser refuses the stream: a local file needs no
+ * cross-origin permission for the loudness boost to hear it. The player
+ * falls back to this, once, when streaming fails. The same Storage rules
+ * decide who may download it.
+ */
+export async function recordingDownload(r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<string> {
+  const where = r.storagePath ?? r.audioUrl
+  if (!where) throw new Error('This take has no audio')
+  return URL.createObjectURL(await getBlob(ref(storage, where)))
 }
 
 export async function deleteRecording(id: string, r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<void> {

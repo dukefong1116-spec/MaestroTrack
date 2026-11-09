@@ -52,7 +52,7 @@ function clock(seconds: number): string {
 }
 
 export default function TakePlayer({
-  src, load, label, storedDuration, onRename, onDelete,
+  src, load, loadFallback, label, storedDuration, onRename, onDelete,
 }: {
   /** The audio, where it is already at hand — a take just recorded. */
   src?: string
@@ -62,6 +62,11 @@ export default function TakePlayer({
    * returns is revoked when the player goes.
    */
   load?: () => Promise<string>
+  /**
+   * A second way to get the audio, tried once if the first will not play
+   * — downloading the whole take where streaming is refused.
+   */
+  loadFallback?: () => Promise<string>
   label: string
   /** Length measured while recording — shown before the file is fetched. */
   storedDuration?: number
@@ -76,6 +81,53 @@ export default function TakePlayer({
 }) {
   const ref = useRef<HTMLAudioElement | null>(null)
   const fetched = useRef<string | null>(null)
+  const fallbackRef = useRef(loadFallback)
+  fallbackRef.current = loadFallback
+  /** The one fallback attempt, shared by whoever notices the failure first. */
+  const fallbackRun = useRef<Promise<boolean> | null>(null)
+  /** While the switch is under way, the failed stream's notices are moot. */
+  const switching = useRef(false)
+
+  /**
+   * Streaming failed: download the whole take and play that instead.
+   *
+   * Some browsers refuse a streamed take once the loudness boost has asked
+   * for it cross-origin, and say so as "a format this browser cannot
+   * play" — of a file they would play perfectly well from a download. The
+   * element was unlocked by the first tap, so playing again here is
+   * allowed without another one.
+   */
+  function fallBack(el: HTMLAudioElement): Promise<boolean> {
+    if (fallbackRun.current) return fallbackRun.current
+    const get = fallbackRef.current
+    if (!get) return Promise.resolve(false)
+    fallbackRun.current = (async () => {
+      switching.current = true
+      setError(false)
+      setUndecodable(false)
+      setBusy(true)
+      try {
+        const url = await get()
+        if (fetched.current?.startsWith('blob:')) URL.revokeObjectURL(fetched.current)
+        fetched.current = url
+        el.src = url
+        boost(el)
+        await el.play()
+        setPlaying(true)
+        return true
+      } catch {
+        // Downloaded and still not playable: now it really is the format.
+        setUndecodable(el.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
+        setError(true)
+        setPlaying(false)
+        return false
+      } finally {
+        switching.current = false
+        setBusy(false)
+      }
+    })()
+    return fallbackRun.current
+  }
   useEffect(() => () => {
     if (fetched.current?.startsWith('blob:')) URL.revokeObjectURL(fetched.current)
   }, [])
@@ -125,6 +177,13 @@ export default function TakePlayer({
     const onMeta = () => { if (Number.isFinite(el.duration)) setLoaded(el.duration) }
     const onEnd = () => { setPlaying(false); setElapsed(0); el.currentTime = 0 }
     const onErr = () => {
+      // A late notice about a source already replaced — the stream that
+      // failed, after the fallback has taken over. Starting a new load
+      // clears el.error, so a stale one finds nothing to report.
+      if (!el.error || switching.current) return
+      // The stream failed and there is another way to get it: try that
+      // before saying anything. If it fails too, this runs again for it.
+      if (fallbackRef.current && !fallbackRun.current) { void fallBack(el); return }
       // Why it failed decides what to offer. A take recorded in Chrome is
       // Opus in WebM, which Safari cannot decode however intact the file
       // is — so "unavailable" was telling someone their recording was
@@ -186,6 +245,7 @@ export default function TakePlayer({
       await el.play()
       setPlaying(true)
     } catch {
+      if (await fallBack(el)) return
       setError(true)
     } finally {
       setBusy(false)
