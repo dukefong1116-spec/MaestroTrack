@@ -29,6 +29,11 @@ const FADE = 'color-mix(in srgb, var(--clay-bg) 80%, transparent)'
 const MISSING_GRACE_MS = 4000
 /** Room between the lit element and the bubble's arrow. */
 const GAP = 14
+/** Everything eases in rather than switching on: the fade first, then the
+ *  bubble drifts up a moment later, so things arrive one at a time. */
+const EASE_OUT = [0.16, 1, 0.3, 1] as const
+const FADE_IN = { duration: 0.5, ease: 'easeOut' } as const
+const DRIFT = { duration: 0.55, ease: EASE_OUT, delay: 0.26 } as const
 
 /** The first matching element that is actually on screen — the sidebar
  *  and the bottom tabs carry the same names, and only one is visible. */
@@ -100,10 +105,12 @@ export default function TourLayer() {
   const showId = show?.id
   const showTarget = show?.target
   useEffect(() => {
-    setBox(null)
     setMissing(false)
     if (!showId) return
     const target = showTarget
+    // Kept, not cleared, between two lit steps — the hole travels from the
+    // last target to the next instead of closing and reopening.
+    if (!target) setBox(null)
     let scrolled = false
     const tick = () => {
       setWaiting(!!document.querySelector('[data-tour-wait]'))
@@ -163,7 +170,7 @@ export default function TourLayer() {
   // middle of it. With nothing lit it sits low and plain.
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const width = Math.min(vw * 0.92, 380)
+  const width = Math.min(vw * 0.92, show.big ? 420 : 380)
   // Centred under what it points at, kept on screen — on a desktop the
   // sidebar is far from the middle, and the arrow has to reach it.
   const left = box
@@ -192,24 +199,25 @@ export default function TourLayer() {
           <div className="pointer-events-auto fixed right-0" style={{ top: box.top, height: box.height, left: box.left + box.width }} />
         </>
       ) : (
-        <div className="pointer-events-auto fixed inset-0" style={{ background: FADE }} />
+        <div className="pointer-events-auto fixed inset-0" />
       ))}
+
+      {/* The fade: one enormous spread shadow in the page's own colour,
+          round a hole over the lit element (or a hole of nothing, mid-
+          screen, when nothing is lit). One element for every step, so
+          from one step to the next it never goes away and comes back —
+          the hole just travels. It eases out on the steps that leave the
+          screen usable, and back in after. */}
+      <motion.div
+        className="fixed"
+        initial={{ opacity: 0, ...(box ?? { top: vh / 2, left: vw / 2, width: 0, height: 0 }) }}
+        animate={{ opacity: show.block ? 1 : 0, ...(box ?? { top: vh / 2, left: vw / 2, width: 0, height: 0 }) }}
+        transition={{ default: { type: 'spring', stiffness: 260, damping: 32 }, opacity: FADE_IN }}
+        style={{ borderRadius: 'var(--clay-r-md)', boxShadow: `0 0 0 9999px ${FADE}` }}
+      />
 
       {box && (
         <>
-          {/* The fade: one enormous spread shadow in the page's own colour,
-              so everything else recedes and the hole keeps its rounded
-              corners. Only where the rest of the screen is off-limits —
-              on the steps that leave it usable, it stays clear. */}
-          {show.block && (
-            <motion.div
-              className="fixed"
-              initial={false}
-              animate={{ top: box.top, left: box.left, width: box.width, height: box.height }}
-              transition={{ type: 'spring', stiffness: 420, damping: 38 }}
-              style={{ borderRadius: 'var(--clay-r-md)', boxShadow: `0 0 0 9999px ${FADE}` }}
-            />
-          )}
           {/* And a ripple, so the eye finds it. */}
           <div
             className="tour-ripple fixed"
@@ -222,15 +230,15 @@ export default function TourLayer() {
         <motion.div
           key={show.id}
           ref={bubbleRef}
-          initial={{ opacity: 0, y: place?.arrow === 'down' ? -8 : 8 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, transition: { duration: 0.15 } }}
+          transition={DRIFT}
           role="dialog"
           aria-label="Guide"
           // A bubble with nothing to press never takes a tap: on the
           // "tap Finish" step it may sit over the tools, which must still work.
-          className={`${show.button || fallback || canSkip ? 'pointer-events-auto' : 'pointer-events-none'} fixed px-4 py-3.5`}
+          className={`${show.button || fallback || canSkip ? 'pointer-events-auto' : 'pointer-events-none'} fixed ${show.big ? 'px-5 py-5' : 'px-4 py-3.5'}`}
           style={{
             left,
             width,
@@ -254,22 +262,40 @@ export default function TourLayer() {
               }}
             />
           )}
-          <div className="relative flex items-start gap-3">
+          <div className={`relative flex items-start ${show.big ? 'gap-3.5' : 'gap-3'}`}>
             <span
-              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+              className={`mt-0.5 flex shrink-0 items-center justify-center rounded-full ${show.big ? 'h-11 w-11' : 'h-8 w-8'}`}
               style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent)' }}
             >
-              <NoteGlyph size={18} />
+              <NoteGlyph size={show.big ? 24 : 18} />
             </span>
-            <p className="flex-1 text-[14.5px] leading-snug">{show.text}</p>
+            <div className="flex-1">
+              {show.title && <p className="mb-1 text-[19px] font-bold leading-tight">{show.title}</p>}
+              <p className={`${show.big ? 'text-[15.5px]' : 'text-[14.5px]'} leading-snug`}>{show.text}</p>
+            </div>
           </div>
-          {(show.button || fallback || canSkip) && (
-            <div className="relative mt-3 flex items-center justify-end gap-2">
+          {(show.button || fallback || canSkip || show.progress) && (
+            <div className={`relative flex items-center justify-end gap-2 ${show.big ? 'mt-4' : 'mt-3'}`}>
+              {/* Where they are in it: a short journey, not a string of pop-ups. */}
+              {show.progress && (
+                <span className="mr-auto flex items-center gap-1.5" aria-label={`Step ${show.progress[0]} of ${show.progress[1]}`}>
+                  {Array.from({ length: show.progress[1] }, (_, n) => (
+                    <span
+                      key={n}
+                      className="h-1.5 rounded-full transition-all"
+                      style={{
+                        width: n + 1 === show.progress![0] ? 14 : 6,
+                        background: n < show.progress![0] ? 'var(--clay-accent)' : 'var(--clay-line)',
+                      }}
+                    />
+                  ))}
+                </span>
+              )}
               {canSkip && (
                 <button
                   type="button"
                   onClick={() => { setSub(null); setTour('done') }}
-                  className="mr-auto px-2 py-1.5 text-[13px] font-medium"
+                  className={`${show.progress ? '' : 'mr-auto '}px-2 py-1.5 text-[13px] font-medium`}
                   style={{ color: 'var(--clay-dim)' }}
                 >
                   Skip tour
@@ -285,7 +311,7 @@ export default function TourLayer() {
                     if (fallback && show.id === 'history') navigate('/student/practice')
                     advance.current(show.id)
                   }}
-                  className="px-4 py-2 text-[14px] font-semibold"
+                  className={`${show.big ? 'px-5 py-2.5 text-[15px]' : 'px-4 py-2 text-[14px]'} font-semibold`}
                   style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', borderRadius: 'var(--clay-r-sm)' }}
                 >
                   {show.button ?? 'Continue'}

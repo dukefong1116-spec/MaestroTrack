@@ -26,7 +26,13 @@ export type ShowId =
 
 export interface Show {
   id: ShowId
+  /** A heading above the text — the welcome has one. */
+  title?: string
   text: string
+  /** Drawn larger: the welcome, the first thing anyone sees. */
+  big?: boolean
+  /** Where this is in the first-run tour, for the dots: [step, of]. */
+  progress?: [number, number]
   /** `[data-coach]` to light up. None: the bubble alone. */
   target?: string
   /** The only way on is tapping the target. Otherwise a button does it. */
@@ -59,6 +65,11 @@ export type Decision =
 const NONE: Decision = { kind: 'none' }
 const show = (s: Show): Decision => ({ kind: 'show', show: s })
 
+/** The first-run tour in order, for its progress dots. */
+const TOUR_ORDER: ShowId[] = ['welcome', 'today', 'start', 'category', 'tools', 'finish', 'streak', 'history']
+const step = (s: Omit<Show, 'progress'>): Decision =>
+  show({ ...s, progress: [TOUR_ORDER.indexOf(s.id) + 1, TOUR_ORDER.length] })
+
 export function whatToShow(i: TourInput): Decision {
   const path = i.path.replace(/\/+$/, '') || '/'
 
@@ -74,18 +85,18 @@ export function whatToShow(i: TourInput): Decision {
     if (path === SESSION) {
       if (i.tour !== 'start') return NONE // e.g. the celebration, before Today
       const sub = i.sub ?? 'category'
-      if (sub === 'category') return show({
+      if (sub === 'category') return step({
         id: 'category', target: 'session-categories', mustTap: true, block: true,
-        text: 'What are you practicing? Tap a category.',
+        text: 'What are you practicing? 🎯 Tap a category.',
       })
-      if (sub === 'tools') return show({
+      if (sub === 'tools') return step({
         id: 'tools', target: 'session-tools', button: 'Got it', block: true,
-        text: 'Nice! Add notes anytime, and try the metronome, tuner or recorder.',
+        text: 'Nice! ✨ Add notes anytime, and try the metronome, tuner or recorder.',
       })
-      if (sub === 'finish') return show({
+      if (sub === 'finish') return step({
         // Not blocking: they should be free to actually practise.
         id: 'finish', target: 'session-finish', mustTap: true, block: false,
-        text: 'Play as long as you like, then tap Finish.',
+        text: 'Play as long as you like, then tap Finish 🏁',
       })
       return NONE // 'saving': the finish sheet and celebration run as normal
     }
@@ -93,25 +104,26 @@ export function whatToShow(i: TourInput): Decision {
     if (path !== HOME) return { kind: 'redirect', to: HOME }
 
     switch (i.tour) {
-      case 'welcome': return show({
-        id: 'welcome', button: "Let's go", block: true,
-        text: `Hi ${i.firstName}! Welcome to MaestroTrack 🎵 Let me show you around — it takes a minute.`,
+      case 'welcome': return step({
+        id: 'welcome', button: "Let's go", block: true, big: true,
+        title: `Hi ${i.firstName}! 👋`,
+        text: 'Welcome to MaestroTrack 🎵 Let me show you around — it only takes a minute.',
       })
-      case 'today': return show({
+      case 'today': return step({
         id: 'today', target: 'week-ring', button: 'Next', block: true,
-        text: 'This is Today — your week at a glance. It fills up as you practice.',
+        text: 'This is Today 📅 your week at a glance. It fills up as you practice.',
       })
-      case 'start': return show({
+      case 'start': return step({
         id: 'start', target: 'start-practising', mustTap: true, block: true,
-        text: "Let's start your first session. Tap Start.",
+        text: "Let's start your first session 🎶 Tap Start.",
       })
-      case 'streak': return show({
+      case 'streak': return step({
         id: 'streak', target: 'week-strip', button: 'Next', block: true,
         text: 'First session logged! 🔥 Day 1 of your streak — come back tomorrow to keep it going.',
       })
-      case 'history': return show({
+      case 'history': return step({
         id: 'history', target: 'tab-practice', mustTap: true, block: true,
-        text: 'Your history lives here. Tap Practice.',
+        text: 'Your history lives here 📖 Tap Practice.',
       })
     }
   }
@@ -121,15 +133,15 @@ export function whatToShow(i: TourInput): Decision {
   if (path === '/student/library' && !seen.has('library')) return show({
     // Either way on: add a piece, or just "Got it".
     id: 'intro-library', target: 'add-piece', mustTap: true, button: 'Got it', block: true,
-    text: "Your Library. Add pieces you're learning and performances coming up. Try adding your first piece!",
+    text: "Your Library 📚 Add pieces you're learning and performances coming up. Try adding your first piece!",
   })
   if (path === '/student/progress' && !seen.has('progress')) return show({
     id: 'intro-progress', button: 'Got it', block: true,
-    text: 'Your progress lives here — badges, goals and patterns. Keep the streak going!',
+    text: 'Your progress lives here 🏆 badges, goals and patterns. Keep the streak going!',
   })
   if (path === SESSION && i.hasPieces && !seen.has('piece-prompt')) return show({
     id: 'piece-prompt', target: 'session-pieces', mustTap: true, block: true,
-    text: "You've got pieces now! Pick what you're working on — you can choose more than one.",
+    text: "You've got pieces now! 🎼 Pick what you're working on — you can choose more than one.",
   })
   return NONE
 }

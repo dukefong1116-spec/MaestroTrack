@@ -17,7 +17,7 @@ describe('the first-run tour, in order', () => {
   it('greets them by name on Today', () => {
     const d = at({})
     expect(id(d)).toBe('welcome')
-    if (d.kind === 'show') expect(d.show.text).toContain('Hi Sam!')
+    if (d.kind === 'show') expect(d.show.title).toContain('Hi Sam!')
   })
 
   it('walks Today, then makes them tap Start', () => {
@@ -59,6 +59,20 @@ describe('the first-run tour, in order', () => {
   it('leaves the invite page alone, so a new student can finish joining', () => {
     expect(at({ path: '/join/abc123' })).toEqual({ kind: 'none' })
     expect(at({ tour: 'start', path: '/login' })).toEqual({ kind: 'none' })
+  })
+
+  it('numbers every step of the tour for its dots, and no intro', () => {
+    const steps = [
+      at({}), at({ tour: 'today' }), at({ tour: 'start' }),
+      at({ tour: 'start', path: '/student/session', sub: 'category' }),
+      at({ tour: 'start', path: '/student/session', sub: 'tools' }),
+      at({ tour: 'start', path: '/student/session', sub: 'finish' }),
+      at({ tour: 'streak' }), at({ tour: 'history' }),
+    ]
+    expect(steps.map((d) => (d.kind === 'show' ? d.show.progress : null)))
+      .toEqual([1, 2, 3, 4, 5, 6, 7, 8].map((n) => [n, 8]))
+    const intro = at({ tour: 'done', path: '/student/library' })
+    if (intro.kind === 'show') expect(intro.show.progress).toBeUndefined()
   })
 
   it('a trailing slash is still Today', () => {
