@@ -74,7 +74,9 @@
   --clay-tint-sky: #E8F0FD;
 
   /* type */
-  --clay-font: 'Fredoka', system-ui, sans-serif;
+  /* The device's own font: San Francisco on iPhone and Mac, Roboto on
+     Android, Segoe on Windows. Nothing to download. */
+  --clay-font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --clay-hand: 'Caveat', cursive;
 }
 

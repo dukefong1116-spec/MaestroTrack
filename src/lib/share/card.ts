@@ -6,10 +6,9 @@ import { plural, type ShareFields } from './fields'
  * Takes ShareFields and nothing else — no session, no profile — so the
  * renderer has no way to draw something private even by mistake.
  *
- * Plain canvas rather than an html-to-image pass over a hidden node: the
- * app's type is Fredoka and Caveat, and DOM-to-image rasterisers are
- * unreliable about waiting for web fonts. Here the wait is explicit and
- * one line long.
+ * Plain canvas rather than an html-to-image pass over a hidden node:
+ * DOM-to-image rasterisers are unreliable about fonts. Here the font is
+ * the device's own, the same one the app uses.
  *
  * Nothing remote is ever drawn. A single cross-origin image would taint
  * the canvas and make toBlob throw a security error, which would present
@@ -43,14 +42,13 @@ const C = {
   butterSoft: '#FFF6D9',
 }
 
-const SANS = "'Fredoka', system-ui, sans-serif"
+const SANS = '-apple-system, BlinkMacSystemFont, system-ui, sans-serif'
 
 export async function renderShareCard(
   fields: ShareFields,
   layout: CardLayout = 'number'
 ): Promise<Blob> {
-  // Without this the first fillText runs before Fredoka has loaded and
-  // the whole card silently falls back to the system font.
+  // Any font still loading is waited for before the first fillText.
   try { await document.fonts.ready } catch { /* older browsers: draw anyway */ }
 
   const canvas = document.createElement('canvas')
