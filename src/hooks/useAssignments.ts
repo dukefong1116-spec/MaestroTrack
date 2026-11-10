@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useMemo } from 'react'
+import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { subscribeStudentAssignments } from '@/lib/firebase/assignments'
 import {
   isOpen, awaitingStudent, sortForStudent, deriveProgress, deriveDailyProgress, dueness,
   type AssignmentProgress, type DailyProgress, type Dueness,
@@ -19,28 +18,17 @@ export interface StudentAssignment {
  * A student's assignments, with the parts that can be derived already
  * derived — progress from the session log, urgency from the due date.
  *
- * Deliberately a separate hook from the dashboard's existing inline
- * subscription rather than a rewrite of it: that code works, and the two
- * can coexist until the new list is proven.
+ * The assignments themselves come from the one subscription the app keeps
+ * (see useStudentData), so however many screens call this, Firestore is
+ * asked once.
  */
 export function useAssignments() {
-  const { profile, user } = useAuth()
-  const uid = profile?.uid ?? user?.uid
   const sessions = usePracticeStore((s) => s.sessions)
-  const [raw, setRaw] = useState<Assignment[]>([])
-
-  useEffect(() => {
-    if (!uid) return
-    return subscribeStudentAssignments(uid, setRaw)
-  }, [uid])
+  const raw = usePracticeStore((s) => s.assignments)
 
   // One clock for the whole list, so every due date is judged against the
   // same instant, and the list ages without needing a reload.
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000)
-    return () => clearInterval(id)
-  }, [])
+  const now = useMinuteTick()
 
   const all = useMemo<StudentAssignment[]>(
     () => sortForStudent(raw, now).map((assignment) => ({

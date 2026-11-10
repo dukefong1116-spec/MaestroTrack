@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { subscribeStudentAssignments, subscribeTeacherAssignments } from '@/lib/firebase/assignments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import {
   applyNotifyPrefs, buildStudentNotifications, buildTeacherNotifications, unreadCount,
   type AppNotification,
 } from '@/lib/utils/notifications'
-import type { Assignment } from '@/types'
 
 /**
  * The notification list for whoever is signed in.
@@ -34,14 +32,10 @@ export function useNotifications(): {
   const requests = useTeacherStore((s) => s.requests)
   const teacherMessages = useTeacherStore((s) => s.messages)
   const studentMessages = usePracticeStore((s) => s.messages)
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-
-  useEffect(() => {
-    if (!uid) return
-    return isTeacher
-      ? subscribeTeacherAssignments(uid, setAssignments)
-      : subscribeStudentAssignments(uid, setAssignments)
-  }, [uid, isTeacher])
+  // The app's one copy of each, kept by useStudentData / useTeacherData.
+  const teacherAssignments = useTeacherStore((s) => s.assignments)
+  const studentAssignments = usePracticeStore((s) => s.assignments)
+  const assignments = isTeacher ? teacherAssignments : studentAssignments
 
   /**
    * Read state is optimistic.

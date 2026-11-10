@@ -11,6 +11,8 @@ interface TeacherState {
   requests: StudioRequest[]
   /** Every message with every student, oldest first. */
   messages: Message[]
+  /** Every assignment this teacher has set, across every student. */
+  assignments: Assignment[]
   resetTeacherData: () => void
   setStudents: (students: UserProfile[]) => void
   setSelectedStudent: (id: string | null) => void
@@ -19,6 +21,7 @@ interface TeacherState {
   setSchedule: (slots: LessonSlot[]) => void
   setRequests: (requests: StudioRequest[]) => void
   setMessages: (messages: Message[]) => void
+  setAssignments: (assignments: Assignment[]) => void
 }
 
 export const useTeacherStore = create<TeacherState>((set) => ({
@@ -29,8 +32,9 @@ export const useTeacherStore = create<TeacherState>((set) => ({
   schedule: [],
   requests: [],
   messages: [],
+  assignments: [],
   resetTeacherData: () => set({
-    students: [], selectedStudentId: null, studentSessions: {}, studentAssignments: {}, schedule: [], requests: [], messages: [],
+    students: [], selectedStudentId: null, studentSessions: {}, studentAssignments: {}, schedule: [], requests: [], messages: [], assignments: [],
   }),
   setStudents: (students) => set({ students }),
   setSelectedStudent: (id) => set({ selectedStudentId: id }),
@@ -41,4 +45,5 @@ export const useTeacherStore = create<TeacherState>((set) => ({
   setSchedule: (slots) => set({ schedule: slots }),
   setRequests: (requests) => set({ requests }),
   setMessages: (messages) => set({ messages }),
+  setAssignments: (assignments) => set({ assignments }),
 }))

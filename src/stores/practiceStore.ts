@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PracticeSession, Piece, Performance, Recording, Message, LessonSlot } from '@/types'
+import type { PracticeSession, Piece, Performance, Recording, Message, LessonSlot, Assignment } from '@/types'
 
 interface PracticeState {
   sessions: PracticeSession[]
@@ -9,6 +9,8 @@ interface PracticeState {
   /** This student's messages with their teacher, oldest first. */
   messages: Message[]
   lessons: LessonSlot[]
+  /** Every assignment set for this student — one subscription for the whole app. */
+  assignments: Assignment[]
   /** True after the current user's first practice-session snapshot arrives. */
   sessionsLoaded: boolean
   resetUserData: () => void
@@ -18,6 +20,7 @@ interface PracticeState {
   setRecordings: (recordings: Recording[]) => void
   setMessages: (messages: Message[]) => void
   setLessons: (lessons: LessonSlot[]) => void
+  setAssignments: (assignments: Assignment[]) => void
   addSession: (session: PracticeSession) => void
   addPiece: (piece: Piece) => void
   addPerformance: (performance: Performance) => void
@@ -60,9 +63,10 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   recordings: [],
   messages: [],
   lessons: [],
+  assignments: [],
   sessionsLoaded: false,
   resetUserData: () => set({
-    sessions: [], pieces: [], performances: [], recordings: [], messages: [], lessons: [],
+    sessions: [], pieces: [], performances: [], recordings: [], messages: [], lessons: [], assignments: [],
     sessionsLoaded: false, timerRunning: false, timerStartedAt: null, timerAccumulatedSec: 0,
   }),
   setSessions: (sessions) => set({ sessions, sessionsLoaded: true }),
@@ -71,6 +75,7 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   setRecordings: (recordings) => set({ recordings }),
   setMessages: (messages) => set({ messages }),
   setLessons: (lessons) => set({ lessons }),
+  setAssignments: (assignments) => set({ assignments }),
   addSession: (session) => set((s) => ({ sessions: prepend(s.sessions, session) })),
   addPiece: (piece) => set((s) => ({ pieces: prepend(s.pieces, piece) })),
   addPerformance: (performance) => set((s) => ({ performances: prepend(s.performances, performance) })),

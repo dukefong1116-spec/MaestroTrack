@@ -5,10 +5,11 @@ import { subscribePerformances } from '@/lib/firebase/performances'
 import { subscribeRecordings } from '@/lib/firebase/recordings'
 import { subscribeStudentMessages } from '@/lib/firebase/messages'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
+import { subscribeStudentAssignments } from '@/lib/firebase/assignments'
 import { usePracticeStore } from '@/stores/practiceStore'
 
 export function useStudentData(userId: string | undefined) {
-  const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, resetUserData } = usePracticeStore()
+  const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData } = usePracticeStore()
 
   useEffect(() => {
     resetUserData()
@@ -25,11 +26,15 @@ export function useStudentData(userId: string | undefined) {
       // "your lesson is tomorrow" is derived from, and nothing else
       // subscribed to it.
       subscribeStudentSchedule(userId, guarded(setLessons)),
+      // Once, here, rather than once per screen that shows them: the
+      // dashboard, Today, the bell, the tab bar and the studio pages all
+      // read this one copy.
+      subscribeStudentAssignments(userId, guarded(setAssignments)),
     ]
     return () => {
       active = false
       unsubs.forEach((u) => u())
       resetUserData()
     }
-  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, resetUserData])
+  }, [userId, setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData])
 }

@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useMemo } from 'react'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { subscribeTeacherAssignments } from '@/lib/firebase/assignments'
 import { sortForReview, awaitingStudent, dueness, latestSubmission } from '@/lib/utils/assignments'
 import type { Assignment, UserProfile } from '@/types'
 
@@ -22,14 +20,9 @@ export interface ReviewItem {
  * is pointless.
  */
 export function useReviewQueue() {
-  const { profile } = useAuth()
   const students = useTeacherStore((s) => s.students)
-  const [raw, setRaw] = useState<Assignment[]>([])
-
-  useEffect(() => {
-    if (!profile?.uid || profile.role !== 'teacher') return
-    return subscribeTeacherAssignments(profile.uid, setRaw)
-  }, [profile?.uid, profile?.role])
+  // Kept by useTeacherData — one subscription for the whole app.
+  const raw = useTeacherStore((s) => s.assignments)
 
   const byId = useMemo(
     () => new Map(students.map((s) => [s.uid, s])),

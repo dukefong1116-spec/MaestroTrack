@@ -16,7 +16,9 @@ import TourLayer from '@/components/onboarding/TourLayer'
  * the entry screen wait on a second request to show a password box would
  * trade one delay for another.
  */
-import LoginPage from '@/pages/auth/LoginPage'
+// Lazy like every other page: someone already signed in never needs the
+// sign-in form or the form libraries it brings.
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 
 /**
  * Everything else arrives when it is actually visited.

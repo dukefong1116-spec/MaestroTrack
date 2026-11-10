@@ -6,9 +6,10 @@ import { getPracticeSummary } from '@/lib/firebase/summary'
 import { sessionsFromSummary } from '@/lib/utils/summary'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { subscribeTeacherMessages } from '@/lib/firebase/messages'
+import { subscribeTeacherAssignments } from '@/lib/firebase/assignments'
 
 export function useTeacherData(teacherId: string | undefined) {
-  const { setStudents, setStudentSessions, setSchedule, setRequests, setMessages, resetTeacherData } = useTeacherStore()
+  const { setStudents, setStudentSessions, setSchedule, setRequests, setMessages, setAssignments, resetTeacherData } = useTeacherStore()
 
   useEffect(() => {
     resetTeacherData()
@@ -39,13 +40,16 @@ export function useTeacherData(teacherId: string | undefined) {
     const unsubSchedule = subscribeTeacherSchedule(teacherId, setSchedule)
     const unsubRequests = subscribeStudioRequests(teacherId, setRequests)
     const unsubMessages = subscribeTeacherMessages(teacherId, (m) => { if (active) setMessages(m) })
+    // One subscription for the bell, the tab bar and the review queue.
+    const unsubAssignments = subscribeTeacherAssignments(teacherId, (a) => { if (active) setAssignments(a) })
     return () => {
       active = false
       unsubStudents()
       unsubSchedule()
       unsubRequests()
       unsubMessages()
+      unsubAssignments()
       resetTeacherData()
     }
-  }, [teacherId, setStudents, setStudentSessions, setSchedule, setRequests, setMessages, resetTeacherData])
+  }, [teacherId, setStudents, setStudentSessions, setSchedule, setRequests, setMessages, setAssignments, resetTeacherData])
 }

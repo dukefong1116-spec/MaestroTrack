@@ -2,7 +2,6 @@ import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth, connectAuthEmulator } from 'firebase/auth'
 import { initializeFirestore, getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getStorage, connectStorageEmulator } from 'firebase/storage'
-import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 
 const USING_EMULATOR =
   import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === '1'
@@ -37,16 +36,21 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 
 // No offline persistence — writes go directly to Firestore server.
-// experimentalForceLongPolling works around WebSocket issues on some networks.
+//
+// The connection is left to detect itself (the SDK's own default). Forcing
+// long polling — every update fetched by asking again — worked round
+// networks that break streaming, but made every network pay for it: live
+// updates (messages, sessions, assignments) arrived later, over more
+// requests. Auto-detect streams where it can and falls back to long
+// polling by itself where it cannot, so those networks are still covered.
 try {
-  initializeFirestore(app, { experimentalForceLongPolling: true })
+  initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
 } catch {
   // Already initialized (HMR hot reload) — safe to ignore
 }
 
 export const db = getFirestore(app)
 export const storage = getStorage(app)
-export const functions = getFunctions(app)
 
 /**
  * Fail in a reasonable time rather than hanging.
@@ -85,7 +89,6 @@ if (USING_EMULATOR) {
     connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true })
     connectFirestoreEmulator(db, host, 8085) // 8080 is commonly taken; see firebase.json
     connectStorageEmulator(storage, host, 9199)
-    connectFunctionsEmulator(functions, host, 5001)
     console.info(`[firebase] using local emulators at ${host} as ${EMULATOR_PROJECT_ID}`)
   } catch (e) {
     console.warn('[firebase] emulator connection failed', e)
