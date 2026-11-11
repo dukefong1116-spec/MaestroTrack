@@ -28,7 +28,8 @@ import { useTourStore } from '@/stores/tourStore'
 import { useAuthStore } from '@/stores/authStore'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
-import { computeStreak } from '@/lib/utils/analytics'
+import { useStreak } from '@/hooks/useStreak'
+import { planOf } from '@/lib/streak/plan'
 import Sticker from '@/components/stickers/Sticker'
 import DailyToday from '@/components/assignments/DailyToday'
 import { useAssignments } from '@/hooks/useAssignments'
@@ -165,7 +166,7 @@ export default function SessionPage() {
    * the same log every other screen reads — so a posted card can never
    * disagree with the streak shown a moment earlier.
    */
-  const shareStreak = useMemo(() => computeStreak(sessions).current, [sessions])
+  const shareStreak = useStreak().current
   const shareWeek = useMemo(() => {
     if (!sharing) return undefined
     const end = parseISO(sharing.date)
@@ -778,6 +779,7 @@ export default function SessionPage() {
       sessionsBefore,
       newSession,
       dailyGoalMinutes: Math.round((profile?.weeklyGoalMinutes ?? 300) / 7),
+      plan: planOf(useAuthStore.getState().profile ?? profile),
     })
 
     setSaving(false)

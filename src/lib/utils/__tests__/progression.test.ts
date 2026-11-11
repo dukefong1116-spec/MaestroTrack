@@ -89,9 +89,10 @@ describe('badges', () => {
     expect(earnedBadges(buildBadgeContext(week)).map((b) => b.id)).toContain('week_warrior')
   })
 
-  it('counts frozen days toward streak badges', () => {
-    // six practised days with a frozen gap in the middle = a 7-day run
-    const sessions = [S(d(0)), S(d(1)), S(d(2)), S(d(4)), S(d(5)), S(d(6))]
+  it('a frozen day joins a run for streak badges', () => {
+    // seven practised days with a frozen gap in the middle = a 7-day run
+    // (the frozen day holds the streak; it does not add a day)
+    const sessions = [S(d(0)), S(d(1)), S(d(2)), S(d(4)), S(d(5)), S(d(6)), S(d(7))]
     const without = earnedBadges(buildBadgeContext(sessions)).map((b) => b.id)
     const withFreeze = earnedBadges(buildBadgeContext(sessions, [d(3)])).map((b) => b.id)
     expect(without).not.toContain('week_warrior')

@@ -70,6 +70,11 @@ describe('what counts', () => {
     expect(r.roomId).toBeTruthy()
     expect(r.newRank).toBe(1)
   })
+  it('streak fields a profile holds, however malformed, cannot break a sync', async () => {
+    await student('ana', { streakRules: 'junk', streakFreezesUsed: [1, null, 'x'], streakRepaired: null })
+    await timerSession('ana', 30)
+    expect((await sync('ana')).xp).toBe(40)
+  })
   it('a typed-in session earns nothing', async () => {
     await student('ana')
     await store.collection('practiceSessions').add({ userId: 'ana', date: today(), durationMinutes: 60, createdAt: new Date().toISOString() })

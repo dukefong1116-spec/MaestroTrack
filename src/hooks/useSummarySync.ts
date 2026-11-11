@@ -50,6 +50,9 @@ export function useSummarySync() {
       displayName: profile.displayName,
       instrument: profile.instrument,
       teacherId: profile.teacherId,
+      streakRules: profile.streakRules,
+      streakFreezesUsed: profile.streakFreezesUsed,
+      streakRepaired: profile.streakRepaired,
     })
 
     // Only write when the figures actually changed. Session subscriptions
@@ -81,5 +84,6 @@ export function useSummarySync() {
         lastWritten.current = ''
       })
   }, [profile?.uid, profile?.role, profile?.displayName, profile?.instrument,
-      profile?.teacherId, sessions, sessionsLoaded])
+      profile?.teacherId, profile?.streakRules, profile?.streakFreezesUsed,
+      profile?.streakRepaired, sessions, sessionsLoaded])
 }

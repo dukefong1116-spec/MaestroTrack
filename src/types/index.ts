@@ -95,6 +95,14 @@ export interface LeagueRoom {
   members: Record<string, LeagueMember>
 }
 
+/** One change to a student's streak rules; applies from `from` onward.
+ *  `lessonDay`: Monday = 0 … Sunday = 6. `min` 0 means any practice. */
+export interface StreakRuleEntry {
+  from: string
+  min: number
+  lessonDay: number | null
+}
+
 export interface UserProfile {
   uid: string
   email: string
@@ -131,6 +139,11 @@ export interface UserProfile {
   avatar?: string
   /** Dates (yyyy-MM-dd) rescued by a streak freeze. */
   streakFreezesUsed?: string[]
+  /** Daily minimum and lesson day, as a history: each entry applies from
+   *  its date on. See src/lib/streak/engine.js. */
+  streakRules?: StreakRuleEntry[]
+  /** Missed days a comeback brought back (yyyy-MM-dd). */
+  streakRepaired?: string[]
   /** Badge ids whose unlock animation has already been shown. */
   badgesSeen?: string[]
   /** BadgeId → ISO date, written the first time a badge is seen as won.

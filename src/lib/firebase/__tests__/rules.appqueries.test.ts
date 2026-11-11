@@ -516,6 +516,18 @@ describe("the student's own writes", () => {
     await assertSucceeds(teacher.recordBadgesEarned(ANA, ['first-week'], '2026-03-02T00:00:00.000Z'))
   })
 
+  it('saveStreakRules / recordStreakRepair — your streak rules and a comeback', async () => {
+    asAna()
+    await assertSucceeds(teacher.saveStreakRules(ANA, [{ from: '2026-03-03', min: 15, lessonDay: 3 }]))
+    await assertSucceeds(teacher.recordStreakRepair(ANA, '2026-03-02'))
+  })
+
+  it('and nobody writes them onto someone else', async () => {
+    asBen()
+    await assertFails(teacher.saveStreakRules(ANA, [{ from: '2026-03-03', min: 0, lessonDay: null }]))
+    await assertFails(teacher.recordStreakRepair(ANA, '2026-03-02'))
+  })
+
   it('submitAssignment — handing work in, and again after feedback', async () => {
     await seed('assignments', 'a1', { teacherId: TEACHER, studentId: ANA, status: 'active' })
     asAna()

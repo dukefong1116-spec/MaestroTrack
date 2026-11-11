@@ -6,6 +6,7 @@ import { useStudentData } from '@/hooks/useStudentData'
 import { useSummarySync } from '@/hooks/useSummarySync'
 import { useTeacherData } from '@/hooks/useTeacherData'
 import { useLeagueSync } from '@/hooks/useLeagueSync'
+import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
@@ -42,6 +43,7 @@ const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
 const PracticeProgressPage = lazy(() => import('@/pages/student/PracticeProgressPage'))
 const LeaguePage = lazy(() => import('@/pages/student/LeaguePage'))
+const StreakPage = lazy(() => import('@/pages/student/StreakPage'))
 const StudioPage = lazy(() => import('@/pages/student/StudioPage'))
 const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
 const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
@@ -88,6 +90,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
   // The weekly league follows the session log; students only.
   useLeagueSync(profile?.role === 'student' ? profile?.uid : undefined, profile?.leagueOptOut, profile?.league?.roomId)
+  // Spends a freeze on a missed day and records a finished comeback.
+  useStreakUpkeep(profile?.role === 'student' ? profile?.uid : undefined)
   return (
     <>
       {children}
@@ -161,6 +165,7 @@ function AppRoutes() {
         <Route path="practice/progress" element={<PracticeProgressPage />} />
         <Route path="progress" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="league" element={<LeaguePage />} />
+        <Route path="streak" element={<StreakPage />} />
         <Route path="studio" element={<StudioPage />} />
         <Route path="settings" element={<SettingsPage />} />
         {/* Nested under settings on purpose: the Settings tab and the

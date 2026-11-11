@@ -2,6 +2,8 @@ import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, each
 import type { PracticeSession, DailyPracticeData, CategoryData, AnalyticsSummary, PracticeCategory } from '@/types'
 import { minutesByCategory } from '@/lib/utils/categories'
 import { onPiece } from './sessionPieces'
+import { walkStreak } from '@/lib/streak/engine'
+import type { StreakPlan } from '@/lib/streak/plan'
 
 export function getDailyData(sessions: PracticeSession[], days = 30): DailyPracticeData[] {
   const end = new Date()
@@ -88,62 +90,33 @@ export function getHeatmapData(sessions: PracticeSession[], days = 365) {
 }
 
 /**
- * Current and longest run of consecutive practice days.
+ * Current and longest run of practice days.
  *
- * `frozenDates` are days with no session that should nonetheless count —
- * streak freezes the user has spent. A freeze only bridges a gap; it never
- * starts a streak on its own, so a user with no sessions has no streak
- * however many freezes they hold.
+ * The streak engine decides (src/lib/streak/engine.js). With no plan this
+ * is the plain rule — any session makes a day, and a gap breaks the run.
+ * A plan adds the person's own rules: their daily minimum, their lesson
+ * day, and the days a freeze or a comeback held. A bare list of dates is
+ * read as frozen days, as callers passed before plans existed.
+ *
+ * Frozen days hold a streak; they do not add to it.
  */
 export function computeStreak(
   sessions: PracticeSession[],
-  frozenDates: Iterable<string> = []
+  plan: StreakPlan | Iterable<string> = []
 ): { current: number; longest: number } {
-  if (sessions.length === 0) return { current: 0, longest: 0 }
+  const p: StreakPlan = isPlan(plan) ? plan : { frozen: [...plan] }
+  const w = walkStreak({
+    sessions,
+    rules: p.rules,
+    frozen: p.frozen,
+    repaired: p.repaired,
+    today: format(new Date(), 'yyyy-MM-dd'),
+  })
+  return { current: w.current, longest: w.longest }
+}
 
-  const days = new Set(sessions.map((s) => s.date.substring(0, 10)))
-  for (const f of frozenDates) days.add(f.substring(0, 10))
-  const uniqueDays = [...days].sort().reverse()
-  let current = 0
-  let longest = 0
-  let streak = 0
-  let prev: Date | null = null
-
-  for (const dayStr of uniqueDays) {
-    const day = parseISO(dayStr)
-    if (prev === null) {
-      const today = new Date()
-      const diff = differenceInDays(today, day)
-      if (diff > 1) break
-      streak = 1
-    } else {
-      const diff = differenceInDays(prev, day)
-      if (diff === 1) streak++
-      else break
-    }
-    prev = day
-    if (streak > longest) longest = streak
-  }
-  current = streak
-
-  // compute longest from scratch
-  let maxStreak = 0
-  let curStreak = 0
-  let prevDay: Date | null = null
-  for (const dayStr of [...uniqueDays].reverse()) {
-    const day = parseISO(dayStr)
-    if (prevDay === null) {
-      curStreak = 1
-    } else {
-      const diff = differenceInDays(day, prevDay)
-      if (diff === 1) curStreak++
-      else curStreak = 1
-    }
-    prevDay = day
-    if (curStreak > maxStreak) maxStreak = curStreak
-  }
-
-  return { current, longest: maxStreak }
+function isPlan(x: StreakPlan | Iterable<string>): x is StreakPlan {
+  return typeof x === 'object' && x !== null && !(Symbol.iterator in x)
 }
 
 export function computeConsistencyScore(sessions: PracticeSession[], days = 30): number {

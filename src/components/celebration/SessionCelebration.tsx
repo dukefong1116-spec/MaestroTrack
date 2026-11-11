@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Volume2, VolumeX, Check, Share2 } from 'lucide-react'
 import StreakFlame from '@/components/icons/StreakFlame'
@@ -8,6 +8,9 @@ import Confetti from './Confetti'
 import CountUp from './CountUp'
 import { rewardCopy, type SessionReward } from '@/lib/utils/gamification'
 import { isSoundMuted, setSoundMuted } from '@/lib/utils/sound'
+import { ThawFlame } from '@/components/streak/FlameIce'
+import { lookReachedAt } from '@/lib/streak/looks'
+import { playFreezeEarned } from '@/lib/streak/sounds'
 import type { InstrumentType } from '@/types'
 
 interface SessionCelebrationProps {
@@ -32,6 +35,20 @@ interface SessionCelebrationProps {
 }
 
 const AUTO_DISMISS_MS = 2800
+/** Longer when there is ice to watch break, or a freeze to see arrive. */
+const AUTO_DISMISS_STREAK_MS = 4800
+
+/** Mounts its children after a delay, so an animation with its own
+ *  timeline — and its sound — starts when it comes into view. */
+function Later({ ms, children, onShow }: { ms: number; children: ReactNode; onShow?: () => void }) {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => { setShown(true); onShow?.() }, ms)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ms])
+  return shown ? <>{children}</> : null
+}
 
 export default function SessionCelebration({
   reward,
@@ -52,7 +69,8 @@ export default function SessionCelebration({
     if (!reward) return
     // Nothing to do here but look at it — so it goes by itself. With a
     // share button there is, so it waits.
-    const timer = onShare || extra ? undefined : setTimeout(onDismiss, AUTO_DISMISS_MS)
+    const long = reward.thawed || reward.freezeEarned || reward.restored
+    const timer = onShare || extra ? undefined : setTimeout(onDismiss, long ? AUTO_DISMISS_STREAK_MS : AUTO_DISMISS_MS)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onDismiss()
     }
@@ -67,7 +85,9 @@ export default function SessionCelebration({
 
   const { headline, sub } = rewardCopy(reward)
   const muted_ = reward.streakState === 'backdated'
-  const showStreak = !muted_ && reward.streakAfter > 0
+  const short = reward.streakState === 'short'
+  const showStreak = !muted_ && (reward.streakAfter > 0 || short)
+  const newLook = !muted_ && !short && reward.streakAfter > reward.streakBefore ? lookReachedAt(reward.streakAfter) : null
   const showConfetti = !muted_ && !reduced
 
   function toggleMute(e: React.MouseEvent) {
@@ -186,23 +206,71 @@ export default function SessionCelebration({
           {showStreak && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-2.5 rounded-2xl py-3"
-              style={{ background: 'var(--clay-bg)' }}
+              style={{ background: reward.thawed || reward.stillFrozen ? 'rgba(120,180,240,.16)' : 'var(--clay-bg)' }}
               initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.4 }}
             >
-              <motion.span
-                initial={reduced ? false : { scale: 0.5 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 14, delay: 1.1 }}
-                style={{ display: 'inline-flex' }}
-              >
-                <StreakFlame streak={reward.streakAfter} size={26} still={!!reduced} />
-              </motion.span>
-              <span className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                {reward.streakAfter} day{reward.streakAfter === 1 ? '' : 's'} in a row
+              {reward.thawed ? (
+                // Ice first, then the flame breaks out of it.
+                <span style={{ display: 'inline-flex', width: 40, height: 40 }}>
+                  <Later ms={reduced ? 0 : 750}>
+                    <ThawFlame streak={reward.streakAfter} size={40} />
+                  </Later>
+                </span>
+              ) : short ? (
+                <StreakFlame streak={Math.max(1, reward.streakAfter)} size={26} state={reward.stillFrozen ? 'frozen' : 'unlit'} still />
+              ) : (
+                <motion.span
+                  initial={reduced ? false : { scale: 0.5 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 14, delay: 1.1 }}
+                  style={{ display: 'inline-flex' }}
+                >
+                  <StreakFlame streak={reward.streakAfter} size={26} still={!!reduced} />
+                </motion.span>
+              )}
+              <span className="text-sm font-semibold" style={{ color: reward.stillFrozen ? '#2F6FA8' : 'var(--clay-ink)' }}>
+                {short
+                  ? `${reward.minutesToLight} more min to ${reward.stillFrozen ? 'thaw' : 'light'} today`
+                  : reward.restored
+                    ? `Your ${reward.restored}-day streak is back`
+                    : `${reward.streakAfter} day${reward.streakAfter === 1 ? '' : 's'} in a row`}
               </span>
             </motion.div>
+          )}
+
+          {newLook && (
+            <motion.p
+              className="mt-2.5 text-xs font-semibold uppercase tracking-widest"
+              style={{ color: newLook.outer }}
+              initial={reduced ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3 }}
+            >
+              {newLook.name} flame unlocked
+            </motion.p>
+          )}
+
+          {reward.freezeEarned && !muted_ && (
+            <Later ms={reduced ? 0 : 1500} onShow={playFreezeEarned}>
+              <motion.div
+                className="mt-3 flex items-center justify-center gap-2.5 rounded-2xl py-2.5"
+                style={{ background: 'rgba(120,180,240,.16)' }}
+                initial={reduced ? false : { opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 16 }}
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'rgba(120,180,240,.3)', color: '#2F6FA8' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
+                    <path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8" />
+                  </svg>
+                </span>
+                <span className="text-sm font-semibold" style={{ color: '#2F6FA8' }}>
+                  Freeze earned · {reward.freezeEarned} of 2
+                </span>
+              </motion.div>
+            </Later>
           )}
 
           {reward.hitDailyGoal && !muted_ && (

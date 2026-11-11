@@ -7,7 +7,6 @@ import { format, startOfWeek, startOfMonth, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { getAnalyticsSummary, computeStreak } from '@/lib/utils/analytics'
 import type { BadgeFamily } from '@/lib/utils/progression'
 import { useGamification } from '@/hooks/useGamification'
 import { getTheme } from '@/lib/utils/instruments'
@@ -20,6 +19,9 @@ import { Block, Legend } from '@/components/ui/Panel'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import StreakRulesEditor from '@/components/streak/StreakRulesEditor'
+import { currentRules, localDay, type RuleChoice } from '@/lib/streak/plan'
+import { saveRuleChoice } from '@/lib/streak/save'
 import type { InstrumentType } from '@/types'
 
 /** Minutes read as hours once there are enough of them to bother. */
@@ -45,6 +47,12 @@ export default function GoalsPanel() {
   const [editGoals, setEditGoals] = useState(false)
   const [weeklyGoal, setWeeklyGoal] = useState(profile?.weeklyGoalMinutes ?? 300)
   const [saving, setSaving] = useState(false)
+  // Your daily minimum and lesson day are set here too, with the goal.
+  const ruleState = useMemo(() => currentRules(profile?.streakRules, localDay()), [profile?.streakRules])
+  const chosenRules = ruleState.next ?? ruleState.now
+  const [ruleDraft, setRuleDraft] = useState<RuleChoice | null>(null)
+  const rules = ruleDraft ?? chosenRules
+  const rulesPending = rules.min !== ruleState.now.min || rules.lessonDay !== ruleState.now.lessonDay
   const [openFamily, setOpenFamily] = useState<BadgeFamily | null>(null)
   const { pinned, togglePin } = usePinnedBadges()
   const [shareNote, setShareNote] = useState<string | null>(null)
@@ -75,8 +83,7 @@ export default function GoalsPanel() {
   const { families, badgeCtx } = game
   const earnedAt = profile?.badgeEarnedAt ?? {}
 
-  const summary = useMemo(() => getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300), [sessions, profile])
-  const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
+  const streak = game.streak
 
   const weekTotal = useMemo(() => {
     const ws = startOfWeek(new Date())
@@ -119,9 +126,13 @@ export default function GoalsPanel() {
       // second save cannot resolve over the first.
       const latest = useAuthStore.getState().profile
       if (latest) setProfile({ ...latest, ...goals, updatedAt: new Date().toISOString() })
+      if (ruleDraft && (ruleDraft.min !== chosenRules.min || ruleDraft.lessonDay !== chosenRules.lessonDay)) {
+        await saveRuleChoice(ruleDraft)
+      }
     } finally {
       setSaving(false)
       setEditGoals(false)
+      setRuleDraft(null)
     }
   }
 
@@ -137,7 +148,7 @@ export default function GoalsPanel() {
 
   const streakStats = [
     { sticker: 'bolt' as const, value: streak, label: 'Current streak' },
-    { sticker: 'star' as const, value: summary.longestStreak, label: 'Longest streak' },
+    { sticker: 'star' as const, value: game.longestStreak, label: 'Longest streak' },
     { sticker: 'trophy' as const, value: earnedIds.size, label: 'Badges earned' },
   ]
 
@@ -148,7 +159,7 @@ export default function GoalsPanel() {
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
             Your week
           </p>
-          <Button size="sm" variant="outline" onClick={() => setEditGoals(!editGoals)}>
+          <Button size="sm" variant="outline" onClick={() => { setEditGoals(!editGoals); setRuleDraft(null) }}>
             <Target size={14} /> {editGoals ? 'Cancel' : 'Edit goal'}
           </Button>
         </div>
@@ -168,8 +179,13 @@ export default function GoalsPanel() {
                   className="max-w-[160px]"
                   hint={`~${Math.round(weeklyGoal / 7)} min/day`}
                 />
-                <Button onClick={saveGoals} loading={saving}>Save</Button>
               </div>
+              <StreakRulesEditor
+                value={rules}
+                onChange={setRuleDraft}
+                pending={rulesPending}
+              />
+              <Button onClick={saveGoals} loading={saving}>Save</Button>
             </div>
           </motion.div>
         )}

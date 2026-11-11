@@ -34,6 +34,11 @@ export const DAY_BONUS = 10
 /** Extra, on each practice day that is day STREAK_DAYS or later of a streak. */
 export const STREAK_BONUS = 20
 export const STREAK_DAYS = 7
+/**
+ * Days before Monday read for a streak carried in. Longer than the streak
+ * itself, because a lesson day or a freeze can sit inside it.
+ */
+export const STREAK_LOOKBACK = 13
 /** Time zones are grouped into bands this many hours wide. */
 export const BAND_HOURS = 3
 /** How far a room may reach into neighbouring bands when its own has none open. */
@@ -93,13 +98,17 @@ export function weekEndsAt(weekStart, band) {
  *
  * `sessions` are `{ date, minutes }` with minutes already credited — the
  * server decides how many minutes of each session are real (tickets,
- * timer readings) before this sees them. Sessions from up to six days
- * before Monday may be included: they count for nothing themselves, but a
- * streak that started last week carries into this one.
+ * timer readings) before this sees them. Sessions from up to
+ * STREAK_LOOKBACK days before Monday may be included: they count for
+ * nothing themselves, but a streak that started last week carries in.
+ *
+ * `holds` are days that keep the streak without practice — lesson days,
+ * frozen days, comeback days (see holdDays in lib/streak/engine).
  *
  * Returns the week's total and a line per day, Monday first.
  */
-export function weekXp(sessions, weekStart) {
+export function weekXp(sessions, weekStart, holds) {
+  const held = holds instanceof Set ? holds : new Set(holds ?? [])
   const byDay = new Map()
   for (const s of sessions) {
     if (!(s.minutes > 0)) continue
@@ -109,10 +118,12 @@ export function weekXp(sessions, weekStart) {
   const days = []
   let xp = 0
   let streak = 0
-  for (let d = addDays(weekStart, -(STREAK_DAYS - 1)); d <= end; d = addDays(d, 1)) {
+  for (let d = addDays(weekStart, -STREAK_LOOKBACK); d <= end; d = addDays(d, 1)) {
     const minutes = byDay.get(d) ?? 0
     const practised = minutes >= DAY_MIN
-    streak = practised ? streak + 1 : 0
+    // A lesson day, frozen day or comeback day holds the streak: it
+    // neither breaks it nor adds to it.
+    streak = practised ? streak + 1 : held.has(d) ? streak : 0
     if (d < weekStart) continue
     const bonus = practised ? DAY_BONUS + (streak >= STREAK_DAYS ? STREAK_BONUS : 0) : 0
     const dayXp = Math.min(minutes, DAILY_CAP) + bonus

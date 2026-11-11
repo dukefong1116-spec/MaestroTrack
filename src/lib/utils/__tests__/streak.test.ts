@@ -71,27 +71,28 @@ describe('computeStreak — existing behaviour', () => {
 })
 
 describe('computeStreak — frozen days', () => {
+  // A frozen day holds a streak: it neither breaks it nor adds a day.
   it('bridges a one-day gap that is frozen', () => {
     // practised today and 2 days ago; yesterday missed but frozen
     const sessions = [S(d(0)), S(d(2))]
     expect(computeStreak(sessions).current).toBe(1)
-    expect(computeStreak(sessions, [d(1)]).current).toBe(3)
+    expect(computeStreak(sessions, [d(1)]).current).toBe(2)
   })
 
   it('keeps a streak alive when yesterday was frozen and nothing logged today', () => {
     const sessions = [S(d(2)), S(d(3))]
     expect(computeStreak(sessions).current).toBe(0)
-    expect(computeStreak(sessions, [d(1)]).current).toBe(3)
+    expect(computeStreak(sessions, [d(1)]).current).toBe(2)
   })
 
   it('does not bridge a two-day gap with a single freeze', () => {
     const sessions = [S(d(0)), S(d(3))]
-    expect(computeStreak(sessions, [d(1)]).current).toBe(2)
+    expect(computeStreak(sessions, [d(1)]).current).toBe(1)
   })
 
   it('bridges a two-day gap with two freezes', () => {
     const sessions = [S(d(0)), S(d(3))]
-    expect(computeStreak(sessions, [d(1), d(2)]).current).toBe(4)
+    expect(computeStreak(sessions, [d(1), d(2)]).current).toBe(2)
   })
 
   it('ignores freezes on days that already have sessions', () => {
@@ -99,12 +100,25 @@ describe('computeStreak — frozen days', () => {
     expect(computeStreak(sessions, [d(0), d(1)]).current).toBe(2)
   })
 
-  it('counts frozen days toward the longest streak too', () => {
+  it('a frozen day joins two runs into one longest streak', () => {
     const sessions = [S(d(10)), S(d(12))]
-    expect(computeStreak(sessions, [d(11)]).longest).toBe(3)
+    expect(computeStreak(sessions, [d(11)]).longest).toBe(2)
   })
 
   it('a freeze alone with no sessions is not a streak', () => {
     expect(computeStreak([], [d(1)]).current).toBe(0)
+  })
+})
+
+describe('computeStreak — your plan', () => {
+  it('reads a daily minimum and lesson day from the plan', () => {
+    const short = (date: string) => ({ ...S(date), durationMinutes: 5 })
+    const rules = [{ from: d(30), min: 10, lessonDay: null }]
+    expect(computeStreak([S(d(0)), short(d(1)), S(d(2))], { rules }).current).toBe(1)
+  })
+  it('reads repaired days from the plan', () => {
+    const sessions = [S(d(0)), S(d(1)), S(d(3)), S(d(4)), S(d(5))]
+    expect(computeStreak(sessions).current).toBe(2)
+    expect(computeStreak(sessions, { repaired: [d(2)] }).current).toBe(5)
   })
 })

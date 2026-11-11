@@ -1,6 +1,7 @@
 import { startOfWeek, parseISO, format } from 'date-fns'
 import type { PracticeSession } from '@/types'
 import { computeStreak } from './analytics'
+import type { StreakPlan } from '@/lib/streak/plan'
 import { categoriesOf } from '@/lib/utils/categories'
 import { piecesOf } from './sessionPieces'
 
@@ -307,10 +308,10 @@ export function badgeProgress(badge: BadgeDef, ctx: BadgeContext): number {
  */
 export function buildBadgeContext(
   sessions: PracticeSession[],
-  frozen: string[] = [],
+  plan: StreakPlan | string[] = [],
   level = 1
 ): BadgeContext {
-  const { current, longest } = computeStreak(sessions, frozen)
+  const { current, longest } = computeStreak(sessions, plan)
   const totalMinutes = sessions.reduce((s, p) => s + p.durationMinutes, 0)
   return {
     sessionCount: sessions.length,

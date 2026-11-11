@@ -25,8 +25,9 @@ import { db, HttpError } from './admin.js'
 import { creditedSessions } from './ticket.js'
 import {
   weekOf, localDay, addDays, bandFor, weekEndsAt, weekXp, streakOn, rankMembers,
-  finalResults, publicName, colourFor, ROOM_MAX, MAX_BAND_REACH, STREAK_DAYS,
+  finalResults, publicName, colourFor, ROOM_MAX, MAX_BAND_REACH, STREAK_LOOKBACK,
 } from '../../src/lib/league/rules.js'
+import { holdDays } from '../../src/lib/streak/engine.js'
 
 const iso = (ms) => new Date(ms).toISOString()
 
@@ -94,18 +95,28 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
     return { optedOut: true, week: week.id, tier, xp: 0, days: [], streak: 0, roomId: null }
   }
 
-  // 3. XP, from the sessions themselves. Six days before Monday are read
-  // too, for a streak carried in from last week.
+  // 3. XP, from the sessions themselves. Days before Monday are read too,
+  // for a streak carried in from last week.
+  const from = addDays(week.start, -STREAK_LOOKBACK)
   const snaps = await store.collection('practiceSessions')
     .where('userId', '==', uid)
-    .where('date', '>=', addDays(week.start, -(STREAK_DAYS - 1)))
+    .where('date', '>=', from)
     .where('date', '<=', addDays(week.start, 6))
     // Newest first, matching the (userId, date desc) index the app's own
     // session query already uses, so this needs no index of its own.
     .orderBy('date', 'desc')
     .get()
   const sessions = snaps.docs.map((d) => ({ ...d.data(), id: d.id, createdMs: d.createTime.toMillis() }))
-  const { xp, days } = weekXp(creditedSessions(uid, sessions), week.start)
+  // Your lesson day, freezes and comebacks hold the league's streak too —
+  // capped at what fair play could produce, since you write those fields.
+  const holds = holdDays({
+    rules: user.streakRules,
+    frozen: user.streakFreezesUsed,
+    repaired: user.streakRepaired,
+    from,
+    to: addDays(week.start, 6),
+  })
+  const { xp, days } = weekXp(creditedSessions(uid, sessions), week.start, holds)
   const base = { optedOut: false, week: week.id, tier, xp, days, streak: streakOn(days, today) }
 
   if (room) return { ...base, roomId, ...(await updateXp(roomId, uid, xp, nowMs)) }

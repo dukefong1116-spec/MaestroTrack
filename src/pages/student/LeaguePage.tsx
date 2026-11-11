@@ -130,9 +130,9 @@ export default function LeaguePage() {
             <StreakFlame streak={streak} size={18} />
             <span className="truncate">
               {streak >= STREAK_DAYS
-                ? `${streak}-day streak · bonus on, +${STREAK_BONUS} a day`
+                ? `${streak}-day league streak · bonus on, +${STREAK_BONUS} a day`
                 : streak > 0
-                  ? `${streak}-day streak · bonus in ${STREAK_DAYS - streak} days`
+                  ? `${streak}-day league streak · bonus in ${STREAK_DAYS - streak} days`
                   : `Practise ${STREAK_DAYS} days in a row for a bonus`}
             </span>
           </span>
@@ -144,7 +144,7 @@ export default function LeaguePage() {
         <ul className="space-y-2.5 text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
           <li><b style={{ color: 'var(--clay-ink)' }}>1 XP a minute</b> you practise with the timer, up to {DAILY_CAP} minutes a day.</li>
           <li><b style={{ color: 'var(--clay-ink)' }}>+{DAY_BONUS} XP</b> for each day you practise at least {DAY_MIN} minutes.</li>
-          <li><b style={{ color: 'var(--clay-ink)' }}>+{STREAK_BONUS} more</b> a day once you're on a {STREAK_DAYS}-day streak.</li>
+          <li><b style={{ color: 'var(--clay-ink)' }}>+{STREAK_BONUS} more</b> a day once you're on a {STREAK_DAYS}-day league streak: {DAY_MIN}+ timer minutes a day. Your lesson day and freezes keep it going.</li>
           <li>Only timer sessions count. Sessions typed into your log don't.</li>
           <li>Each week ends Sunday at midnight. The top of your room moves up a tier, the bottom moves down. In Fortissimo, the top {MAESTRO_PLACES} finish as Maestro.</li>
           <li>Other players see only your first name and last initial.</li>

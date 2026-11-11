@@ -2,27 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { computeStreak } from '@/lib/utils/analytics'
-import {
-  decideFreezes, freezesAvailable, weekStrip, type WeekDay,
-} from '@/lib/utils/streakFreeze'
+import { weekStrip, type WeekDay } from '@/lib/utils/streakFreeze'
+import { useStreak, useStreakMoments, type FreezeEvent } from '@/hooks/useStreak'
+import { planOf } from '@/lib/streak/plan'
 import {
   computeProgression, buildBadgeContext, earnedBadges, badgeFamilies,
   type BadgeDef, type BadgeContext, type FamilyState, type Progression,
 } from '@/lib/utils/progression'
 import {
-  recordStreakFreezes, markBadgesSeen, markMasteryPrompted, recordBadgesEarned,
+  markBadgesSeen, markMasteryPrompted, recordBadgesEarned,
   updateUserProfile,
 } from '@/lib/firebase/teacher'
 import { MAX_PINNED } from '@/hooks/usePinnedBadges'
 import { updatePiece } from '@/lib/firebase/pieces'
 import { findMasteryCandidate, type MasteryCandidate } from '@/lib/utils/mastery'
 
-export interface FreezeEvent {
-  streak: number
-  daysFrozen: number
-  remaining: number
-}
+export type { FreezeEvent }
 
 export interface Gamification {
   streak: number
@@ -51,9 +46,10 @@ export interface Gamification {
 /**
  * Single source of gamification state.
  *
- * Two side effects run here, both guarded so they fire once:
- *  - spending a freeze to rescue a lapsed streak
- *  - recording that a badge's unlock animation has been shown
+ * Side effects here are guarded so they fire once — recording that a
+ * badge's unlock animation has been shown, and pinning the first badges.
+ * Spending freezes is the streak's own upkeep (useStreakUpkeep), and the
+ * moment it leaves for Today is read from there.
  *
  * Both write through arrayUnion, so a second tab racing this merges
  * rather than clobbering.
@@ -63,7 +59,11 @@ export function useGamification(): Gamification {
   const setProfile = useAuthStore((s) => s.setProfile)
   const { sessions, pieces } = usePracticeStore()
 
-  const frozen = useMemo(() => profile?.streakFreezesUsed ?? [], [profile?.streakFreezesUsed])
+  const plan = useMemo(
+    () => planOf(profile),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [profile?.streakRules, profile?.streakFreezesUsed, profile?.streakRepaired]
+  )
   const seen = useMemo(() => profile?.badgesSeen ?? [], [profile?.badgesSeen])
   const earnedAt = useMemo(() => profile?.badgeEarnedAt ?? {}, [profile?.badgeEarnedAt])
   const pinned = useMemo(() => profile?.pinnedBadges ?? [], [profile?.pinnedBadges])
@@ -73,19 +73,17 @@ export function useGamification(): Gamification {
   )
   const dailyGoal = Math.round((profile?.weeklyGoalMinutes ?? 300) / 7)
 
-  const { current: streak, longest: longestStreak } = useMemo(
-    () => computeStreak(sessions, frozen),
-    [sessions, frozen]
-  )
+  const live = useStreak()
+  const { current: streak, longest: longestStreak } = live
 
-  const week = useMemo(() => weekStrip(sessions, frozen), [sessions, frozen])
+  const week = useMemo(() => weekStrip(live, live.today, plan.rules), [live, plan.rules])
   const progression = useMemo(() => computeProgression(sessions, dailyGoal), [sessions, dailyGoal])
 
   // The level goes in rather than being patched over the top afterwards —
   // buildBadgeContext no longer invents one.
   const badgeCtx = useMemo(
-    () => buildBadgeContext(sessions, frozen, progression.level),
-    [sessions, frozen, progression.level]
+    () => buildBadgeContext(sessions, plan, progression.level),
+    [sessions, plan, progression.level]
   )
   const badges = useMemo(() => earnedBadges(badgeCtx), [badgeCtx])
   const families = useMemo(() => badgeFamilies(badgeCtx), [badgeCtx])
@@ -98,42 +96,9 @@ export function useGamification(): Gamification {
     [pieces, sessions, masteryPrompted]
   )
 
-  const [pendingFreeze, setPendingFreeze] = useState<FreezeEvent | null>(null)
+  const queued = useStreakMoments((st) => st.freeze)
+  const pendingFreeze = queued && queued.uid === profile?.uid ? queued : null
   const [badgeQueue, setBadgeQueue] = useState<BadgeDef[]>([])
-
-  // ── spend a freeze, at most once per mount ───────────────────────────
-  const freezeAttempted = useRef(false)
-  useEffect(() => {
-    if (freezeAttempted.current) return
-    if (!profile?.uid || sessions.length === 0) return
-
-    const decision = decideFreezes(sessions, frozen, longestStreak)
-    if (decision.freeze.length === 0) return
-
-    freezeAttempted.current = true
-    const nextUsed = [...new Set([...frozen, ...decision.freeze])]
-
-    recordStreakFreezes(profile.uid, decision.freeze)
-      .then(() => {
-        // Reflect locally so the streak reads correctly straight away —
-        // against the live profile, not this render's copy.
-        const latest = useAuthStore.getState().profile ?? profile
-        // Union against whatever is live, so this cannot drop dates another
-        // write added in the meantime — mirroring the arrayUnion on the server.
-        const merged = [...new Set([...(latest.streakFreezesUsed ?? []), ...decision.freeze])]
-        setProfile({ ...latest, streakFreezesUsed: merged })
-        setPendingFreeze({
-          streak: decision.rescuedStreak,
-          daysFrozen: decision.freeze.length,
-          remaining: freezesAvailable(longestStreak, nextUsed),
-        })
-      })
-      .catch(() => {
-        // Write failed — leave the streak as it really is rather than
-        // showing a rescue we could not persist.
-        freezeAttempted.current = false
-      })
-  }, [profile, sessions, frozen, longestStreak, setProfile])
 
   // ── queue unseen badges, and stamp when they were won ────────────────
   useEffect(() => {
@@ -261,7 +226,7 @@ export function useGamification(): Gamification {
   return {
     streak,
     longestStreak,
-    freezesLeft: freezesAvailable(longestStreak, frozen),
+    freezesLeft: live.held,
     week,
     progression,
     badges,
@@ -274,7 +239,7 @@ export function useGamification(): Gamification {
     // and the badge auto-dismiss, whereas this one waits for an answer.
     pendingMastery: pendingFreeze || badgeQueue.length > 0 ? null : pendingMastery,
     dismissBadge,
-    dismissFreeze: () => setPendingFreeze(null),
+    dismissFreeze: () => useStreakMoments.getState().setFreeze(null),
     dismissMastery,
     confirmMastery,
   }

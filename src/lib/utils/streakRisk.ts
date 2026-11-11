@@ -42,7 +42,10 @@ export function streakRisk(
   sessions: PracticeSession[],
   currentStreak: number,
   freezesLeft: number,
-  now: Date = new Date()
+  now: Date = new Date(),
+  /** Whether today already counts — from the streak engine, which knows
+   *  the daily minimum. Without it, any session today counts. */
+  litToday?: boolean
 ): StreakRisk {
   if (currentStreak <= 0) return NONE
 
@@ -50,7 +53,7 @@ export function streakRisk(
   // local too — toISOString() is UTC and rolls over early for anyone
   // behind it.
   const today = format(now, 'yyyy-MM-dd')
-  if (sessions.some((s) => s.date.substring(0, 10) === today)) return NONE
+  if (litToday ?? sessions.some((s) => s.date.substring(0, 10) === today)) return NONE
 
   // Midnight is the real deadline: it is when the day the streak needs
   // stops being available. endOfDay() is 23:59:59.999, which truncates a

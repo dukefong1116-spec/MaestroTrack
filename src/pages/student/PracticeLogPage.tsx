@@ -8,9 +8,11 @@ import { Share2, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { format, parseISO, subDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
+import { useAuthStore } from '@/stores/authStore'
 import ShareSheet from '@/components/share/ShareSheet'
 import { addPracticeSession, deletePracticeSession } from '@/lib/firebase/practice'
-import { computeStreak } from '@/lib/utils/analytics'
+import { useStreak } from '@/hooks/useStreak'
+import { planOf } from '@/lib/streak/plan'
 import { computeSessionReward, type SessionReward } from '@/lib/utils/gamification'
 import { playSessionChime, primeAudioContext } from '@/lib/utils/sound'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
@@ -213,7 +215,8 @@ export default function PracticeLogPage() {
    * here from the same session log everything else reads, so a shared
    * card can never disagree with the streak on screen.
    */
-  const shareStreak = useMemo(() => computeStreak(sessions).current, [sessions])
+  const live = useStreak()
+  const shareStreak = live.current
   const shareWeek = useMemo(() => {
     if (!sharing) return undefined
     const end = parseISO(sharing.date)
@@ -242,7 +245,7 @@ export default function PracticeLogPage() {
     },
   })
 
-  const { current: streak } = useMemo(() => computeStreak(sessions), [sessions])
+  const streak = live.current
 
   /** Mon-first array of the last 7 days, flagged where practice happened. */
   // NudgeList renders null when it has nothing to say, so the Block
@@ -328,6 +331,7 @@ export default function PracticeLogPage() {
       sessionsBefore,
       newSession,
       dailyGoalMinutes: Math.round((profile?.weeklyGoalMinutes ?? 300) / 7),
+      plan: planOf(useAuthStore.getState().profile ?? profile),
     })
     if (earned.streakState !== 'backdated') {
       playSessionChime(profile?.instrument as InstrumentType | undefined, earned.minutes)

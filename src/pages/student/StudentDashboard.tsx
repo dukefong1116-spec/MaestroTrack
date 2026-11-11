@@ -22,8 +22,18 @@ import { useGamification } from '@/hooks/useGamification'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Avatar from '@/components/profile/Avatar'
-import StreakFlame from '@/components/icons/StreakFlame'
+import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
+import { useStreak } from '@/hooks/useStreak'
+import { dowOf, freezesToSpend } from '@/lib/streak/engine'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
+
+function Snowflake({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
+      <path d="M12 2.5v19M3.8 7.2l16.4 9.6M20.2 7.2 3.8 16.8" />
+    </svg>
+  )
+}
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
@@ -47,6 +57,26 @@ export default function StudentDashboard() {
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
   const game = useGamification()
+  const live = useStreak()
+  const flameState: FlameState = live.todayLit ? 'lit' : live.flameFrozen ? 'frozen' : 'unlit'
+  const min = live.todayRule.min
+  // What is still to do today, once some of it is done.
+  const toGo = Math.max(1, min - live.todayMinutes)
+  const amount = live.todayMinutes > 0 ? `${toGo} more min` : `${min} min`
+  const streakLine = live.todayLit
+    ? "Today's lit"
+    : live.flameFrozen
+      ? (min > 0 ? `Frozen · practise ${amount} to thaw` : 'Frozen · practise to thaw it')
+      : live.todayRule.lessonDay === dowOf(live.today)
+        ? 'Lesson day · your streak holds today'
+        : min > 0
+          ? `Practise ${amount} to light today`
+          : live.current > 0 ? 'Practise today to light it' : 'Practise today to start one'
+  // A freeze about to be spent comes first; the comeback is for when
+  // there was none.
+  const comeback = live.comeback && !live.comeback.complete && freezesToSpend(live).length === 0
+    ? live.comeback
+    : null
   const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const summary = useMemo(() =>
@@ -160,20 +190,49 @@ export default function StudentDashboard() {
           </div>
         </Block>
 
-        {/* Streak and the badges you pinned share one line. */}
+        {/* Streak and the badges you pinned share one line. The streak
+            opens its own page. */}
         <Block>
           <div className="flex items-center gap-2.5">
-            <StreakFlame streak={game.streak} size={18} />
-            <span className="min-w-0 flex-1 text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-              {game.streak > 0 ? `${game.streak} ${game.streak === 1 ? 'day' : 'days'}` : 'No streak yet'}
-              {game.freezesLeft > 0 && (
-                <span style={{ color: 'var(--clay-faint)', fontWeight: 500 }}>
-                  {'  ·  '}{game.freezesLeft} freeze{game.freezesLeft === 1 ? '' : 's'}
+            <button
+              type="button"
+              onClick={() => navigate('/student/streak')}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center">
+                <StreakFlame streak={live.current} size={28} state={flameState} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-semibold leading-tight" style={{ color: live.flameFrozen && !live.todayLit ? '#2F6FA8' : 'var(--clay-ink)' }}>
+                  {live.current > 0 ? `${live.current}-day streak` : 'No streak yet'}
                 </span>
-              )}
-            </span>
+                <span className="mt-0.5 flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--clay-dim)' }}>
+                  <span className="truncate">{streakLine}</span>
+                  {live.held > 0 && (
+                    <span className="flex shrink-0 items-center gap-0.5 font-semibold" style={{ color: '#2F6FA8' }} aria-label={`${live.held} freeze${live.held === 1 ? '' : 's'}`}>
+                      · <Snowflake size={11} /> {live.held}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </button>
             <PinnedBadges size={28} />
           </div>
+          {comeback && (
+            <button
+              type="button"
+              onClick={() => navigate('/student/streak')}
+              className="mt-3 w-full rounded-2xl px-3.5 py-2.5 text-left"
+              style={{ background: 'rgba(242,163,58,.14)' }}
+            >
+              <span className="block text-[13px] font-semibold" style={{ color: '#9A5A0C' }}>
+                Bring back your {comeback.restore}-day streak
+              </span>
+              <span className="block text-[12px]" style={{ color: '#9A5A0C' }}>
+                {comeback.done === 0 ? 'Practise today and tomorrow, and it’s back.' : 'Practise today and it’s back. 1 of 2 done.'}
+              </span>
+            </button>
+          )}
         </Block>
 
         {/* Timely prompts — previously buried on the Reminders page */}
@@ -197,7 +256,7 @@ export default function StudentDashboard() {
             }}
           >
             <Sticker name="note" size={20} tone="onAccent" />
-            {summary.currentStreak > 0 ? 'Keep it going' : 'Start practising'}
+            {live.current > 0 ? 'Keep it going' : 'Start practising'}
           </button>
         </Block>
       </Panel>
@@ -268,7 +327,7 @@ export default function StudentDashboard() {
       <FreezeMoment
         open={!!game.pendingFreeze}
         streak={game.pendingFreeze?.streak ?? 0}
-        daysFrozen={game.pendingFreeze?.daysFrozen ?? 1}
+        days={game.pendingFreeze?.days ?? []}
         remaining={game.pendingFreeze?.remaining ?? 0}
         onDismiss={game.dismissFreeze}
       />

@@ -9,6 +9,7 @@ export const DAY_MIN: number
 export const DAY_BONUS: number
 export const STREAK_BONUS: number
 export const STREAK_DAYS: number
+export const STREAK_LOOKBACK: number
 export const BAND_HOURS: number
 export const MAX_BAND_REACH: number
 export const MAESTRO_PLACES: number
@@ -26,7 +27,7 @@ export function weekIdOf(day: string): string
 export function weekOf(nowMs: number, offsetMin: number): LeagueWeek
 export function bandFor(offsetMin: number): number
 export function weekEndsAt(weekStart: string, band: number): number
-export function weekXp(sessions: { date: string; minutes: number }[], weekStart: string): { xp: number; days: DayLine[] }
+export function weekXp(sessions: { date: string; minutes: number }[], weekStart: string, holds?: Iterable<string>): { xp: number; days: DayLine[] }
 export function streakOn(days: DayLine[], today: string): number
 export function rankMembers<T extends Ranked>(members: T[]): T[]
 export function moveCounts(n: number): { up: number; down: number }

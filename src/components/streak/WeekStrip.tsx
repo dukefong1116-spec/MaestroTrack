@@ -11,6 +11,18 @@ function Snowflake({ size = 11 }: { size?: number }) {
   )
 }
 
+/** A quaver, for your lesson day. */
+function Note({ size = 11 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l11-2v13" />
+      <circle cx="6" cy="18" r="3" fill="currentColor" />
+      <circle cx="17" cy="16" r="3" fill="currentColor" />
+    </svg>
+  )
+}
+
 /**
  * The last seven days at a glance — the thing that makes a streak feel
  * losable rather than just a number. Today pulses while it's still unclaimed.
@@ -31,13 +43,14 @@ export default function WeekStrip({
       {days.map((day) => {
         const done = day.practised
         const frozen = day.frozen
+        const lesson = day.lesson && !done && !frozen
         const pending = day.isToday && !done && !frozen
 
         const bg = done
           ? 'var(--clay-accent)'
           : frozen
             ? 'var(--clay-frozen)'
-            : day.isFuture
+            : day.isFuture || (lesson && !day.isToday)
               ? 'transparent'
               : 'rgba(58,48,84,.09)'
 
@@ -52,15 +65,16 @@ export default function WeekStrip({
               style={{
                 width: size,
                 background: bg,
-                color: frozen ? '#2F6FA8' : '#fff',
-                border: day.isFuture ? '1.5px dashed rgba(58,48,84,.18)' : 'none',
+                color: frozen ? '#2F6FA8' : lesson ? 'var(--clay-dim)' : '#fff',
+                border: day.isFuture || lesson ? '1.5px dashed rgba(58,48,84,.18)' : 'none',
                 boxShadow: done ? 'var(--clay-accent-shadow)' : 'none',
               }}
               animate={pending ? { scale: [1, 1.12, 1] } : { scale: 1 }}
               transition={pending ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : undefined}
-              title={day.date}
+              title={lesson ? `${day.date} · lesson day` : day.date}
             >
               {frozen && <Snowflake size={Math.round(size * 0.42)} />}
+              {lesson && <Note size={Math.round(size * 0.42)} />}
               {done && (
                 <svg width={Math.round(size * 0.46)} height={Math.round(size * 0.46)} viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">

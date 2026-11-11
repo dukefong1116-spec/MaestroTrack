@@ -5,7 +5,8 @@ import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { streakRisk, riskCopy } from '@/lib/utils/streakRisk'
-import { freezesAvailable } from '@/lib/utils/streakFreeze'
+import { useStreak } from '@/hooks/useStreak'
+import { dowOf } from '@/lib/streak/engine'
 import type { StickerName } from '@/components/stickers/Sticker'
 import { onPiece } from '@/lib/utils/sessionPieces'
 
@@ -45,6 +46,7 @@ export function usePracticeNudges(limit = 3): Nudge[] {
   // The interval that used to live here now lives in useMinuteTick, shared
   // with the notification list, so the two cannot disagree about the time.
   const now = useMinuteTick()
+  const live = useStreak()
 
   const weeklyGoal = profile?.weeklyGoalMinutes ?? 300
   const summary = useMemo(
@@ -69,12 +71,10 @@ export function usePracticeNudges(limit = 3): Nudge[] {
     // A warning that reads the same at 9am and 11pm teaches people to
     // ignore it, so this names the hours left and sharpens through the
     // evening. See streakRisk for the rule.
-    const risk = streakRisk(
-      sessions,
-      summary.currentStreak,
-      freezesAvailable(summary.longestStreak, profile?.streakFreezesUsed ?? []),
-      now
-    )
+    // Your lesson day holds the streak by itself, so there is nothing to
+    // warn about on it.
+    const lessonToday = live.todayRule.lessonDay === dowOf(live.today)
+    const risk = streakRisk(sessions, lessonToday ? 0 : live.current, live.held, now, live.todayLit)
     if (risk.level !== 'none') {
       out.push({
         id: 'streak-at-risk',
@@ -115,5 +115,5 @@ export function usePracticeNudges(limit = 3): Nudge[] {
 
     // Stable sort: equal priorities keep the order they were built in.
     return out.sort((a, b) => b.priority - a.priority).slice(0, limit)
-  }, [sessions, pieces, summary, weeklyGoal, limit, profile?.streakFreezesUsed, now])
+  }, [sessions, pieces, summary, weeklyGoal, limit, live, now])
 }

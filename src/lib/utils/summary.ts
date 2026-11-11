@@ -1,5 +1,6 @@
 import { format, subDays } from 'date-fns'
 import { computeStreak } from './analytics'
+import { planOf } from '@/lib/streak/plan'
 import type {
   PracticeSession, PracticeSummary, StudioStats, UserProfile, PracticeCategory,
 } from '@/types'
@@ -27,7 +28,8 @@ const RETAIN_DAYS = 800
 
 export function buildSummaries(
   sessions: PracticeSession[],
-  profile: Pick<UserProfile, 'uid' | 'displayName' | 'instrument' | 'teacherId'>,
+  profile: Pick<UserProfile, 'uid' | 'displayName' | 'instrument' | 'teacherId'>
+    & Partial<Pick<UserProfile, 'streakRules' | 'streakFreezesUsed' | 'streakRepaired'>>,
   now: Date = new Date()
 ): { studio: StudioStats; summary: PracticeSummary } {
   const cutoff = format(subDays(now, RETAIN_DAYS), 'yyyy-MM-dd')
@@ -45,7 +47,9 @@ export function buildSummaries(
     }
   }
 
-  const { current } = computeStreak(sessions)
+  // The same streak the student sees: their minimum, lesson day and the
+  // days a freeze or comeback held.
+  const { current } = computeStreak(sessions, planOf(profile))
   const updatedAt = new Date().toISOString()
 
   return {

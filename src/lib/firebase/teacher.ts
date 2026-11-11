@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './config'
 import { onSnapshotError } from './snapshotError'
-import type { TeacherNote, UserProfile } from '@/types'
+import type { StreakRuleEntry, TeacherNote, UserProfile } from '@/types'
 const USERS = 'users'
 
 export function subscribeStudents(
@@ -108,6 +108,24 @@ export async function recordStreakFreezes(uid: string, dates: string[]): Promise
   await setDoc(
     doc(db, USERS, uid),
     { streakFreezesUsed: arrayUnion(...dates), updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
+}
+
+/** A comeback completed: the missed day now holds the streak. */
+export async function recordStreakRepair(uid: string, date: string): Promise<void> {
+  await setDoc(
+    doc(db, USERS, uid),
+    { streakRepaired: arrayUnion(date), updatedAt: new Date().toISOString() },
+    { merge: true }
+  )
+}
+
+/** The whole rules history, replaced — see withChoice in lib/streak/plan. */
+export async function saveStreakRules(uid: string, rules: StreakRuleEntry[]): Promise<void> {
+  await setDoc(
+    doc(db, USERS, uid),
+    { streakRules: rules, updatedAt: new Date().toISOString() },
     { merge: true }
   )
 }

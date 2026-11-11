@@ -91,6 +91,19 @@ describe('weekly XP', () => {
     const sessions = [0, 1, 2, 3, 4, 5, 6].filter((n) => n !== 3).map((n) => ({ date: addDays(MON, n), minutes: 10 }))
     expect(weekXp(sessions, MON).days.every((d) => d.bonus <= 10)).toBe(true)
   })
+  it('a held day keeps the streak without adding to it', () => {
+    // Monday to Sunday practised except Thursday, which was a lesson day.
+    const sessions = [0, 1, 2, 4, 5, 6].map((n) => ({ date: addDays(MON, n), minutes: 10 }))
+    expect(weekXp(sessions, MON).days[6]).toMatchObject({ streak: 3, bonus: 10 })
+    const held = weekXp(sessions, MON, [addDays(MON, 3)]).days
+    expect(held[3]).toMatchObject({ streak: 3, bonus: 0, xp: 0 })
+    expect(held[6]).toMatchObject({ streak: 6, bonus: 10 })
+  })
+  it('carries a streak across a held day from last week', () => {
+    const last = [-8, -7, -6, -5, -4, -3].map((n) => ({ date: addDays(MON, n), minutes: 10 }))
+    const { days } = weekXp([...last, { date: MON, minutes: 10 }], MON, [addDays(MON, -2), addDays(MON, -1)])
+    expect(days[0]).toMatchObject({ streak: 7, bonus: 30 })
+  })
   it('tops out at 1,050 for a perfect week on a long streak', () => {
     const sessions = Array.from({ length: 13 }, (_, i) => ({ date: addDays(MON, i - 6), minutes: 200 }))
     expect(weekXp(sessions, MON).xp).toBe(7 * 150)
