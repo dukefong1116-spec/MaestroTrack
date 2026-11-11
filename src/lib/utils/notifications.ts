@@ -1,5 +1,6 @@
 import { addDays, getDay, parseISO, set, startOfDay, differenceInCalendarDays } from 'date-fns'
-import type { Assignment, LessonSlot, Message, NotifyKind, StudioRequest, UserProfile } from '@/types'
+import type { Assignment, LeagueResult, LeagueRoom, LessonSlot, Message, NotifyKind, StudioRequest, UserProfile } from '@/types'
+import { moveCounts, rankMembers, zoneOf, TIERS } from '@/lib/league/rules'
 import type { StickerName } from '@/components/stickers/Sticker'
 
 /**
@@ -25,6 +26,9 @@ export type NotificationKind =
   | 'submission-received'
   | 'join-request'
   | 'message-new'
+  | 'league-passed'
+  | 'league-last-day'
+  | 'league-results'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -46,6 +50,7 @@ export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> 
   feedback: ['assignment-returned', 'assignment-approved'],
   lessons: ['lesson-tomorrow', 'lesson-soon'],
   submissions: ['submission-received'],
+  league: ['league-passed', 'league-last-day', 'league-results'],
   // 'message-new' is absent too: a message is a person talking to you.
   // 'join-request' is deliberately absent, and so stays on whatever the
   // Settings switches say. Somebody is standing at the door: a request
@@ -167,9 +172,12 @@ export function buildStudentNotifications(input: {
   /** From the current teacher, not yet read in the conversation. */
   messages?: Message[]
   teacherName?: string
+  /** The weekly league: your open room, and last week's result if unseen. */
+  league?: { uid: string; room: LeagueRoom | null; result?: LeagueResult; seenWeek?: string }
   options: BuildOptions
 }): AppNotification[] {
   const { assignments, lessons, messages = [], teacherName } = input
+  const leagueItems = input.league ? leagueNotifications(input.league, input.options.now) : []
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const out: AppNotification[] = []
 
@@ -253,6 +261,7 @@ export function buildStudentNotifications(input: {
     })
   }
 
+  out.push(...leagueItems)
   return finish(out, cap)
 }
 
@@ -333,4 +342,78 @@ export function isUnread(n: AppNotification, readAt?: string): boolean {
 
 export function unreadCount(all: AppNotification[], readAt?: string): number {
   return all.reduce((n, item) => n + (isUnread(item, readAt) ? 1 : 0), 0)
+}
+
+/**
+ * The league's three bell items, all derived from the room you are
+ * already listening to and your profile — nothing stored for them.
+ *
+ *   passed    someone overtook you. The server keeps only the latest on
+ *             your entry, and the id is per day, so it is at most one a
+ *             day, the newest winning.
+ *   last day  the final 24 hours, when where you stand decides the week.
+ *   results   last week's room has finished and you have not seen how.
+ */
+export function leagueNotifications(
+  league: { uid: string; room: LeagueRoom | null; result?: LeagueResult; seenWeek?: string },
+  now: Date,
+): AppNotification[] {
+  const out: AppNotification[] = []
+  const { uid, room, result, seenWeek } = league
+  const to = '/student/league'
+
+  if (room && room.status === 'open' && room.members?.[uid]) {
+    const me = room.members[uid]
+    const tierName = TIERS[room.tier]?.name ?? 'your'
+    if (me.passedBy && differenceInCalendarDays(now, parseISO(me.passedBy.at)) <= 1) {
+      out.push({
+        id: `league:passed:${room.id}:${me.passedBy.at.slice(0, 10)}`,
+        kind: 'league-passed',
+        title: `${me.passedBy.name} passed you`,
+        body: `${tierName} league · time to take it back`,
+        at: me.passedBy.at,
+        to,
+        priority: 55,
+        sticker: 'trophy',
+      })
+    }
+    const left = room.endsAt - now.getTime()
+    if (left > 0 && left <= 24 * 3_600_000) {
+      const list = rankMembers(Object.entries(room.members).map(([id, m]) => ({ uid: id, ...m })))
+      const i = list.findIndex((m) => m.uid === uid)
+      const n = list.length
+      const zone = zoneOf(i, n, room.tier, me.xp)
+      const { up } = moveCounts(n)
+      const title = zone === 'up' ? "Last day: you're in the move-up zone"
+        : zone === 'down' ? "Last day: you're in the drop zone"
+          : i === up && room.tier < TIERS.length - 1 ? 'Last day: 1 place from moving up'
+            : null
+      if (title) {
+        out.push({
+          id: `league:lastday:${room.id}`,
+          kind: 'league-last-day',
+          title,
+          body: zone === 'up' ? 'One more session keeps you there.' : 'One more session could change it.',
+          at: new Date(room.endsAt - 24 * 3_600_000).toISOString(),
+          to,
+          priority: 65,
+          sticker: 'trophy',
+        })
+      }
+    }
+  }
+
+  if (result && result.week !== seenWeek && result.at) {
+    out.push({
+      id: `league:results:${result.week}`,
+      kind: 'league-results',
+      title: 'Your league results are in',
+      body: `${TIERS[result.fromTier]?.name ?? ''} league, last week`,
+      at: result.at,
+      to,
+      priority: 75,
+      sticker: 'trophy',
+    })
+  }
+  return out
 }

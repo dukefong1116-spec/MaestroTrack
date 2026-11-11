@@ -23,6 +23,12 @@ interface SessionCelebrationProps {
    * post about is exactly this one.
    */
   onShare?: () => void
+  /**
+   * More to watch, after the minutes and the streak — the weekly league's
+   * climb. While it is there the card waits to be closed rather than
+   * leaving on its own mid-animation.
+   */
+  extra?: React.ReactNode
 }
 
 const AUTO_DISMISS_MS = 2800
@@ -33,6 +39,7 @@ export default function SessionCelebration({
   accent,
   onDismiss,
   onShare,
+  extra,
 }: SessionCelebrationProps) {
   const [muted, setMuted] = useState(isSoundMuted)
 
@@ -45,7 +52,7 @@ export default function SessionCelebration({
     if (!reward) return
     // Nothing to do here but look at it — so it goes by itself. With a
     // share button there is, so it waits.
-    const timer = onShare ? undefined : setTimeout(onDismiss, AUTO_DISMISS_MS)
+    const timer = onShare || extra ? undefined : setTimeout(onDismiss, AUTO_DISMISS_MS)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onDismiss()
     }
@@ -54,7 +61,7 @@ export default function SessionCelebration({
       clearTimeout(timer)
       document.removeEventListener('keydown', onKey)
     }
-  }, [reward, onDismiss, onShare])
+  }, [reward, onDismiss, onShare, extra])
 
   if (!reward) return null
 
@@ -209,6 +216,8 @@ export default function SessionCelebration({
               Daily goal reached
             </motion.p>
           )}
+
+          {extra}
 
           {onShare && (
             <motion.div

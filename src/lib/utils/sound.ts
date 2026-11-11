@@ -53,6 +53,11 @@ const ROOTS: Record<InstrumentType, number> = {
   voice: 392.0,       // G4
 }
 
+/** The root note an instrument's sounds are built on, in Hz. */
+export function rootFor(instrument: InstrumentType | undefined): number {
+  return ROOTS[instrument ?? 'piano'] ?? 261.63
+}
+
 /** Semitone offsets, added progressively as the session gets longer. */
 const CHORD = [0, 7, 4, 12, 14] // root, fifth, third, octave, ninth
 

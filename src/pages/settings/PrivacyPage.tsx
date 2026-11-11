@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Check, Download, Eye, EyeOff, Link2 } from 'lucide-react'
+import { Check, Download, Eye, EyeOff, Link2, Trophy } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
 import { authErrorMessage } from '@/lib/firebase/account'
-import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen } from '@/components/ui/Panel'
+import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen, ToggleRow } from '@/components/ui/Panel'
+import { updateUserProfile } from '@/lib/firebase/teacher'
+import { useAuthStore } from '@/stores/authStore'
 import Button from '@/components/ui/Button'
 
 /**
@@ -88,6 +90,30 @@ export default function PrivacyPage() {
             forwarding one forwards the audio.
           </p>
         </Block>
+
+        {!isTeacher && (
+          <>
+            <Block>
+              <Legend
+                title="Weekly leagues"
+                hint="Other players in your room see your first name and last initial, your rank and your weekly XP. Nothing else: no photo, no profile, no studio."
+              />
+            </Block>
+            <ToggleRow
+              icon={<Trophy size={19} />}
+              label="Join weekly leagues"
+              hint={profile?.leagueOptOut ? "Off: you're in no league" : 'On'}
+              checked={!profile?.leagueOptOut}
+              onChange={(on) => {
+                // Optimistic: the profile reaches here through a listener,
+                // and a switch that lags a second behind its tap looks broken.
+                const live = useAuthStore.getState().profile
+                if (live) useAuthStore.getState().setProfile({ ...live, leagueOptOut: !on })
+                if (profile?.uid) void updateUserProfile(profile.uid, { leagueOptOut: !on }).catch(() => {})
+              }}
+            />
+          </>
+        )}
 
         <Block>
           <Legend

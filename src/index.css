@@ -271,3 +271,20 @@ input[type="range"] {
 @media (prefers-reduced-motion: reduce) {
   .tour-ripple { animation: none; box-shadow: 0 0 0 3px var(--clay-accent); }
 }
+
+/* Weekly league trophies: the metronome swings, the tuning fork hums,
+   and a small sparkle comes and goes. Off under reduced motion, like
+   everything else (see the data-motion rule above). */
+@keyframes league-swing { from { transform: rotate(-16deg) } to { transform: rotate(16deg) } }
+@keyframes league-wave { 0% { opacity: .9 } 100% { opacity: .1 } }
+@keyframes league-twinkle { 0%, 100% { opacity: .2; transform: scale(.6) } 50% { opacity: 1; transform: scale(1) } }
+.league-swing { animation: league-swing 1.2s ease-in-out infinite alternate; }
+.league-wave { animation: league-wave 1.4s ease-out infinite; }
+.league-twinkle { animation: league-twinkle 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .league-swing, .league-wave, .league-twinkle { animation: none; }
+}
+
+/* Scrolls as ever, without the scrollbar strip down the right edge. */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

@@ -180,7 +180,7 @@ export function whatToShow(i: TourInput): Decision {
     id: 'intro-library', target: 'add-piece', mustTap: true, button: 'Got it', block: true,
     text: "Your Library 📚 Add pieces you're learning and performances coming up. Try adding your first piece!",
   })
-  if (path === '/student/progress' && !seen.has('progress')) return show({
+  if (path === '/student/practice/progress' && !seen.has('progress')) return show({
     id: 'intro-progress', button: 'Got it', block: true,
     text: 'Your progress lives here 🏆 badges, goals and patterns. Keep the streak going!',
   })

@@ -86,8 +86,8 @@ describe('after the tour', () => {
   it('introduces the Library and Progress once each', () => {
     expect(id(at({ ...done, path: '/student/library' }))).toBe('intro-library')
     expect(id(at({ ...done, path: '/student/library', seen: ['library'] }))).toBe('none')
-    expect(id(at({ ...done, path: '/student/progress' }))).toBe('intro-progress')
-    expect(id(at({ ...done, path: '/student/progress', seen: ['progress'] }))).toBe('none')
+    expect(id(at({ ...done, path: '/student/practice/progress' }))).toBe('intro-progress')
+    expect(id(at({ ...done, path: '/student/practice/progress', seen: ['progress'] }))).toBe('none')
   })
 
   it('asks for a piece in a session only once there is one to pick', () => {

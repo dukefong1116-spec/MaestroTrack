@@ -72,6 +72,12 @@
     "homepage": "https://firebase.google.com/"
   },
   {
+    "name": "firebase-admin",
+    "version": "13.10.0",
+    "license": "Apache-2.0",
+    "homepage": "https://firebase.google.com/"
+  },
+  {
     "name": "firebase-tools",
     "version": "15.32.1",
     "license": "MIT",

@@ -20,6 +20,9 @@ import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import LeagueSessionPanel from '@/components/league/LeagueSessionPanel'
+import { requestTicket, type SyncResult } from '@/lib/firebase/league'
+import { useLeagueStore, type Climb } from '@/stores/leagueStore'
 import { useTour } from '@/hooks/useTour'
 import { useTourStore } from '@/stores/tourStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -153,6 +156,8 @@ export default function SessionPage() {
   )
   const [reward, setReward] = useState<SessionReward | null>(null)
   const [justSaved, setJustSaved] = useState<PracticeSession | null>(null)
+  /** The league's word on the session just saved, for the celebration. */
+  const [league, setLeague] = useState<{ result: SyncResult; climb: Climb | null } | null>(null)
   const [sharing, setSharing] = useState<PracticeSession | null>(null)
 
   /**
@@ -249,6 +254,27 @@ export default function SessionPage() {
     if (!timerRunning && !timerStartedAt && timerAccumulatedSec === 0) startTimer()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The weekly league's practice ticket: asked for as the timer starts,
+  // and again each minute until one arrives if the network was down. The
+  // server credits this session no more minutes than really passed since
+  // it — see api/_lib/ticket.js. Students only; nobody else has a league.
+  const ticketRef = useRef<string | null>(null)
+  const askingRef = useRef(false)
+  const isStudent = profile?.role === 'student'
+  useEffect(() => {
+    if (!isStudent) return
+    let stopped = false
+    const fetchTicket = async () => {
+      if (ticketRef.current || askingRef.current || stopped) return
+      askingRef.current = true
+      try { ticketRef.current = await requestTicket() } catch { /* offline: next minute */ }
+      finally { askingRef.current = false }
+    }
+    void fetchTicket()
+    const id = setInterval(fetchTicket, 60_000)
+    return () => { stopped = true; clearInterval(id) }
+  }, [isStudent])
 
   /* ── which category the clock is running in ───────────── */
   // Subscribed, so tapping a chip re-renders even while paused.
@@ -676,6 +702,11 @@ export default function SessionPage() {
       difficultyRating: 3,
       confidenceRating,
       notes: thoughts.trim() || undefined,
+      // For the weekly league, which counts only timer sessions. Frozen
+      // once written (see the rules).
+      source: 'timer' as const,
+      timedMinutes: minutes,
+      ticket: ticketRef.current ?? undefined,
     }
 
     setSaving(true)
@@ -741,6 +772,13 @@ export default function SessionPage() {
     // how the sound used to vanish with nothing reported.
     playSessionChime(profile?.instrument as InstrumentType | undefined, minutes)
     setReward(earned)
+    // The league's part of the celebration: your new XP, and the climb if
+    // this session moved you. Arrives a moment after the rest.
+    if (isStudent && !profile?.leagueOptOut) {
+      void useLeagueStore.getState().sync().then((r) => {
+        if (r?.roomId) setLeague({ result: r, climb: useLeagueStore.getState().takeClimb() })
+      })
+    }
     // The tour's first session is in: the next step waits on Today, once
     // the celebration has had its moment.
     if (inTour) { setTour('streak'); useTourStore.getState().setSub(null) }
@@ -1436,8 +1474,17 @@ export default function SessionPage() {
         reward={reward}
         instrument={profile?.instrument as InstrumentType | undefined}
         // In the tour, Today is next — the streak step waits there.
+        extra={league && (profile?.uid ?? user?.uid) ? (
+          <LeagueSessionPanel
+            result={league.result}
+            climb={league.climb}
+            uid={(profile?.uid ?? user?.uid)!}
+            instrument={profile?.instrument as InstrumentType | undefined}
+          />
+        ) : undefined}
         onDismiss={() => {
           setReward(null)
+          setLeague(null)
           navigate(useAuthStore.getState().profile?.onboarding?.tour === 'streak' ? '/student' : '/student/practice')
         }}
         onShare={justSaved ? () => { setReward(null); setSharing(justSaved) } : undefined}

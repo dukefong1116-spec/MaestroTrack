@@ -32,6 +32,7 @@ import { categoryFields, categoryLabel, minutesByCategory, splitEvenly } from '@
 import { pieceFields, pieceLabel } from '@/lib/utils/sessionPieces'
 import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
+import PracticeTabs from '@/components/practice/PracticeTabs'
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
@@ -362,6 +363,8 @@ export default function PracticeLogPage() {
             <Sticker name="pencil" size={14} tone="accent" /> Log past
           </Button>
         </div>
+
+        <PracticeTabs />
 
         {/* session in progress */}
         {timerRunning && (

@@ -19,7 +19,7 @@ export const studentNav: NavItem[] = [
   { to: '/student', icon: LayoutDashboard, label: 'Today', end: true },
   { to: '/student/practice', icon: 'metro', label: 'Practice' },
   { to: '/student/library', icon: 'book', label: 'Library' },
-  { to: '/student/progress', icon: 'target', label: 'Progress' },
+  { to: '/student/league', icon: 'trophy', label: 'League' },
 ]
 
 export const teacherNav: NavItem[] = [

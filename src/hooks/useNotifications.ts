@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useTeacherStore } from '@/stores/teacherStore'
+import { useLeagueStore } from '@/stores/leagueStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import {
   applyNotifyPrefs, buildStudentNotifications, buildTeacherNotifications, unreadCount,
@@ -61,6 +62,10 @@ export function useNotifications(): {
   const messagesReadAt = profile?.messagesReadAt
   const teacherId = profile?.teacherId
   const teacherName = profile?.teacherName
+  const leagueRoom = useLeagueStore((s) => s.room)
+  const leagueResult = profile?.league?.lastResult
+  const leagueSeen = profile?.leagueSeen
+  const leagueOff = profile?.leagueOptOut
   const items = useMemo(() => {
     if (!uid) return []
     // Only messages not yet read in the conversation itself: reading them
@@ -72,11 +77,13 @@ export function useNotifications(): {
         })
       : buildStudentNotifications({
           assignments, lessons, options: { now }, teacherName,
+          league: uid && !leagueOff ? { uid, room: leagueRoom, result: leagueResult, seenWeek: leagueSeen } : undefined,
           messages: studentMessages.filter((m) => m.from === 'teacher' && m.teacherId === teacherId && m.createdAt > (messagesReadAt ?? '')),
         })
     return applyNotifyPrefs(all, notify ?? {})
   }, [uid, isTeacher, assignments, students, requests, lessons, now, notify,
-      teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName])
+      teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName,
+      leagueRoom, leagueResult, leagueSeen, leagueOff])
 
   const markAllRead = useCallback(() => {
     if (!uid) return

@@ -86,7 +86,11 @@ service cloud.firestore {
         // and joining still is not.
         && (d.get('teacherId', null) == before.get('teacherId', null)
             || d.get('teacherId', null) == null)
-        && d.get('studioCode', '') == before.get('studioCode', '');
+        && d.get('studioCode', '') == before.get('studioCode', '')
+        // Your league tier, room and results are the league server's to
+        // write, never yours — otherwise anyone could promote themselves.
+        // leagueSeen and leagueOptOut stay yours.
+        && d.get('league', null) == before.get('league', null);
     }
 
     function isTeacher() {
@@ -189,7 +193,9 @@ service cloud.firestore {
       // account has nobody to have accepted it yet.
       allow create: if isMe(userId)
                     && (!('teacherId' in request.resource.data)
-                        || request.resource.data.teacherId == null);
+                        || request.resource.data.teacherId == null)
+                    // Nor already holding a league tier.
+                    && !('league' in request.resource.data);
 
       // Only ever your own profile, and not every field of it — see
       // validProfileChange, which is what stops a student walking into a
@@ -364,13 +370,51 @@ service cloud.firestore {
     // all their charts ever used.
     match /practiceSessions/{id} {
       allow read: if isMe(resource.data.userId);
-      allow create: if isMe(request.resource.data.userId) && dateStaysAString();
+      allow create: if isMe(request.resource.data.userId) && dateStaysAString()
+                    && timerFieldsWellFormed();
       // userId is immutable: handing a record to someone else plants it in
       // their log, where it counts toward their streaks and their totals.
       allow update: if isMe(resource.data.userId)
                     && request.resource.data.userId == resource.data.userId
-                    && dateStaysAString();
+                    && dateStaysAString()
+                    && timerFieldsUnchanged();
       allow delete: if isMe(resource.data.userId);
+    }
+
+    /**
+     * What the practice timer stamps on a session, for the weekly league:
+     * `source: 'timer'`, the minutes it measured, and the server's signed
+     * ticket. Well-formed when written, and never changed afterwards — so
+     * a session typed into the log cannot later be turned into a timed
+     * one, nor a timed one stretched. (The ticket itself is checked by
+     * the league server; rules cannot verify a signature.)
+     */
+    function timerFieldsWellFormed() {
+      let d = request.resource.data;
+      return (!('source' in d) || d.source == 'timer')
+        && (!('timedMinutes' in d) || (d.timedMinutes is number && d.timedMinutes >= 0))
+        && (!('ticket' in d) || (d.ticket is string && d.ticket.size() < 200));
+    }
+    function timerFieldsUnchanged() {
+      let d = request.resource.data;
+      let before = resource.data;
+      return d.get('source', null) == before.get('source', null)
+        && d.get('timedMinutes', null) == before.get('timedMinutes', null)
+        && d.get('ticket', null) == before.get('ticket', null);
+    }
+
+    /**
+     * Weekly league rooms: read by the players in them, written only by
+     * the league server (which bypasses these rules). A room's member map
+     * is keyed by uid, so membership is a key lookup.
+     */
+    match /leagueRooms/{roomId} {
+      allow read: if signedIn() && uid() in resource.data.members;
+      allow write: if false;
+    }
+    // The server's own bookkeeping: which room is filling. Nobody else's.
+    match /leagueIndex/{id} {
+      allow read, write: if false;
     }
 
     match /pieces/{id} {

@@ -18,7 +18,7 @@ import type { InstrumentType } from '@/types'
  * And in one panel: these are all answers to the same question, so they
  * are divided by hairlines rather than floated apart as separate cards.
  */
-export default function ProgressPage() {
+export default function ProgressPage({ embedded }: { embedded?: boolean } = {}) {
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
 
@@ -46,7 +46,8 @@ export default function ProgressPage() {
 
   return (
     <div>
-      <PageHeader title="Progress" subtitle="How you're doing against your week." />
+      {/* Inside Practice the page's own title would repeat the tab's. */}
+      {!embedded && <PageHeader title="Progress" subtitle="How you're doing against your week." />}
 
       <Panel>
         <GoalsPanel />

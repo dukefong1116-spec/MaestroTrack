@@ -5,6 +5,8 @@ import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
 import { useSummarySync } from '@/hooks/useSummarySync'
 import { useTeacherData } from '@/hooks/useTeacherData'
+import { useLeagueSync } from '@/hooks/useLeagueSync'
+import LeagueResultGate from '@/components/league/LeagueResultGate'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
@@ -38,7 +40,8 @@ const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
 const PracticeLogPage = lazy(() => import('@/pages/student/PracticeLogPage'))
 const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
 const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
-const ProgressPage = lazy(() => import('@/pages/student/ProgressPage'))
+const PracticeProgressPage = lazy(() => import('@/pages/student/PracticeProgressPage'))
+const LeaguePage = lazy(() => import('@/pages/student/LeaguePage'))
 const StudioPage = lazy(() => import('@/pages/student/StudioPage'))
 const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
 const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
@@ -83,6 +86,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   // has practised but never had a summary written.
   useSummarySync()
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
+  // The weekly league follows the session log; students only.
+  useLeagueSync(profile?.role === 'student' ? profile?.uid : undefined, profile?.leagueOptOut, profile?.league?.roomId)
   return (
     <>
       {children}
@@ -92,6 +97,9 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       {/* Global for the same reason: the first session, which the tour
           walks through, runs outside the main layout. */}
       <TourLayer />
+      {/* The weekly league's result, the first time you open the app after
+          your room's week has ended — from any page. */}
+      <LeagueResultGate />
     </>
   )
 }
@@ -149,7 +157,10 @@ function AppRoutes() {
         <Route index element={<StudentDashboard />} />
         <Route path="practice" element={<PracticeLogPage />} />
         <Route path="library" element={<LibraryPage />} />
-        <Route path="progress" element={<ProgressPage />} />
+        {/* Progress lives inside Practice now; League took its tab. */}
+        <Route path="practice/progress" element={<PracticeProgressPage />} />
+        <Route path="progress" element={<Navigate to="/student/practice/progress" replace />} />
+        <Route path="league" element={<LeaguePage />} />
         <Route path="studio" element={<StudioPage />} />
         <Route path="settings" element={<SettingsPage />} />
         {/* Nested under settings on purpose: the Settings tab and the
@@ -168,9 +179,9 @@ function AppRoutes() {
             keep working after the Library/Progress consolidation. */}
         <Route path="pieces" element={<Navigate to="/student/library" replace />} />
         <Route path="performances" element={<Navigate to="/student/library?tab=performances" replace />} />
-        <Route path="goals" element={<Navigate to="/student/progress" replace />} />
-        <Route path="insights" element={<Navigate to="/student/progress" replace />} />
-        <Route path="analytics" element={<Navigate to="/student/progress" replace />} />
+        <Route path="goals" element={<Navigate to="/student/practice/progress" replace />} />
+        <Route path="insights" element={<Navigate to="/student/practice/progress" replace />} />
+        <Route path="analytics" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="reminders" element={<Navigate to="/student" replace />} />
       </Route>
 

@@ -28,7 +28,7 @@ export default function AppLayout() {
         that is overlapping it.
       */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="flex-1 overflow-y-auto overscroll-contain">
+        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
           <div className="clay-zoom max-w-7xl mx-auto px-6 py-8">
             <Outlet />
           </div>

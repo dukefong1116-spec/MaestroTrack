@@ -13,7 +13,7 @@
     "emulate": "firebase emulators:start --only auth,firestore,storage,functions",
     "emulate:lan": "firebase emulators:start --config firebase.lan.json --only auth,firestore,storage,functions",
     "test": "TZ=America/Los_Angeles vitest run --exclude '**/rules*.test.ts' --exclude '**/node_modules/**'",
-    "test:rules": "vitest run --no-file-parallelism src/lib/firebase/__tests__/rules.test.ts src/lib/firebase/__tests__/rules.attacks.test.ts src/lib/firebase/__tests__/rules.storage.test.ts src/lib/firebase/__tests__/rules.appqueries.test.ts src/lib/firebase/__tests__/rules.protected.test.ts src/lib/firebase/__tests__/rules.upload.test.ts src/lib/firebase/__tests__/rules.shares.test.ts src/lib/firebase/__tests__/rules.join.test.ts",
+    "test:rules": "vitest run --no-file-parallelism src/lib/firebase/__tests__/rules.test.ts src/lib/firebase/__tests__/rules.attacks.test.ts src/lib/firebase/__tests__/rules.storage.test.ts src/lib/firebase/__tests__/rules.appqueries.test.ts src/lib/firebase/__tests__/rules.protected.test.ts src/lib/firebase/__tests__/rules.upload.test.ts src/lib/firebase/__tests__/rules.shares.test.ts src/lib/firebase/__tests__/rules.join.test.ts src/lib/firebase/__tests__/rules.league.test.ts src/lib/firebase/__tests__/rules.leagueserver.test.ts",
     "licenses": "node scripts/licenses.mjs"
   },
   "dependencies": {
@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "firebase": "^12.15.0",
+    "firebase-admin": "^13.10.0",
     "framer-motion": "^12.41.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^1.21.0",

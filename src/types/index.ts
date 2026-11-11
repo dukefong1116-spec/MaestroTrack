@@ -34,6 +34,8 @@ export type NotifyKind =
   | 'submissions'
   /** The prompts on Today, which are a separate surface from the bell. */
   | 'nudges'
+  /** league-passed, league-last-day, league-results — students only */
+  | 'league'
 
 export type PracticeCategory =
   | 'Scales'
@@ -52,6 +54,46 @@ export type PerformanceType =
   | 'Masterclass'
 
 export type TourCheckpoint = 'welcome' | 'today' | 'start' | 'streak' | 'history' | 'done'
+
+export interface LeagueResult {
+  week: string
+  roomId: string
+  fromTier: number
+  toTier: number
+  rank: number
+  of: number
+  xp: number
+  maestro: boolean
+  /** When the server wrote it — the week's end, as far as the bell knows. */
+  at?: string
+}
+
+export interface LeagueState {
+  tier?: number
+  roomId?: string | null
+  week?: string | null
+  lastResult?: LeagueResult
+}
+
+export interface LeagueMember {
+  name: string
+  colour: number
+  xp: number
+  xpAt: string
+  joinedAt: string
+  passedBy?: { name: string; at: string }
+}
+
+export interface LeagueRoom {
+  id: string
+  week: string
+  weekStart: string
+  tier: number
+  band: number
+  endsAt: number
+  status: 'open' | 'final'
+  members: Record<string, LeagueMember>
+}
 
 export interface UserProfile {
   uid: string
@@ -110,6 +152,15 @@ export interface UserProfile {
    */
   /** Student: messages from the teacher up to here have been read. */
   messagesReadAt?: string
+  /**
+   * Weekly league state — written only by the league server, never by the
+   * app (the rules freeze it). See src/lib/league/rules.js.
+   */
+  league?: LeagueState
+  /** The last league week whose result reveal has been watched. */
+  leagueSeen?: string
+  /** Settings → Privacy → Weekly leagues, switched off. */
+  leagueOptOut?: boolean
   /** Teacher: per student, messages up to here have been read. */
   threadsReadAt?: Record<string, string>
   onboarding?: {
@@ -168,6 +219,16 @@ export interface PracticeSession {
   confidenceRating: number
   notes?: string
   createdAt: string
+  /**
+   * Stamped by the practice timer, for the weekly league: only timer
+   * sessions count there. Frozen once written (see the rules). Absent on
+   * sessions typed into the Practice Log.
+   */
+  source?: 'timer'
+  /** What the timer itself measured, in whole minutes. */
+  timedMinutes?: number
+  /** The league server's signed ticket from when the timer started. */
+  ticket?: string
 }
 
 export interface Piece {

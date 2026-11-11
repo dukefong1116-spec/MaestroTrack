@@ -34,7 +34,7 @@ export default function PinnedBadges({ size = 44 }: { size?: number }) {
   return (
     <button
       type="button"
-      onClick={() => navigate('/student/progress')}
+      onClick={() => navigate('/student/practice/progress')}
       aria-label={`${shown.length} pinned badge${shown.length === 1 ? '' : 's'} — open Progress`}
       className="flex items-center transition-transform active:scale-95"
       style={{ gap: inset }}

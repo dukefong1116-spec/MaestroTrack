@@ -1,4 +1,4 @@
-import { Bell, Clock, MessageSquare, CalendarDays, Inbox, Lightbulb } from 'lucide-react'
+import { Bell, Clock, MessageSquare, CalendarDays, Inbox, Lightbulb, Trophy } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
 import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/ui/Panel'
@@ -60,6 +60,13 @@ export default function NotificationsPage() {
               hint="The day before, and an hour before"
               checked={prefs.notify.lessons}
               onChange={toggle('lessons')}
+            />
+            <ToggleRow
+              icon={<Trophy size={19} />}
+              label="League"
+              hint="When someone passes you, the last day, and your results"
+              checked={prefs.notify.league}
+              onChange={toggle('league')}
             />
           </>
         )}

@@ -32,7 +32,7 @@ export const DEFAULT_PREFS: Prefs = {
   accent: 'instrument',
   displayScale: 100,
   reduceMotion: false,
-  notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true },
+  notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true, league: true },
   reminderEnabled: false,
   reminderTime: '18:00',
 }
