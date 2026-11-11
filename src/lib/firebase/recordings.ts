@@ -9,8 +9,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
-import { db, storage, auth } from './config'
+import { db, auth, loadStorage } from './config'
 import { onSnapshotError } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import { withStoredDay } from './storedDay'
@@ -67,6 +66,7 @@ export async function uploadRecording(
   // and let a teacher hear it only while it is handed in to them.
   const docRef = doc(collection(db, COL))
   const path = `recordings/${authUid}/${docRef.id}/${file.name}`
+  const { storage, ref, uploadBytes, uploadBytesResumable } = await loadStorage()
   const storageRef = ref(storage, path)
   // Say what this is, rather than hoping the blob still knows.
   //
@@ -154,7 +154,10 @@ export async function shareRecordings(ids: string[]): Promise<void> {
  * Takes saved before paths were stored have only their old link.
  */
 export async function recordingAudio(r: Pick<Recording, 'storagePath' | 'audioUrl'>): Promise<string> {
-  if (r.storagePath) return getDownloadURL(ref(storage, r.storagePath))
+  if (r.storagePath) {
+    const { storage, ref, getDownloadURL } = await loadStorage()
+    return getDownloadURL(ref(storage, r.storagePath))
+  }
   if (r.audioUrl) return r.audioUrl
   throw new Error('This take has no audio')
 }
@@ -164,8 +167,8 @@ export async function deleteRecording(id: string, r: Pick<Recording, 'storagePat
   const where = r.storagePath ?? r.audioUrl
   if (!where) return
   try {
-    const storageRef = ref(storage, where)
-    await deleteObject(storageRef)
+    const { storage, ref, deleteObject } = await loadStorage()
+    await deleteObject(ref(storage, where))
   } catch {
     // storage object may already be gone
   }

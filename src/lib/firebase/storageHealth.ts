@@ -1,4 +1,4 @@
-import { storage } from './config'
+import app from './config'
 
 /**
  * Is a Storage bucket actually there?
@@ -35,7 +35,7 @@ export async function checkStorageHealth(): Promise<StorageHealth> {
   if (cached) return cached
   if (inFlight) return inFlight
 
-  const bucket = storage.app.options.storageBucket
+  const bucket = app.options.storageBucket
   if (!bucket) {
     cached = 'not-configured'
     return cached

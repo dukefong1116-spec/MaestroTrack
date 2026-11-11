@@ -37,17 +37,26 @@ const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
-const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
-const PracticeLogPage = lazy(() => import('@/pages/student/PracticeLogPage'))
-const SessionPage = lazy(() => import('@/pages/student/SessionPage'))
-const LibraryPage = lazy(() => import('@/pages/student/LibraryPage'))
-const PracticeProgressPage = lazy(() => import('@/pages/student/PracticeProgressPage'))
-const LeaguePage = lazy(() => import('@/pages/student/LeaguePage'))
-const StreakPage = lazy(() => import('@/pages/student/StreakPage'))
-const StudioPage = lazy(() => import('@/pages/student/StudioPage'))
+const loadStudentDashboard = () => import('@/pages/student/StudentDashboard')
+const loadPracticeLog = () => import('@/pages/student/PracticeLogPage')
+const loadSession = () => import('@/pages/student/SessionPage')
+const loadLibrary = () => import('@/pages/student/LibraryPage')
+const loadPracticeProgress = () => import('@/pages/student/PracticeProgressPage')
+const loadLeague = () => import('@/pages/student/LeaguePage')
+const loadStreak = () => import('@/pages/student/StreakPage')
+const loadStudio = () => import('@/pages/student/StudioPage')
+const StudentDashboard = lazy(loadStudentDashboard)
+const PracticeLogPage = lazy(loadPracticeLog)
+const SessionPage = lazy(loadSession)
+const LibraryPage = lazy(loadLibrary)
+const PracticeProgressPage = lazy(loadPracticeProgress)
+const LeaguePage = lazy(loadLeague)
+const StreakPage = lazy(loadStreak)
+const StudioPage = lazy(loadStudio)
 const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
 const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
-const SettingsPage = lazy(() => import('@/pages/student/SettingsPage'))
+const loadSettings = () => import('@/pages/student/SettingsPage')
+const SettingsPage = lazy(loadSettings)
 const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
 
@@ -62,13 +71,63 @@ const PrivacyPage = lazy(() => import('@/pages/settings/PrivacyPage'))
 const SharedLinksPage = lazy(() => import('@/pages/settings/SharedLinksPage'))
 const AboutPage = lazy(() => import('@/pages/settings/AboutPage'))
 
-const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
-const StudentsPage = lazy(() => import('@/pages/teacher/StudentsPage'))
+const loadTeacherDashboard = () => import('@/pages/teacher/TeacherDashboard')
+const loadStudents = () => import('@/pages/teacher/StudentsPage')
+const TeacherDashboard = lazy(loadTeacherDashboard)
+const StudentsPage = lazy(loadStudents)
 const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage'))
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
-const SchedulePage = lazy(() => import('@/pages/teacher/SchedulePage'))
+const loadSchedule = () => import('@/pages/teacher/SchedulePage')
+const SchedulePage = lazy(loadSchedule)
+
+/**
+ * The page being opened starts downloading straight away, alongside
+ * signing in, rather than after it: a lazy page is otherwise only asked
+ * for once the route renders, which waits for the sign-in check and the
+ * profile — a second trip on a phone that the page itself did not need.
+ */
+const OPENING: [RegExp, () => Promise<unknown>][] = [
+  [/^\/student\/?$/, loadStudentDashboard],
+  [/^\/student\/practice\/?$/, loadPracticeLog],
+  [/^\/student\/practice\/progress/, loadPracticeProgress],
+  [/^\/student\/session/, loadSession],
+  [/^\/student\/library/, loadLibrary],
+  [/^\/student\/league/, loadLeague],
+  [/^\/student\/streak/, loadStreak],
+  [/^\/teacher\/?$/, loadTeacherDashboard],
+]
+OPENING.find(([path]) => path.test(window.location.pathname))?.[1]().catch(() => {})
+
+/**
+ * The tabs you are likely to open next, fetched once the app has settled,
+ * so switching to them shows the page at once instead of a spinner.
+ *
+ * One at a time, most likely first: fetched all together they shared the
+ * connection, and the tab you actually tapped arrived later than if
+ * nothing had been fetched at all. Not on a connection the person has
+ * asked to keep light.
+ */
+const NEXT_TABS = {
+  student: [loadPracticeLog, loadPracticeProgress, loadSession, loadLeague, loadStreak, loadLibrary, loadStudentDashboard, loadSettings, loadStudio],
+  teacher: [loadTeacherDashboard, loadStudents, loadSchedule],
+}
+function usePrefetchTabs(role: 'student' | 'teacher' | undefined) {
+  useEffect(() => {
+    if (!role) return
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
+    if (saveData) return
+    let stopped = false
+    const timer = setTimeout(async () => {
+      for (const load of NEXT_TABS[role]) {
+        if (stopped) return
+        await load().catch(() => {})
+      }
+    }, 600)
+    return () => { stopped = true; clearTimeout(timer) }
+  }, [role])
+}
 
 function RouteLoading() {
   return (
@@ -92,6 +151,7 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   useLeagueSync(profile?.role === 'student' ? profile?.uid : undefined, profile?.leagueOptOut, profile?.league?.roomId)
   // Spends a freeze on a missed day and records a finished comeback.
   useStreakUpkeep(profile?.role === 'student' ? profile?.uid : undefined)
+  usePrefetchTabs(profile?.role === 'student' || profile?.role === 'teacher' ? profile.role : undefined)
   return (
     <>
       {children}

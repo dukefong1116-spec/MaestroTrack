@@ -1,6 +1,5 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { doc, setDoc } from 'firebase/firestore'
-import { auth, db, storage } from './config'
+import { auth, db, loadStorage } from './config'
 
 /**
  * Profile photos.
@@ -52,6 +51,7 @@ export async function uploadAvatar(file: File): Promise<string> {
   const problem = checkAvatarFile(file)
   if (problem) throw new Error(problem)
 
+  const { storage, ref, uploadBytes, getDownloadURL } = await loadStorage()
   const objectRef = ref(storage, avatarPath(uid))
   // Stated rather than inferred: the rule matches on contentType, so a blob
   // that arrives with an empty type is refused as a permissions error for
@@ -76,6 +76,7 @@ export async function removeAvatar(): Promise<void> {
   if (!uid) throw new Error('You are not signed in.')
 
   try {
+    const { storage, ref, deleteObject } = await loadStorage()
     await deleteObject(ref(storage, avatarPath(uid)))
   } catch {
     // Already gone, or never uploaded. Clearing the pointer is still right.

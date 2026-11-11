@@ -46,6 +46,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Firestore's Pipeline regex engine, which the app never uses — see
+      // the stub for why it is swapped out.
+      're2js': path.resolve(__dirname, './src/lib/firebase/re2jsStub.js'),
     },
   },
 })

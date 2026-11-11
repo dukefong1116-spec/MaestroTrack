@@ -1,8 +1,7 @@
 import {
   collection, deleteDoc, doc, getDocs, orderBy, query, setDoc, where,
 } from 'firebase/firestore'
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { db, storage } from '@/lib/firebase/config'
+import { db, loadStorage } from '@/lib/firebase/config'
 import { renderOgCard } from './card'
 import type { ShareFields } from './fields'
 
@@ -90,6 +89,7 @@ export async function createShare(
   let image: string | undefined
   try {
     const blob = await renderOgCard(fields)
+    const { storage, ref, uploadBytes, getDownloadURL } = await loadStorage()
     const target = ref(storage, sharePath(ownerId, slug))
     await uploadBytes(target, blob, { contentType: 'image/png' })
     image = await getDownloadURL(target)
@@ -136,6 +136,7 @@ export async function deleteShare(ownerId: string, slug: string): Promise<void> 
   // nothing points at it.
   await deleteDoc(doc(db, COL, slug))
   try {
+    const { storage, ref, deleteObject } = await loadStorage()
     await deleteObject(ref(storage, sharePath(ownerId, slug)))
   } catch {
     // Already gone, or never uploaded. Either way the link is dead.

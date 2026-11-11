@@ -210,9 +210,9 @@ export const useUploadStore = create<UploadState>((set, get) => ({
  */
 async function probeStorage(): Promise<string | undefined> {
   try {
-    const { auth, storage } = await import('@/lib/firebase/config')
+    const { auth, default: app } = await import('@/lib/firebase/config')
     const user = auth.currentUser
-    const bucket = storage.app.options.storageBucket
+    const bucket = app.options.storageBucket
     if (!user || !bucket) return undefined
     const name = `recordings/${user.uid}/.probe-${Date.now()}`
     const res = await fetch(
