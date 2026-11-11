@@ -181,6 +181,18 @@ export default function SessionPage() {
   /** Finish is a two-beat flow now: capture the length, then ask how it went. */
   const [askingConfidence, setAskingConfidence] = useState(false)
   /**
+   * The question is open, right now — synchronously, unlike the state. The
+   * sheet keeps its buttons on screen for a moment while it fades away, and
+   * a tap on Finish in that moment used to land on the invisible "Skip"
+   * underneath it and save the session without asking.
+   */
+  const askingRef = useRef(false)
+  /** The sheet itself, so a dismissal can make it let taps through at once. */
+  const confidenceRef = useRef<HTMLDivElement>(null)
+  const letTapsThrough = (through: boolean) => {
+    if (confidenceRef.current) confidenceRef.current.style.pointerEvents = through ? 'none' : ''
+  }
+  /**
    * Takes the person has decided not to keep, chosen on the way out.
    *
    * A session used to upload every clip it had recorded, and the only way
@@ -260,16 +272,16 @@ export default function SessionPage() {
   // server credits this session no more minutes than really passed since
   // it — see api/_lib/ticket.js. Students only; nobody else has a league.
   const ticketRef = useRef<string | null>(null)
-  const askingRef = useRef(false)
+  const ticketAskingRef = useRef(false)
   const isStudent = profile?.role === 'student'
   useEffect(() => {
     if (!isStudent) return
     let stopped = false
     const fetchTicket = async () => {
-      if (ticketRef.current || askingRef.current || stopped) return
-      askingRef.current = true
+      if (ticketRef.current || ticketAskingRef.current || stopped) return
+      ticketAskingRef.current = true
       try { ticketRef.current = await requestTicket() } catch { /* offline: next minute */ }
-      finally { askingRef.current = false }
+      finally { ticketAskingRef.current = false }
     }
     void fetchTicket()
     const id = setInterval(fetchTicket, 60_000)
@@ -645,11 +657,16 @@ export default function SessionPage() {
     setTool(null)
 
     if (measuredSecRef.current === null) measuredSecRef.current = stopTimer()
+    askingRef.current = true
+    letTapsThrough(false) // reopened mid-fade, it is the same sheet
     setAskingConfidence(true)
   }
 
   /** Tapped Finish by mistake — give the session back, clock intact. */
   function cancelFinish() {
+    if (!askingRef.current) return
+    askingRef.current = false
+    letTapsThrough(true)
     setAskingConfidence(false)
     // Back to "tap Finish" if the tour was waiting on this one.
     if (useTourStore.getState().sub === 'saving') useTourStore.getState().setSub('finish')
@@ -674,6 +691,8 @@ export default function SessionPage() {
 
     answeredRef.current = confidenceRating
     primeAudioContext() // this tap is a gesture too — Safari needs it here
+    askingRef.current = false
+    letTapsThrough(true)
     setAskingConfidence(false)
 
     const uid = profile?.uid ?? user?.uid
@@ -1280,7 +1299,11 @@ export default function SessionPage() {
             key="confidence"
             className="fixed inset-0 z-[55] flex items-end justify-center p-4 sm:items-center"
             initial={{ opacity: 0 }}
+            ref={confidenceRef}
             animate={{ opacity: 1 }}
+            // Leaving, it lets taps through at once (letTapsThrough), to
+            // whatever is really there: the fade must never be a trap over
+            // the Finish button.
             exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
           >
@@ -1390,7 +1413,7 @@ export default function SessionPage() {
                 {CONFIDENCE_CHOICES.map((c) => (
                   <motion.button
                     key={c.value}
-                    onClick={() => void finish(c.value)}
+                    onClick={() => { if (askingRef.current) void finish(c.value) }}
                     disabled={saving}
                     whileTap={{ scale: 0.97 }}
                     className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left"
@@ -1416,7 +1439,7 @@ export default function SessionPage() {
 
               <div className="mt-4 flex items-center justify-center gap-5">
                 <button
-                  onClick={() => void finish(7)}
+                  onClick={() => { if (askingRef.current) void finish(7) }}
                   disabled={saving}
                   className="text-[13px] font-semibold"
                   style={{ color: 'var(--clay-faint)' }}
