@@ -349,6 +349,13 @@ describe("the teacher's reads", () => {
     const waiting = await expectDelivered<unknown[]>((cb) => requests.subscribeStudioRequests(TEACHER, cb))
     expect(waiting, 'the teacher sees it waiting').toHaveLength(1)
     await assertSucceeds(requests.acceptStudioRequest(raised, 'Chen Music'))
+
+    // The student reads when they were let in — the "You've joined" note.
+    as(env.authenticatedContext('loner'), 'loner')
+    expect(await requests.acceptedAt('loner', TEACHER)).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    // Nobody else can read it.
+    asBen()
+    await assertFails(requests.acceptedAt('loner', TEACHER))
   })
 
   it('leaveStudio — a student walking out of their own accord', async () => {

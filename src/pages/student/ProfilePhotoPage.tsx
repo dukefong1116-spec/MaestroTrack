@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, Camera, Image as ImageIcon, ChevronRight } from 'lucide-react'
+import { ChevronLeft, Camera, Image as ImageIcon, ChevronRight, Check } from 'lucide-react'
+import Button from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { uploadAvatar, removeAvatar, AVATAR_ACCEPT_ATTR, checkAvatarFile } from '@/lib/firebase/avatar'
@@ -15,6 +16,9 @@ import type { InstrumentType } from '@/types'
  * picture (`capture`), one that opens the library. On a desktop browser
  * both land in the same file chooser, which is the right fallback — there
  * is no camera to prefer.
+ *
+ * Picking only previews it. Nothing is uploaded until Save — so a wrong
+ * pick, or a change of mind, costs nothing; leaving the page drops it.
  */
 export default function ProfilePhotoPage() {
   const { profile } = useAuth()
@@ -25,11 +29,20 @@ export default function ProfilePhotoPage() {
 
   const [busy, setBusy] = useState<'upload' | 'remove' | null>(null)
   const [error, setError] = useState('')
-  /** Shown while the upload is in flight, so the new face appears at once. */
-  const [preview, setPreview] = useState<string | null>(null)
+  /** Picked but not saved yet: the file, and a local picture of it. */
+  const [pending, setPending] = useState<{ file: File; url: string } | null>(null)
+  const [saved, setSaved] = useState(false)
 
   const uid = profile?.uid
-  const shown = preview ?? profile?.avatar
+  const shown = pending?.url ?? profile?.avatar
+
+  // The local picture is released when it is replaced, saved, or left.
+  useEffect(() => () => { if (pending) URL.revokeObjectURL(pending.url) }, [pending])
+  useEffect(() => {
+    if (!saved) return
+    const t = setTimeout(() => setSaved(false), 2500)
+    return () => clearTimeout(t)
+  }, [saved])
 
   function patchProfile(avatar: string) {
     if (!profile || !uid) return
@@ -46,21 +59,24 @@ export default function ProfilePhotoPage() {
     if (!file) return
 
     setError('')
+    setSaved(false)
     const problem = checkAvatarFile(file)
     if (problem) { setError(problem); return }
+    setPending({ file, url: URL.createObjectURL(file) })
+  }
 
-    const localUrl = URL.createObjectURL(file)
-    setPreview(localUrl)
+  async function onSave() {
+    if (!pending) return
+    setError('')
     setBusy('upload')
     try {
-      const url = await uploadAvatar(file)
+      const url = await uploadAvatar(pending.file)
       patchProfile(url)
-      setPreview(null)
+      setPending(null)
+      setSaved(true)
     } catch (err) {
-      setPreview(null)
       setError(authErrorMessage(err))
     } finally {
-      URL.revokeObjectURL(localUrl)
       setBusy(null)
     }
   }
@@ -71,7 +87,7 @@ export default function ProfilePhotoPage() {
     try {
       await removeAvatar()
       patchProfile('')
-      setPreview(null)
+      setPending(null)
     } catch (err) {
       setError(authErrorMessage(err))
     } finally {
@@ -158,8 +174,15 @@ export default function ProfilePhotoPage() {
             size={132}
             className={busy === 'upload' ? 'opacity-60' : undefined}
           />
-          {busy === 'upload' && (
-            <p className="mt-4 text-[13px] font-medium" style={{ color: 'var(--clay-dim)' }}>Uploading…</p>
+          {pending && (
+            <p className="mt-4 text-[13px] font-medium" style={{ color: 'var(--clay-dim)' }}>
+              {busy === 'upload' ? 'Saving…' : 'Not saved yet'}
+            </p>
+          )}
+          {saved && !pending && (
+            <p className="mt-4 flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)' }}>
+              <Check size={15} /> Photo saved
+            </p>
           )}
         </div>
 
@@ -179,13 +202,19 @@ export default function ProfilePhotoPage() {
         />
       </div>
 
+      {pending && (
+        <Button onClick={onSave} loading={busy === 'upload'} className="mt-4 w-full">
+          Save photo
+        </Button>
+      )}
+
       {error && (
         <p className="mt-4 text-[13px] font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>
       )}
 
       {/* Apart from the panel above: removing is not one of the ways to set
           a photo, and it should not share a surface with them. */}
-      {profile?.avatar ? (
+      {pending ? null : profile?.avatar ? (
         <button
           type="button"
           onClick={onRemove}

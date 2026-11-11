@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 import type { PracticeSession, Piece, Performance, Recording, Message, LessonSlot, Assignment } from '@/types'
+import type { Snapshot } from '@/lib/cache/snapshot'
+
+type SnapshotKey = keyof Snapshot
 
 interface PracticeState {
   sessions: PracticeSession[]
@@ -13,6 +16,14 @@ interface PracticeState {
   assignments: Assignment[]
   /** True after the current user's first practice-session snapshot arrives. */
   sessionsLoaded: boolean
+  /**
+   * Which lists have had their live data. Until then a list may be showing
+   * the saved copy from the last visit (see lib/cache/snapshot) — fine to
+   * look at, never to act on. `sessionsLoaded` is the live one for sessions.
+   */
+  live: Record<SnapshotKey, boolean>
+  /** Fill in, from the saved copy, whatever has not arrived live yet. */
+  hydrate: (snap: Snapshot) => void
   resetUserData: () => void
   setSessions: (sessions: PracticeSession[]) => void
   setPieces: (pieces: Piece[]) => void
@@ -65,17 +76,25 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   lessons: [],
   assignments: [],
   sessionsLoaded: false,
+  live: { sessions: false, pieces: false, assignments: false, lessons: false },
+  hydrate: (snap) => set((s) => ({
+    sessions: s.live.sessions ? s.sessions : snap.sessions,
+    pieces: s.live.pieces ? s.pieces : snap.pieces,
+    assignments: s.live.assignments ? s.assignments : snap.assignments,
+    lessons: s.live.lessons ? s.lessons : snap.lessons,
+  })),
   resetUserData: () => set({
     sessions: [], pieces: [], performances: [], recordings: [], messages: [], lessons: [], assignments: [],
-    sessionsLoaded: false, timerRunning: false, timerStartedAt: null, timerAccumulatedSec: 0,
+    sessionsLoaded: false, live: { sessions: false, pieces: false, assignments: false, lessons: false },
+    timerRunning: false, timerStartedAt: null, timerAccumulatedSec: 0,
   }),
-  setSessions: (sessions) => set({ sessions, sessionsLoaded: true }),
-  setPieces: (pieces) => set({ pieces }),
+  setSessions: (sessions) => set((s) => ({ sessions, sessionsLoaded: true, live: { ...s.live, sessions: true } })),
+  setPieces: (pieces) => set((s) => ({ pieces, live: { ...s.live, pieces: true } })),
   setPerformances: (performances) => set({ performances }),
   setRecordings: (recordings) => set({ recordings }),
   setMessages: (messages) => set({ messages }),
-  setLessons: (lessons) => set({ lessons }),
-  setAssignments: (assignments) => set({ assignments }),
+  setLessons: (lessons) => set((s) => ({ lessons, live: { ...s.live, lessons: true } })),
+  setAssignments: (assignments) => set((s) => ({ assignments, live: { ...s.live, assignments: true } })),
   addSession: (session) => set((s) => ({ sessions: prepend(s.sessions, session) })),
   addPiece: (piece) => set((s) => ({ pieces: prepend(s.pieces, piece) })),
   addPerformance: (performance) => set((s) => ({ performances: prepend(s.performances, performance) })),

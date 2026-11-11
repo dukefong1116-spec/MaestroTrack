@@ -47,7 +47,7 @@ function measure(target: string): Box | null {
 }
 
 export default function TourLayer() {
-  const { profile } = useAuth()
+  const { profile, profileLive } = useAuth()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const pieces = usePracticeStore((s) => s.pieces)
@@ -76,7 +76,9 @@ export default function TourLayer() {
   }), [onboarding?.tour, onboarding?.seen, pathname, sub, pieces, profile?.displayName,
       profile?.role, profile?.teacherId, profile?.studioName, profile?.teacherName, studioStep, compact])
 
-  const show: Show | null = decision.kind === 'show' ? decision.show : null
+  // Only from the server's copy of the profile: the one saved on this
+  // device could be a step behind, and a tap would then write it back.
+  const show: Show | null = profileLive && decision.kind === 'show' ? decision.show : null
 
   // In the tour but somewhere else: back to Today, where it carries on.
   useEffect(() => {

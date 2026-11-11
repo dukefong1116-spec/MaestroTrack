@@ -144,6 +144,8 @@ export interface UserProfile {
   streakRules?: StreakRuleEntry[]
   /** Missed days a comeback brought back (yyyy-MM-dd). */
   streakRepaired?: string[]
+  /** The metronome's tempo when last used — it starts there next time. */
+  metronomeBpm?: number
   /** Badge ids whose unlock animation has already been shown. */
   badgesSeen?: string[]
   /** BadgeId → ISO date, written the first time a badge is seen as won.

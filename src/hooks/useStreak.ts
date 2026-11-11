@@ -57,10 +57,13 @@ const inFlight = new Set<string>()
  */
 export function useStreakUpkeep(uid: string | undefined) {
   const loaded = usePracticeStore((s) => s.sessionsLoaded)
+  // Spending freezes needs the server's own list of them, not the copy
+  // saved on this device.
+  const profileLive = useAuthStore((s) => s.profileLive)
   const streak = useStreak()
 
   useEffect(() => {
-    if (!uid || !loaded) return
+    if (!uid || !loaded || !profileLive) return
     const { setProfile } = useAuthStore.getState()
 
     const spend = freezesToSpend(streak)
@@ -99,5 +102,5 @@ export function useStreakUpkeep(uid: string | undefined) {
         })
         .catch(() => { inFlight.delete(key) })
     }
-  }, [uid, loaded, streak])
+  }, [uid, loaded, profileLive, streak])
 }

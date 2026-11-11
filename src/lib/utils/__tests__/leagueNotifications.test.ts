@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leagueNotifications, applyNotifyPrefs } from '../notifications'
+import { leagueNotifications, applyNotifyPrefs, buildStudentNotifications } from '../notifications'
 import type { LeagueRoom } from '@/types'
 
 const NOW = new Date('2026-11-12T12:00:00.000Z')
@@ -56,5 +56,22 @@ describe('league bell items', () => {
     const result = { week: '2026-W45', roomId: 'r0', fromTier: 1, toTier: 2, rank: 2, of: 9, xp: 300, maestro: false, at: '2026-11-09T08:00:00.000Z' }
     const items = leagueNotifications({ uid: 'me', room: null, result }, NOW)
     expect(applyNotifyPrefs(items, { league: false })).toHaveLength(0)
+  })
+})
+
+describe("you've joined", () => {
+  const joined = { teacherId: 't1', at: '2026-11-11T09:00:00.000Z', studioName: 'Harper Strings' }
+  it('says who let you in, and where', () => {
+    const items = buildStudentNotifications({ assignments: [], lessons: [], joined, teacherName: 'Ms Harper', options: { now: NOW } })
+    expect(items[0]).toMatchObject({ kind: 'studio-joined', title: "You've joined Harper Strings", body: 'Ms Harper accepted your request.', to: '/student/studio' })
+  })
+  it('is not switched off by any Settings category', () => {
+    const items = buildStudentNotifications({ assignments: [], lessons: [], joined, options: { now: NOW } })
+    const off = { assignments: false, feedback: false, lessons: false, league: false, submissions: false }
+    expect(applyNotifyPrefs(items, off)).toHaveLength(1)
+  })
+  it('fades after a month', () => {
+    const later = new Date('2027-01-20T12:00:00.000Z')
+    expect(buildStudentNotifications({ assignments: [], lessons: [], joined, options: { now: later } })).toHaveLength(0)
   })
 })

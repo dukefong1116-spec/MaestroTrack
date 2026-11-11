@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useLeagueStore } from '@/stores/leagueStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
+import { acceptedAt } from '@/lib/firebase/requests'
 import {
   applyNotifyPrefs, buildStudentNotifications, buildTeacherNotifications, unreadCount,
   type AppNotification,
@@ -66,6 +67,8 @@ export function useNotifications(): {
   const leagueResult = profile?.league?.lastResult
   const leagueSeen = profile?.leagueSeen
   const leagueOff = profile?.leagueOptOut
+  const joinedAt = useJoinedAt(isTeacher ? undefined : uid, teacherId)
+  const studioName = profile?.studioName
   const items = useMemo(() => {
     if (!uid) return []
     // Only messages not yet read in the conversation itself: reading them
@@ -78,12 +81,13 @@ export function useNotifications(): {
       : buildStudentNotifications({
           assignments, lessons, options: { now }, teacherName,
           league: uid && !leagueOff ? { uid, room: leagueRoom, result: leagueResult, seenWeek: leagueSeen } : undefined,
+          joined: teacherId && joinedAt ? { teacherId, at: joinedAt, studioName } : undefined,
           messages: studentMessages.filter((m) => m.from === 'teacher' && m.teacherId === teacherId && m.createdAt > (messagesReadAt ?? '')),
         })
     return applyNotifyPrefs(all, notify ?? {})
   }, [uid, isTeacher, assignments, students, requests, lessons, now, notify,
       teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName,
-      leagueRoom, leagueResult, leagueSeen, leagueOff])
+      leagueRoom, leagueResult, leagueSeen, leagueOff, joinedAt, studioName])
 
   const markAllRead = useCallback(() => {
     if (!uid) return
@@ -95,4 +99,27 @@ export function useNotifications(): {
   }, [uid])
 
   return { items, unread: unreadCount(items, readAt), markAllRead }
+}
+
+// One read per student and teacher, however many places show the bell.
+const joinedCache = new Map<string, Promise<string | null>>()
+
+/** When the current teacher accepted you, for the "You've joined" item. */
+function useJoinedAt(uid: string | undefined, teacherId: string | undefined): string | null {
+  const [at, setAt] = useState<string | null>(null)
+  useEffect(() => {
+    setAt(null)
+    if (!uid || !teacherId) return
+    const key = `${uid}|${teacherId}`
+    let p = joinedCache.get(key)
+    if (!p) {
+      // A failed read is forgotten, so the next showing tries again.
+      p = acceptedAt(uid, teacherId).catch(() => { joinedCache.delete(key); return null })
+      joinedCache.set(key, p)
+    }
+    let live = true
+    void p.then((v) => { if (live) setAt(v) })
+    return () => { live = false }
+  }, [uid, teacherId])
+  return at
 }

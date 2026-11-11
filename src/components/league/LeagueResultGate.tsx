@@ -14,10 +14,13 @@ import { useAuth } from '@/hooks/useAuth'
 const LeagueResultMoment = lazy(() => import('./LeagueResultMoment'))
 
 export default function LeagueResultGate() {
-  const { profile } = useAuth()
+  const { profile, profileLive } = useAuth()
   const location = useLocation()
   const result = profile?.league?.lastResult
   const due =
+    // Judged on the server's copy of the profile, not the one saved on
+    // this device, which may not know the week was already seen.
+    profileLive &&
     profile?.role === 'student' &&
     !!result &&
     result.week !== profile.leagueSeen &&

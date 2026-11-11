@@ -18,3 +18,6 @@ createRoot(document.getElementById('root')!).render(
     </AppErrorBoundary>
   </StrictMode>,
 )
+
+// Fetched after the first render, so it never delays the app appearing.
+void import('@/lib/pwa').then((m) => m.startServiceWorker()).catch(() => {})

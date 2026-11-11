@@ -33,13 +33,17 @@ export default function TeacherProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting, dirtyFields } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       displayName: profile?.displayName ?? '',
       studioName: profile?.studioName ?? '',
     },
   })
+  // Field by field, not the whole form at once: an unset instrument reads
+  // as undefined before you touch the form and as '' after, which made the
+  // form look changed when nothing was.
+  const isDirty = Object.keys(dirtyFields).length > 0
 
   async function onSubmit(data: FormData) {
     if (!profile) return
@@ -48,6 +52,8 @@ export default function TeacherProfilePage() {
     try {
       await updateUserProfile(profile.uid, data)
       setProfile({ ...profile, ...data })
+      // What was saved is now the starting point: nothing left to save.
+      reset(data)
       setSaved(true)
     } finally {
       setSaving(false)
@@ -102,7 +108,7 @@ export default function TeacherProfilePage() {
               error={errors.studioName?.message}
               {...register('studioName')}
             />
-            <Button type="submit" loading={isSubmitting || saving}>
+            <Button type="submit" disabled={!isDirty && !saved} loading={isSubmitting || saving}>
               {saved && !saving ? 'Saved' : 'Save'}
             </Button>
           </form>

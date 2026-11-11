@@ -8,6 +8,7 @@ import { useTeacherData } from '@/hooks/useTeacherData'
 import { useLeagueSync } from '@/hooks/useLeagueSync'
 import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
+import StudioJoinedMoment from '@/components/celebration/StudioJoinedMoment'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
@@ -164,6 +165,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       {/* The weekly league's result, the first time you open the app after
           your room's week has ended — from any page. */}
       <LeagueResultGate />
+      {/* "You're in": a teacher accepted you, seen from any page. */}
+      <StudioJoinedMoment />
     </>
   )
 }

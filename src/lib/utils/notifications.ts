@@ -29,6 +29,7 @@ export type NotificationKind =
   | 'league-passed'
   | 'league-last-day'
   | 'league-results'
+  | 'studio-joined'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -52,6 +53,8 @@ export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> 
   submissions: ['submission-received'],
   league: ['league-passed', 'league-last-day', 'league-results'],
   // 'message-new' is absent too: a message is a person talking to you.
+  // So is 'studio-joined': it happens once, and it is the answer to
+  // something you asked for.
   // 'join-request' is deliberately absent, and so stays on whatever the
   // Settings switches say. Somebody is standing at the door: a request
   // nobody is told about is a student who thinks they were ignored. It
@@ -174,12 +177,27 @@ export function buildStudentNotifications(input: {
   teacherName?: string
   /** The weekly league: your open room, and last week's result if unseen. */
   league?: { uid: string; room: LeagueRoom | null; result?: LeagueResult; seenWeek?: string }
+  /** The teacher accepted your request to join: when, and into what. */
+  joined?: { teacherId: string; at: string; studioName?: string }
   options: BuildOptions
 }): AppNotification[] {
-  const { assignments, lessons, messages = [], teacherName } = input
+  const { assignments, lessons, messages = [], teacherName, joined } = input
   const leagueItems = input.league ? leagueNotifications(input.league, input.options.now) : []
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const out: AppNotification[] = []
+
+  if (joined && withinHorizon(joined.at, now, sinceDays)) {
+    out.push({
+      id: `studio:joined:${joined.teacherId}`,
+      kind: 'studio-joined',
+      title: joined.studioName ? `You've joined ${joined.studioName}` : "You've joined the studio",
+      body: teacherName ? `${teacherName} accepted your request.` : 'Your teacher accepted your request.',
+      at: joined.at,
+      to: '/student/studio',
+      priority: 90,
+      sticker: 'users',
+    })
+  }
 
   for (const a of assignments) {
     if (withinHorizon(a.createdAt, now, sinceDays)) {

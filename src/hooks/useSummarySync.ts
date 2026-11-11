@@ -28,7 +28,7 @@ export function summaryWriteError(): string | null {
  * teacher while they wait for the next session to be logged.
  */
 export function useSummarySync() {
-  const { profile } = useAuth()
+  const { profile, profileLive } = useAuth()
   const sessions = usePracticeStore((s) => s.sessions)
   const sessionsLoaded = usePracticeStore((s) => s.sessionsLoaded)
   const lastWritten = useRef<string>('')
@@ -37,6 +37,8 @@ export function useSummarySync() {
 
   useEffect(() => {
     if (!profile?.uid || profile.role !== 'student') return
+    // Not from the copy saved on this device: its streak rules may be old.
+    if (!profileLive) return
     if (lastUid.current !== profile.uid) {
       lastUid.current = profile.uid
       lastWritten.current = ''
@@ -85,5 +87,5 @@ export function useSummarySync() {
       })
   }, [profile?.uid, profile?.role, profile?.displayName, profile?.instrument,
       profile?.teacherId, profile?.streakRules, profile?.streakFreezesUsed,
-      profile?.streakRepaired, sessions, sessionsLoaded])
+      profile?.streakRepaired, sessions, sessionsLoaded, profileLive])
 }

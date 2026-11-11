@@ -55,9 +55,14 @@ export interface Gamification {
  * rather than clobbering.
  */
 export function useGamification(): Gamification {
-  const { profile } = useAuth()
+  const { profile, profileLive } = useAuth()
   const setProfile = useAuthStore((s) => s.setProfile)
   const { sessions, pieces } = usePracticeStore()
+  // Badges are recorded, celebrated and pinned only from live data — not
+  // from the copy saved on this device, which may be a step behind and
+  // would replay a celebration or overwrite a date.
+  const sessionsLoaded = usePracticeStore((s) => s.sessionsLoaded)
+  const dataLive = profileLive && sessionsLoaded
 
   const plan = useMemo(
     () => planOf(profile),
@@ -92,8 +97,8 @@ export function useGamification(): Gamification {
   // prompt is still valid. Answering either way writes the piece id, which
   // removes it from consideration for good.
   const pendingMastery = useMemo(
-    () => findMasteryCandidate(pieces, sessions, masteryPrompted),
-    [pieces, sessions, masteryPrompted]
+    () => (dataLive ? findMasteryCandidate(pieces, sessions, masteryPrompted) : null),
+    [dataLive, pieces, sessions, masteryPrompted]
   )
 
   const queued = useStreakMoments((st) => st.freeze)
@@ -102,7 +107,7 @@ export function useGamification(): Gamification {
 
   // ── queue unseen badges, and stamp when they were won ────────────────
   useEffect(() => {
-    if (!profile?.uid) return
+    if (!profile?.uid || !dataLive) return
 
     // The date goes in the moment the app first sees the badge earned, not
     // when the celebration is dismissed: someone who never comes back still
@@ -130,7 +135,7 @@ export function useGamification(): Gamification {
       const additions = unseen.filter((b) => !known.has(b.id))
       return additions.length ? [...q, ...additions] : q
     })
-  }, [badges, seen, earnedAt, profile?.uid, setProfile])
+  }, [badges, seen, earnedAt, profile?.uid, dataLive, setProfile])
 
   // ── fill the row on Today, so the feature is found at all ────────────
   //
@@ -142,7 +147,7 @@ export function useGamification(): Gamification {
   const pinning = useRef(false)
   useEffect(() => {
     if (pinning.current) return
-    if (!profile?.uid || profile.role === 'teacher') return
+    if (!profile?.uid || profile.role === 'teacher' || !dataLive) return
     if (profile.badgePinsTouched) return
 
     const free = MAX_PINNED - pinned.length
@@ -175,7 +180,7 @@ export function useGamification(): Gamification {
         pinning.current = false
       })
       .catch(() => {})
-  }, [profile?.uid, profile?.role, profile?.badgePinsTouched, pinned, families, setProfile])
+  }, [profile?.uid, profile?.role, profile?.badgePinsTouched, pinned, families, dataLive, setProfile])
 
   function dismissBadge() {
     const shown = badgeQueue[0]

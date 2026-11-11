@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, doc, onSnapshot, query, updateDoc, where, writeBatch,
+  collection, deleteDoc, doc, getDoc, onSnapshot, query, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
 import { auth, db } from './config'
 import { requestId } from './invites'
@@ -106,6 +106,18 @@ export async function declineStudioRequest(request: StudioRequest): Promise<void
 export async function withdrawStudioRequest(studentId: string, teacherId: string): Promise<void> {
   if (auth.currentUser?.uid !== studentId) throw new Error('That request is not yours to withdraw.')
   await deleteDoc(doc(db, REQUESTS, requestId(studentId, teacherId)))
+}
+
+/**
+ * When this student's request to `teacherId` was accepted — what the
+ * "You've joined" notification is dated from. Their own request, which
+ * the rules already let them read. Null if there is none, or not accepted.
+ */
+export async function acceptedAt(studentId: string, teacherId: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, REQUESTS, requestId(studentId, teacherId)))
+  if (!snap.exists()) return null
+  const r = readRequest(snap.id, snap.data())
+  return r.status === 'accepted' ? (r.decidedAt ?? null) : null
 }
 
 /** What a student is waiting on, if anything. */

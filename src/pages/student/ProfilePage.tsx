@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Camera, Check, Mail, KeyRound } from 'lucide-react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,7 +14,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import type { InstrumentType } from '@/types'
+import type { InstrumentType, UserProfile } from '@/types'
 
 const schema = z.object({
   displayName: z.string().min(2, 'Use at least two characters.'),
@@ -83,7 +83,6 @@ function Note({ tone, children }: { tone: 'ok' | 'bad'; children: React.ReactNod
 export default function ProfilePage() {
   const { profile, user } = useAuth()
   const { setProfile } = useAuthStore()
-  const navigate = useNavigate()
 
   const [saving, setSaving] = useState(false)
   /**
@@ -130,15 +129,22 @@ export default function ProfilePage() {
     return () => clearTimeout(t)
   }, [pwDone])
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting, dirtyFields } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: {
-      displayName: profile?.displayName ?? '',
-      instrument: profile?.instrument,
-      experienceLevel: profile?.experienceLevel,
-      weeklyGoalMinutes: profile?.weeklyGoalMinutes ?? 300,
-    },
+    defaultValues: formValues(profile),
   })
+  // Field by field, not the whole form at once: an unset instrument reads
+  // as undefined before you touch the form and as '' after, which made the
+  // form look changed when nothing was.
+  const isDirty = Object.keys(dirtyFields).length > 0
+
+  // The profile can arrive after the form first draws (or change on another
+  // device): take it in, unless you are part-way through editing.
+  useEffect(() => {
+    if (!profile || isDirty) return
+    reset(formValues(profile))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.displayName, profile?.instrument, profile?.experienceLevel, profile?.weeklyGoalMinutes])
 
   function closeEmail() {
     setEmailOpen(false)
@@ -162,6 +168,8 @@ export default function ProfilePage() {
       }
       setProfile(updated)
       localStorage.setItem(`maestro_profile_${uid}`, JSON.stringify(updated))
+      // What was saved is now the starting point: nothing left to save.
+      reset(data)
       setSaved(true)
     } catch (e) {
       setSaveError(authErrorMessage(e))
@@ -313,21 +321,20 @@ export default function ProfilePage() {
       {emailDone && <Note tone="ok">{emailDone}</Note>}
       {pwDone && <Note tone="ok"><Check size={13} className="mr-1 inline" />{pwDone}</Note>}
 
-      {/* The one save on this screen. */}
+      {/* The one save on this screen — only once there is something to
+          save. No Cancel: the back arrow already leaves without saving. */}
       <div className="mt-6 flex gap-3">
         <Button
           type="submit"
           form="profile-details"
           className="flex-1"
+          disabled={!isDirty && !saved}
           loading={isSubmitting || saving}
           // The label carries the result, because the button is where
           // you are already looking when you press it.
           style={saved ? { background: 'var(--clay-success-fg)', color: '#FFFFFF' } : undefined}
         >
           {saved ? <><Check size={16} /> Saved</> : 'Save changes'}
-        </Button>
-        <Button variant="outline" onClick={() => navigate('/student/settings')}>
-          Cancel
         </Button>
       </div>
 
@@ -404,4 +411,18 @@ export default function ProfilePage() {
       </Modal>
     </div>
   )
+}
+
+/**
+ * The form's starting values. An unset instrument or level starts as the
+ * option the dropdown shows anyway (its first), so an untouched form is
+ * never counted as changed.
+ */
+function formValues(profile: UserProfile | null | undefined): FormData {
+  return {
+    displayName: profile?.displayName ?? '',
+    instrument: (profile?.instrument as InstrumentType | undefined) ?? INSTRUMENT_LIST[0],
+    experienceLevel: profile?.experienceLevel ?? 'beginner',
+    weeklyGoalMinutes: profile?.weeklyGoalMinutes ?? 300,
+  }
 }

@@ -3,7 +3,7 @@ import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile 
 import { useAuthStore } from '@/stores/authStore'
 
 export function useAuthInit() {
-  const { setUser, setProfile, setLoading } = useAuthStore()
+  const { setUser, setProfile, setLoading, setProfileLive } = useAuthStore()
 
   useEffect(() => {
     let generation = 0
@@ -15,9 +15,19 @@ export function useAuthInit() {
     const unsub = onAuthChange(async (user) => {
       const currentGeneration = ++generation
       dropProfileWatch()
+      setProfileLive(false)
       setLoading(true)
       setUser(user)
       if (user) {
+        // The copy saved on this device last visit, shown at once so the
+        // app opens without waiting on the network. The server's copy
+        // replaces it below; until then profileLive stays false and
+        // nothing writes on its own.
+        const saved = savedProfile(user.uid)
+        if (saved) {
+          setProfile(saved)
+          setLoading(false)
+        }
         try {
           let profile = await getUserProfile(user.uid)
           console.log('[Auth] Firestore profile:', profile)
@@ -63,7 +73,10 @@ export function useAuthInit() {
           if (currentGeneration !== generation) return
           localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(profile))
           localStorage.setItem(`maestro_role_${user.uid}`, profile.role)
-          if (currentGeneration === generation) setProfile(profile)
+          if (currentGeneration === generation) {
+            setProfile(profile)
+            setProfileLive(true)
+          }
 
           // From here it stays live. The read above is what handles a
           // missing document; this is what notices somebody else changing
@@ -75,11 +88,13 @@ export function useAuthInit() {
               localStorage.setItem(`maestro_profile_${user.uid}`, JSON.stringify(fresh))
               localStorage.setItem(`maestro_role_${user.uid}`, fresh.role)
               setProfile(fresh)
+              setProfileLive(true)
             })
           }
         } catch (e) {
           console.error('[Auth] Failed to load Firestore profile:', e)
-          if (currentGeneration === generation) setProfile(null)
+          // Offline with a saved copy: keep showing it (still not live).
+          if (currentGeneration === generation && !saved) setProfile(null)
         } finally {
           if (currentGeneration === generation) setLoading(false)
         }
@@ -94,7 +109,19 @@ export function useAuthInit() {
       dropProfileWatch()
       unsub()
     }
-  }, [setUser, setProfile, setLoading])
+  }, [setUser, setProfile, setLoading, setProfileLive])
+}
+
+/** The profile saved on this device, if it is whole enough to show. */
+function savedProfile(uid: string): import('@/types').UserProfile | null {
+  try {
+    const raw = localStorage.getItem(`maestro_profile_${uid}`)
+    if (!raw) return null
+    const p = JSON.parse(raw) as import('@/types').UserProfile
+    return p && p.uid === uid && (p.role === 'student' || p.role === 'teacher') ? p : null
+  } catch {
+    return null
+  }
 }
 
 export function useAuth() {

@@ -28,6 +28,20 @@
       })();
     </script>
     <title>MaestroTrack — Practice Intelligence for Musicians</title>
+    <!--
+      The secure connections to Firebase are set up while the app's code
+      is still downloading, instead of after: sign-in, then the database.
+    -->
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <!-- Installed to the Home Screen: its own icon, full screen. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MaestroTrack" />
   </head>
   <body style="margin:0;">
     <div id="root"></div>

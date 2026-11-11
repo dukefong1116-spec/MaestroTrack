@@ -1,3 +1,4 @@
+/// <reference types="vite-plugin-pwa/client" />
 /// <reference types="vite/client" />
 
 /** Injected by vite.config.ts `define`, so the version is never retyped. */

@@ -1,3 +1,4 @@
+import { clearSnapshots } from '@/lib/cache/snapshot'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -71,6 +72,8 @@ export async function signIn(email: string, password: string): Promise<User> {
 
 export async function logOut(): Promise<void> {
   await signOut(auth)
+  // The saved copy of Today goes with you (see lib/cache/snapshot).
+  await clearSnapshots()
 }
 
 export async function resetPassword(email: string): Promise<void> {

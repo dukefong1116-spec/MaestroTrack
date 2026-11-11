@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
+import { recentOpenTimes } from '@/lib/utils/openTimes'
 import licenses from '@/generated/licenses.json'
 
 const SUPPORT_EMAIL = 'support@maestrotrack.app'
@@ -65,6 +66,8 @@ export default function AboutPage() {
   const { profile } = useAuth()
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const isTeacher = profile?.role === 'teacher'
+  // Read once: how quickly Today appeared on this device, latest first.
+  const [opens] = useState(recentOpenTimes)
 
   // The first-run tour again, from the top — skippable this time, since
   // they asked for it rather than being new.
@@ -123,6 +126,12 @@ export default function AboutPage() {
         </Block>
         <FactRow label="Version" value={__APP_VERSION__} />
         <FactRow label="Built" value={__BUILD_DATE__} />
+        {opens.length > 0 && (
+          <FactRow
+            label="Today opened in"
+            value={opens.map((t) => `${(t.shown / 1000).toFixed(1)}s${t.live ? ` (live ${(t.live / 1000).toFixed(1)}s)` : ''}`).join(' · ')}
+          />
+        )}
 
         <button
           type="button"

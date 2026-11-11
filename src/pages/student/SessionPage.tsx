@@ -26,6 +26,7 @@ import { useLeagueStore, type Climb } from '@/stores/leagueStore'
 import { useTour } from '@/hooks/useTour'
 import { useTourStore } from '@/stores/tourStore'
 import { useAuthStore } from '@/stores/authStore'
+import { updateUserProfile } from '@/lib/firebase/teacher'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
 import ShareSheet from '@/components/share/ShareSheet'
 import { useStreak } from '@/hooks/useStreak'
@@ -332,7 +333,31 @@ export default function SessionPage() {
   const savingSplit: CategoryMinutes = apportion(liveSecByCategory, Math.max(1, Math.round(elapsedSec / 60)))
 
   /* ── metronome ─────────────────────────────────────────── */
-  const [bpm, setBpm] = useState(92)
+  // Starts at the tempo you last used, kept on your account so it follows
+  // you between devices. Saved a moment after you stop changing it.
+  const savedBpm = validBpm(profile?.metronomeBpm)
+  const [bpm, setBpmState] = useState(() => savedBpm ?? 92)
+  const bpmChosen = useRef(false)
+  const setBpm = useCallback((next: number) => {
+    bpmChosen.current = true
+    setBpmState(next)
+  }, [])
+  // The profile can arrive after the page opens: take its tempo, unless
+  // you have already picked one here.
+  useEffect(() => {
+    if (!bpmChosen.current && savedBpm !== null) setBpmState(savedBpm)
+  }, [savedBpm])
+  const unsavedBpm = useRef<{ uid: string; bpm: number } | null>(null)
+  useEffect(() => {
+    if (!bpmChosen.current) return
+    const uid = profile?.uid
+    if (!uid || bpm === savedBpm) return
+    unsavedBpm.current = { uid, bpm }
+    const t = setTimeout(() => saveBpm(unsavedBpm), 1200)
+    return () => clearTimeout(t)
+  }, [bpm, savedBpm, profile?.uid])
+  // Leaving straight after changing it still keeps it.
+  useEffect(() => () => saveBpm(unsavedBpm), [])
   const [metroOn, setMetroOn] = useState(false)
   const [beat, setBeat] = useState(-1)
   const metroRef = useRef<Metronome | null>(null)
@@ -368,7 +393,7 @@ export default function SessionPage() {
   const handleTap = useCallback(() => {
     const next = tapRef.current.tap()
     if (next) setBpm(next)
-  }, [])
+  }, [setBpm])
 
   /* ── tuner ─────────────────────────────────────────────── */
   const [reading, setReading] = useState<PitchReading | null>(null)
@@ -1530,4 +1555,23 @@ export default function SessionPage() {
       </AnimatePresence>
     </motion.div>
   )
+}
+
+/** A tempo the metronome can play, or null. */
+function validBpm(v: unknown): number | null {
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 30 && n <= 240 ? Math.round(n) : null
+}
+
+/** Saves the tempo waiting in `pending`, if any, and clears it. */
+function saveBpm(pending: { current: { uid: string; bpm: number } | null }) {
+  const next = pending.current
+  if (!next) return
+  pending.current = null
+  void updateUserProfile(next.uid, { metronomeBpm: next.bpm })
+    .then(() => {
+      const latest = useAuthStore.getState().profile
+      if (latest?.uid === next.uid) useAuthStore.getState().setProfile({ ...latest, metronomeBpm: next.bpm })
+    })
+    .catch(() => { /* the next change tries again; the tempo itself still works */ })
 }

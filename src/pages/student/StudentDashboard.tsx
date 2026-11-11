@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
 import { getTheme } from '@/lib/utils/instruments'
-import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import AssignmentCard from '@/components/assignments/AssignmentCard'
 import SubmitSheet from '@/components/assignments/SubmitSheet'
 import { useAssignments } from '@/hooks/useAssignments'
@@ -24,6 +23,7 @@ import ProgressRing from '@/components/ui/ProgressRing'
 import Avatar from '@/components/profile/Avatar'
 import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import { useStreak } from '@/hooks/useStreak'
+import { markTodayShown, markTodayLive } from '@/lib/utils/openTimes'
 import { dowOf, freezesToSpend } from '@/lib/streak/engine'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
 
@@ -56,6 +56,14 @@ export default function StudentDashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
   const { sessions } = usePracticeStore()
+  const sessionsLive = usePracticeStore((s) => s.sessionsLoaded)
+
+  // The real opening time on this phone, readable in Settings › About.
+  const hasSomething = sessions.length > 0 || sessionsLive
+  useEffect(() => {
+    if (hasSomething) markTodayShown()
+    if (sessionsLive) markTodayLive()
+  }, [hasSomething, sessionsLive])
   const game = useGamification()
   const live = useStreak()
   const flameState: FlameState = live.todayLit ? 'lit' : live.flameFrozen ? 'frozen' : 'unlit'
@@ -92,11 +100,9 @@ export default function StudentDashboard() {
   const nudges = usePracticeNudges(3)
   const [opened, setOpened] = useState<Assignment | null>(null)
 
-  const [lessonSlots, setLessonSlots] = useState<LessonSlot[]>([])
-  useEffect(() => {
-    if (!profile?.uid) return
-    return subscribeStudentSchedule(profile.uid, setLessonSlots)
-  }, [profile?.uid])
+  // The one schedule listener the whole app shares (useStudentData), which
+  // also means it shows from the saved copy at once.
+  const lessonSlots: LessonSlot[] = usePracticeStore((s) => s.lessons)
   const nextLesson = lessonSlots.length > 0
     ? lessonSlots.slice().sort((a, b) => {
         const today = new Date().getDay()
