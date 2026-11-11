@@ -1,4 +1,6 @@
 import { Suspense, lazy, useEffect } from 'react'
+import { lazyPage } from '@/lib/lazyPage'
+import { setOpeningPage } from '@/lib/openingPage'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
@@ -38,26 +40,35 @@ const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
-const loadStudentDashboard = () => import('@/pages/student/StudentDashboard')
-const loadPracticeLog = () => import('@/pages/student/PracticeLogPage')
-const loadSession = () => import('@/pages/student/SessionPage')
-const loadLibrary = () => import('@/pages/student/LibraryPage')
-const loadPracticeProgress = () => import('@/pages/student/PracticeProgressPage')
-const loadLeague = () => import('@/pages/student/LeaguePage')
-const loadStreak = () => import('@/pages/student/StreakPage')
-const loadStudio = () => import('@/pages/student/StudioPage')
-const StudentDashboard = lazy(loadStudentDashboard)
-const PracticeLogPage = lazy(loadPracticeLog)
-const SessionPage = lazy(loadSession)
-const LibraryPage = lazy(loadLibrary)
-const PracticeProgressPage = lazy(loadPracticeProgress)
-const LeaguePage = lazy(loadLeague)
-const StreakPage = lazy(loadStreak)
-const StudioPage = lazy(loadStudio)
+const loadStudentDashboardPage = lazyPage(() => import('@/pages/student/StudentDashboard'))
+const loadStudentDashboard = loadStudentDashboardPage.load
+const loadPracticeLogPage = lazyPage(() => import('@/pages/student/PracticeLogPage'))
+const loadPracticeLog = loadPracticeLogPage.load
+const loadSessionPage = lazyPage(() => import('@/pages/student/SessionPage'))
+const loadSession = loadSessionPage.load
+const loadLibraryPage = lazyPage(() => import('@/pages/student/LibraryPage'))
+const loadLibrary = loadLibraryPage.load
+const loadPracticeProgressPage = lazyPage(() => import('@/pages/student/PracticeProgressPage'))
+const loadPracticeProgress = loadPracticeProgressPage.load
+const loadLeaguePage = lazyPage(() => import('@/pages/student/LeaguePage'))
+const loadLeague = loadLeaguePage.load
+const loadStreakPage = lazyPage(() => import('@/pages/student/StreakPage'))
+const loadStreak = loadStreakPage.load
+const loadStudioPage = lazyPage(() => import('@/pages/student/StudioPage'))
+const loadStudio = loadStudioPage.load
+const StudentDashboard = loadStudentDashboardPage.Page
+const PracticeLogPage = loadPracticeLogPage.Page
+const SessionPage = loadSessionPage.Page
+const LibraryPage = loadLibraryPage.Page
+const PracticeProgressPage = loadPracticeProgressPage.Page
+const LeaguePage = loadLeaguePage.Page
+const StreakPage = loadStreakPage.Page
+const StudioPage = loadStudioPage.Page
 const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
 const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
-const loadSettings = () => import('@/pages/student/SettingsPage')
-const SettingsPage = lazy(loadSettings)
+const loadSettingsPage = lazyPage(() => import('@/pages/student/SettingsPage'))
+const loadSettings = loadSettingsPage.load
+const SettingsPage = loadSettingsPage.Page
 const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
 
@@ -72,16 +83,19 @@ const PrivacyPage = lazy(() => import('@/pages/settings/PrivacyPage'))
 const SharedLinksPage = lazy(() => import('@/pages/settings/SharedLinksPage'))
 const AboutPage = lazy(() => import('@/pages/settings/AboutPage'))
 
-const loadTeacherDashboard = () => import('@/pages/teacher/TeacherDashboard')
-const loadStudents = () => import('@/pages/teacher/StudentsPage')
-const TeacherDashboard = lazy(loadTeacherDashboard)
-const StudentsPage = lazy(loadStudents)
+const loadTeacherDashboardPage = lazyPage(() => import('@/pages/teacher/TeacherDashboard'))
+const loadTeacherDashboard = loadTeacherDashboardPage.load
+const loadStudentsPage = lazyPage(() => import('@/pages/teacher/StudentsPage'))
+const loadStudents = loadStudentsPage.load
+const TeacherDashboard = loadTeacherDashboardPage.Page
+const StudentsPage = loadStudentsPage.Page
 const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage'))
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
-const loadSchedule = () => import('@/pages/teacher/SchedulePage')
-const SchedulePage = lazy(loadSchedule)
+const loadSchedulePage = lazyPage(() => import('@/pages/teacher/SchedulePage'))
+const loadSchedule = loadSchedulePage.load
+const SchedulePage = loadSchedulePage.Page
 
 /**
  * The page being opened starts downloading straight away, alongside
@@ -99,7 +113,12 @@ const OPENING: [RegExp, () => Promise<unknown>][] = [
   [/^\/student\/streak/, loadStreak],
   [/^\/teacher\/?$/, loadTeacherDashboard],
 ]
-OPENING.find(([path]) => path.test(window.location.pathname))?.[1]().catch(() => {})
+/**
+ * Ready when the page being opened has its code — main.tsx waits on it
+ * (briefly) before the first draw, so that page appears at once, with no
+ * spinner in between.
+ */
+setOpeningPage(OPENING.find(([path]) => path.test(window.location.pathname))?.[1]().catch(() => {}) ?? Promise.resolve())
 
 /**
  * The tabs you are likely to open next, fetched once the app has settled,

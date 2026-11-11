@@ -41,7 +41,10 @@ export function useSummarySync() {
     if (!profileLive) return
     if (lastUid.current !== profile.uid) {
       lastUid.current = profile.uid
-      lastWritten.current = ''
+      // What this device last wrote successfully, remembered across opens:
+      // without it every open rewrote an unchanged summary, competing with
+      // the live data for the connection just as the app was starting.
+      lastWritten.current = readWritten(profile.uid)
     }
     // Nothing loaded yet — writing now would publish an empty summary over
     // a good one.
@@ -71,8 +74,9 @@ export function useSummarySync() {
     lastWritten.current = fingerprint
 
     writeQueue.current = writeQueue.current.catch(() => {}).then(() => writeSummaries(studio, summary))
+    const uid = profile.uid
     void writeQueue.current
-      .then(() => { lastError = null })
+      .then(() => { lastError = null; saveWritten(uid, fingerprint) })
       .catch((err: { code?: string }) => {
         // Swallowing this was wrong. A denied write means a teacher sees an
         // empty page and neither of us can tell why — practice is still
@@ -84,8 +88,17 @@ export function useSummarySync() {
           'rules have not been published yet.'
         )
         lastWritten.current = ''
+        saveWritten(uid, '')
       })
   }, [profile?.uid, profile?.role, profile?.displayName, profile?.instrument,
       profile?.teacherId, profile?.streakRules, profile?.streakFreezesUsed,
       profile?.streakRepaired, sessions, sessionsLoaded, profileLive])
+}
+
+const WRITTEN = (uid: string) => `maestro_summary_written_${uid}`
+function readWritten(uid: string): string {
+  try { return localStorage.getItem(WRITTEN(uid)) ?? '' } catch { return '' }
+}
+function saveWritten(uid: string, fingerprint: string) {
+  try { localStorage.setItem(WRITTEN(uid), fingerprint) } catch { /* unavailable: it just writes again */ }
 }
