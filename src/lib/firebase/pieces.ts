@@ -7,11 +7,10 @@ import {
   query,
   where,
   getDocs,
-  onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import type { Piece } from '@/types'
 
 const COL = 'pieces'
@@ -45,7 +44,7 @@ export async function getPieces(userId: string): Promise<Piece[]> {
 
 export function subscribePieces(userId: string, callback: (pieces: Piece[]) => void): Unsubscribe {
   const q = query(collection(db, COL), where('userId', '==', userId))
-  return onSnapshot(q, (snap) => {
+  return onServerSnapshot(q, (snap) => {
     const sorted = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as Piece)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))

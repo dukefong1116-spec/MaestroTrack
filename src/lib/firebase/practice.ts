@@ -9,10 +9,10 @@ import {
   orderBy,
   limit,
   getDocs,
-  onSnapshot,
   type Unsubscribe,
   Timestamp,
 } from 'firebase/firestore'
+import { onServerSnapshot } from './snapshotError'
 import { db } from './config'
 import { cleanForFirestore } from './clean'
 import { withStoredDay } from './storedDay'
@@ -92,7 +92,7 @@ export function subscribePracticeSessions(
    * and trims client-side — more bandwidth, but a working app beats a
    * fast empty one.
    */
-  const primary = onSnapshot(
+  const primary = onServerSnapshot(
     query(collection(db, COL), where('userId', '==', userId), orderBy('date', 'desc'), limit(max)),
     (snap) => callback(toSessions(snap)),
     (err) => {
@@ -101,7 +101,7 @@ export function subscribePracticeSessions(
         'If this is failed-precondition, the console error above carries a link that ' +
         'creates the missing index.', err.code
       )
-      fallback = onSnapshot(
+      fallback = onServerSnapshot(
         query(collection(db, COL), where('userId', '==', userId)),
         (snap) => callback(toSessions(snap).slice(0, max)),
         (e) => console.error('[sessions] could not read practice sessions at all:', e.code)

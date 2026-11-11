@@ -1,4 +1,4 @@
-import type { Assignment, LessonSlot, Piece, PracticeSession } from '@/types'
+import type { Assignment, LessonSlot, Message, Performance, Piece, PracticeSession, Recording } from '@/types'
 
 /**
  * The last thing you saw, kept on this device, so opening the app shows
@@ -12,24 +12,36 @@ import type { Assignment, LessonSlot, Piece, PracticeSession } from '@/types'
  * them saved, and this must never do the same. See useStudentData for
  * where it is read and kept up to date.
  *
- * One record per account, in IndexedDB (larger and off the main thread,
- * unlike localStorage). Cleared on sign-out. Any failure — private mode,
- * storage full, an old shape — just means starting without it.
+ * A few records per account — a student's lists, their league, a
+ * teacher's studio — in IndexedDB (larger and off the main thread, unlike
+ * localStorage). Cleared on sign-out. Any failure — private mode, storage
+ * full, an old shape — just means starting without it.
  */
 
+/** A student's own lists: everything their pages read. */
 export interface Snapshot {
   sessions: PracticeSession[]
   pieces: Piece[]
   assignments: Assignment[]
   lessons: LessonSlot[]
+  performances: Performance[]
+  recordings: Recording[]
+  messages: Message[]
+}
+
+/** Which record: a student's lists by uid alone, the rest by a suffix. */
+export const snapshotKey = {
+  student: (uid: string) => uid,
+  league: (uid: string) => `${uid}:league`,
+  teacher: (uid: string) => `${uid}:teacher`,
 }
 
 const DB = 'maestro-snapshot'
 const STORE = 'snapshots'
 /** Bump when the shape changes; older records are then ignored. */
-const VERSION = 1
+const VERSION = 2
 
-interface Row { v: number; savedAt: number; data: Snapshot }
+interface Row<T> { v: number; savedAt: number; data: T }
 
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -50,20 +62,20 @@ function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<
   }))
 }
 
-export async function readSnapshot(uid: string): Promise<Snapshot | null> {
+export async function readSnapshot<T = Snapshot>(key: string): Promise<T | null> {
   try {
-    const row = await run<Row | undefined>('readonly', (s) => s.get(uid) as IDBRequest<Row | undefined>)
-    if (!row || row.v !== VERSION || !row.data || !Array.isArray(row.data.sessions)) return null
+    const row = await run<Row<T> | undefined>('readonly', (s) => s.get(key) as IDBRequest<Row<T> | undefined>)
+    if (!row || row.v !== VERSION || !row.data || typeof row.data !== 'object') return null
     return row.data
   } catch {
     return null
   }
 }
 
-export async function writeSnapshot(uid: string, data: Snapshot): Promise<void> {
+export async function writeSnapshot<T = Snapshot>(key: string, data: T): Promise<void> {
   try {
-    const row: Row = { v: VERSION, savedAt: Date.now(), data }
-    await run('readwrite', (s) => s.put(row, uid))
+    const row: Row<T> = { v: VERSION, savedAt: Date.now(), data }
+    await run('readwrite', (s) => s.put(row, key))
   } catch {
     // Full, private, or unavailable: the next open is simply not instant.
   }

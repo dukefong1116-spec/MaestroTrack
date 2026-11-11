@@ -4,7 +4,7 @@ import type { PracticeSession } from '@/types'
 
 /** The saved copy fills in what has not arrived live — never the reverse. */
 const S = (id: string) => ({ id, userId: 'u', date: '2026-11-10', durationMinutes: 20 }) as PracticeSession
-const snap = { sessions: [S('old')], pieces: [], assignments: [], lessons: [] }
+const snap = { sessions: [S('old')], pieces: [], assignments: [], lessons: [], performances: [], recordings: [], messages: [] }
 
 describe('saved copy vs live data', () => {
   beforeEach(() => usePracticeStore.getState().resetUserData())

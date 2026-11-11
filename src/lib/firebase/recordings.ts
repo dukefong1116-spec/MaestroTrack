@@ -10,7 +10,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db, auth, loadStorage } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import { withStoredDay } from './storedDay'
 import type { Recording } from '@/types'
@@ -56,6 +56,7 @@ export async function uploadRecording(
   // when the Firestore doc is missing and can therefore drift. If the two
   // ever disagree the upload is rejected as unauthorized, with nothing to
   // indicate why.
+  await auth.authStateReady()
   const authUid = auth.currentUser?.uid
   if (!authUid) throw Object.assign(new Error('Not signed in'), { code: 'storage/unauthenticated' })
   if (authUid !== userId) {
@@ -208,7 +209,7 @@ export function subscribeRecordings(
   callback: (recordings: Recording[]) => void
 ): Unsubscribe {
   const q = query(collection(db, COL), where('userId', '==', userId))
-  return onSnapshot(q, (snap) => {
+  return onServerSnapshot(q, (snap) => {
     // Settled here, before anything sorts or reads it — see storedDay.
     const sorted = snap.docs
       .map((d) => withStoredDay<Recording>(d.id, d.data(), 'recordings'))

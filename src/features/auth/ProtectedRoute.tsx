@@ -9,13 +9,13 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, provisional } = useAuth()
 
   if (loading) return <AppSkeleton />
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user && !provisional) return <Navigate to="/login" replace />
 
-  const cachedRole = localStorage.getItem(`maestro_role_${user.uid}`)
+  const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const effectiveRole = profile?.role ?? cachedRole
 
   if (role && effectiveRole && effectiveRole !== role) {

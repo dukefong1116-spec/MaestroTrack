@@ -13,6 +13,13 @@ interface AuthState {
    */
   profileLive: boolean
   setProfileLive: (live: boolean) => void
+  /**
+   * Showing the last account used on this device while Firebase has not
+   * yet said who is signed in. It stands in for `user` at the door (see
+   * ProtectedRoute) and ends the moment Firebase answers, either way.
+   */
+  provisional: boolean
+  setProvisional: (provisional: boolean) => void
   setUser: (user: User | null) => void
   setProfile: (profile: UserProfile | null) => void
   setLoading: (loading: boolean) => void
@@ -24,6 +31,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: true,
   profileLive: false,
   setProfileLive: (profileLive) => set({ profileLive }),
+  provisional: false,
+  setProvisional: (provisional) => set({ provisional }),
   setUser: (user) => set({ user }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),

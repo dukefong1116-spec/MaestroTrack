@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
 import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile } from '@/lib/firebase/auth'
 import { useAuthStore } from '@/stores/authStore'
+import { markOpen } from '@/lib/utils/openTimes'
+import { clearSnapshots } from '@/lib/cache/snapshot'
+
+/** Who was last signed in on this device. Removed on signing out. */
+export const LAST_UID = 'maestro_last_uid'
 
 export function useAuthInit() {
-  const { setUser, setProfile, setLoading, setProfileLive } = useAuthStore()
+  const { setUser, setProfile, setLoading, setProfileLive, setProvisional } = useAuthStore()
 
   useEffect(() => {
     let generation = 0
@@ -12,20 +17,43 @@ export function useAuthInit() {
     let unsubProfile: (() => void) | null = null
     const dropProfileWatch = () => { unsubProfile?.(); unsubProfile = null }
 
+    // Whoever was last signed in here, drawn before Firebase has said a
+    // word: on a phone, finding out means reading Safari's slow local
+    // storage, and everything used to wait for it. Nothing writes on its
+    // own until the server's copy of the profile is in (profileLive), and
+    // if Firebase says nobody is signed in, this ends at the login page.
+    const early = readLastUid()
+    const earlyProfile = early ? savedProfile(early) : null
+    if (earlyProfile) {
+      setProfile(earlyProfile)
+      setProvisional(true)
+      setLoading(false)
+    }
+
     const unsub = onAuthChange(async (user) => {
       const currentGeneration = ++generation
+      markOpen('auth')
       dropProfileWatch()
       setProfileLive(false)
-      setLoading(true)
+      setProvisional(false)
+      const saved = user ? savedProfile(user.uid) : null
+      // Only when there is nothing to show: the app stays up otherwise.
+      if (!saved) setLoading(true)
       setUser(user)
+      try {
+        if (user) localStorage.setItem(LAST_UID, user.uid)
+        else localStorage.removeItem(LAST_UID)
+      } catch { /* storage unavailable: the next open just waits */ }
+      // Drawn from the last account, and Firebase says nobody is signed in
+      // (the session ended): what was saved goes too.
+      if (!user && earlyProfile) void clearSnapshots()
       if (user) {
         // The copy saved on this device last visit, shown at once so the
         // app opens without waiting on the network. The server's copy
         // replaces it below; until then profileLive stays false and
         // nothing writes on its own.
-        const saved = savedProfile(user.uid)
         if (saved) {
-          setProfile(saved)
+          if (useAuthStore.getState().profile?.uid !== user.uid) setProfile(saved)
           setLoading(false)
         }
         try {
@@ -76,6 +104,7 @@ export function useAuthInit() {
           if (currentGeneration === generation) {
             setProfile(profile)
             setProfileLive(true)
+            markOpen('profile')
           }
 
           // From here it stays live. The read above is what handles a
@@ -109,7 +138,15 @@ export function useAuthInit() {
       dropProfileWatch()
       unsub()
     }
-  }, [setUser, setProfile, setLoading, setProfileLive])
+  }, [setUser, setProfile, setLoading, setProfileLive, setProvisional])
+}
+
+function readLastUid(): string | null {
+  try {
+    return localStorage.getItem(LAST_UID)
+  } catch {
+    return null
+  }
 }
 
 /** The profile saved on this device, if it is whole enough to show. */

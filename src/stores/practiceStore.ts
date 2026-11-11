@@ -3,6 +3,8 @@ import type { PracticeSession, Piece, Performance, Recording, Message, LessonSlo
 import type { Snapshot } from '@/lib/cache/snapshot'
 
 type SnapshotKey = keyof Snapshot
+export const SNAPSHOT_KEYS: SnapshotKey[] = ['sessions', 'pieces', 'assignments', 'lessons', 'performances', 'recordings', 'messages']
+const NOT_LIVE = Object.fromEntries(SNAPSHOT_KEYS.map((k) => [k, false])) as Record<SnapshotKey, boolean>
 
 interface PracticeState {
   sessions: PracticeSession[]
@@ -76,23 +78,25 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   lessons: [],
   assignments: [],
   sessionsLoaded: false,
-  live: { sessions: false, pieces: false, assignments: false, lessons: false },
-  hydrate: (snap) => set((s) => ({
-    sessions: s.live.sessions ? s.sessions : snap.sessions,
-    pieces: s.live.pieces ? s.pieces : snap.pieces,
-    assignments: s.live.assignments ? s.assignments : snap.assignments,
-    lessons: s.live.lessons ? s.lessons : snap.lessons,
-  })),
+  live: { ...NOT_LIVE },
+  hydrate: (snap) => set((s) => {
+    const next: Partial<PracticeState> = {}
+    for (const k of SNAPSHOT_KEYS) {
+      // Only what has not arrived live, and only a list the copy really has.
+      if (!s.live[k] && Array.isArray(snap[k])) (next as Record<string, unknown>)[k] = snap[k]
+    }
+    return next
+  }),
   resetUserData: () => set({
     sessions: [], pieces: [], performances: [], recordings: [], messages: [], lessons: [], assignments: [],
-    sessionsLoaded: false, live: { sessions: false, pieces: false, assignments: false, lessons: false },
+    sessionsLoaded: false, live: { ...NOT_LIVE },
     timerRunning: false, timerStartedAt: null, timerAccumulatedSec: 0,
   }),
   setSessions: (sessions) => set((s) => ({ sessions, sessionsLoaded: true, live: { ...s.live, sessions: true } })),
   setPieces: (pieces) => set((s) => ({ pieces, live: { ...s.live, pieces: true } })),
-  setPerformances: (performances) => set({ performances }),
-  setRecordings: (recordings) => set({ recordings }),
-  setMessages: (messages) => set({ messages }),
+  setPerformances: (performances) => set((s) => ({ performances, live: { ...s.live, performances: true } })),
+  setRecordings: (recordings) => set((s) => ({ recordings, live: { ...s.live, recordings: true } })),
+  setMessages: (messages) => set((s) => ({ messages, live: { ...s.live, messages: true } })),
   setLessons: (lessons) => set((s) => ({ lessons, live: { ...s.live, lessons: true } })),
   setAssignments: (assignments) => set((s) => ({ assignments, live: { ...s.live, assignments: true } })),
   addSession: (session) => set((s) => ({ sessions: prepend(s.sessions, session) })),

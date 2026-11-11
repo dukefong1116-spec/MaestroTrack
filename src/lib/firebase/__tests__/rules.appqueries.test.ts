@@ -33,7 +33,7 @@ const live: { db: Firestore | null; uid: string | null } = { db: null, uid: null
 
 vi.mock('../config', () => ({
   get db() { return live.db },
-  get auth() { return { currentUser: live.uid ? { uid: live.uid } : null } },
+  get auth() { return { currentUser: live.uid ? { uid: live.uid } : null, authStateReady: async () => {} } },
   get storage() { return {} },
   loadStorage: async () => ({ ...(await import('firebase/storage')), storage: {} }),
   default: {},

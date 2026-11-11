@@ -44,6 +44,7 @@ async function safeCollect(
 }
 
 export async function buildDataExport(): Promise<ExportResult> {
+  await auth.authStateReady()
   const user = auth.currentUser
   if (!user) throw new Error('You are not signed in.')
   const uid = user.uid

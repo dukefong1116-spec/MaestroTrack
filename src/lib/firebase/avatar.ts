@@ -45,6 +45,7 @@ export function checkAvatarFile(file: File): string | null {
  * recordings upload learned this the hard way.
  */
 export async function uploadAvatar(file: File): Promise<string> {
+  await auth.authStateReady()
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('You are not signed in.')
 
@@ -72,6 +73,7 @@ export async function uploadAvatar(file: File): Promise<string> {
  * order can leave a profile pointing at a file that is no longer there.
  */
 export async function removeAvatar(): Promise<void> {
+  await auth.authStateReady()
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('You are not signed in.')
 

@@ -40,7 +40,10 @@ const EXCUSE: Record<InviteProblem, { title: string; body: string }> = {
 export default function JoinPage() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
-  const { profile, user, loading } = useAuth()
+  const { profile, user, loading: authLoading, provisional } = useAuth()
+  // This page asks whether you are signed in, so it waits for Firebase's
+  // real answer rather than the last account used on this device.
+  const loading = authLoading || provisional
 
   const [invite, setInvite] = useState<StudioInvite | null>(null)
   const [problem, setProblem] = useState<InviteProblem | null>(null)

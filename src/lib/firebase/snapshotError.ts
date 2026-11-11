@@ -1,4 +1,51 @@
-import type { FirestoreError } from 'firebase/firestore'
+import {
+  onSnapshot,
+  type DocumentReference, type DocumentSnapshot, type FirestoreError, type Query, type QuerySnapshot, type Unsubscribe,
+} from 'firebase/firestore'
+
+/**
+ * onSnapshot that only speaks once the server has.
+ *
+ * With no connection, Firestore answers a listener from its memory — and
+ * on a fresh start its memory is empty, so a student with two years of
+ * practice is told, as a fact, that they have none. That blanked the
+ * screen on a weak signal, and overwrote the copy saved on the device with
+ * nothing. So everything before the server's first confirmed answer is
+ * ignored; the saved copy stays on screen until there is something true
+ * to replace it with. After that first answer it behaves as before,
+ * including showing your own writes straight away.
+ *
+ * Metadata events are asked for only to learn when the server confirms a
+ * list that did not change (an empty one, say); on their own, later, they
+ * deliver nothing.
+ */
+export function onServerSnapshot<T>(
+  target: Query<T>, next: (snap: QuerySnapshot<T>) => void, error?: (e: FirestoreError) => void,
+): Unsubscribe
+export function onServerSnapshot<T>(
+  target: DocumentReference<T>, next: (snap: DocumentSnapshot<T>) => void, error?: (e: FirestoreError) => void,
+): Unsubscribe
+export function onServerSnapshot(
+  target: Query | DocumentReference,
+  next: ((snap: QuerySnapshot) => void) | ((snap: DocumentSnapshot) => void),
+  error?: (e: FirestoreError) => void,
+): Unsubscribe {
+  let confirmed = false
+  let lastDoc: string | undefined
+  const deliver = (snap: QuerySnapshot | DocumentSnapshot) => {
+    const first = !confirmed && !snap.metadata.fromCache
+    if (first) confirmed = true
+    if (!confirmed) return
+    if ('docChanges' in snap) {
+      if (first || snap.docChanges().length > 0) (next as (s: QuerySnapshot) => void)(snap)
+      return
+    }
+    const now = JSON.stringify(snap.data() ?? null)
+    if (first || now !== lastDoc) (next as (s: DocumentSnapshot) => void)(snap)
+    lastDoc = now
+  }
+  return onSnapshot(target as Query, { includeMetadataChanges: true }, deliver as (s: QuerySnapshot) => void, error)
+}
 
 /**
  * A subscription that fails silently is indistinguishable from one that

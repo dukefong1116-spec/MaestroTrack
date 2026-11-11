@@ -17,6 +17,7 @@ import { auth } from './config'
  */
 
 async function reauthenticate(currentPassword: string) {
+  await auth.authStateReady()
   const user = auth.currentUser
   if (!user?.email) throw new Error('You are not signed in.')
   const credential = EmailAuthProvider.credential(user.email, currentPassword)

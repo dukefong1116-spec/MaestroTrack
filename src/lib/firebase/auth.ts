@@ -72,7 +72,9 @@ export async function signIn(email: string, password: string): Promise<User> {
 
 export async function logOut(): Promise<void> {
   await signOut(auth)
-  // The saved copy of Today goes with you (see lib/cache/snapshot).
+  // The saved copy of your data goes with you (see lib/cache/snapshot),
+  // and the next open starts at the login page.
+  try { localStorage.removeItem('maestro_last_uid') } catch { /* unavailable */ }
   await clearSnapshots()
 }
 

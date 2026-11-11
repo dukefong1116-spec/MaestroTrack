@@ -13,7 +13,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import type { StreakRuleEntry, TeacherNote, UserProfile } from '@/types'
 const USERS = 'users'
 
@@ -27,7 +27,7 @@ export function subscribeStudents(
     where('role', '==', 'student'),
     where('teacherId', '==', teacherId)
   )
-  return onSnapshot(
+  return onServerSnapshot(
     q,
     (snap) => {
       console.log('[TeacherDashboard] query snapshot size:', snap.size)

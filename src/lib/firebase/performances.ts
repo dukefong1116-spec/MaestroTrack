@@ -6,11 +6,10 @@ import {
   doc,
   query,
   where,
-  onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import type { Performance } from '@/types'
 
 const COL = 'performances'
@@ -40,7 +39,7 @@ export function subscribePerformances(
   callback: (performances: Performance[]) => void
 ): Unsubscribe {
   const q = query(collection(db, COL), where('userId', '==', userId))
-  return onSnapshot(q, (snap) => {
+  return onServerSnapshot(q, (snap) => {
     const sorted = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as Performance)
       .sort((a, b) => a.date.localeCompare(b.date))

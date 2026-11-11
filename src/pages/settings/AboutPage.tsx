@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
-import { recentOpenTimes } from '@/lib/utils/openTimes'
+import { recentOpenTimes, type OpenTime } from '@/lib/utils/openTimes'
 import licenses from '@/generated/licenses.json'
 
 const SUPPORT_EMAIL = 'support@maestrotrack.app'
@@ -60,6 +60,13 @@ function NotWrittenYet({ what }: { what: string }) {
       Replace this before anyone outside testing uses the app.
     </div>
   )
+}
+
+/** "Today 0.4s · sign-in 0.9s · profile 1.2s · live 1.6s" */
+function openLine(t: OpenTime): string {
+  const part = (label: string, ms?: number) => (ms === undefined ? null : `${label} ${(ms / 1000).toFixed(1)}s`)
+  return [part('Today', t.shown), part('sign-in', t.auth), part('profile', t.profile), part('live', t.live)]
+    .filter(Boolean).join(' · ')
 }
 
 export default function AboutPage() {
@@ -126,12 +133,13 @@ export default function AboutPage() {
         </Block>
         <FactRow label="Version" value={__APP_VERSION__} />
         <FactRow label="Built" value={__BUILD_DATE__} />
-        {opens.length > 0 && (
+        {opens.map((t, i) => (
           <FactRow
-            label="Today opened in"
-            value={opens.map((t) => `${(t.shown / 1000).toFixed(1)}s${t.live ? ` (live ${(t.live / 1000).toFixed(1)}s)` : ''}`).join(' · ')}
+            key={t.at}
+            label={i === 0 ? 'Latest open' : `${i + 1} opens ago`}
+            value={openLine(t)}
           />
-        )}
+        ))}
 
         <button
           type="button"

@@ -1,3 +1,4 @@
+import { onServerSnapshot } from './snapshotError'
 import {
   collection, deleteDoc, doc, getDoc, onSnapshot, query, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
@@ -38,7 +39,7 @@ export function subscribeStudioRequests(
     where('teacherId', '==', teacherId),
     where('status', '==', 'pending')
   )
-  return onSnapshot(
+  return onServerSnapshot(
     q,
     (snap) => {
       const rows = snap.docs.map((d) => readRequest(d.id, d.data()))
@@ -70,6 +71,7 @@ export async function acceptStudioRequest(
   studioName?: string,
   teacherName?: string
 ): Promise<void> {
+  await auth.authStateReady()
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('You are not signed in.')
   if (uid !== request.teacherId) throw new Error('That request is not yours to accept.')
@@ -90,6 +92,7 @@ export async function acceptStudioRequest(
 
 /** Turn them away. Nothing is written to their profile. */
 export async function declineStudioRequest(request: StudioRequest): Promise<void> {
+  await auth.authStateReady()
   const uid = auth.currentUser?.uid
   if (!uid) throw new Error('You are not signed in.')
   if (uid !== request.teacherId) throw new Error('That request is not yours to decline.')
@@ -104,6 +107,7 @@ export async function declineStudioRequest(request: StudioRequest): Promise<void
 
 /** A student changing their mind before anyone has answered. */
 export async function withdrawStudioRequest(studentId: string, teacherId: string): Promise<void> {
+  await auth.authStateReady()
   if (auth.currentUser?.uid !== studentId) throw new Error('That request is not yours to withdraw.')
   await deleteDoc(doc(db, REQUESTS, requestId(studentId, teacherId)))
 }
@@ -149,6 +153,7 @@ export function subscribeMyStudioRequest(
  * so this walks out and cannot walk in.
  */
 export async function leaveStudio(studentId: string): Promise<void> {
+  await auth.authStateReady()
   if (auth.currentUser?.uid !== studentId) throw new Error('That is not your studio to leave.')
   await updateDoc(doc(db, USERS, studentId), {
     teacherId: null,

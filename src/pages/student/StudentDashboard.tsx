@@ -23,7 +23,7 @@ import ProgressRing from '@/components/ui/ProgressRing'
 import Avatar from '@/components/profile/Avatar'
 import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import { useStreak } from '@/hooks/useStreak'
-import { markTodayShown, markTodayLive } from '@/lib/utils/openTimes'
+import { markOpen } from '@/lib/utils/openTimes'
 import { dowOf, freezesToSpend } from '@/lib/streak/engine'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
 
@@ -61,8 +61,8 @@ export default function StudentDashboard() {
   // The real opening time on this phone, readable in Settings › About.
   const hasSomething = sessions.length > 0 || sessionsLive
   useEffect(() => {
-    if (hasSomething) markTodayShown()
-    if (sessionsLive) markTodayLive()
+    if (hasSomething) markOpen('shown')
+    if (sessionsLive) markOpen('live')
   }, [hasSomething, sessionsLive])
   const game = useGamification()
   const live = useStreak()

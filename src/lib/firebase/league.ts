@@ -1,4 +1,5 @@
-import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore'
+import { onServerSnapshot } from './snapshotError'
+import { doc, type Unsubscribe } from 'firebase/firestore'
 import { auth, db } from './config'
 import type { LeagueRoom } from '@/types'
 import type { DayLine } from '@/lib/league/rules'
@@ -25,6 +26,7 @@ export interface SyncResult {
 }
 
 async function post<T>(path: string, body: unknown = {}): Promise<T> {
+  await auth.authStateReady()
   const user = auth.currentUser
   if (!user) throw new Error('Not signed in')
   const res = await fetch(path, {
@@ -48,7 +50,7 @@ export function syncLeague(): Promise<SyncResult> {
 }
 
 export function subscribeRoom(roomId: string, cb: (room: LeagueRoom | null) => void): Unsubscribe {
-  return onSnapshot(
+  return onServerSnapshot(
     doc(db, 'leagueRooms', roomId),
     (snap) => cb(snap.exists() ? ({ id: snap.id, ...snap.data() } as LeagueRoom) : null),
     () => cb(null),

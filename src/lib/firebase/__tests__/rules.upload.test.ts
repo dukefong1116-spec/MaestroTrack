@@ -31,7 +31,7 @@ vi.mock('../config', () => ({
   get db() { return live.db },
   get storage() { return live.storage },
   loadStorage: async () => ({ ...(await import('firebase/storage')), storage: live.storage }),
-  get auth() { return { currentUser: live.uid ? { uid: live.uid } : null } },
+  get auth() { return { currentUser: live.uid ? { uid: live.uid } : null, authStateReady: async () => {} } },
   default: {},
 }))
 

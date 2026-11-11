@@ -7,7 +7,8 @@ import { subscribeStudentMessages } from '@/lib/firebase/messages'
 import { subscribeStudentSchedule } from '@/lib/firebase/schedule'
 import { subscribeStudentAssignments } from '@/lib/firebase/assignments'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { readSnapshot, writeSnapshot } from '@/lib/cache/snapshot'
+import { readSnapshot, writeSnapshot, snapshotKey, type Snapshot } from '@/lib/cache/snapshot'
+import { SNAPSHOT_KEYS } from '@/stores/practiceStore'
 
 export function useStudentData(userId: string | undefined) {
   const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData } = usePracticeStore()
@@ -20,7 +21,7 @@ export function useStudentData(userId: string | undefined) {
 
     // What you saw last time, at once — replaced, list by list, as the
     // live data arrives. Display only: see lib/cache/snapshot.
-    void readSnapshot(userId).then((snap) => {
+    void readSnapshot<Snapshot>(snapshotKey.student(userId)).then((snap) => {
       if (active && snap) usePracticeStore.getState().hydrate(snap)
     })
 
@@ -33,15 +34,12 @@ export function useStudentData(userId: string | undefined) {
       if (!active || !unsaved) return
       unsaved = false
       const now = usePracticeStore.getState()
-      void writeSnapshot(userId, {
-        sessions: now.sessions, pieces: now.pieces, assignments: now.assignments, lessons: now.lessons,
-      })
+      const data = Object.fromEntries(SNAPSHOT_KEYS.map((k) => [k, now[k]])) as unknown as Snapshot
+      void writeSnapshot(snapshotKey.student(userId), data)
     }
     const stopSaving = usePracticeStore.subscribe((st, prev) => {
-      const { live } = st
-      if (!live.sessions || !live.pieces || !live.assignments || !live.lessons) return
-      if (st.sessions === prev.sessions && st.pieces === prev.pieces
-        && st.assignments === prev.assignments && st.lessons === prev.lessons) return
+      if (!SNAPSHOT_KEYS.every((k) => st.live[k])) return
+      if (SNAPSHOT_KEYS.every((k) => st[k] === prev[k])) return
       unsaved = true
       clearTimeout(saveTimer)
       saveTimer = setTimeout(save, 1500)

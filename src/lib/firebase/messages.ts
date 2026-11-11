@@ -1,8 +1,8 @@
 import {
-  addDoc, collection, deleteDoc, doc, onSnapshot, query, where, type Unsubscribe,
+  addDoc, collection, deleteDoc, doc, query, where, type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { Message } from '@/types'
 
@@ -32,7 +32,7 @@ export async function deleteMessage(id: string): Promise<void> {
 /** Every message a student is part of, oldest first. */
 export function subscribeStudentMessages(studentId: string, callback: (messages: Message[]) => void): Unsubscribe {
   const q = query(collection(db, COL), where('studentId', '==', studentId))
-  return onSnapshot(q, (snap) => {
+  return onServerSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Message).sort(byTime))
   }, onSnapshotError('messages'))
 }
@@ -40,7 +40,7 @@ export function subscribeStudentMessages(studentId: string, callback: (messages:
 /** Every message a teacher is part of, across all their students, oldest first. */
 export function subscribeTeacherMessages(teacherId: string, callback: (messages: Message[]) => void): Unsubscribe {
   const q = query(collection(db, COL), where('teacherId', '==', teacherId))
-  return onSnapshot(q, (snap) => {
+  return onServerSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Message).sort(byTime))
   }, onSnapshotError('messages'))
 }

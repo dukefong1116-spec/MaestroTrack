@@ -11,7 +11,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError } from './snapshotError'
+import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { Assignment, PracticeCategory, Submission, TeacherFeedback } from '@/types'
 
@@ -49,7 +49,7 @@ export function subscribeStudentAssignments(
   callback: (assignments: Assignment[]) => void
 ): Unsubscribe {
   const q = query(collection(db, COL), where('studentId', '==', studentId))
-  return onSnapshot(q, (snap) =>
+  return onServerSnapshot(q, (snap) =>
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Assignment)), onSnapshotError('assignments'))
 }
 
@@ -140,6 +140,6 @@ export function subscribeTeacherAssignments(
   callback: (assignments: Assignment[]) => void
 ): Unsubscribe {
   const q = query(collection(db, COL), where('teacherId', '==', teacherId))
-  return onSnapshot(q, (snap) =>
+  return onServerSnapshot(q, (snap) =>
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Assignment)), onSnapshotError('assignments'))
 }

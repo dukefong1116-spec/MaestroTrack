@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useLeagueStore } from '@/stores/leagueStore'
-import { subscribeRoom } from '@/lib/firebase/league'
+import { subscribeRoom, type SyncResult } from '@/lib/firebase/league'
+import { readSnapshot, writeSnapshot, snapshotKey } from '@/lib/cache/snapshot'
+import type { LeagueRoom } from '@/types'
+
+interface SavedLeague { result: SyncResult | null; room: LeagueRoom | null }
 
 /**
  * Keeps the weekly league in step with the session log, for a student.
@@ -30,6 +34,28 @@ export function useLeagueSync(uid: string | undefined, optedOut: boolean | undef
 
   useEffect(() => {
     if (!uid) { useLeagueStore.getState().reset(); lastKey = ''; return }
+    // The League tab as you last saw it, at once; the sync and the room's
+    // live listener bring it up to date. Display only, like Today's copy.
+    let active = true
+    void readSnapshot<SavedLeague>(snapshotKey.league(uid)).then((saved) => {
+      if (!active || !saved) return
+      const st = useLeagueStore.getState()
+      if (!st.result && saved.result) useLeagueStore.setState({ result: saved.result })
+      if (!st.room && saved.room) st.setRoom(saved.room)
+    })
+    // Kept from what the server says, a moment after it changes.
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const stop = useLeagueStore.subscribe((st, prev) => {
+      if (st.result === prev.result && st.room === prev.room) return
+      if (!st.result) return
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        if (!active) return
+        const now = useLeagueStore.getState()
+        void writeSnapshot<SavedLeague>(snapshotKey.league(uid), { result: now.result, room: now.room })
+      }, 1500)
+    })
+    return () => { active = false; clearTimeout(timer); stop() }
   }, [uid])
 
   useEffect(() => {

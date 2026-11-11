@@ -73,6 +73,7 @@ export interface NewInvite {
  */
 export async function createInvite(profile: UserProfile): Promise<NewInvite> {
   if (profile.role !== 'teacher') throw new Error('Only a teacher can invite a student.')
+  await auth.authStateReady()
   if (auth.currentUser?.uid !== profile.uid) throw new Error('Sign in again before inviting a student.')
 
   const token = generateInviteToken()
@@ -165,6 +166,7 @@ export async function requestToJoin(
   profile: UserProfile,
   invite: StudioInvite
 ): Promise<StudioRequest> {
+  await auth.authStateReady()
   if (auth.currentUser?.uid !== profile.uid) throw new Error('Sign in again before joining a studio.')
   if (profile.role !== 'student') throw new Error('Only a student account can join a studio.')
   if (profile.teacherId) throw new Error('You are already in a studio. Ask your teacher to remove you first.')
@@ -195,6 +197,7 @@ export async function requestToJoin(
 
 /** Burn an invitation that was sent to the wrong person. */
 export async function revokeInvite(token: string): Promise<void> {
+  await auth.authStateReady()
   if (!auth.currentUser) throw new Error('You are not signed in.')
   const batch = writeBatch(db)
   batch.update(doc(db, INVITES, token), { status: 'revoked', updatedAt: new Date().toISOString() })
