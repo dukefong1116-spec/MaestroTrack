@@ -124,8 +124,8 @@ export default function ShareSheet({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
-      style={{ background: 'rgba(58,48,84,.42)' }}
+      className="fixed inset-0 z-[60] flex items-end justify-center p-2 sm:items-center sm:p-4"
+      style={{ background: 'rgba(58,48,84,.42)', paddingTop: 'max(8px, env(safe-area-inset-top))' }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
@@ -133,21 +133,36 @@ export default function ShareSheet({
         onClick={(e) => e.stopPropagation()}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        className="w-full max-w-[420px] overflow-hidden p-5"
-        style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-lg)' }}
+        // Never taller than the screen: on a phone, with the browser's own
+        // bars taking their share, the sheet used to grow past the top and
+        // take its close button with it — leaving no way out at all. Now it
+        // scrolls inside itself, and the title row with × stays pinned.
+        className="no-scrollbar w-full max-w-[420px] overflow-y-auto overscroll-contain px-5 pb-5"
+        style={{
+          background: 'var(--clay-surface)',
+          borderRadius: 'var(--clay-r-lg)',
+          maxHeight: 'calc(100dvh - 16px - env(safe-area-inset-top))',
+        }}
       >
-        <div className="mb-3 flex items-center justify-between">
+        <div className="sticky top-0 z-10 -mx-5 mb-3 flex items-center justify-between px-5 pb-2 pt-5" style={{ background: 'var(--clay-surface)' }}>
           <h2 className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>
             Share your session
           </h2>
-          <button onClick={onClose} aria-label="Close" style={{ color: 'var(--clay-dim)' }}>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full"
+            style={{ color: 'var(--clay-ink)', background: 'var(--clay-bg)' }}
+          >
             <X size={17} />
           </button>
         </div>
 
         <div
           className="mb-3 flex aspect-[4/5] items-center justify-center overflow-hidden"
-          style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-md)' }}
+          // Shorter on a short screen, so the choices below still fit; the
+          // card inside keeps its own shape (object-contain).
+          style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-md)', maxHeight: '44dvh', marginInline: 'auto' }}
         >
           {error ? (
             <p className="px-6 text-center text-[12px]" style={{ color: 'var(--clay-dim)' }}>{error}</p>
