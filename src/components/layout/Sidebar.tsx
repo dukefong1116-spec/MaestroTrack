@@ -37,7 +37,7 @@ export default function Sidebar() {
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
-  const { inStudio, unreadMessages } = useStudio()
+  const { inStudio, studioAttention } = useStudio()
   const nav = navFor(role, inStudio)
   const { unread } = useNotifications()
 
@@ -125,7 +125,7 @@ export default function Sidebar() {
                 {/* Something on this page wants attention. A dot rather
                     than a number: the count belongs on the bell, and two
                     counts disagreeing is worse than one. */}
-                {((unread > 0 && to === homeFor(role)) || (unreadMessages > 0 && to === studioNav.to)) && (
+                {((unread > 0 && to === homeFor(role)) || (studioAttention > 0 && to === studioNav.to)) && (
                   <span
                     className="ml-auto h-2 w-2 shrink-0 rounded-full"
                     style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent)' }}

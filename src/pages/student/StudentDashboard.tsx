@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sticker from '@/components/stickers/Sticker'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import { nextOccurrence } from '@/lib/utils/notifications'
+import { startOfDay } from 'date-fns'
 import PinnedBadges from '@/components/badges/PinnedBadges'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
@@ -44,12 +46,14 @@ function formatTime(time: string) {
 }
 
 function getNextLessonText(slot: LessonSlot): string {
-  const today = new Date().getDay()
-  let daysUntil = (slot.dayOfWeek - today + 7) % 7
-  if (daysUntil === 0) daysUntil = 7 // next week if today
-  if (daysUntil === 0) return `Today at ${formatTime(slot.startTime)}`
-  if (daysUntil === 1) return `Tomorrow at ${formatTime(slot.startTime)}`
-  return `${DAYS[slot.dayOfWeek]} at ${formatTime(slot.startTime)}`
+  // The real next date, so a lesson moved this week or a one-off from the
+  // studio calendar reads right; a weekly slot comes out as before.
+  const now = new Date()
+  const when = nextOccurrence(slot, now)
+  const days = Math.round((startOfDay(when).getTime() - startOfDay(now).getTime()) / 86_400_000)
+  if (days === 0) return `Today at ${formatTime(slot.startTime)}`
+  if (days === 1) return `Tomorrow at ${formatTime(slot.startTime)}`
+  return `${DAYS[when.getDay()]} at ${formatTime(slot.startTime)}`
 }
 
 export default function StudentDashboard() {
@@ -105,10 +109,8 @@ export default function StudentDashboard() {
   const lessonSlots: LessonSlot[] = usePracticeStore((s) => s.lessons)
   const nextLesson = lessonSlots.length > 0
     ? lessonSlots.slice().sort((a, b) => {
-        const today = new Date().getDay()
-        const da = (a.dayOfWeek - today + 7) % 7 || 7
-        const db = (b.dayOfWeek - today + 7) % 7 || 7
-        return da - db
+        const now = new Date()
+        return nextOccurrence(a, now).getTime() - nextOccurrence(b, now).getTime()
       })[0]
     : null
 

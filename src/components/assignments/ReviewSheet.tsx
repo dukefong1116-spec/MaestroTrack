@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
 import Sticker from '@/components/stickers/Sticker'
 import TakePlayer from '@/components/recordings/TakePlayer'
+import AttachmentList from './AttachmentList'
 import { reviewAssignment } from '@/lib/firebase/assignments'
 import { recordingAudio } from '@/lib/firebase/recordings'
 import { latestSubmission } from '@/lib/utils/assignments'
@@ -71,6 +72,7 @@ export default function ReviewSheet({
         {assignment.description && (
           <p className="mt-3 text-[13px]" style={{ color: 'var(--clay-dim)' }}>{assignment.description}</p>
         )}
+        <AttachmentList files={assignment.attachments} className="mt-3" />
 
         {submission?.minutesAtSubmission != null && (
           <p className="mt-3 flex items-center gap-1.5 text-[12.5px]" style={{ color: 'var(--clay-ink)' }}>

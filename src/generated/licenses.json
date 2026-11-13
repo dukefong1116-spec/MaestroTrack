@@ -174,10 +174,22 @@
     "homepage": "https://vite.dev"
   },
   {
+    "name": "vite-plugin-pwa",
+    "version": "2.0.0",
+    "license": "MIT",
+    "homepage": "https://github.com/vite-pwa/vite-plugin-pwa#readme"
+  },
+  {
     "name": "vitest",
     "version": "3.2.7",
     "license": "MIT",
     "homepage": "https://github.com/vitest-dev/vitest#readme"
+  },
+  {
+    "name": "workbox-window",
+    "version": "7.4.1",
+    "license": "MIT",
+    "homepage": "https://github.com/GoogleChrome/workbox"
   },
   {
     "name": "zod",

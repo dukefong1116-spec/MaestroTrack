@@ -7,6 +7,7 @@ import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
 import { useSummarySync } from '@/hooks/useSummarySync'
 import { useTeacherData } from '@/hooks/useTeacherData'
+import { useStudioUpkeep } from '@/hooks/useStudioData'
 import { useLeagueSync } from '@/hooks/useLeagueSync'
 import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
@@ -93,9 +94,15 @@ const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage')
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
-const loadSchedulePage = lazyPage(() => import('@/pages/teacher/SchedulePage'))
-const loadSchedule = loadSchedulePage.load
-const SchedulePage = loadSchedulePage.Page
+const loadCalendarPage = lazyPage(() => import('@/pages/teacher/CalendarPage'))
+const loadCalendar = loadCalendarPage.load
+const CalendarPage = loadCalendarPage.Page
+const loadReviewPage = lazyPage(() => import('@/pages/teacher/ReviewPage'))
+const ReviewPage = loadReviewPage.Page
+const FamiliesPage = lazy(() => import('@/pages/teacher/FamiliesPage'))
+const ReportsPage = lazy(() => import('@/pages/teacher/ReportsPage'))
+const TeacherMessagesPage = lazy(() => import('@/pages/teacher/MessagesPage'))
+const MorePage = lazy(() => import('@/pages/teacher/MorePage'))
 
 /**
  * The page being opened starts downloading straight away, alongside
@@ -112,6 +119,7 @@ const OPENING: [RegExp, () => Promise<unknown>][] = [
   [/^\/student\/league/, loadLeague],
   [/^\/student\/streak/, loadStreak],
   [/^\/teacher\/?$/, loadTeacherDashboard],
+  [/^\/teacher\/calendar/, loadCalendar],
 ]
 /**
  * Ready when the page being opened has its code — main.tsx waits on it
@@ -131,7 +139,7 @@ setOpeningPage(OPENING.find(([path]) => path.test(window.location.pathname))?.[1
  */
 const NEXT_TABS = {
   student: [loadPracticeLog, loadPracticeProgress, loadSession, loadLeague, loadStreak, loadLibrary, loadStudentDashboard, loadSettings, loadStudio],
-  teacher: [loadTeacherDashboard, loadStudents, loadSchedule],
+  teacher: [loadTeacherDashboard, loadStudents, loadCalendar, loadReviewPage.load],
 }
 function usePrefetchTabs(role: 'student' | 'teacher' | undefined) {
   useEffect(() => {
@@ -167,6 +175,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   // has practised but never had a summary written.
   useSummarySync()
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
+  // A roster row per student, and lesson lengths that follow the settings.
+  useStudioUpkeep(profile?.role === 'teacher' ? profile?.uid : undefined)
   // The weekly league follows the session log; students only.
   useLeagueSync(profile?.role === 'student' ? profile?.uid : undefined, profile?.leagueOptOut, profile?.league?.roomId)
   // Spends a freeze on a missed day and records a finished comeback.
@@ -282,7 +292,14 @@ function AppRoutes() {
         <Route index element={<TeacherDashboard />} />
         <Route path="students" element={<StudentsPage />} />
         <Route path="students/:studentId" element={<StudentDetailPage />} />
-        <Route path="schedule" element={<SchedulePage />} />
+        <Route path="calendar" element={<CalendarPage />} />
+        <Route path="review" element={<ReviewPage />} />
+        <Route path="families" element={<FamiliesPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="messages" element={<TeacherMessagesPage />} />
+        <Route path="more" element={<MorePage />} />
+        {/* The Schedule page became the calendar. */}
+        <Route path="schedule" element={<Navigate to="/teacher/calendar" replace />} />
         <Route path="research" element={<ResearchPage />} />
         <Route path="settings" element={<TeacherSettingsPage />} />
         <Route path="settings/profile" element={<TeacherProfilePage />} />

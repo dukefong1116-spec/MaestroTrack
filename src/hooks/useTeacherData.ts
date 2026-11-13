@@ -8,6 +8,10 @@ import { useTeacherStore, TEACHER_SNAPSHOT_KEYS, type TeacherSnapshot } from '@/
 import { readSnapshot, writeSnapshot, snapshotKey } from '@/lib/cache/snapshot'
 import { subscribeTeacherMessages } from '@/lib/firebase/messages'
 import { subscribeTeacherAssignments } from '@/lib/firebase/assignments'
+import {
+  subscribeRoster, subscribeFamilies, subscribeStudioSettings, subscribeStudioLessons, subscribeOccurrences,
+  subscribeLessonNotes, subscribeInvoices, subscribeTeacherCorrections, subscribeTeacherPractice,
+} from '@/lib/firebase/studio'
 
 export function useTeacherData(teacherId: string | undefined) {
   const { setStudents, setStudentSessions, setSchedule, setRequests, setMessages, setAssignments, resetTeacherData } = useTeacherStore()
@@ -67,7 +71,23 @@ export function useTeacherData(teacherId: string | undefined) {
     const unsubMessages = subscribeTeacherMessages(teacherId, (m) => { if (active) setMessages(m) })
     // One subscription for the bell, the tab bar and the review queue.
     const unsubAssignments = subscribeTeacherAssignments(teacherId, (a) => { if (active) setAssignments(a) })
+    // The studio records. Each reports an empty list if refused (rules not
+    // published yet), so the pages still open rather than waiting.
+    const setStudio = useTeacherStore.getState().setStudio
+    const guard = <T,>(fn: (v: T) => void) => (v: T) => { if (active) fn(v) }
+    const unsubStudio = [
+      subscribeRoster(teacherId, guard((v) => setStudio('roster', v))),
+      subscribeFamilies(teacherId, guard((v) => setStudio('families', v))),
+      subscribeStudioSettings(teacherId, guard((v) => setStudio('settings', v))),
+      subscribeStudioLessons(teacherId, guard((v) => setStudio('lessons', v))),
+      subscribeOccurrences(teacherId, guard((v) => setStudio('occurrences', v))),
+      subscribeLessonNotes(teacherId, guard((v) => setStudio('notes', v))),
+      subscribeInvoices(teacherId, guard((v) => setStudio('invoices', v))),
+      subscribeTeacherCorrections(teacherId, guard((v) => setStudio('corrections', v))),
+      subscribeTeacherPractice(teacherId, guard((v) => setStudio('teacherPractice', v))),
+    ]
     return () => {
+      unsubStudio.forEach((u) => u())
       // Cancelled, not saved — see useStudentData.
       clearTimeout(saveTimer)
       active = false

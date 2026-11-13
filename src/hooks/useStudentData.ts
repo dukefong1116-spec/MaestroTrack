@@ -9,6 +9,13 @@ import { subscribeStudentAssignments } from '@/lib/firebase/assignments'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { readSnapshot, writeSnapshot, snapshotKey, type Snapshot } from '@/lib/cache/snapshot'
 import { SNAPSHOT_KEYS } from '@/stores/practiceStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useStudentStudioStore } from '@/stores/studentStudioStore'
+import {
+  subscribeMyStudioLessons, subscribeMyOccurrences, subscribeMySharedNotes, subscribeMyCorrections, subscribeMyTeacherPractice,
+} from '@/lib/firebase/studio'
+import { studentSlots } from '@/lib/studio/studentLessons'
+import type { LessonOccurrence, LessonSlot, StudioLesson } from '@/types'
 
 export function useStudentData(userId: string | undefined) {
   const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData } = usePracticeStore()
@@ -49,6 +56,17 @@ export function useStudentData(userId: string | undefined) {
     const onHide = () => { if (document.visibilityState === 'hidden') save() }
     document.addEventListener('visibilitychange', onHide)
 
+    const studio = useStudentStudioStore.getState()
+    studio.reset()
+    let legacySlots: LessonSlot[] | null = null
+    let studioLessons: StudioLesson[] = []
+    let studioDates: LessonOccurrence[] = []
+    const pushLessons = () => {
+      if (!active || legacySlots === null) return
+      const teacherId = useAuthStore.getState().profile?.teacherId
+      setLessons([...legacySlots, ...studentSlots(userId, teacherId, studioLessons, studioDates)])
+    }
+
     const unsubs = [
       subscribePracticeSessions(userId, guarded(setSessions)),
       subscribePieces(userId, guarded(setPieces)),
@@ -58,7 +76,15 @@ export function useStudentData(userId: string | undefined) {
       // Lessons recur weekly and change rarely, but the schedule is what
       // "your lesson is tomorrow" is derived from, and nothing else
       // subscribed to it.
-      subscribeStudentSchedule(userId, guarded(setLessons)),
+      subscribeStudentSchedule(userId, (slots) => { legacySlots = slots; pushLessons() }),
+      // The teacher's studio calendar, in the same shape as the slots
+      // above, added to them — see lib/studio/studentLessons. Waits for
+      // the slots so the list never goes live without them.
+      subscribeMyStudioLessons(userId, (l) => { studioLessons = l; pushLessons() }),
+      subscribeMyOccurrences(userId, (o) => { studioDates = o; pushLessons() }),
+      subscribeMySharedNotes(userId, guarded((sharedNotes) => studio.set({ sharedNotes }))),
+      subscribeMyCorrections(userId, guarded((corrections) => studio.set({ corrections }))),
+      subscribeMyTeacherPractice(userId, guarded((teacherPractice) => studio.set({ teacherPractice }))),
       // Once, here, rather than once per screen that shows them: the
       // dashboard, Today, the bell, the tab bar and the studio pages all
       // read this one copy.
@@ -73,6 +99,7 @@ export function useStudentData(userId: string | undefined) {
       stopSaving()
       unsubs.forEach((u) => u())
       resetUserData()
+      useStudentStudioStore.getState().reset()
     }
   }, [userId, setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData])
 }

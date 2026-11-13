@@ -13,6 +13,7 @@ import {
   deriveProgress, deriveDailyProgress, latestFeedback, awaitingStudent, normaliseStatus, dueLabel,
 } from '@/lib/utils/assignments'
 import DailyStrip from './DailyStrip'
+import AttachmentList from './AttachmentList'
 import { usePracticeStore } from '@/stores/practiceStore'
 import type { Assignment } from '@/types'
 
@@ -118,6 +119,7 @@ export default function SubmitSheet({
         {assignment.description && (
           <p className="mb-3 text-[13px]" style={{ color: 'var(--clay-dim)' }}>{assignment.description}</p>
         )}
+        <AttachmentList files={assignment.attachments} className="mb-3" />
         {assignment.dueDate && (
           <p className="mb-4 text-[12px] font-semibold" style={{ color: 'var(--clay-dim)' }}>
             {dueLabel(assignment)}

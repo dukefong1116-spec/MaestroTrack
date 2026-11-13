@@ -372,6 +372,14 @@ export interface LessonSlot {
   durationMinutes: number
   createdAt: string
   updatedAt: string
+  /**
+   * Set only on lessons made from the teacher's studio calendar (see
+   * lib/studio/studentLessons): a one-off on this date instead of every
+   * week, and the dates a weekly lesson does not happen because it was
+   * moved or cancelled. Absent on every slot made the old way.
+   */
+  date?: string
+  skipDates?: string[]
 }
 
 /** One attempt at handing work in. Append-only: a returned assignment is
@@ -432,6 +440,20 @@ export interface Assignment {
   type?: 'task' | 'daily'
   submissions?: Submission[]
   feedback?: TeacherFeedback[]
+  /**
+   * The studio record this is for. Always set on work made from the studio
+   * pages; the only link for a student not on the app yet, whose
+   * `studentId` is '' until they join.
+   */
+  rosterId?: string
+  /** Files the teacher attached: a demo, the score. */
+  attachments?: AssignmentAttachment[]
+}
+
+export interface AssignmentAttachment {
+  kind: 'audio' | 'video' | 'pdf' | 'image'
+  name: string
+  storagePath: string
 }
 
 /**
@@ -552,4 +574,202 @@ export interface PracticeSummary {
   dailyCategories: Record<string, Record<string, number>>
   totalSessions: number
   updatedAt: string
+  /**
+   * The last few sessions, one line each: when, how long, what kind. Lets
+   * the teacher see the log and suggest a correction to a single entry
+   * without ever reading a session document — so still nothing from the
+   * thoughts pad, and no piece names.
+   */
+  recentSessions?: SummarySession[]
+}
+
+export interface SummarySession {
+  id: string
+  date: string
+  minutes: number
+  category: string
+}
+
+/* ── Teacher studio ─────────────────────────────────────────────────────
+ * Everything below is the teacher's own records. Dates are local
+ * 'yyyy-MM-dd', times 'HH:mm', money in whole cents.
+ */
+
+/** One student the teacher teaches — on the app or not. */
+export interface RosterStudent {
+  id: string
+  teacherId: string
+  /** Their account, once they have one and are in the studio. */
+  uid: string | null
+  name: string
+  instrument?: InstrumentType | string
+  familyId?: string
+  /** Absent or null: the studio default. */
+  lessonMinutes?: number | null
+  /** Absent or null: the price of their lesson length in the studio settings. */
+  priceCents?: number | null
+  /** Manual corrections to the make-up credits the policy works out. */
+  creditAdjust?: number
+  parentName?: string
+  email?: string
+  phone?: string
+  /** What they are working on, kept by the teacher. */
+  repertoire?: RepertoireItem[]
+  status: 'active' | 'left'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FamilyContact { name: string; email?: string; phone?: string }
+
+export interface Family {
+  id: string
+  teacherId: string
+  name: string
+  contacts: FamilyContact[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LessonType { id: string; name: string; minutes: number; priceCents: number; group?: boolean }
+export interface CalendarTag { id: string; name: string; color: string }
+
+export interface StudioSettings {
+  teacherId: string
+  defaultLessonMinutes: number
+  lessonTypes: LessonType[]
+  tags: CalendarTag[]
+  policy: {
+    teacherCancelCredit: boolean
+    noticeCredit: boolean
+    creditExpiryDays: number | null
+  }
+  /** Calendar hours shown, 0–24. */
+  dayStart: number
+  dayEnd: number
+  updatedAt: string
+}
+
+/** A lesson or class that happens every week. */
+export interface StudioLesson {
+  id: string
+  teacherId: string
+  rosterIds: string[]
+  /** The accounts among rosterIds — what lets a student read it. */
+  studentUids: string[]
+  title: string
+  tagId: string
+  /** 0 = Sunday, as on LessonSlot. */
+  dayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6
+  startTime: string
+  durationMinutes: number
+  /** Set for groups, or a lesson made a fixed length: it no longer follows the student's length. */
+  fixedMinutes?: number | null
+  where?: string
+  startsOn: string
+  endsOn?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type AttendanceMark = 'present' | 'student_cancel' | 'teacher_cancel' | 'missed'
+
+/**
+ * One dated lesson: a weekly lesson on a particular date that something
+ * happened to (moved, resized, attended, cancelled), or a one-off.
+ * A weekly lesson's is keyed `${lessonId}_${originalDate}`.
+ */
+export interface LessonOccurrence {
+  id: string
+  teacherId: string
+  lessonId?: string
+  originalDate?: string
+  rosterIds: string[]
+  studentUids: string[]
+  title: string
+  tagId: string
+  date: string
+  startTime: string
+  durationMinutes: number
+  where?: string
+  cancelled?: boolean
+  attendance?: Record<string, AttendanceMark>
+  carried?: { text: string; state: 'open' | 'covered' | 'carried' }[]
+  /** A make-up: whose credit it uses. */
+  makeupFor?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LessonNote {
+  id: string
+  teacherId: string
+  rosterId: string
+  /** The student's account, or '' — and only 'shared' notes are ever readable by them. */
+  studentUid: string
+  date: string
+  occurrenceId?: string
+  visibility: 'shared' | 'private'
+  text: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InvoiceLine { rosterId: string; text: string; amountCents: number }
+export interface Payment { at: string; amountCents: number; method: 'cash' | 'card' | 'transfer' | 'other'; note?: string }
+
+export interface Invoice {
+  id: string
+  teacherId: string
+  familyId: string
+  /** 'yyyy-MM' */
+  period: string
+  lines: InvoiceLine[]
+  totalCents: number
+  payments: Payment[]
+  dueOn: string
+  sentAt?: string
+  remindedAt?: string[]
+  status: 'open' | 'void'
+  createdAt: string
+  updatedAt: string
+}
+
+/** The teacher suggests; the student decides. */
+export interface PracticeCorrection {
+  id: string
+  teacherId: string
+  studentId: string
+  sessionId: string
+  sessionDate: string
+  fromMinutes: number
+  toMinutes: number
+  reason?: string
+  status: 'pending' | 'accepted' | 'declined'
+  createdAt: string
+  decidedAt?: string
+}
+
+/** Practice the teacher records for a student. Shown, never counted toward the league. */
+export interface TeacherPracticeEntry {
+  id: string
+  teacherId: string
+  rosterId: string
+  studentUid: string
+  date: string
+  minutes: number
+  what?: string
+  createdAt: string
+}
+
+export type RepertoireStatus = 'learning' | 'polishing' | 'ready' | 'done'
+export interface RepertoireItem {
+  id: string
+  title: string
+  kind: 'piece' | 'skill'
+  status: RepertoireStatus
+  tempo?: string
+  notes?: string
+  /** Each change of status, for the progress report. */
+  history: { at: string; status: RepertoireStatus }[]
 }

@@ -689,6 +689,179 @@ service cloud.firestore {
         && f.get('badgeLabel', '') is string;
     }
 
+    /* ══ Teacher studio ═══════════════════════════════════════════════
+     *
+     * The teacher's own records. Everything here is additions: no rule
+     * above was changed for it. The shape of the ideas:
+     *
+     *  - A teacher owns what they write (teacherId is theirs, and stays).
+     *  - A student is only ever named on something by a teacher they are
+     *    actually in the studio of (teaches()), and reads only what names
+     *    them — and only the notes marked shared.
+     *  - Students without an account are roster rows, owned by the teacher.
+     */
+
+    function ownsRoster(id) {
+      return id is string
+        && exists(/databases/$(database)/documents/studioStudents/$(id))
+        && get(/databases/$(database)/documents/studioStudents/$(id)).data.teacherId == uid();
+    }
+    function mine(d) {
+      return d.teacherId == uid();
+    }
+    function keepsOwner() {
+      return resource.data.teacherId == uid() && request.resource.data.teacherId == uid();
+    }
+    // '' or null: no account (yet). Otherwise someone in this teacher's studio.
+    function studentOk(u) {
+      return u == null || u == '' || teaches(u);
+    }
+
+    /* ── who the teacher teaches, account or not ─────────────────────── */
+    // Teacher only: the row holds prices and private details.
+    match /studioStudents/{id} {
+      allow read: if signedIn() && resource.data.teacherId == uid();
+      allow create: if signedIn() && mine(request.resource.data)
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 120
+                    && studentOk(request.resource.data.get('uid', null));
+      // uid may be set (linking the student's account once they join),
+      // cleared, or left — never pointed at someone outside the studio.
+      allow update: if signedIn() && keepsOwner()
+                    && (request.resource.data.get('uid', null) == resource.data.get('uid', null)
+                        || studentOk(request.resource.data.get('uid', null)));
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    match /families/{id} {
+      allow read: if signedIn() && resource.data.teacherId == uid();
+      allow create: if signedIn() && mine(request.resource.data);
+      allow update: if signedIn() && keepsOwner();
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    match /studioSettings/{teacherId} {
+      allow read: if isMe(teacherId);
+      allow write: if isMe(teacherId) && request.resource.data.teacherId == teacherId;
+    }
+
+    match /invoices/{id} {
+      allow read: if signedIn() && resource.data.teacherId == uid();
+      allow create: if signedIn() && mine(request.resource.data);
+      allow update: if signedIn() && keepsOwner();
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── the calendar ─────────────────────────────────────────────────
+     * A student reads the lessons that name them. The teacher's own uid
+     * is on every document, and the student app shows only lessons from
+     * its current teacher, so naming a stranger plants nothing in their
+     * calendar. */
+    function lessonShape(d) {
+      return d.rosterIds is list && d.rosterIds.size() <= 30
+        && d.studentUids is list && d.studentUids.size() <= 30
+        && d.startTime is string && d.durationMinutes is number
+        && d.durationMinutes > 0 && d.durationMinutes <= 600;
+    }
+    match /studioLessons/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid() || uid() in resource.data.studentUids);
+      allow create: if signedIn() && mine(request.resource.data) && lessonShape(request.resource.data);
+      allow update: if signedIn() && keepsOwner() && lessonShape(request.resource.data);
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+    match /lessonOccurrences/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid() || uid() in resource.data.studentUids);
+      allow create: if signedIn() && mine(request.resource.data) && lessonShape(request.resource.data)
+                    && request.resource.data.date is string;
+      allow update: if signedIn() && keepsOwner() && lessonShape(request.resource.data);
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── lesson notes: shared or private ──────────────────────────────
+     * Private notes exist so a teacher has somewhere to write what a
+     * student must not read. The student's read requires visibility
+     * 'shared' on the document itself, so their query has to ask for
+     * shared notes only — a private one can never be listed or fetched. */
+    function noteShape(d) {
+      return d.visibility in ['shared', 'private']
+        && d.text is string && d.text.size() > 0 && d.text.size() <= 5000
+        && d.studentUid is string;
+    }
+    match /lessonNotes/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid()
+                      || (resource.data.studentUid == uid() && resource.data.visibility == 'shared'));
+      allow create: if signedIn() && mine(request.resource.data) && noteShape(request.resource.data)
+                    && ownsRoster(request.resource.data.rosterId)
+                    && studentOk(request.resource.data.studentUid);
+      allow update: if signedIn() && keepsOwner() && noteShape(request.resource.data)
+                    && request.resource.data.rosterId == resource.data.rosterId
+                    && (request.resource.data.studentUid == resource.data.studentUid
+                        || studentOk(request.resource.data.studentUid));
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── practice: the teacher suggests, the student decides ─────────── */
+    match /practiceCorrections/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid() || resource.data.studentId == uid());
+      allow create: if signedIn() && mine(request.resource.data)
+                    && teaches(request.resource.data.studentId)
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.toMinutes is int
+                    && request.resource.data.toMinutes >= 0
+                    && request.resource.data.toMinutes <= 1440;
+      // The student answers once, and changes nothing else — not the
+      // minutes the teacher suggested.
+      allow update: if signedIn()
+                    && resource.data.studentId == uid()
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status in ['accepted', 'declined']
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedAt']);
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    // Practice the teacher records for a student. Read by that student;
+    // never counted toward their streak or the league.
+    match /teacherPractice/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid()
+                      || (resource.data.studentUid != '' && resource.data.studentUid == uid()));
+      allow create: if signedIn() && mine(request.resource.data)
+                    && ownsRoster(request.resource.data.rosterId)
+                    && request.resource.data.studentUid is string
+                    && studentOk(request.resource.data.studentUid)
+                    && request.resource.data.minutes is int
+                    && request.resource.data.minutes > 0
+                    && request.resource.data.minutes <= 600;
+      allow update: if signedIn() && keepsOwner()
+                    && request.resource.data.rosterId == resource.data.rosterId
+                    && studentOk(request.resource.data.studentUid);
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
+    /* ── assignments for a student not on the app yet ─────────────────
+     * A second block for the same documents: Firestore allows a request
+     * if any matching rule does, so the rules in the assignments block
+     * above are untouched and still all apply. These add exactly two
+     * things — and studentId '' never matches a student's own query. */
+    match /assignments/{id} {
+      allow create: if signedIn()
+                    && request.resource.data.teacherId == uid()
+                    && request.resource.data.studentId == ''
+                    && ownsRoster(request.resource.data.get('rosterId', null));
+      // Once they join: the work becomes theirs, and nothing else changes.
+      allow update: if signedIn()
+                    && resource.data.teacherId == uid()
+                    && resource.data.studentId == ''
+                    && request.resource.data.teacherId == uid()
+                    && teaches(request.resource.data.studentId)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentId', 'updatedAt']);
+    }
+
     // Anything not named above is denied. New collections have to be
     // granted access deliberately rather than inheriting it.
     match /{document=**} {

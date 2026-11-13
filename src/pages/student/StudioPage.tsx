@@ -9,6 +9,7 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import AssignmentRow from '@/components/assignments/AssignmentRow'
 import { nextOccurrence } from '@/lib/utils/notifications'
 import { organise } from '@/lib/utils/assignmentGroups'
+import FromYourTeacher from '@/components/studio/FromYourTeacher'
 
 /**
  * A student's studio, at a glance: one panel, top to bottom — who it is,
@@ -129,6 +130,10 @@ export default function StudioPage() {
             <Send size={15} style={{ color: 'var(--clay-accent)' }} />
           </span>
         </Link>
+
+        {/* A correction to answer, notes from lessons, practice the
+            teacher added. Renders nothing when there is none. */}
+        <FromYourTeacher />
 
         {/* What is most pressing; the rest one tap away. Grows to fill. */}
         <div className="flex-1 px-5 pb-2 pt-4" style={{ borderTop: '1px solid var(--clay-line)' }}>

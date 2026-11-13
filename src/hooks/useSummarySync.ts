@@ -69,6 +69,7 @@ export function useSummarySync() {
       s: studio.currentStreak,
       n: studio.displayName,
       t: studio.teacherId,
+      r: summary.recentSessions?.map((x) => `${x.id}:${x.minutes}`),
     })
     if (fingerprint === lastWritten.current) return
     lastWritten.current = fingerprint

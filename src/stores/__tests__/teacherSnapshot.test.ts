@@ -5,7 +5,8 @@ import type { PracticeSession, UserProfile } from '@/types'
 /** A teacher's saved studio fills in what has not arrived live — never the reverse. */
 const student = (uid: string) => ({ uid }) as UserProfile
 const session = (id: string) => ({ id }) as PracticeSession
-const snap: TeacherSnapshot = {
+// Partial: a copy saved before the studio lists existed has none of them.
+const snap: Partial<TeacherSnapshot> = {
   students: [student('saved')], studentSessions: { a: [session('old-a')], b: [session('old-b')] },
   schedule: [], requests: [], messages: [], assignments: [],
 }
@@ -30,5 +31,12 @@ describe("a teacher's saved copy vs live data", () => {
     const { studentSessions } = useTeacherStore.getState()
     expect(studentSessions.a.map((s) => s.id)).toEqual(['live-a'])
     expect(studentSessions.b.map((s) => s.id)).toEqual(['old-b'])
+  })
+  it('studio lists hydrate too, and live ones win', () => {
+    const roster = [{ id: 'r1' }] as TeacherSnapshot['roster']
+    useTeacherStore.getState().setStudio('families', [])
+    useTeacherStore.getState().hydrate({ ...snap, roster, families: [{ id: 'f-old' }] as TeacherSnapshot['families'] })
+    expect(useTeacherStore.getState().roster.map((r) => r.id)).toEqual(['r1'])
+    expect(useTeacherStore.getState().families).toEqual([])
   })
 })

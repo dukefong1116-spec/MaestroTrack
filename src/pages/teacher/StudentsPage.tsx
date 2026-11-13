@@ -1,148 +1,138 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserMinus, UserPlus } from 'lucide-react'
-import Sticker from '@/components/stickers/Sticker'
-import { useAuth } from '@/hooks/useAuth'
+import { MessageCircle, Search, ChevronRight } from 'lucide-react'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { removeStudentFromStudio } from '@/lib/firebase/teacher'
+import { useMembers, useAllLessons, useStudioSettings, type Member } from '@/hooks/useStudioData'
+import { useOpenMessages } from '@/hooks/useTeacherMessages'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
-import PageHeader from '@/components/common/PageHeader'
-import Avatar from '@/components/profile/Avatar'
-import Card from '@/components/ui/Card'
-import Input from '@/components/ui/Input'
-import Badge from '@/components/ui/Badge'
-import EmptyState from '@/components/common/EmptyState'
-import PendingRequests from '@/components/teacher/PendingRequests'
-import InviteSheet from '@/components/teacher/InviteSheet'
-import type { UserProfile, InstrumentType } from '@/types'
+import { hasOwnLength, hasOwnPrice, lessonMinutes, lessonPriceCents } from '@/lib/studio/settings'
+import { clock, money } from '@/lib/studio/dates'
+import AddStudentSheet from '@/components/teacher/AddStudentSheet'
+import WaitingToJoin from '@/components/teacher/WaitingToJoin'
+import { StudioPage, Segmented, Pill, Btn, Avatar, Empty } from '@/components/teacher/studio/ui'
+import { colorFor, inputStyle } from '@/components/teacher/studio/tokens'
+
+const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function StudentsPage() {
-  const { profile } = useAuth()
-  const { students, studentSessions } = useTeacherStore()
   const navigate = useNavigate()
+  const members = useMembers()
+  const lessons = useAllLessons()
+  const settings = useStudioSettings()
+  const sessions = useTeacherStore((s) => s.studentSessions)
+  const families = useTeacherStore((s) => s.families)
+  const requests = useTeacherStore((s) => s.requests)
+  const openMessages = useOpenMessages()
   const [search, setSearch] = useState('')
-  const [inviting, setInviting] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'app' | 'none'>('all')
+  const [adding, setAdding] = useState(false)
 
-  const filtered = useMemo(() =>
-    students.filter((s) =>
-      s.displayName.toLowerCase().includes(search.toLowerCase()) ||
-      s.instrument?.toLowerCase().includes(search.toLowerCase())
-    ),
-    [students, search]
-  )
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return members
+      .filter((m) => (filter === 'all' || (filter === 'app' ? m.onApp : !m.onApp)))
+      .filter((m) => !q || m.name.toLowerCase().includes(q) || (m.instrument ?? '').toLowerCase().includes(q))
+      .map((m) => {
+        const weekly = lessons.find((l) => l.rosterIds.includes(m.id) && l.rosterIds.length === 1)
+        const week = m.uid ? getAnalyticsSummary(sessions[m.uid] ?? [], m.profile?.weeklyGoalMinutes ?? 300).totalMinutesThisWeek : null
+        return {
+          m,
+          family: families.find((f) => f.id === m.roster.familyId)?.name ?? '—',
+          lesson: weekly ? `${DAY[weekly.dayOfWeek]} ${clock(weekly.startTime)}${weekly.where ? ` · ${weekly.where}` : ''}` : 'Not scheduled',
+          // The weekly lesson's real length; the student's own (or the
+          // default) when they have none yet.
+          minutes: weekly?.durationMinutes ?? lessonMinutes(m.roster, settings),
+          ownLength: hasOwnLength(m.roster) || (!!weekly && weekly.durationMinutes !== settings.defaultLessonMinutes),
+          price: lessonPriceCents(m.roster, settings),
+          ownPrice: hasOwnPrice(m.roster),
+          week,
+        }
+      })
+  }, [members, lessons, sessions, families, settings, search, filter])
 
-  async function handleRemove(e: React.MouseEvent, student: UserProfile) {
-    e.stopPropagation()
-    if (window.confirm(`Remove ${student.displayName} from your studio?`)) {
-      await removeStudentFromStudio(student.uid)
-    }
-  }
+  const open = (m: Member) => navigate(`/teacher/students/${encodeURIComponent(m.id)}`)
 
   return (
-    <div>
-      <PageHeader
-        title="My Students"
-        subtitle={`${students.length} students in your studio`}
-        actions={
-          <button
-            type="button"
-            onClick={() => setInviting(true)}
-            className="flex items-center gap-2 px-3.5 py-2 text-sm font-bold transition-transform active:scale-95"
-            style={{
-              background: 'var(--clay-accent)',
-              color: 'var(--clay-on-accent)',
-              borderRadius: 'var(--clay-r-sm)',
-            }}
-          >
-            <UserPlus size={15} /> Invite
-          </button>
-        }
-      />
-
-      {profile && (
-        <InviteSheet open={inviting} onClose={() => setInviting(false)} profile={profile} />
-      )}
-
-      <PendingRequests />
-
-      <div className="mb-6">
-        <Input
-          placeholder="Search by name or instrument..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+    <StudioPage
+      title="Students"
+      subtitle={`${members.length} student${members.length === 1 ? '' : 's'}${requests.length ? ` · ${requests.length} waiting to join` : ''}`}
+      actions={<Btn kind="primary" onClick={() => setAdding(true)}>+ Add student</Btn>}
+    >
+      <WaitingToJoin />
+      <div className="flex flex-wrap items-center gap-2.5 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        <label className="flex min-w-[200px] flex-1 items-center gap-2 rounded-[10px] px-3" style={inputStyle}>
+          <Search size={16} style={{ color: 'var(--clay-dim)' }} aria-hidden="true" />
+          <input type="search" aria-label="Search students" placeholder="Search students" value={search} onChange={(e) => setSearch(e.target.value)} className="min-h-[38px] flex-1 border-0 bg-transparent text-[14px] outline-none" />
+        </label>
+        <Segmented label="Show" value={filter} onChange={setFilter} options={[{ value: 'all', label: 'All' }, { value: 'app', label: 'On the app' }, { value: 'none', label: 'Not on the app' }]} />
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={<Sticker name="users" size={36} tone="accent" />}
-          title={search ? 'No students match your search' : 'No students yet'}
-          description={search ? 'Try a different name or instrument.' : 'Tap Invite to send one a link, or show them the code in person.'}
-        />
+      {rows.length === 0 ? (
+        <Empty>{members.length ? 'Nobody matches.' : 'No students yet. Add one with the button above — an invitation, or a record for someone not on the app.'}</Empty>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((student) => {
-            const sessions = studentSessions[student.uid] ?? []
-            const summary = getAnalyticsSummary(sessions, student.weeklyGoalMinutes ?? 300)
-
-            return (
-              <div key={student.uid}>
-                <Card hover className="p-5 space-y-4" onClick={() => navigate(`/teacher/students/${student.uid}`)}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        src={student.avatar}
-                        name={student.displayName}
-                        instrument={student.instrument as InstrumentType | undefined}
-                        size={40}
-                      />
-                      <div>
-                        <p className="font-semibold text-[var(--clay-ink)]">{student.displayName}</p>
-                        <p className="text-xs text-[var(--clay-dim)] capitalize">{student.instrument ?? 'Unknown'}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => handleRemove(e, student)}
-                      className="text-[var(--clay-dim)] hover:text-red-400 transition-colors"
-                    >
-                      <UserMinus size={14} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.currentStreak}d</p>
-                      <p className="text-xs text-[var(--clay-dim)]">Streak</p>
-                    </div>
-                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.weeklyGoalPercentage}%</p>
-                      <p className="text-xs text-[var(--clay-dim)]">Goal</p>
-                    </div>
-                    <div className="bg-[var(--clay-bg-deep)] rounded-lg p-2">
-                      <p className="text-sm font-bold text-[var(--clay-ink)]">{summary.consistencyScore}%</p>
-                      <p className="text-xs text-[var(--clay-dim)]">Consist.</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-xs text-[var(--clay-dim)] mb-1">
-                      <span>Weekly goal</span>
-                      <span>{summary.totalMinutesThisWeek}/{student.weeklyGoalMinutes ?? 300} min</span>
-                    </div>
-                    <div className="h-1.5 bg-[var(--clay-line)] rounded-full overflow-hidden">
-                      <div className="h-full bg-[var(--clay-accent)] rounded-full" style={{ width: `${Math.min(100, summary.weeklyGoalPercentage)}%` }} />
-                    </div>
-                  </div>
-
-                  <Badge variant={student.experienceLevel === 'advanced' || student.experienceLevel === 'professional' ? 'purple' : 'info'} size="sm" className="capitalize">
-                    {student.experienceLevel ?? 'Student'}
-                  </Badge>
-                </Card>
-              </div>
-            )
-          })}
-        </div>
+        <>
+          {/* Phone: one row each. */}
+          <div className="md:hidden">
+            {rows.map((r) => (
+              <button key={r.m.id} type="button" onClick={() => open(r.m)} className="flex w-full items-center gap-3 px-4 py-3 text-left" style={{ borderTop: '1px solid var(--clay-line)' }}>
+                <Avatar name={r.m.name} color={colorFor(r.m.id)} size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold" style={{ color: 'var(--clay-ink)' }}>{r.m.name}</span>
+                  <span className="block truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{r.m.instrument ?? '—'} · {r.lesson} · {r.minutes} min</span>
+                </span>
+                {!r.m.onApp && <Pill>No app</Pill>}
+                <ChevronRight size={16} style={{ color: 'var(--clay-faint)' }} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          {/* Wider: a table. */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[880px] border-collapse text-left">
+              <thead>
+                <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: '#FBFAFE' }}>
+                  <th className="px-6 py-2 font-semibold">Student</th>
+                  <th className="px-2 py-2 font-semibold">Family</th>
+                  <th className="px-2 py-2 font-semibold">Weekly lesson</th>
+                  <th className="px-2 py-2 font-semibold">Length</th>
+                  <th className="px-2 py-2 font-semibold">Price</th>
+                  <th className="px-2 py-2 font-semibold">Practice this week</th>
+                  <th className="px-2 py-2 font-semibold">App</th>
+                  <th className="px-6 py-2"><span className="sr-only">Message</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.m.id} className="text-[13.5px]" style={{ borderTop: '1px solid var(--clay-line)', color: '#4F4766' }}>
+                    <td className="px-6 py-2.5">
+                      <button type="button" onClick={() => open(r.m)} className="flex items-center gap-3 text-left">
+                        <Avatar name={r.m.name} color={colorFor(r.m.id)} size={36} />
+                        <span>
+                          <span className="block font-bold" style={{ color: 'var(--clay-ink)' }}>{r.m.name}</span>
+                          <span className="block text-[12px] capitalize" style={{ color: 'var(--clay-dim)' }}>{r.m.instrument ?? '—'}</span>
+                        </span>
+                      </button>
+                    </td>
+                    <td className="px-2 py-2.5">{r.family}</td>
+                    <td className="px-2 py-2.5">{r.lesson}</td>
+                    <td className="whitespace-nowrap px-2 py-2.5">{r.minutes} min {r.ownLength && <Pill tone="purple">Own length</Pill>}</td>
+                    <td className="whitespace-nowrap px-2 py-2.5">{money(r.price)}{r.ownPrice ? ' · own price' : ''}</td>
+                    <td className="px-2 py-2.5">{r.week == null ? '—' : `${r.week} min`}</td>
+                    <td className="px-2 py-2.5">{r.m.onApp ? <Pill tone="success">On the app</Pill> : <Pill>Not on the app</Pill>}</td>
+                    <td className="px-6 py-2.5 text-right">
+                      {r.m.onApp && (
+                        <button type="button" onClick={() => openMessages(r.m.uid)} aria-label={`Message ${r.m.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-[11px]" style={{ background: 'var(--clay-accent-soft)', color: '#C2452B' }}>
+                          <MessageCircle size={17} aria-hidden="true" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-    </div>
+      <AddStudentSheet open={adding} onClose={() => setAdding(false)} onAdded={(id) => navigate(`/teacher/students/${encodeURIComponent(id)}`)} />
+    </StudioPage>
   )
 }

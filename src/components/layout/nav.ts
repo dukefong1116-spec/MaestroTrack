@@ -22,11 +22,13 @@ export const studentNav: NavItem[] = [
   { to: '/student/league', icon: 'trophy', label: 'League' },
 ]
 
+// A teacher's menu is the studio rail and tab bar (components/teacher/
+// layout/pages.ts); this list is kept for anything that asks navFor().
 export const teacherNav: NavItem[] = [
   { to: '/teacher', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/teacher/students', icon: 'users', label: 'My Students', short: 'Students' },
-  { to: '/teacher/schedule', icon: 'calendar', label: 'Schedule' },
-  { to: '/teacher/research', icon: 'chart', label: 'Research' },
+  { to: '/teacher/students', icon: 'users', label: 'Students' },
+  { to: '/teacher/calendar', icon: 'calendar', label: 'Calendar' },
+  { to: '/teacher/review', icon: 'clipboard', label: 'To review', short: 'Review' },
 ]
 
 /** Only for a student in a studio: assignments, messages, the next lesson. */

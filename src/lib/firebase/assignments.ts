@@ -13,7 +13,7 @@ import {
 import { db } from './config'
 import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
-import type { Assignment, PracticeCategory, Submission, TeacherFeedback } from '@/types'
+import type { Assignment, AssignmentAttachment, PracticeCategory, Submission, TeacherFeedback } from '@/types'
 
 const COL = 'assignments'
 
@@ -29,6 +29,9 @@ export async function createAssignment(
     requiresRecording?: boolean
     dailyTargetMinutes?: number
     type?: 'task' | 'daily'
+    /** The studio record; for a student not on the app yet, studentId is ''. */
+    rosterId?: string
+    attachments?: AssignmentAttachment[]
   }
 ): Promise<string> {
   const now = new Date().toISOString()

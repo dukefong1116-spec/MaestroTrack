@@ -1,5 +1,9 @@
 import { create } from 'zustand'
-import type { UserProfile, PracticeSession, Assignment, LessonSlot, StudioRequest, Message } from '@/types'
+import type {
+  UserProfile, PracticeSession, Assignment, LessonSlot, StudioRequest, Message,
+  RosterStudent, Family, StudioSettings, StudioLesson, LessonOccurrence, LessonNote, Invoice,
+  PracticeCorrection, TeacherPracticeEntry,
+} from '@/types'
 
 /** What a teacher's pages read, as saved on the device between visits. */
 export interface TeacherSnapshot {
@@ -9,9 +13,25 @@ export interface TeacherSnapshot {
   requests: StudioRequest[]
   messages: Message[]
   assignments: Assignment[]
+  roster: RosterStudent[]
+  families: Family[]
+  /** The stored document, or null before one exists: read through useStudioSettings. */
+  settings: Partial<StudioSettings> | null
+  lessons: StudioLesson[]
+  occurrences: LessonOccurrence[]
+  notes: LessonNote[]
+  invoices: Invoice[]
+  corrections: PracticeCorrection[]
+  teacherPractice: TeacherPracticeEntry[]
 }
 type TeacherSnapshotKey = keyof TeacherSnapshot
-export const TEACHER_SNAPSHOT_KEYS: TeacherSnapshotKey[] = ['students', 'studentSessions', 'schedule', 'requests', 'messages', 'assignments']
+export const TEACHER_SNAPSHOT_KEYS: TeacherSnapshotKey[] = [
+  'students', 'studentSessions', 'schedule', 'requests', 'messages', 'assignments',
+  'roster', 'families', 'settings', 'lessons', 'occurrences', 'notes', 'invoices', 'corrections', 'teacherPractice',
+]
+/** The studio records, each set by its own subscription. */
+export const STUDIO_KEYS = ['roster', 'families', 'settings', 'lessons', 'occurrences', 'notes', 'invoices', 'corrections', 'teacherPractice'] as const
+export type StudioKey = typeof STUDIO_KEYS[number]
 const NOT_LIVE = Object.fromEntries(TEACHER_SNAPSHOT_KEYS.map((k) => [k, false])) as Record<TeacherSnapshotKey, boolean>
 
 interface TeacherState {
@@ -26,6 +46,17 @@ interface TeacherState {
   messages: Message[]
   /** Every assignment this teacher has set, across every student. */
   assignments: Assignment[]
+  roster: RosterStudent[]
+  families: Family[]
+  settings: Partial<StudioSettings> | null
+  lessons: StudioLesson[]
+  occurrences: LessonOccurrence[]
+  notes: LessonNote[]
+  invoices: Invoice[]
+  corrections: PracticeCorrection[]
+  teacherPractice: TeacherPracticeEntry[]
+  /** One studio list arrived live. */
+  setStudio: <K extends StudioKey>(key: K, value: TeacherSnapshot[K]) => void
   /**
    * Which lists have had their live data. Until then a list may be showing
    * the copy saved on this device last visit (see lib/cache/snapshot).
@@ -53,7 +84,9 @@ export const useTeacherStore = create<TeacherState>((set) => ({
   requests: [],
   messages: [],
   assignments: [],
+  roster: [], families: [], settings: null, lessons: [], occurrences: [], notes: [], invoices: [], corrections: [], teacherPractice: [],
   live: { ...NOT_LIVE },
+  setStudio: (key, value) => set((s) => ({ [key]: value, live: { ...s.live, [key]: true } }) as Partial<TeacherState>),
   hydrate: (snap) => set((s) => {
     const next: Record<string, unknown> = {}
     for (const k of TEACHER_SNAPSHOT_KEYS) {
@@ -66,6 +99,7 @@ export const useTeacherStore = create<TeacherState>((set) => ({
   }),
   resetTeacherData: () => set({
     students: [], selectedStudentId: null, studentSessions: {}, studentAssignments: {}, schedule: [], requests: [], messages: [], assignments: [],
+    roster: [], families: [], settings: null, lessons: [], occurrences: [], notes: [], invoices: [], corrections: [], teacherPractice: [],
     live: { ...NOT_LIVE },
   }),
   setStudents: (students) => set((s) => ({ students, live: { ...s.live, students: true } })),

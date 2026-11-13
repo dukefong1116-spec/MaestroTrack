@@ -2,7 +2,7 @@ import { format, subDays } from 'date-fns'
 import { computeStreak } from './analytics'
 import { planOf } from '@/lib/streak/plan'
 import type {
-  PracticeSession, PracticeSummary, StudioStats, UserProfile, PracticeCategory,
+  PracticeSession, PracticeSummary, StudioStats, UserProfile, PracticeCategory, SummarySession,
 } from '@/types'
 import { minutesByCategory } from '@/lib/utils/categories'
 
@@ -68,8 +68,23 @@ export function buildSummaries(
       dailyCategories,
       totalSessions: sessions.length,
       updatedAt,
+      // Only for a student in a studio: their teacher's practice log. One
+      // line per session — when, how long, what kind — and nothing else.
+      ...(profile.teacherId ? { recentSessions: recentLines(sessions, now) } : {}),
     },
   }
+}
+
+const RECENT_DAYS = 60
+const RECENT_MAX = 30
+
+export function recentLines(sessions: PracticeSession[], now: Date = new Date()): SummarySession[] {
+  const since = format(subDays(now, RECENT_DAYS), 'yyyy-MM-dd')
+  return sessions
+    .filter((s) => s.date.substring(0, 10) >= since)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
+    .slice(0, RECENT_MAX)
+    .map((s) => ({ id: s.id, date: s.date.substring(0, 10), minutes: s.durationMinutes, category: s.category }))
 }
 
 /**

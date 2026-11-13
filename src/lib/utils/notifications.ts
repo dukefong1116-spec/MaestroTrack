@@ -122,8 +122,21 @@ export function nextOccurrence(slot: LessonSlot, now: Date): Date {
     seconds: 0,
     milliseconds: 0,
   })
+  // A one-off from the studio calendar happens on its date only. Once it
+  // has passed there is no next one, so it is put out of reach of every
+  // "soon" and "tomorrow" check rather than repeating next week.
+  if (slot.date) {
+    const [y, mo, d] = slot.date.split('-').map(Number)
+    const at = new Date(y, mo - 1, d, Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0)
+    return at.getTime() > now.getTime() ? at : addDays(now, 3650)
+  }
   // Today, but already gone: the next one is next week.
   if (when.getTime() <= now.getTime()) when = addDays(when, 7)
+  // A week it was moved away from, or cancelled: the one after.
+  const skip = slot.skipDates
+  if (skip?.length) {
+    for (let i = 0; i < 52 && skip.includes(dayKey(when)); i++) when = addDays(when, 7)
+  }
   return when
 }
 

@@ -49,7 +49,7 @@ export default function BottomTabs() {
    */
   // In a studio, Studio takes Settings' slot — five is all a phone holds —
   // and Settings opens from the photo on Today instead.
-  const { inStudio, unreadMessages } = useStudio()
+  const { inStudio, studioAttention } = useStudio()
   const items = navFor(role, inStudio)
   const rest = items.filter((t) => t.to !== home)
   const homeTab = items.find((t) => t.to === home)
@@ -124,9 +124,9 @@ export default function BottomTabs() {
               <>
                 <span className="relative">
                   <TabIcon icon={icon} active={isActive} />
-                  {to === studioNav.to && unreadMessages > 0 && (
+                  {to === studioNav.to && studioAttention > 0 && (
                     <span
-                      aria-label={`${unreadMessages} unread`}
+                      aria-label={`${studioAttention} new`}
                       className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
                       style={{ background: 'var(--clay-accent)' }}
                     />

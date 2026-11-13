@@ -1,489 +1,164 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
-import Sticker from '@/components/stickers/Sticker'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
+import { useMembers } from '@/hooks/useStudioData'
+import { useOpenMessages } from '@/hooks/useTeacherMessages'
 import { subscribePracticeSummary } from '@/lib/firebase/summary'
+import { subscribeSharedRecordings, recordingAudio } from '@/lib/firebase/recordings'
+import { removeStudentFromStudio } from '@/lib/firebase/teacher'
+import { updateRosterStudent } from '@/lib/firebase/studio'
 import { sessionsFromSummary } from '@/lib/utils/summary'
-import { updateUserProfile } from '@/lib/firebase/teacher'
-import MessageThread from '@/components/messages/MessageThread'
-import { useAuthStore } from '@/stores/authStore'
-import { createAssignment, deleteAssignment, subscribeTeacherStudentAssignments } from '@/lib/firebase/assignments'
-import { normaliseStatus, needsReview, deriveDailyProgress, deriveProgress } from '@/lib/utils/assignments'
-import DailyStrip from '@/components/assignments/DailyStrip'
+import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
+import ProfileAvatar from '@/components/profile/Avatar'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
-import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
-import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
-import { getInstrumentTheme } from '@/lib/utils/instruments'
-import Avatar from '@/components/profile/Avatar'
-import Card from '@/components/ui/Card'
-import Button from '@/components/ui/Button'
-import Textarea from '@/components/ui/Textarea'
-import Select from '@/components/ui/Select'
-import Input from '@/components/ui/Input'
-import Badge from '@/components/ui/Badge'
-import PracticeBarChart from '@/components/charts/PracticeBarChart'
-import CategoryPieChart from '@/components/charts/CategoryPieChart'
-import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
-import StatCard from '@/components/common/StatCard'
-import type { PracticeSession, Assignment, InstrumentType, Recording, PracticeCategory } from '@/types'
+import InviteSheet from '@/components/teacher/InviteSheet'
+import TakePlayer from '@/components/recordings/TakePlayer'
+import { StudioPage, Btn, Pill, Avatar, Empty } from '@/components/teacher/studio/ui'
+import { colorFor } from '@/components/teacher/studio/tokens'
+import Overview from './record/Overview'
+import Lessons from './record/Lessons'
+import Assignments from './record/Assignments'
+import Repertoire from './record/Repertoire'
+import Practice from './record/Practice'
+import Report from './record/Report'
+import type { Assignment, PracticeSummary, Recording } from '@/types'
 
-const CATEGORY_OPTIONS: PracticeCategory[] = [
-  'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
-]
+const TABS = [
+  ['overview', 'Overview'], ['lessons', 'Lessons & notes'], ['assignments', 'Assignments'], ['repertoire', 'Repertoire'],
+  ['practice', 'Practice'], ['recordings', 'Recordings'], ['report', 'Report'],
+] as const
+type Tab = typeof TABS[number][0]
 
-const NO_SESSIONS: PracticeSession[] = []
-
+/**
+ * One student, everything about them: who they are and their lesson,
+ * the lessons and notes, their work, repertoire, practice, recordings,
+ * and a progress report. Found by their studio record or, for links made
+ * before studio records existed, by their account.
+ */
 export default function StudentDetailPage() {
-  const { studentId } = useParams<{ studentId: string }>()
+  const { studentId = '' } = useParams<{ studentId: string }>()
   const navigate = useNavigate()
   const { profile } = useAuth()
-  const { students, studentSessions, setStudentSessions } = useTeacherStore()
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [assignTitle, setAssignTitle] = useState('')
-  const [assignDesc, setAssignDesc] = useState('')
-  const [assignDue, setAssignDue] = useState('')
-  const [assignNeedsRecording, setAssignNeedsRecording] = useState(false)
-  const [assignDailyMinutes, setAssignDailyMinutes] = useState('')
-  const [assignKind, setAssignKind] = useState<'task' | 'daily'>('task')
-  const [assignCategory, setAssignCategory] = useState('')
-  // The form is a thing you occasionally do, not a thing you always look
-  // at. Open by default it pushed the actual student data below the fold
-  // every time you came here just to see how someone is getting on.
-  const [composing, setComposing] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const members = useMembers()
+  const assignments = useTeacherStore((s) => s.assignments)
+  const families = useTeacherStore((s) => s.families)
+  const setStudentSessions = useTeacherStore((s) => s.setStudentSessions)
+  const openMessages = useOpenMessages()
+  const [params, setParams] = useSearchParams()
+  const tab = (TABS.find(([t]) => t === params.get('tab'))?.[0] ?? 'overview') as Tab
+  const m = members.find((x) => x.id === studentId || x.uid === studentId)
+  const sessions = useTeacherStore((s) => (m?.uid ? s.studentSessions[m.uid] : undefined)) ?? NONE
+  const [summary, setSummary] = useState<PracticeSummary | null | undefined>(undefined)
+  const [recordings, setRecordings] = useState<Recording[]>([])
   const [reviewing, setReviewing] = useState<Assignment | null>(null)
+  const [inviting, setInviting] = useState(false)
+  const uid = m?.uid ?? null
 
-  /**
-   * Opened straight from the bell.
-   *
-   * "Ana handed work in" used to drop you on the teacher dashboard, which
-   * is clickable but leaves you to go and find the submission. It now
-   * names the student and the assignment, and this opens the review.
-   *
-   * Waits for the list, which arrives from a subscription, and strips the
-   * parameter once used so closing the sheet does not reopen it.
-   */
-  const wantedReview = searchParams.get('review')
   useEffect(() => {
-    if (!wantedReview) return
-    const found = assignments.find((a) => a.id === wantedReview)
+    if (!uid) { setSummary(null); return }
+    return subscribePracticeSummary(uid, (s) => { setSummary(s); setStudentSessions(uid, sessionsFromSummary(s)) })
+  }, [uid, setStudentSessions])
+  useEffect(() => {
+    if (!uid) { setRecordings([]); return }
+    return subscribeSharedRecordings(uid, setRecordings)
+  }, [uid])
+
+  // Opened from the bell: straight to the review.
+  const wanted = params.get('review')
+  useEffect(() => {
+    if (!wanted) return
+    const found = assignments.find((a) => a.id === wanted)
     if (!found) return
     setReviewing(found)
-    const next = new URLSearchParams(searchParams)
+    const next = new URLSearchParams(params)
     next.delete('review')
-    setSearchParams(next, { replace: true })
-  }, [wantedReview, assignments, searchParams, setSearchParams])
-  const [studentRecordings, setStudentRecordings] = useState<Recording[]>([])
-  /** Null while the summary is still being fetched; false once we know. */
-  const [summaryExists, setSummaryExists] = useState<boolean | null>(null)
-  const [assigning, setAssigning] = useState(false)
+    setParams(next, { replace: true })
+  }, [wanted, assignments, params, setParams])
 
-  const student = students.find((s) => s.uid === studentId)
-  // A fresh `[]` literal here is a new identity every render, which defeated
-  // the four useMemos below — every chart recomputed over the full session
-  // history on each keystroke in the assignment form.
-  const sessions: PracticeSession[] = studentSessions[studentId ?? ''] ?? NO_SESSIONS
-  // This page is about the student, so it wears the student’s colour,
-  // not whatever accent the teacher happens to have picked.
-  const theme = getInstrumentTheme(student?.instrument as InstrumentType | undefined)
+  const takeNames = useMemo(() => takeNamesByDay(recordings), [recordings])
 
-  useEffect(() => {
-    if (!studentId) return
-    // The rolled-up copy, not the sessions themselves — see useTeacherData.
-    const unsubSummary = subscribePracticeSummary(studentId, (summary) => {
-      setSummaryExists(!!summary)
-      setStudentSessions(studentId, sessionsFromSummary(summary))
-    })
-    const unsubA = profile?.uid
-      ? subscribeTeacherStudentAssignments(profile.uid, studentId, setAssignments)
-      : undefined
-    return () => { unsubSummary(); unsubA?.() }
-  }, [studentId, setStudentSessions, profile?.uid])
-
-  // The takes this student has handed in — the documents only, no audio.
-  // The review sheet plays them, and the conversation shares and plays them.
-  useEffect(() => {
-    if (!studentId) { setStudentRecordings([]); return }
-    return subscribeSharedRecordings(studentId, setStudentRecordings)
-  }, [studentId])
-
-  // The conversation with this student, and reading it: opening the page
-  // marks it read, written only when something newer has arrived.
-  const allMessages = useTeacherStore((s) => s.messages)
-  const thread = useMemo(() => allMessages.filter((m) => m.studentId === studentId), [allMessages, studentId])
-  const latestFromStudent = thread.filter((m) => m.from === 'student').at(-1)?.createdAt ?? ''
-  const threadReadAt = (studentId && profile?.threadsReadAt?.[studentId]) || ''
-  useEffect(() => {
-    const uid = profile?.uid
-    if (!uid || !studentId || !latestFromStudent || latestFromStudent <= threadReadAt) return
-    const live = useAuthStore.getState().profile
-    const threadsReadAt = { ...(live?.threadsReadAt ?? {}), [studentId]: new Date().toISOString() }
-    if (live) useAuthStore.getState().setProfile({ ...live, threadsReadAt })
-    void updateUserProfile(uid, { threadsReadAt }).catch(() => {})
-  }, [profile?.uid, studentId, latestFromStudent, threadReadAt])
-
-  const summary = useMemo(() => getAnalyticsSummary(sessions, student?.weeklyGoalMinutes ?? 300), [sessions, student])
-  const dailyData = useMemo(() => getDailyData(sessions, 14), [sessions])
-  const categoryData = useMemo(() => getCategoryData(sessions), [sessions])
-  const heatmap = useMemo(() => getHeatmapData(sessions), [sessions])
-
-  async function handleAssign() {
-    if (!profile || !studentId || !assignTitle.trim()) return
-    setAssigning(true)
-    try {
-      await createAssignment(profile.uid, studentId, {
-        title: assignTitle.trim(),
-        description: assignDesc.trim() || undefined,
-        dueDate: assignDue || undefined,
-        type: assignKind,
-        // Each kind carries only its own fields, so a task cannot acquire a
-        // stray daily target and a daily one cannot demand a recording.
-        requiresRecording: assignKind === 'task' && assignNeedsRecording ? true : undefined,
-        dailyTargetMinutes: assignKind === 'daily' && Number(assignDailyMinutes) > 0
-          ? Number(assignDailyMinutes) : undefined,
-        category: assignKind === 'daily' && assignCategory
-          ? (assignCategory as PracticeCategory) : undefined,
-      })
-      setAssignTitle('')
-      setAssignDesc('')
-      setAssignDue('')
-      setAssignNeedsRecording(false)
-      setAssignDailyMinutes('')
-      setAssignCategory('')
-      setAssignKind('task')
-      setComposing(false)
-    } finally {
-      setAssigning(false)
-    }
+  if (!m) {
+    return (
+      <StudioPage title="Student" back={{ to: '/teacher/students', label: 'All students' }}>
+        <Empty>{members.length ? 'This student isn’t in your studio.' : 'Loading…'}</Empty>
+      </StudioPage>
+    )
   }
 
-  if (!student) return (
-    <div className="flex items-center justify-center h-64 text-[var(--clay-dim)]">Student not found</div>
-  )
+  const family = families.find((f) => f.id === m.roster.familyId)
+  const emails = [m.roster.email, ...(family?.contacts ?? []).map((c) => c.email)].filter((e): e is string => !!e)
+  const first = m.name.split(' ')[0]
+
+  async function remove() {
+    if (!m || !window.confirm(`Remove ${m.name} from your studio?${m.onApp ? ' They keep their own practice; they just leave your studio.' : ''}`)) return
+    if (m.uid && m.profile?.teacherId === profile?.uid) await removeStudentFromStudio(m.uid)
+    if (m.roster.createdAt) await updateRosterStudent(m.id, { status: 'left' }).catch(() => {})
+    navigate('/teacher/students')
+  }
 
   return (
-    <div>
-      <button onClick={() => navigate('/teacher/students')} className="flex items-center gap-2 text-[var(--clay-dim)] hover:text-[var(--clay-ink)] text-sm mb-6 transition-colors">
-        <ArrowLeft size={16} /> Back to Students
-      </button>
-
-      <div className="flex items-center gap-4 mb-8">
-        <Avatar
-          src={student.avatar}
-          name={student.displayName}
-          instrument={student?.instrument as InstrumentType | undefined}
-          size={56}
-        />
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--clay-ink)]">{student.displayName}</h1>
-          <p className="text-[var(--clay-dim)] text-sm capitalize">{student.instrument} · {student.experienceLevel}</p>
-        </div>
-      </div>
-
-      {/* An empty page used to be ambiguous: a student who has not
-          practised looked identical to figures that were never written.
-          Say which. */}
-      {summaryExists === false && (
-        <Card className="mb-6 p-5">
-          <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>
-            No practice figures for {student?.displayName ?? 'this student'} yet
-          </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed" style={{ color: 'var(--clay-dim)' }}>
-            Their practice is recorded on their own device, and a summary of it is
-            published for you the next time they open the app. If they have been
-            practising and this stays empty, the <code>practiceSummary</code> and{' '}
-            <code>studioStats</code> rules have most likely not been published yet —
-            their app would be refused permission to share the figures.
-          </p>
-        </Card>
-      )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="This Week" value={`${summary.totalMinutesThisWeek}m`} />
-        <StatCard label="Streak" value={`${summary.currentStreak}d`} />
-        <StatCard label="Consistency" value={`${summary.consistencyScore}%`} />
-        <StatCard label="Goal" value={`${summary.weeklyGoalPercentage}%`} />
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-        <Card className="p-5">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Last 14 Days</p>
-          <PracticeBarChart data={dailyData} color={theme.primary} />
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Category Distribution</p>
-          <CategoryPieChart data={categoryData} />
-        </Card>
-      </div>
-
-      <Card className="p-5 mb-8">
-        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4">Practice Heatmap</p>
-        <PracticeHeatmap data={heatmap} color={theme.primary} />
-      </Card>
-
-      {/* Assignments */}
-      <div className="mb-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest flex items-center gap-2">
-            <Sticker name="clipboard" size={14} tone="ink" /> Assignments
-          </p>
-          <button
-            onClick={() => setComposing((v) => !v)}
-            className="shrink-0 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-transform active:scale-95"
-            style={{
-              background: composing ? 'var(--clay-bg)' : 'var(--clay-accent)',
-              color: composing ? 'var(--clay-dim)' : 'var(--clay-on-accent)',
-            }}
-          >
-            {composing ? 'Cancel' : '+ New assignment'}
-          </button>
-        </div>
-
-        {composing && (
-        <Card className="p-5 mb-4">
-          <div className="space-y-3">
-
-            {/* Two genuinely different things. A one-off task is handed in
-                and reviewed; daily practice measures itself off the log and
-                needs no review at all, so they ask for different fields. */}
-            <div className="flex gap-2">
-              {([
-                { id: 'task', label: 'Task', hint: 'handed in once' },
-                { id: 'daily', label: 'Daily practice', hint: 'minutes every day' },
-              ] as const).map((k) => {
-                const on = assignKind === k.id
-                return (
-                  <button
-                    key={k.id}
-                    onClick={() => setAssignKind(k.id)}
-                    className="flex-1 px-3 py-2.5 text-left transition-colors"
-                    style={{
-                      borderRadius: 'var(--clay-r-sm)',
-                      background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
-                      color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
-                    }}
-                  >
-                    <span className="block text-[13px] font-semibold">{k.label}</span>
-                    <span className="block text-[11px] opacity-80">{k.hint}</span>
-                  </button>
-                )
-              })}
-            </div>
-
-            <Input
-              placeholder={assignKind === 'daily'
-                ? 'Title (e.g. Daily scales)'
-                : 'Assignment title (e.g. Practice Hanon No. 1)'}
-              value={assignTitle}
-              onChange={(e) => setAssignTitle(e.target.value)}
-            />
-            <Textarea
-              placeholder="Description or notes (optional)"
-              value={assignDesc}
-              onChange={(e) => setAssignDesc(e.target.value)}
-              rows={2}
-            />
-            {assignKind === 'daily' && (
-              <>
-                {/* The app reads this off the practice log, so the student
-                    reports nothing and you take nobody's word. A due date is
-                    required because it is the window being measured. */}
-                <div className="flex items-center gap-2.5">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Minutes per day"
-                    value={assignDailyMinutes}
-                    onChange={(e) => setAssignDailyMinutes(e.target.value)}
-                    className="max-w-[180px]"
-                  />
-                  {!assignDue && (
-                    <span className="text-[11.5px]" style={{ color: 'var(--clay-danger)' }}>
-                      Set an end date below
-                    </span>
-                  )}
-                </div>
-
-                {/* Narrowing to one category is optional, and safe only
-                    because the student's session is pre-filled with it when
-                    they start from the assignment, and they are asked before
-                    saving if it still does not match. Without both of those
-                    this would silently fail to count. */}
-                <Select
-                  value={assignCategory}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignCategory(e.target.value)}
-                  options={[
-                    { value: '', label: 'Any kind of practice' },
-                    ...CATEGORY_OPTIONS.map((c) => ({ value: c, label: `Only ${c}` })),
-                  ]}
-                />
-              </>
-            )}
-
-            {/* Task only: a daily-practice assignment measures itself and is
-                not handed in, so there is nothing for a recording to attach
-                to. Off by default, since requiring audio makes scales,
-                sight-reading and theory awkward to set. */}
-            {assignKind === 'task' && (
-            <button
-              type="button"
-              role="switch"
-              aria-checked={assignNeedsRecording}
-              onClick={() => setAssignNeedsRecording((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left"
-              style={{ background: 'var(--clay-bg)' }}
-            >
-              <span
-                className="relative h-5 w-9 shrink-0 rounded-full transition-colors"
-                style={{ background: assignNeedsRecording ? 'var(--clay-accent)' : 'var(--clay-bg-deep)' }}
-              >
-                <span
-                  className="absolute top-0.5 h-4 w-4 rounded-full transition-all"
-                  style={{ left: assignNeedsRecording ? 20 : 2, background: '#fff' }}
-                />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[13px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-                  Require a recording
-                </span>
-                <span className="block text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>
-                  {assignNeedsRecording
-                    ? 'They must attach a take before they can hand this in'
-                    : 'They can hand it in with just a note'}
-                </span>
-              </span>
+    <StudioPage
+      back={{ to: '/teacher/students', label: 'All students' }}
+      title={
+        <span className="flex items-center gap-3">
+          {m.profile?.avatar
+            ? <ProfileAvatar src={m.profile.avatar} name={m.name} size={44} />
+            : <Avatar name={m.name} color={colorFor(m.id)} size={44} />}
+          <span className="min-w-0 truncate">{m.name}</span>
+          {m.onApp ? <Pill tone="success">On the app</Pill> : <Pill>Not on the app</Pill>}
+        </span>
+      }
+      subtitle={`${m.instrument ? `${m.instrument} · ` : ''}${family?.name ?? 'Not in a family'}${m.profile?.experienceLevel ? ` · ${m.profile.experienceLevel}` : ''}`}
+      actions={
+        <>
+          {!m.onApp && <Btn kind="primary" onClick={() => setInviting(true)}>Invite to the app</Btn>}
+          {m.onApp
+            ? <Btn kind="quiet" onClick={() => openMessages(m.uid)}>Message</Btn>
+            : emails.length > 0 && <a className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-bold" style={{ background: 'var(--clay-accent-soft)', color: '#C2452B' }} href={`mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(`${first}’s lessons`)}`}>Email family</a>}
+          <Btn kind="link" onClick={remove}>Remove</Btn>
+        </>
+      }
+    >
+      <div role="tablist" aria-label="Student record" className="no-scrollbar flex gap-0.5 overflow-x-auto px-3 sm:px-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        {TABS.map(([id, label]) => {
+          const on = tab === id
+          return (
+            <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setParams({ tab: id }, { replace: true })}
+              className="-mb-px shrink-0 whitespace-nowrap px-3 py-3 text-[13.5px]"
+              style={{ color: on ? 'var(--clay-ink)' : 'var(--clay-dim)', fontWeight: on ? 700 : 600, borderBottom: `2px solid ${on ? 'var(--clay-accent)' : 'transparent'}` }}>
+              {label}
             </button>
-            )}
+          )
+        })}
+      </div>
 
-            <div className="flex items-center gap-3">
-              <Input
-                type="date"
-                value={assignDue}
-                onChange={(e) => setAssignDue(e.target.value)}
-                className="max-w-[180px]"
-              />
-              <Button size="sm" onClick={handleAssign} loading={assigning} disabled={!assignTitle.trim()}>
-                <Plus size={14} /> Assign
-              </Button>
+      {tab === 'overview' && <Overview m={m} />}
+      {tab === 'lessons' && <Lessons m={m} />}
+      {tab === 'assignments' && <Assignments m={m} sessions={sessions} onReview={setReviewing} />}
+      {tab === 'repertoire' && <Repertoire m={m} />}
+      {tab === 'practice' && <Practice m={m} sessions={sessions} summary={summary} />}
+      {tab === 'recordings' && (
+        recordings.length === 0
+          ? <Empty>{m.onApp ? `${first} hasn’t handed in any recordings yet.` : `${first} isn’t on the app, so there are no recordings.`}</Empty>
+          : (
+            <div>
+              {[...recordings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((r, i) => (
+                <div key={r.id} className="px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+                  <p className="mb-1.5 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{format(parseISO(r.createdAt), 'EEE, MMM d · h:mm a')}{r.pieceName ? ` · ${r.pieceName}` : ''}</p>
+                  <TakePlayer load={() => recordingAudio(r)} label={r.title?.trim() || takeNames.get(r.id) || takeLabel(r.date, i + 1)} storedDuration={r.duration} />
+                </div>
+              ))}
             </div>
-          </div>
-        </Card>
-        )}
-        <div className="space-y-2">
-          {assignments
-            .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-            .map((a) => (
-              <div key={a.id}>
-                <Card className="p-4 flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm ${normaliseStatus(a.status) === 'approved' ? 'line-through text-[var(--clay-dim)]' : 'text-[var(--clay-ink)]'}`}>
-                        {a.title}
-                      </p>
-                      {(() => {
-                        const st = normaliseStatus(a.status)
-                        const label = st === 'approved' ? 'approved'
-                          : st === 'submitted' ? 'handed in'
-                          : st === 'returned' ? 'sent back'
-                          : st === 'cancelled' ? 'cancelled' : 'assigned'
-                        const variant = st === 'approved' ? 'success'
-                          : st === 'submitted' ? 'warning' : 'info'
-                        return <Badge variant={variant} size="sm">{label}</Badge>
-                      })()}
-                      {a.requiresRecording && (
-                        <Badge variant="default" size="sm">recording</Badge>
-                      )}
-                    </div>
-                    {a.description && <p className="text-xs text-[var(--clay-dim)] mt-1">{a.description}</p>}
-                    {/* Progress without having to open anything: the point
-                        of a minutes-a-day assignment is that it answers
-                        itself from the practice log. */}
-                    {(() => {
-                      const daily = deriveDailyProgress(a, sessions)
-                      if (daily.tracked) return (
-                        <div className="mt-2">
-                          <DailyStrip progress={daily} dailyTarget={a.dailyTargetMinutes ?? 0} compact />
-                          <p className="text-xs mt-1.5" style={{ color: daily.onTrack ? 'var(--clay-dim)' : 'var(--clay-danger)' }}>
-                            {daily.minutesDone} / {daily.minutesRequired} min
-                            {' · '}{daily.daysMet} of {daily.daysRequired} days
-                            {!daily.onTrack && ' · missed a day'}
-                          </p>
-                        </div>
-                      )
-                      const total = deriveProgress(a, sessions)
-                      if (total.tracked) return (
-                        <p className="text-xs mt-1.5" style={{ color: 'var(--clay-dim)' }}>
-                          {total.minutesDone} / {a.targetMinutes} min practised
-                          {total.targetMet && ' · target met'}
-                        </p>
-                      )
-                      return null
-                    })()}
-                    <p className="text-xs text-[var(--clay-dim)] mt-1">
-                      Assigned {format(parseISO(a.createdAt), 'MMM d')}
-                      {a.dueDate ? ` · Due ${format(parseISO(a.dueDate), 'MMM d')}` : ''}
-                      {a.completedAt ? ` · Completed ${format(parseISO(a.completedAt), 'MMM d')}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {needsReview(a) && (
-                      <button
-                        onClick={() => setReviewing(a)}
-                        className="rounded-full px-3 py-1.5 text-[12px] font-semibold transition-transform active:scale-95"
-                        style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}
-                      >
-                        Review
-                      </button>
-                    )}
-                    <button onClick={() => deleteAssignment(a.id)} className="text-[var(--clay-dim)] hover:text-red-400 transition-colors">
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </Card>
-              </div>
-            ))}
-          {assignments.length === 0 && (
-            <p className="text-sm text-[var(--clay-dim)] text-center py-4">No assignments yet.</p>
-          )}
-        </div>
-      </div>
+          )
+      )}
+      {tab === 'report' && <Report m={m} sessions={sessions} studio={profile?.studioName || profile?.displayName || ''} />}
 
-      {/* Messages with this student — what Teacher Notes used to be, now a
-          conversation they can answer. */}
-      <div>
-        <p className="text-xs font-semibold text-[var(--clay-dim)] uppercase tracking-widest mb-4 flex items-center gap-2">
-          <Sticker name="message" size={14} tone="ink" /> Messages
-        </p>
-        <Card className="p-5">
-          {profile && studentId && (
-            <MessageThread
-              me="teacher"
-              teacherId={profile.uid}
-              studentId={studentId}
-              otherName={student.displayName?.split(' ')[0] || 'your student'}
-              messages={thread}
-              recordings={studentRecordings}
-              assignments={assignments}
-              onOpenAssignment={(a) => setReviewing(a)}
-              canSend={student.teacherId === profile.uid}
-            />
-          )}
-        </Card>
-      </div>
-
-      <ReviewSheet
-        assignment={reviewing}
-        studentName={student?.displayName ?? 'Student'}
-        recordings={studentRecordings}
-        open={!!reviewing}
-        onClose={() => setReviewing(null)}
-      />
-
-    </div>
+      <ReviewSheet assignment={reviewing} studentName={m.name} recordings={recordings} open={!!reviewing} onClose={() => setReviewing(null)} />
+      {profile && <InviteSheet open={inviting} onClose={() => setInviting(false)} profile={profile} />}
+    </StudioPage>
   )
 }
+
+const NONE: never[] = []
