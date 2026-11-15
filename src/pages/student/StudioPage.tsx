@@ -124,7 +124,7 @@ export default function StudioPage() {
           )}
           <span
             className="mt-3 flex h-10 items-center justify-between px-4 text-[13px]"
-            style={{ background: 'var(--clay-bg)', color: 'var(--clay-faint)', borderRadius: 20 }}
+            style={{ background: 'var(--clay-field)', color: 'var(--clay-faint)', borderRadius: 20 }}
           >
             Message {teacher}…
             <Send size={15} style={{ color: 'var(--clay-accent-ink)' }} />

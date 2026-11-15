@@ -102,7 +102,7 @@ export default function NotificationsPage() {
                   value={prefs.reminderTime}
                   onChange={(e) => void set({ reminderTime: e.target.value })}
                   className="rounded-[var(--clay-r-sm)] px-4 py-2.5 text-sm outline-none"
-                  style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
+                  style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
                 />
               </label>
             </Block>

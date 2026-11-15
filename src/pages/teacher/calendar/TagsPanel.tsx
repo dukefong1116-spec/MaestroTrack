@@ -59,7 +59,7 @@ export default function TagsPanel({ counts }: { counts: Record<string, number> }
               <span className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{used}</span>
             </button>
             {open && (
-              <div className="mb-2.5 space-y-2.5 rounded-xl p-2.5" style={{ background: 'var(--clay-bg)' }}>
+              <div className="mb-2.5 space-y-2.5 rounded-xl p-2.5" style={{ background: 'var(--clay-wash)' }}>
                 <label className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>
                   Name
                   <input
@@ -90,7 +90,7 @@ export default function TagsPanel({ counts }: { counts: Record<string, number> }
                 </div>
                 <div className="flex items-center">
                   {used === 0 && settings.tags.length > 1 && (
-                    <button type="button" onClick={() => { void save(settings.tags.filter((x) => x.id !== t.id)); setEditing(null) }} className="py-1 text-[12.5px] font-semibold" style={{ color: '#B3263C' }}>
+                    <button type="button" onClick={() => { void save(settings.tags.filter((x) => x.id !== t.id)); setEditing(null) }} className="py-1 text-[12.5px] font-semibold" style={{ color: 'var(--clay-tone-danger)' }}>
                       Delete tag
                     </button>
                   )}

@@ -149,7 +149,7 @@ export default function MasteryMoment({
             className="py-3.5 text-[15px] font-semibold"
             style={{
               borderRadius: 'var(--clay-r-lg)',
-              background: 'var(--clay-bg)',
+              background: 'var(--clay-field)',
               color: 'var(--clay-dim)',
             }}
           >

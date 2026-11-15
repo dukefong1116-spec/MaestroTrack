@@ -25,7 +25,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             error && 'shadow-[inset_0_0_0_2px_var(--clay-danger)]',
             className
           )}
-          style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
+          style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
           {...props}
         />
         {error && <p className="text-xs font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>}

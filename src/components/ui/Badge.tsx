@@ -13,7 +13,7 @@ interface BadgeProps {
  * and an outline flattens them back into stickers-on-glass.
  */
 const VARIANTS: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
-  default: { background: 'var(--clay-bg-deep)', color: 'var(--clay-dim)' },
+  default: { background: 'var(--clay-bg-deep)', color: 'var(--clay-ink-soft)' },
   success: { background: 'var(--clay-success-bg)', color: 'var(--clay-success-fg)' },
   warning: { background: 'var(--clay-warning-bg)', color: 'var(--clay-warning-fg)' },
   danger: { background: 'var(--clay-danger-bg)', color: 'var(--clay-danger-fg)' },

@@ -109,7 +109,7 @@ export default function TeacherDashboard() {
       subtitle={`${format(now, 'EEEE, MMMM d')} · ${todays.length} lesson${todays.length === 1 ? '' : 's'} today`}
       actions={
         <div className="flex items-center gap-2 lg:hidden">
-          <button type="button" onClick={() => openMessages(null)} aria-label={`Messages${unread.size ? `, ${unread.size} unread` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+          <button type="button" onClick={() => openMessages(null)} aria-label={`Messages${unread.size ? `, ${unread.size} unread` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
             <MessageCircle size={19} />
             {unread.size > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold" style={{ background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }}>{unread.size}</span>}
           </button>
@@ -119,9 +119,9 @@ export default function TeacherDashboard() {
     >
       <div className="grid grid-cols-2 xl:grid-cols-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {stat('♪', 'var(--clay-accent-soft)', 'var(--clay-accent-ink)', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
-        {stat('✓', 'var(--clay-purple-bg)', '#5B3FA8', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
-        {stat('↑', 'var(--clay-success-bg)', '#1F6B4A', `${weekMinutes} min`, 'studio practice this week')}
-        {stat('$', 'var(--clay-warning-bg)', '#7A4F05', money(outstanding), 'outstanding', () => navigate('/teacher/families'))}
+        {stat('✓', 'var(--clay-purple-bg)', 'var(--clay-tone-purple)', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
+        {stat('↑', 'var(--clay-success-bg)', 'var(--clay-tone-success)', `${weekMinutes} min`, 'studio practice this week')}
+        {stat('$', 'var(--clay-warning-bg)', 'var(--clay-tone-warning)', money(outstanding), 'outstanding', () => navigate('/teacher/families'))}
       </div>
 
       <div className="flex flex-wrap">
@@ -135,7 +135,7 @@ export default function TeacherDashboard() {
             const tag = tagFor(settings.tags, i.tagId)
             const solo = i.rosterIds.length === 1 ? i.rosterIds[0] : null
             const mark = solo ? ATTENDANCE.find((a) => a.value === i.attendance[solo]) : undefined
-            const [bg, fg] = mark ? toneColors(mark.tone) : ['var(--clay-bg)', 'var(--clay-ink)']
+            const [bg, fg] = mark ? toneColors(mark.tone) : ['var(--clay-field)', 'var(--clay-ink)']
             const noted = notes.some((n) => n.occurrenceId === i.key)
             return (
               <div key={i.key} className="flex flex-wrap items-center gap-3 px-5 py-2.5 sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>

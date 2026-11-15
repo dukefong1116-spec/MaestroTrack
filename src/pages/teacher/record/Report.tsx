@@ -81,7 +81,7 @@ export default function Report({ m, sessions, studio }: { m: Member; sessions: P
       <h3 className="mb-1.5 mt-5 text-[14px] font-bold" style={{ color: 'var(--clay-ink)' }}>Repertoire</h3>
       {r.moved.length ? r.moved.map((x) => <p key={x} className="py-0.5 text-[13.5px]" style={{ color: 'var(--clay-ink-soft)' }}>{x}</p>) : <p className="text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>Add pieces in the Repertoire tab to see them here.</p>}
       <h3 className="mb-1.5 mt-5 text-[14px] font-bold" style={{ color: 'var(--clay-ink)' }}>From you</h3>
-      <textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} className="w-full rounded-xl border-0 p-3 text-[14px] outline-none" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
+      <textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} className="w-full rounded-xl border-0 p-3 text-[14px] outline-none" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
         placeholder={`${first} has made steady progress: the pulse is much more secure. Next: clean left-hand fingering, and practising slowly before speeding up.`} />
       <div className="mt-3 flex flex-wrap gap-2">
         <Btn kind="primary" onClick={print}>Print or save as PDF</Btn>

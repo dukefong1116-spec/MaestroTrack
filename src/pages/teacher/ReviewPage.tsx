@@ -126,7 +126,7 @@ export default function ReviewPage() {
 
       {rows.length === 0 ? <Empty>{filter === 'needs' ? 'Nothing waiting — all caught up.' : 'Nothing here.'}</Empty> : (
         <div role="table" aria-label="Handed-in assignments">
-          <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)', borderBottom: '1px solid var(--clay-line)' }}>
+          <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-wash)', borderBottom: '1px solid var(--clay-line)' }}>
             <span role="columnheader" className="w-6"><Check label="Select every row shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown))} /></span>
             <span role="columnheader" className="w-44">Student</span>
             <span role="columnheader" className="flex-1">Assignment</span>
@@ -154,7 +154,7 @@ export default function ReviewPage() {
                   </span>
                 </span>
                 <span role="cell" className="text-[13px] md:w-32" style={{ color: 'var(--clay-ink-soft)' }}>{formatDistanceToNowStrict(parseISO(sub.at), { addSuffix: true })}</span>
-                <span role="cell" className="text-[13px] md:w-24" style={{ color: late ? '#B3263C' : 'var(--clay-ink-soft)', fontWeight: late ? 700 : 400 }}>{a.dueDate ? `${format(parseISO(a.dueDate), 'MMM d')}${late ? ' · late' : ''}` : '—'}</span>
+                <span role="cell" className="text-[13px] md:w-24" style={{ color: late ? 'var(--clay-tone-danger)' : 'var(--clay-ink-soft)', fontWeight: late ? 700 : 400 }}>{a.dueDate ? `${format(parseISO(a.dueDate), 'MMM d')}${late ? ' · late' : ''}` : '—'}</span>
                 <span role="cell" className="md:w-28">
                   {st === 'needs' ? <Pill tone="purple">Needs review</Pill> : st === 'back' ? <Pill tone="warning">Sent back</Pill> : <Pill tone="success">Approved</Pill>}
                 </span>

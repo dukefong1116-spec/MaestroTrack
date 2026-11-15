@@ -118,7 +118,7 @@ export default function TeacherSettingsPage() {
 
         <p className="mb-1.5 mt-4 text-[12.5px] font-medium" style={{ color: 'var(--clay-dim)' }}>Lesson types and prices</p>
         <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--clay-line)' }}>
-          <div className="hidden grid-cols-[minmax(0,1fr)_110px_110px_70px_40px] gap-2 px-3 py-2 text-[12px] font-semibold sm:grid" style={{ background: 'var(--clay-bg)', color: 'var(--clay-dim)' }}>
+          <div className="hidden grid-cols-[minmax(0,1fr)_110px_110px_70px_40px] gap-2 px-3 py-2 text-[12px] font-semibold sm:grid" style={{ background: 'var(--clay-wash)', color: 'var(--clay-dim)' }}>
             <span>Name</span><span>Length</span><span>Price a lesson</span><span>Group</span><span />
           </div>
           {types.map((t, i) => (

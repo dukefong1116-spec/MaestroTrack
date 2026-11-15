@@ -110,7 +110,7 @@ export default function Sidebar() {
             data-coach={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
             className={({ isActive }) => cn(
               'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
-              !isActive && 'hover:bg-[var(--clay-bg)]'
+              !isActive && 'hover:bg-[var(--clay-wash)]'
             )}
             style={({ isActive }) =>
               isActive
@@ -143,7 +143,7 @@ export default function Sidebar() {
           to={settingsFor(role)}
           className={({ isActive }) => cn(
             'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
-            !isActive && 'hover:bg-[var(--clay-bg)]'
+            !isActive && 'hover:bg-[var(--clay-wash)]'
           )}
           style={({ isActive }) =>
             isActive

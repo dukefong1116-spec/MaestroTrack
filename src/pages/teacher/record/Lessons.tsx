@@ -26,7 +26,7 @@ export default function Lessons({ m }: { m: Member }) {
     const priv = mine.find((n) => n.visibility === 'private')
     const carried = it.carried.filter((c) => c.state === 'carried')
     return (
-      <button key={it.key} type="button" onClick={() => setOpen(it)} className="block w-full px-5 py-3.5 text-left hover:bg-[var(--clay-bg)] sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      <button key={it.key} type="button" onClick={() => setOpen(it)} className="block w-full px-5 py-3.5 text-left hover:bg-[var(--clay-wash)] sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="h-3 w-3 rounded" style={{ background: tagFor(settings.tags, it.tagId).color }} aria-hidden="true" />
           <strong className="text-[14px]" style={{ color: 'var(--clay-ink)' }}>{parseDay(it.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {clock(it.startTime)}</strong>

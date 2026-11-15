@@ -78,7 +78,7 @@ export default function TeacherRail() {
               to={p.to}
               end={p.end}
               aria-label={p.label}
-              className={({ isActive }) => `${itemCls} ${isActive ? '' : 'hover:bg-[var(--clay-bg)]'}`}
+              className={({ isActive }) => `${itemCls} ${isActive ? '' : 'hover:bg-[var(--clay-wash)]'}`}
               style={({ isActive }) => isActive
                 ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }
                 : { color: 'var(--clay-dim)' }}
@@ -107,7 +107,7 @@ export default function TeacherRail() {
         <NavLink
           to="/teacher/settings"
           aria-label="Settings"
-          className={({ isActive }) => `${itemCls} ${isActive ? '' : 'hover:bg-[var(--clay-bg)]'}`}
+          className={({ isActive }) => `${itemCls} ${isActive ? '' : 'hover:bg-[var(--clay-wash)]'}`}
           style={({ isActive }) => isActive ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { color: 'var(--clay-dim)' }}
         >
           <Settings className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />

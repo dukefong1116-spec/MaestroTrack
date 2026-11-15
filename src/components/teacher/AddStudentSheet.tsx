@@ -80,7 +80,7 @@ export default function AddStudentSheet({ open, onClose, onAdded }: { open: bool
             <span className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>Invite to the app</span>
             <span className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>A QR code, a code to read out, or a link. They join once you accept.</span>
           </button>
-          <button type="button" onClick={() => setMode('record')} className="flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition-transform active:scale-[.98]" style={{ background: 'var(--clay-bg)' }}>
+          <button type="button" onClick={() => setMode('record')} className="flex flex-col items-start gap-2 rounded-2xl p-4 text-left transition-transform active:scale-[.98]" style={{ background: 'var(--clay-field)' }}>
             <UserPlus size={22} style={{ color: 'var(--clay-ink)' }} aria-hidden="true" />
             <span className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>Add without an account</span>
             <span className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>Keep their lessons, notes and invoices here; invite them whenever you like.</span>

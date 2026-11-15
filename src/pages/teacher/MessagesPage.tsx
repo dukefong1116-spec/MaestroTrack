@@ -33,7 +33,7 @@ export default function MessagesPage() {
             <span className="block truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{name}</span>
             <span className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>On the app</span>
           </span>
-          {member && <button type="button" onClick={() => navigate(`/teacher/students/${encodeURIComponent(member.id)}`)} className="rounded-[10px] px-3 py-1.5 text-[12.5px] font-semibold" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>Record</button>}
+          {member && <button type="button" onClick={() => navigate(`/teacher/students/${encodeURIComponent(member.id)}`)} className="rounded-[10px] px-3 py-1.5 text-[12.5px] font-semibold" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>Record</button>}
         </div>
         <div className="flex min-h-0 flex-1 flex-col pb-[env(safe-area-inset-bottom)]">
           <MessageThread full me="teacher" teacherId={profile.uid} studentId={withId} otherName={name.split(' ')[0]} messages={thread} recordings={recordings} assignments={mine}
@@ -46,7 +46,7 @@ export default function MessagesPage() {
   return (
     <StudioPage
       title="Messages"
-      actions={<button type="button" onClick={() => setAnnouncing(true)} aria-label="Announcement to every student" className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}><Megaphone size={18} /></button>}
+      actions={<button type="button" onClick={() => setAnnouncing(true)} aria-label="Announcement to every student" className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}><Megaphone size={18} /></button>}
     >
       <ConversationList onOpen={(id) => setParams({ with: id })} />
       <AnnouncementSheet open={announcing} onClose={() => setAnnouncing(false)} />

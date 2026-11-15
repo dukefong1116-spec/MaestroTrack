@@ -130,7 +130,7 @@ function Composer({ teacherId, m, onDone }: { teacherId: string; m: Member; onDo
   }
 
   return (
-    <div className="space-y-3 px-5 py-4 sm:px-6" style={{ background: 'var(--clay-bg)', borderBottom: '1px solid var(--clay-line)' }}>
+    <div className="space-y-3 px-5 py-4 sm:px-6" style={{ background: 'var(--clay-wash)', borderBottom: '1px solid var(--clay-line)' }}>
       <div className="flex gap-2">
         {([['task', 'Task', 'handed in once'], ['daily', 'Daily practice', 'minutes every day']] as const).map(([id, label, hint]) => (
           <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)} className="flex-1 rounded-xl px-3 py-2 text-left"

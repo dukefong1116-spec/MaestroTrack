@@ -25,7 +25,12 @@
   /* ground — "Mistral accent": Zéphir cream with Mistral blue (palette:
      Mistral #A3DFF1, Zéphir #FEE4B8, Solara #FFC065, Pulpe #FFA43A) */
   --clay-bg: #FFF8EC;
-  --clay-bg-deep: #FEEBCB;
+  --clay-bg-deep: #DDE9EF;
+  /* Fills inside a panel, kept off the cream so they read as their own thing:
+     field for inputs, menus, tab groups and soft buttons; wash for table
+     headers, hovers and inset boxes. */
+  --clay-field: #E7F0F4;
+  --clay-wash: #EFF5F8;
   --clay-surface: #FFFFFF;
 
   /* ink — deep navy */
@@ -68,6 +73,12 @@
   --clay-danger-bg:  #FFE3E7;
   --clay-purple-fg:  #7A5AC4;
   --clay-purple-bg:  #EDE6FB;
+  /* Text on the tinted chips above: deep in light, bright in dark. */
+  --clay-tone-success: #1F6B4A;
+  --clay-tone-warning: #7A4F05;
+  --clay-tone-danger: #B3263C;
+  --clay-tone-purple: #5B3FA8;
+  --clay-tone-info: #24558F;
 
   /* pale fills that have to stop being pale after dark */
   --clay-sticker-ink-fill: #F3EADB;
@@ -102,6 +113,8 @@
   :root:not([data-theme="light"]) {
     --clay-bg: #0E1A21;
     --clay-bg-deep: #15252E;
+    --clay-field: #243B47;
+    --clay-wash: #1F3440;
     --clay-surface: #1A2C36;
 
     --clay-ink: #EAF4F8;
@@ -129,6 +142,11 @@
     --clay-danger-bg:  #3C1F26;
     --clay-purple-fg:  #BCA6F2;
     --clay-purple-bg:  #2A2342;
+    --clay-tone-success: #6BCB9B;
+    --clay-tone-warning: #FFC065;
+    --clay-tone-danger: #FF8A9B;
+    --clay-tone-purple: #BCA6F2;
+    --clay-tone-info: #9CCBEF;
 
     --clay-sticker-ink-fill: #253D49;
     --clay-sticker-accent-fill: #1D4556;
@@ -148,6 +166,8 @@
 :root[data-theme="dark"] {
   --clay-bg: #0E1A21;
   --clay-bg-deep: #15252E;
+  --clay-field: #243B47;
+  --clay-wash: #1F3440;
   --clay-surface: #1A2C36;
 
   --clay-ink: #EAF4F8;
@@ -175,6 +195,11 @@
   --clay-danger-bg:  #3C1F26;
   --clay-purple-fg:  #BCA6F2;
   --clay-purple-bg:  #2A2342;
+  --clay-tone-success: #6BCB9B;
+  --clay-tone-warning: #FFC065;
+  --clay-tone-danger: #FF8A9B;
+  --clay-tone-purple: #BCA6F2;
+  --clay-tone-info: #9CCBEF;
 
   --clay-sticker-ink-fill: #253D49;
   --clay-sticker-accent-fill: #1D4556;

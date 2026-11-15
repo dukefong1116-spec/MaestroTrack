@@ -149,7 +149,7 @@ export default function InviteSheet({
             <div
               className="flex items-center gap-2 px-3 py-2.5 text-[12px]"
               style={{
-                background: 'var(--clay-bg)',
+                background: 'var(--clay-wash)',
                 borderRadius: 'var(--clay-r-sm)',
                 color: 'var(--clay-dim)',
               }}

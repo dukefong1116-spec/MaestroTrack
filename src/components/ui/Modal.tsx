@@ -56,7 +56,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
               <button
                 onClick={onClose}
                 className="rounded-full p-1.5 transition-transform active:scale-90"
-                style={{ color: 'var(--clay-faint)', background: 'var(--clay-bg)' }}
+                style={{ color: 'var(--clay-faint)', background: 'var(--clay-field)' }}
               >
                 <X size={17} />
               </button>

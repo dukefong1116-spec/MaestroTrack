@@ -93,7 +93,7 @@ export default function NotificationBell({ label, floating, rail }: {
           type="button"
           onClick={toggle}
           aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
-          className="relative flex h-11 w-full shrink-0 items-center gap-3.5 overflow-hidden whitespace-nowrap rounded-[0.875rem] px-[0.9375rem] text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]"
+          className="relative flex h-11 w-full shrink-0 items-center gap-3.5 overflow-hidden whitespace-nowrap rounded-[0.875rem] px-[0.9375rem] text-sm font-semibold transition-colors hover:bg-[var(--clay-wash)]"
           style={{ color: 'var(--clay-dim)' }}
         >
           <Bell className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
@@ -116,7 +116,7 @@ export default function NotificationBell({ label, floating, rail }: {
         aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
         className={
           label
-            ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]'
+            ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-wash)]'
             : floating
               ? 'relative flex h-11 w-11 items-center justify-center rounded-full'
               : 'relative flex h-9 w-9 items-center justify-center rounded-full'
@@ -128,7 +128,7 @@ export default function NotificationBell({ label, floating, rail }: {
               // On a phone this sits over the page rather than inside the
               // sidebar, so it needs its own surface to read as a control.
               ? { background: 'var(--clay-surface)', color: 'var(--clay-ink)', boxShadow: 'var(--clay-raised)' }
-              : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
+              : { background: 'var(--clay-field)', color: 'var(--clay-ink)' }
         }
       >
         <span className="relative flex shrink-0 items-center justify-center">

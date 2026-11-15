@@ -77,7 +77,7 @@ export function Segmented<T extends string>({
   className?: string
 }) {
   return (
-    <div role="group" aria-label={label} className={cn('flex flex-wrap gap-0.5 p-[3px]', className)} style={{ background: 'var(--clay-bg)', borderRadius: 10 }}>
+    <div role="group" aria-label={label} className={cn('flex flex-wrap gap-0.5 p-[3px]', className)} style={{ background: 'var(--clay-field)', borderRadius: 10 }}>
       {options.map((o) => {
         const on = o.value === value
         return (
@@ -117,7 +117,7 @@ export function Btn({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: BtnKind }) {
   const style: React.CSSProperties =
     kind === 'primary' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }
-      : kind === 'soft' ? { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
+      : kind === 'soft' ? { background: 'var(--clay-field)', color: 'var(--clay-ink)' }
         : kind === 'quiet' ? { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }
           : { background: 'transparent', color: 'var(--clay-accent-ink)', paddingLeft: 2, paddingRight: 2 }
   return (

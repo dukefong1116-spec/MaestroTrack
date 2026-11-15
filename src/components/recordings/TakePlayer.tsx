@@ -210,7 +210,7 @@ export default function TakePlayer({
 
   return (
     <>
-    <div className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
+    <div className="px-3.5 py-3" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
       <audio ref={ref} src={audioSrc} preload="none" />
 
       <div className="flex items-center gap-3">

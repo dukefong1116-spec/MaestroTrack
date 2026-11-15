@@ -39,7 +39,7 @@ export default function AttachmentList({ files, className }: { files?: Assignmen
           return (
             <button key={f.storagePath} type="button" disabled={busy === f.storagePath} onClick={() => open(f)}
               className="inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-semibold disabled:opacity-60"
-              style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+              style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
               <Icon size={13} aria-hidden="true" style={{ color: 'var(--clay-accent-ink)' }} />
               <span className="truncate">{f.name}</span>
             </button>

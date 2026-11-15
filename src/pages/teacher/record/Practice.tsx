@@ -96,7 +96,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
       </div>
       {error && <p className="px-6 pb-2 text-[13px]" style={{ color: 'var(--clay-danger)' }}>{error}</p>}
       {adding && (
-        <div className="mx-5 mb-3 flex flex-wrap items-end gap-2.5 rounded-xl p-3 sm:mx-6" style={{ background: 'var(--clay-bg)' }}>
+        <div className="mx-5 mb-3 flex flex-wrap items-end gap-2.5 rounded-xl p-3 sm:mx-6" style={{ background: 'var(--clay-wash)' }}>
           <Field label="Day" className="w-40"><input type="date" className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={addDate} max={dayKey(new Date())} onChange={(e) => setAddDate(e.target.value)} /></Field>
           <Field label="Minutes" className="w-24"><input type="number" min={1} max={600} className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={addMins} onChange={(e) => setAddMins(e.target.value)} /></Field>
           <Field label="What (optional)" className="min-w-[180px] flex-1"><input className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={addWhat} onChange={(e) => setAddWhat(e.target.value)} placeholder="Told me in the lesson" /></Field>
@@ -134,7 +134,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
               )}
             </div>
             {editing === s.id && (
-              <div className="mt-2 flex flex-wrap items-end gap-2 rounded-xl p-2.5" style={{ background: 'var(--clay-bg)' }}>
+              <div className="mt-2 flex flex-wrap items-end gap-2 rounded-xl p-2.5" style={{ background: 'var(--clay-wash)' }}>
                 <Field label="Minutes" className="w-24"><input type="number" min={0} className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={mins} onChange={(e) => setMins(e.target.value)} /></Field>
                 <Field label="Why" className="min-w-[200px] flex-1"><input className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="The timer ran on after you stopped" /></Field>
                 <Btn kind="soft" style={{ background: '#fff' }} onClick={() => setEditing(null)}>Cancel</Btn>

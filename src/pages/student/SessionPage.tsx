@@ -1406,7 +1406,7 @@ export default function SessionPage() {
                           className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-opacity"
                           style={{
                             borderRadius: 'var(--clay-r-sm)',
-                            background: 'var(--clay-bg)',
+                            background: 'var(--clay-field)',
                             opacity: keep ? 1 : 0.5,
                           }}
                         >
@@ -1446,7 +1446,7 @@ export default function SessionPage() {
                     className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left"
                     style={{
                       borderRadius: 'var(--clay-r-md)',
-                      background: 'var(--clay-bg)',
+                      background: 'var(--clay-field)',
                       color: 'var(--clay-ink)',
                     }}
                   >

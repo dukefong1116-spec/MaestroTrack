@@ -34,7 +34,7 @@ export default function Repertoire({ m }: { m: Member }) {
       {items.length === 0 ? <Empty>Nothing yet. Pieces and skills you add here show their progress in the report.</Empty> : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-[13.5px]">
-            <thead><tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)' }}>
+            <thead><tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-wash)' }}>
               <th className="px-6 py-2 font-semibold">Piece or skill</th><th className="px-2 py-2 font-semibold">Status</th><th className="px-2 py-2 font-semibold">Tempo goal</th><th className="px-2 py-2 font-semibold">Notes and next step</th><th className="w-10" />
             </tr></thead>
             <tbody>

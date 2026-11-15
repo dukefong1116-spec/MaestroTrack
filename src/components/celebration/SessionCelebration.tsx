@@ -206,7 +206,7 @@ export default function SessionCelebration({
           {showStreak && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-2.5 rounded-2xl py-3"
-              style={{ background: reward.thawed || reward.stillFrozen ? 'rgba(120,180,240,.16)' : 'var(--clay-bg)' }}
+              style={{ background: reward.thawed || reward.stillFrozen ? 'rgba(120,180,240,.16)' : 'var(--clay-wash)' }}
               initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.4 }}

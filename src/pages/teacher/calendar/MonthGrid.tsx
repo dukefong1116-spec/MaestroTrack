@@ -57,7 +57,7 @@ export default function MonthGrid({
             aria-label={label}
             onClick={() => onPick(date)}
             className="flex min-h-[118px] min-w-0 flex-col gap-[3px] px-2 pb-2 pt-1.5 text-left"
-            style={{ borderTop: '1px solid var(--clay-line)', borderLeft: i % 7 ? '1px solid var(--clay-line)' : 'none', background: inMonth ? 'var(--clay-surface)' : 'var(--clay-bg)' }}
+            style={{ borderTop: '1px solid var(--clay-line)', borderLeft: i % 7 ? '1px solid var(--clay-line)' : 'none', background: inMonth ? 'var(--clay-surface)' : 'var(--clay-wash)' }}
           >
             <span className="flex justify-end">
               <span className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[13px]"

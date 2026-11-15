@@ -28,7 +28,7 @@ const H = 1350
 
 const C = {
   bg: '#FFF8EC',
-  bgDeep: '#FEEBCB',
+  bgDeep: '#DDE9EF',
   surface: '#FFFFFF',
   ink: '#1F3A48',
   dim: '#5C6F7A',

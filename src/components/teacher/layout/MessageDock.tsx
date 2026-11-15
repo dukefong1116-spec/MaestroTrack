@@ -75,7 +75,7 @@ export function ConversationList({ onOpen }: { onOpen: (studentId: string) => vo
           key={m.id}
           type="button"
           onClick={() => onOpen(m.uid as string)}
-          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-[var(--clay-bg)]"
+          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-[var(--clay-wash)]"
         >
           <Avatar name={m.name} color={colorFor(m.id)} size={44} />
           <span className="min-w-0 flex-1">
@@ -106,10 +106,10 @@ function DockList({ onOpen, onClose, onAnnounce }: { onOpen: (id: string) => voi
     <>
       <div className="flex items-center gap-2 py-3 pl-4 pr-3" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         <h2 className="flex-1 text-[18px] font-bold" style={{ color: 'var(--clay-ink)' }}>Messages</h2>
-        <button type="button" onClick={onAnnounce} aria-label="Announcement to every student" title="Announcement to everyone" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+        <button type="button" onClick={onAnnounce} aria-label="Announcement to every student" title="Announcement to everyone" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
           <Megaphone size={17} aria-hidden="true" />
         </button>
-        <button type="button" onClick={onClose} aria-label="Close messages" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+        <button type="button" onClick={onClose} aria-label="Close messages" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
           <X size={17} aria-hidden="true" />
         </button>
       </div>
@@ -138,11 +138,11 @@ function DockThread({ studentId, onBack, onClose }: { studentId: string; onBack:
           <span className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>{member?.instrument ?? ''} · on the app</span>
         </span>
         {member && (
-          <button type="button" onClick={() => navigate(`/teacher/students/${member.id}`)} className="rounded-[10px] px-2.5 py-1.5 text-[12px] font-semibold" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+          <button type="button" onClick={() => navigate(`/teacher/students/${member.id}`)} className="rounded-[10px] px-2.5 py-1.5 text-[12px] font-semibold" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
             Record
           </button>
         )}
-        <button type="button" onClick={onClose} aria-label="Close messages" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
+        <button type="button" onClick={onClose} aria-label="Close messages" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
           <X size={17} aria-hidden="true" />
         </button>
       </div>

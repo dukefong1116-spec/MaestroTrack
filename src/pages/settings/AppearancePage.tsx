@@ -39,7 +39,7 @@ export default function AppearancePage() {
                   onClick={() => void set({ theme: id })}
                   className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[var(--clay-r-sm)] transition-transform active:scale-95"
                   style={{
-                    background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
+                    background: on ? 'var(--clay-accent)' : 'var(--clay-field)',
                     color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
                     boxShadow: on ? 'var(--clay-accent-shadow)' : 'none',
                   }}
@@ -91,7 +91,7 @@ export default function AppearancePage() {
                   onClick={() => void set({ displayScale: s })}
                   className="min-h-[52px] rounded-[var(--clay-r-sm)] font-semibold transition-transform active:scale-95"
                   style={{
-                    background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
+                    background: on ? 'var(--clay-accent)' : 'var(--clay-field)',
                     color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
                     boxShadow: on ? 'var(--clay-accent-shadow)' : 'none',
                     fontSize: 11 + (s - 90) * 0.12,

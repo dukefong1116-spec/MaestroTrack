@@ -54,7 +54,7 @@ export default function NotificationPanel({
               <li key={n.id}>
                 <button
                   onClick={() => { navigate(n.to); onClose() }}
-                  className="flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--clay-bg)]"
+                  className="flex w-full items-start gap-2.5 rounded-[12px] px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--clay-wash)]"
                 >
                   <span className="mt-0.5 shrink-0">
                     <Sticker name={n.sticker} size={16} tone="ink" />
