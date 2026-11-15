@@ -116,7 +116,7 @@ export default function StudentDetailPage() {
           {!m.onApp && <Btn kind="primary" onClick={() => setInviting(true)}>Invite to the app</Btn>}
           {m.onApp
             ? <Btn kind="quiet" onClick={() => openMessages(m.uid)}>Message</Btn>
-            : emails.length > 0 && <a className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-bold" style={{ background: 'var(--clay-accent-soft)', color: '#C2452B' }} href={`mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(`${first}’s lessons`)}`}>Email family</a>}
+            : emails.length > 0 && <a className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-bold" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }} href={`mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(`${first}’s lessons`)}`}>Email family</a>}
           <Btn kind="link" onClick={remove}>Remove</Btn>
         </>
       }

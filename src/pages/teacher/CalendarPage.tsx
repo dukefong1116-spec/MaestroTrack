@@ -139,10 +139,10 @@ export default function CalendarPage() {
                     const n = items.filter((i) => i.date === d).length
                     return (
                       <button key={d} type="button" aria-pressed={on} onClick={() => setAnchor(d)} className="flex h-[58px] flex-col items-center justify-center rounded-xl"
-                        style={on ? { background: 'var(--clay-accent)', color: '#fff' } : { background: 'var(--clay-bg)', color: d === today ? 'var(--clay-accent-ink)' : 'var(--clay-ink)' }}>
+                        style={on ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { background: 'var(--clay-bg)', color: d === today ? 'var(--clay-accent-ink)' : 'var(--clay-ink)' }}>
                         <span className="text-[11px] font-semibold opacity-85">{parseDay(d).toLocaleDateString('en-US', { weekday: 'short' })}</span>
                         <span className="text-[16px] font-bold">{parseDay(d).getDate()}</span>
-                        <span className="h-[5px] w-[5px] rounded-full" style={{ background: n ? (on ? '#fff' : 'var(--clay-accent)') : 'transparent' }} />
+                        <span className="h-[5px] w-[5px] rounded-full" style={{ background: n ? (on ? 'var(--clay-on-accent)' : 'var(--clay-accent-ink)') : 'transparent' }} />
                       </button>
                     )
                   })}
@@ -201,10 +201,10 @@ export default function CalendarPage() {
       <NewLessonSheet open={adding} onClose={() => setAdding(false)} date={anchor} />
 
       {toast && (
-        <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] text-white lg:bottom-8" style={{ background: 'var(--clay-ink)', boxShadow: '0 14px 30px -10px rgba(58,48,84,.45)' }}>
+        <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] lg:bottom-8" style={{ background: 'var(--clay-ink)', color: 'var(--clay-surface)', boxShadow: '0 14px 30px -10px rgba(31,58,72,.45)' }}>
           <span>{toast.text}</span>
           {toast.action && (
-            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold" style={{ background: 'var(--clay-accent)' }}>
+            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
               {toast.action.label}
             </button>
           )}

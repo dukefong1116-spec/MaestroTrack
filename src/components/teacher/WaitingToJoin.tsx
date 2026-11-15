@@ -43,7 +43,7 @@ export default function WaitingToJoin() {
   }
 
   return (
-    <div className="px-5 py-3 sm:px-6" style={{ background: '#FFF6F2', borderBottom: '1px solid #F6E3DC' }}>
+    <div className="px-5 py-3 sm:px-6" style={{ background: 'var(--clay-accent-soft)', borderBottom: '1px solid var(--clay-line)' }}>
       <p className="mb-2 text-[13.5px] font-bold" style={{ color: 'var(--clay-ink)' }}>Waiting to join your studio · {requests.length}</p>
       {error && <p className="mb-2 text-[13px]" style={{ color: 'var(--clay-danger)' }}>{error}</p>}
       <div className="space-y-2.5">

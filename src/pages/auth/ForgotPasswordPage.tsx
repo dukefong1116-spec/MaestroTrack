@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
               <div className="flex justify-center"><Sticker name="mail" size={44} tone="accent" /></div>
               <p className="font-semibold" style={{ color: 'var(--clay-ink)' }}>Check your inbox!</p>
               <p className="text-sm" style={{ color: 'var(--clay-dim)' }}>Password reset email sent.</p>
-              <Link to="/login" className="text-sm font-medium" style={{ color: 'var(--clay-accent)' }}>Back to Sign In</Link>
+              <Link to="/login" className="text-sm font-medium" style={{ color: 'var(--clay-accent-ink)' }}>Back to Sign In</Link>
             </div>
           ) : (
             <>
@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
                 <Button type="submit" className="w-full" loading={isSubmitting}>Send Reset Link</Button>
               </form>
               <p className="text-center text-sm mt-6">
-                <Link to="/login" className="font-medium" style={{ color: 'var(--clay-accent)' }}>Back to Sign In</Link>
+                <Link to="/login" className="font-medium" style={{ color: 'var(--clay-accent-ink)' }}>Back to Sign In</Link>
               </p>
             </>
           )}

@@ -14,7 +14,12 @@ import NotificationPanel from './NotificationPanel'
  * any one row, and a badge that only clears item by item would stay lit
  * for things nobody intends to open.
  */
-export default function NotificationBell({ label, floating }: { label?: string; floating?: boolean }) {
+export default function NotificationBell({ label, floating, rail }: {
+  label?: string
+  floating?: boolean
+  /** In the teacher's icon rail: a row like the pages under it, the label shown only while the rail is open. */
+  rail?: { open: boolean }
+}) {
   const { profile } = useAuth()
   const { items, unread, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
@@ -83,6 +88,28 @@ export default function NotificationBell({ label, floating }: { label?: string; 
     <div ref={boxRef} className={label ? 'w-full' : 'relative'}>
       {/* With a label it is a row like the navigation beside it; without
           one — a collapsed sidebar — it falls back to the icon alone. */}
+      {rail ? (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
+          className="relative flex h-11 w-full shrink-0 items-center gap-3.5 overflow-hidden whitespace-nowrap rounded-[0.875rem] px-[0.9375rem] text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]"
+          style={{ color: 'var(--clay-dim)' }}
+        >
+          <Bell className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
+          <span className="min-w-0 truncate" style={{ opacity: rail.open ? 1 : 0, transition: 'opacity 120ms ease' }}>Notifications</span>
+          {unread > 0 && (
+            <span
+              className="absolute flex items-center justify-center rounded-full text-[0.65rem] font-bold"
+              style={rail.open
+                ? { right: '0.625rem', top: '0.75rem', minWidth: '1.25rem', height: '1.25rem', padding: '0 0.375rem', background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }
+                : { left: '1.625rem', top: '0.25rem', minWidth: '1.0625rem', height: '1.0625rem', padding: '0 0.25rem', background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)', border: '2px solid var(--clay-surface)' }}
+            >
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </button>
+      ) : (
       <motion.button
         onClick={toggle}
         whileTap={{ scale: 0.97 }}
@@ -139,6 +166,7 @@ export default function NotificationBell({ label, floating }: { label?: string; 
           </AnimatePresence>
         )}
       </motion.button>
+      )}
 
       {createPortal(
         <AnimatePresence>

@@ -93,7 +93,7 @@ export default function StudioPage() {
             </span>
             <span className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--clay-faint)' }}>
               {last && formatDistanceToNowStrict(parseISO(last.createdAt), { addSuffix: true })}
-              {unreadMessages > 0 && <span className="h-2 w-2 rounded-full" style={{ background: 'var(--clay-accent)' }} />}
+              {unreadMessages > 0 && <span className="h-2 w-2 rounded-full" style={{ background: 'var(--clay-accent-ink)' }} />}
             </span>
           </div>
           {recent.length === 0 ? (
@@ -127,7 +127,7 @@ export default function StudioPage() {
             style={{ background: 'var(--clay-bg)', color: 'var(--clay-faint)', borderRadius: 20 }}
           >
             Message {teacher}…
-            <Send size={15} style={{ color: 'var(--clay-accent)' }} />
+            <Send size={15} style={{ color: 'var(--clay-accent-ink)' }} />
           </span>
         </Link>
 

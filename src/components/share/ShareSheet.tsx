@@ -125,7 +125,7 @@ export default function ShareSheet({
   return (
     <motion.div
       className="fixed inset-0 z-[60] flex items-end justify-center p-2 sm:items-center sm:p-4"
-      style={{ background: 'rgba(58,48,84,.42)', paddingTop: 'max(8px, env(safe-area-inset-top))' }}
+      style={{ background: 'rgba(31,58,72,.42)', paddingTop: 'max(8px, env(safe-area-inset-top))' }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >

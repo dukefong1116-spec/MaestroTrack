@@ -74,7 +74,7 @@ export default function MakeupsPanel() {
                 <div className="flex flex-wrap gap-1.5">
                   {options.map((o) => (
                     <button key={`${o.date}${o.time}`} type="button" disabled={busy === m.id} onClick={() => book(m.id, o.date, o.time)}
-                      className="min-h-[32px] rounded-[9px] px-2.5 text-[12.5px] font-bold disabled:opacity-50" style={{ background: 'var(--clay-accent-soft)', color: '#C2452B' }}>
+                      className="min-h-[32px] rounded-[9px] px-2.5 text-[12.5px] font-bold disabled:opacity-50" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}>
                       {parseDay(o.date).toLocaleDateString('en-US', { weekday: 'short' })} {clock(o.time)}
                     </button>
                   ))}

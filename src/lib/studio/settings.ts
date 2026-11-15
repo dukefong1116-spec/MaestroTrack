@@ -7,7 +7,7 @@ import type { CalendarTag, LessonType, RosterStudent, StudioSettings } from '@/t
  */
 
 export const DEFAULT_TAGS: CalendarTag[] = [
-  { id: 'private', name: 'Private lesson', color: '#FF7A5C' },
+  { id: 'private', name: 'Private lesson', color: '#2A8EB3' },
   { id: 'group', name: 'Group class', color: '#7A5AC4' },
   { id: 'makeup', name: 'Make-up', color: '#2E8B62' },
   { id: 'event', name: 'Recital or event', color: '#3B7DD8' },
@@ -16,6 +16,7 @@ export const DEFAULT_TAGS: CalendarTag[] = [
 
 /** Eight colours, each at least 3:1 against white so a bar or dot reads. */
 export const TAG_SWATCHES: { color: string; name: string }[] = [
+  { color: '#2A8EB3', name: 'Mistral' },
   { color: '#FF7A5C', name: 'Coral' },
   { color: '#C98A12', name: 'Amber' },
   { color: '#2E8B62', name: 'Green' },
@@ -23,7 +24,6 @@ export const TAG_SWATCHES: { color: string; name: string }[] = [
   { color: '#3B7DD8', name: 'Blue' },
   { color: '#7A5AC4', name: 'Purple' },
   { color: '#D64257', name: 'Red' },
-  { color: '#7D7495', name: 'Grey' },
 ]
 
 export const DEFAULT_LESSON_TYPES: LessonType[] = [

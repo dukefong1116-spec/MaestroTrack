@@ -36,7 +36,7 @@ export default function ConfirmSheet({
         >
           <div
             className="absolute inset-0 backdrop-blur-sm"
-            style={{ background: 'rgba(58,48,84,.45)' }}
+            style={{ background: 'rgba(31,58,72,.45)' }}
             onClick={busy ? undefined : onCancel}
           />
           <motion.div

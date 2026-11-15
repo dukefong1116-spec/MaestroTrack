@@ -281,7 +281,7 @@ export default function TourLayer() {
           <div className={`relative flex items-start ${show.big ? 'gap-3.5' : 'gap-3'}`}>
             <span
               className={`mt-0.5 flex shrink-0 items-center justify-center rounded-full ${show.big ? 'h-11 w-11' : 'h-8 w-8'}`}
-              style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent)' }}
+              style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}
             >
               <NoteGlyph size={show.big ? 24 : 18} />
             </span>

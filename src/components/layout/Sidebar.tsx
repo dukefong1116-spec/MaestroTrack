@@ -48,7 +48,7 @@ export default function Sidebar() {
       animate={{ width: collapsed ? 72 : 248 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="relative hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
-      style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(58,48,84,.14)', zIndex: 1 }}
+      style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(31,58,72,.14)', zIndex: 1 }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5">
@@ -128,7 +128,7 @@ export default function Sidebar() {
                 {((unread > 0 && to === homeFor(role)) || (studioAttention > 0 && to === studioNav.to)) && (
                   <span
                     className="ml-auto h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent)' }}
+                    style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent-ink)' }}
                   />
                 )}
               </>

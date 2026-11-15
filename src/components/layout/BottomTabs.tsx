@@ -128,7 +128,7 @@ export default function BottomTabs() {
                     <span
                       aria-label={`${studioAttention} new`}
                       className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full"
-                      style={{ background: 'var(--clay-accent)' }}
+                      style={{ background: 'var(--clay-accent-ink)' }}
                     />
                   )}
                 </span>

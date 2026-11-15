@@ -76,7 +76,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="p-5 sm:px-6" style={{ boxShadow: '1px 0 0 var(--clay-line), 0 1px 0 var(--clay-line)' }}>
               <p className="mb-3 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--clay-dim)' }}>Last 14 days</p>
-              <PracticeBarChart data={daily} color="#FF7A5C" />
+              <PracticeBarChart data={daily} color="#2A8EB3" />
             </div>
             <div className="p-5 sm:px-6" style={{ boxShadow: '0 1px 0 var(--clay-line)' }}>
               <p className="mb-3 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--clay-dim)' }}>What they practise</p>
@@ -85,7 +85,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
           </div>
           <div className="p-5 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
             <p className="mb-3 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--clay-dim)' }}>The year</p>
-            <PracticeHeatmap data={heat} color="#FF7A5C" />
+            <PracticeHeatmap data={heat} color="#2A8EB3" />
           </div>
         </>
       )}
@@ -106,7 +106,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
       {mineAdded.map((e) => (
         <div key={e.id} className="flex flex-wrap items-center gap-2.5 px-5 py-2.5 sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
           <strong className="w-28 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>{parseDay(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
-          <span className="flex-1 text-[13.5px]" style={{ color: '#4F4766' }}>{e.minutes} min{e.what ? ` · ${e.what}` : ''}</span>
+          <span className="flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink-soft)' }}>{e.minutes} min{e.what ? ` · ${e.what}` : ''}</span>
           <Pill>Added by you</Pill>
           <button type="button" onClick={() => void deleteTeacherPractice(e.id)} className="text-[12.5px] font-semibold" style={{ color: 'var(--clay-dim)' }}>Remove</button>
         </div>
@@ -120,7 +120,7 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
           <div key={s.id} className="px-5 py-2.5 sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
             <div className="flex flex-wrap items-center gap-2.5">
               <strong className="w-28 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>{parseDay(s.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong>
-              <span className="flex-1 text-[13.5px]" style={{ color: '#4F4766' }}>{s.minutes} min · {s.category}</span>
+              <span className="flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink-soft)' }}>{s.minutes} min · {s.category}</span>
               {pending ? (
                 <>
                   <Pill tone="warning">Suggested {pending.toMinutes} min · waiting for {first}</Pill>

@@ -303,7 +303,7 @@ export default function TakePlayer({
                 href={audioSrc}
                 download
                 className="font-semibold underline"
-                style={{ color: 'var(--clay-accent)' }}
+                style={{ color: 'var(--clay-accent-ink)' }}
               >
                 Download the take
               </a>

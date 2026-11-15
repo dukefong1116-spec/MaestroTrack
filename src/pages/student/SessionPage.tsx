@@ -965,7 +965,7 @@ export default function SessionPage() {
                 top: 16, width: 26, height: 17, marginLeft: -13,
                 borderRadius: 6,
                 background: 'var(--clay-accent)',
-                boxShadow: '0 4px 10px -2px rgba(255,122,92,.5)',
+                boxShadow: '0 4px 10px -2px rgba(91,184,214,.55)',
               }}
             />
           </motion.div>
@@ -1336,7 +1336,7 @@ export default function SessionPage() {
           >
             <div
               className="absolute inset-0"
-              style={{ background: 'rgba(58,48,84,.45)' }}
+              style={{ background: 'rgba(31,58,72,.45)' }}
               onClick={cancelFinish}
             />
             <motion.div

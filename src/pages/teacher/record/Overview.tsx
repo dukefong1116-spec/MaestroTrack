@@ -63,7 +63,7 @@ export default function Overview({ m }: { m: Member }) {
           </select>
         </label>
         {fam && fam.contacts.length > 0 && (
-          <p className="mt-2 text-[13px]" style={{ color: '#4F4766' }}>{fam.contacts.map((c) => [c.name, c.email, c.phone].filter(Boolean).join(' · ')).join(' / ')}</p>
+          <p className="mt-2 text-[13px]" style={{ color: 'var(--clay-ink-soft)' }}>{fam.contacts.map((c) => [c.name, c.email, c.phone].filter(Boolean).join(' · ')).join(' / ')}</p>
         )}
         <div className="mt-3 grid gap-2">
           {(['parentName', 'email', 'phone'] as const).map((k) => (
@@ -77,7 +77,7 @@ export default function Overview({ m }: { m: Member }) {
       </Cell>
 
       <Cell title="Weekly lesson">
-        <p className="text-[13.5px]" style={{ color: '#4F4766' }}>
+        <p className="text-[13.5px]" style={{ color: 'var(--clay-ink-soft)' }}>
           {weekly.length ? weekly.map((l) => `${DAY[l.dayOfWeek]}s at ${clock(l.startTime)}${l.where ? ` · ${l.where}` : ''}${l.rosterIds.length > 1 ? ` (${l.title})` : ''}`).join('; ') : 'Not on the calendar yet — add a lesson from the calendar.'}
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2.5">

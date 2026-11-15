@@ -317,7 +317,7 @@ export default function StudentDashboard() {
               <button
                 onClick={() => navigate('/student/studio/assignments')}
                 className="mt-2.5 text-[12.5px] font-semibold"
-                style={{ color: 'var(--clay-accent)' }}
+                style={{ color: 'var(--clay-accent-ink)' }}
               >
                 {todo.length - 4} more
               </button>

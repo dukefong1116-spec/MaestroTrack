@@ -90,7 +90,7 @@ export default function AboutPage() {
           <a
             href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`MaestroTrack ${__APP_VERSION__} — support`)}`}
             className="inline-flex items-center gap-2 text-sm font-semibold"
-            style={{ color: 'var(--clay-accent)' }}
+            style={{ color: 'var(--clay-accent-ink)' }}
           >
             <Mail size={16} /> {SUPPORT_EMAIL}
           </a>

@@ -119,7 +119,7 @@ export default function FamiliesPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left text-[13.5px]">
                 <thead>
-                  <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: '#FBFAFE' }}>
+                  <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)' }}>
                     <th className="w-8 py-2 pl-6"><Check label="Select every family shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown.map((r) => r.f.id)))} /></th>
                     <th className="px-2 py-2 font-semibold">Family</th><th className="px-2 py-2 font-semibold">Students</th>
                     <th className="px-2 py-2 font-semibold">Due</th><th className="px-2 py-2 text-right font-semibold">Balance</th><th className="py-2 pl-2 pr-6 font-semibold">Status</th>
@@ -129,7 +129,7 @@ export default function FamiliesPage() {
                   {shown.map((r) => {
                     const on = sel.has(r.f.id)
                     return (
-                      <tr key={r.f.id} style={{ borderTop: '1px solid var(--clay-line)', background: on ? '#FFF6F2' : r.f.id === pickedId ? '#FBFAFE' : undefined }}>
+                      <tr key={r.f.id} style={{ borderTop: '1px solid var(--clay-line)', background: on ? 'var(--clay-accent-soft)' : r.f.id === pickedId ? 'var(--clay-bg)' : undefined }}>
                         <td className="py-2.5 pl-6"><Check label={`Select ${r.f.name}`} checked={on} onChange={() => setSel((s) => { const n = new Set(s); if (n.has(r.f.id)) n.delete(r.f.id); else n.add(r.f.id); return n })} /></td>
                         <td className="px-2 py-2.5">
                           <button type="button" onClick={() => setParams({ family: r.f.id }, { replace: true })} className="text-left">
@@ -137,8 +137,8 @@ export default function FamiliesPage() {
                             <span className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>{r.f.contacts[0]?.name ?? 'No contact yet'}</span>
                           </button>
                         </td>
-                        <td className="px-2 py-2.5" style={{ color: '#4F4766' }}>{r.kids.map((m) => m.name.split(' ')[0]).join(', ') || '—'}</td>
-                        <td className="px-2 py-2.5" style={{ color: '#4F4766' }}>{r.due ? parseDay(r.due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
+                        <td className="px-2 py-2.5" style={{ color: 'var(--clay-ink-soft)' }}>{r.kids.map((m) => m.name.split(' ')[0]).join(', ') || '—'}</td>
+                        <td className="px-2 py-2.5" style={{ color: 'var(--clay-ink-soft)' }}>{r.due ? parseDay(r.due).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
                         <td className="px-2 py-2.5 text-right font-bold" style={{ color: 'var(--clay-ink)' }}>{moneyExact(r.balance)}</td>
                         <td className="py-2.5 pl-2 pr-6">{r.invoices.length === 0 ? <Pill>No invoices yet</Pill> : r.standing === 'paid' ? <Pill tone="success">Paid</Pill> : r.standing === 'overdue' ? <Pill tone="danger">Overdue</Pill> : <Pill tone="warning">{r.reminded ? 'Reminder sent' : 'Unpaid'}</Pill>}</td>
                       </tr>
@@ -230,7 +230,7 @@ function FamilyPane({ row, onEdit }: { row: { f: Family; kids: ReturnType<typeof
             <div key={i} className="flex justify-between gap-3 py-2 text-[13.5px]" style={{ borderTop: '1px solid var(--clay-line)', color: 'var(--clay-ink)' }}><span>{l.text}</span><span>{moneyExact(l.amountCents)}</span></div>
           ))}
           <div className="flex justify-between pb-1 pt-3 text-[15px] font-bold" style={{ borderTop: '2px solid var(--clay-line)', color: 'var(--clay-ink)' }}><span>Total</span><span>{moneyExact(inv.totalCents)}</span></div>
-          <div className="flex justify-between text-[13.5px]" style={{ color: '#4F4766' }}><span>Paid</span><span>{moneyExact(paidCents(inv))}</span></div>
+          <div className="flex justify-between text-[13.5px]" style={{ color: 'var(--clay-ink-soft)' }}><span>Paid</span><span>{moneyExact(paidCents(inv))}</span></div>
           {(inv.payments ?? []).map((p, i) => (
             <p key={i} className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{new Date(p.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {p.method} · {moneyExact(p.amountCents)}{p.note ? ` · ${p.note}` : ''}</p>
           ))}

@@ -99,7 +99,7 @@ export default function SoundSetting({ bare }: { bare?: boolean } = {}) {
           onClick={check}
           disabled={checking}
           className="text-[12.5px] font-semibold disabled:opacity-50"
-          style={{ color: 'var(--clay-accent)' }}
+          style={{ color: 'var(--clay-accent-ink)' }}
         >
           {checking ? 'Checking…' : 'Check audio on this device'}
         </button>

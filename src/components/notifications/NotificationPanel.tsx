@@ -70,7 +70,7 @@ export default function NotificationPanel({
                       {fresh && (
                         <span
                           className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ background: 'var(--clay-accent)' }}
+                          style={{ background: 'var(--clay-accent-ink)' }}
                         />
                       )}
                     </span>

@@ -43,7 +43,7 @@ export default function MonthGrid({
           return (
             <button key={date} type="button" aria-label={label} aria-pressed={on} onClick={() => onPick(date)} className="flex h-12 flex-col items-center gap-0.5 pt-1">
               <span className="flex h-7 w-7 items-center justify-center rounded-full text-[14px]"
-                style={on ? { background: 'var(--clay-ink)', color: '#fff', fontWeight: 700 } : isToday ? { background: 'var(--clay-accent)', color: '#fff', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)' }}>
+                style={on ? { background: 'var(--clay-ink)', color: 'var(--clay-surface)', fontWeight: 700 } : isToday ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)' }}>
                 {d.getDate()}
               </span>
               <span className="flex gap-0.5">{dots.map((c) => <span key={c} className="h-[5px] w-[5px] rounded-full" style={{ background: c }} />)}</span>
@@ -57,11 +57,11 @@ export default function MonthGrid({
             aria-label={label}
             onClick={() => onPick(date)}
             className="flex min-h-[118px] min-w-0 flex-col gap-[3px] px-2 pb-2 pt-1.5 text-left"
-            style={{ borderTop: '1px solid var(--clay-line)', borderLeft: i % 7 ? '1px solid var(--clay-line)' : 'none', background: inMonth ? 'var(--clay-surface)' : '#FBFAFE' }}
+            style={{ borderTop: '1px solid var(--clay-line)', borderLeft: i % 7 ? '1px solid var(--clay-line)' : 'none', background: inMonth ? 'var(--clay-surface)' : 'var(--clay-bg)' }}
           >
             <span className="flex justify-end">
               <span className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[13px]"
-                style={isToday ? { background: 'var(--clay-accent)', color: '#fff', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)', fontWeight: 600 }}>
+                style={isToday ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)', fontWeight: 600 }}>
                 {d.getDate() === 1 ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : d.getDate()}
               </span>
             </span>

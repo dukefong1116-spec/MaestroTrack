@@ -111,14 +111,14 @@ export default function TeacherDashboard() {
         <div className="flex items-center gap-2 lg:hidden">
           <button type="button" onClick={() => openMessages(null)} aria-label={`Messages${unread.size ? `, ${unread.size} unread` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
             <MessageCircle size={19} />
-            {unread.size > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-white" style={{ background: 'var(--clay-accent-ink)' }}>{unread.size}</span>}
+            {unread.size > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold" style={{ background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }}>{unread.size}</span>}
           </button>
           <NotificationBell floating />
         </div>
       }
     >
       <div className="grid grid-cols-2 xl:grid-cols-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        {stat('♪', 'var(--clay-accent-soft)', '#C2452B', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
+        {stat('♪', 'var(--clay-accent-soft)', 'var(--clay-accent-ink)', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
         {stat('✓', 'var(--clay-purple-bg)', '#5B3FA8', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
         {stat('↑', 'var(--clay-success-bg)', '#1F6B4A', `${weekMinutes} min`, 'studio practice this week')}
         {stat('$', 'var(--clay-warning-bg)', '#7A4F05', money(outstanding), 'outstanding', () => navigate('/teacher/families'))}
@@ -191,7 +191,7 @@ export default function TeacherDashboard() {
           {recentNotes.map((n) => (
             <div key={n.id} className="px-5 py-2.5 text-[13px] sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
               <div className="font-bold" style={{ color: 'var(--clay-ink)' }}>{nameOf(n.rosterId)} <span className="font-normal" style={{ color: 'var(--clay-dim)' }}>· {parseDay(n.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}{n.visibility === 'private' ? ' · private' : ''}</span></div>
-              <div className="mt-0.5 leading-relaxed" style={{ color: '#4F4766' }}>{n.text}</div>
+              <div className="mt-0.5 leading-relaxed" style={{ color: 'var(--clay-ink-soft)' }}>{n.text}</div>
             </div>
           ))}
         </div>

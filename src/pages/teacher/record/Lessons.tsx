@@ -26,15 +26,15 @@ export default function Lessons({ m }: { m: Member }) {
     const priv = mine.find((n) => n.visibility === 'private')
     const carried = it.carried.filter((c) => c.state === 'carried')
     return (
-      <button key={it.key} type="button" onClick={() => setOpen(it)} className="block w-full px-5 py-3.5 text-left hover:bg-[#FBFAFE] sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      <button key={it.key} type="button" onClick={() => setOpen(it)} className="block w-full px-5 py-3.5 text-left hover:bg-[var(--clay-bg)] sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         <div className="flex flex-wrap items-center gap-2">
           <span className="h-3 w-3 rounded" style={{ background: tagFor(settings.tags, it.tagId).color }} aria-hidden="true" />
           <strong className="text-[14px]" style={{ color: 'var(--clay-ink)' }}>{parseDay(it.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · {clock(it.startTime)}</strong>
           <span className="text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{it.durationMinutes} min{it.rosterIds.length > 1 ? ` · ${it.title}` : ''}{it.makeupFor ? ' · make-up' : ''}</span>
           {it.cancelled ? <Pill>No lesson</Pill> : mark ? <Pill tone={mark.tone}>{mark.label}</Pill> : it.date < today ? <Pill tone="accent">Attendance not recorded</Pill> : null}
         </div>
-        {shared && <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: '#4F4766' }}><span style={{ color: 'var(--clay-dim)' }}>Shared with {first}:</span> {shared.text}</p>}
-        {priv && <p className="mt-0.5 text-[13.5px] leading-relaxed" style={{ color: '#4F4766' }}><span style={{ color: 'var(--clay-dim)' }}>Private:</span> {priv.text}</p>}
+        {shared && <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--clay-ink-soft)' }}><span style={{ color: 'var(--clay-dim)' }}>Shared with {first}:</span> {shared.text}</p>}
+        {priv && <p className="mt-0.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--clay-ink-soft)' }}><span style={{ color: 'var(--clay-dim)' }}>Private:</span> {priv.text}</p>}
         {carried.length > 0 && <p className="mt-1 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>Carried to the next lesson: {carried.map((c) => c.text).join('; ')}</p>}
       </button>
     )

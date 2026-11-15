@@ -51,13 +51,13 @@ export default function TeacherRail() {
           width: open ? '15.5rem' : '4.5rem',
           background: 'var(--clay-surface)',
           borderRight: '1px solid var(--clay-line)',
-          boxShadow: open ? '16px 0 32px -16px rgba(58,48,84,.3)' : 'none',
+          boxShadow: open ? '16px 0 32px -16px rgba(31,58,72,.3)' : 'none',
           transition: reduce ? 'none' : 'width 170ms ease, box-shadow 170ms ease',
         }}
       >
         <div className="mb-2.5 flex h-12 shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap pl-1">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.875rem]" style={{ background: 'linear-gradient(135deg,#FF7A5C,#F26243)' }}>
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></svg>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.875rem]" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></svg>
           </span>
           <span className="min-w-0" style={{ opacity: open ? 1 : 0, transition: reduce ? 'none' : 'opacity 120ms ease' }}>
             <span className="block text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>MaestroTrack</span>
@@ -67,8 +67,8 @@ export default function TeacherRail() {
           </span>
         </div>
 
-        <div className="shrink-0 overflow-hidden [&>*]:w-full">
-          <NotificationBell label={open ? 'Notifications' : undefined} />
+        <div className="shrink-0 [&>*]:w-full">
+          <NotificationBell rail={{ open }} />
         </div>
 
         <nav aria-label="Pages" className="mt-1 flex flex-col gap-1">
@@ -91,8 +91,8 @@ export default function TeacherRail() {
                     <span
                       className="absolute flex items-center justify-center rounded-full text-[0.65rem] font-bold"
                       style={open
-                        ? { right: '0.625rem', top: '0.75rem', minWidth: '1.25rem', height: '1.25rem', padding: '0 0.375rem', background: isActive ? '#fff' : 'var(--clay-accent)', color: isActive ? 'var(--clay-accent-ink)' : '#fff' }
-                        : { left: '1.625rem', top: '0.25rem', minWidth: '1.0625rem', height: '1.0625rem', padding: '0 0.25rem', background: isActive ? '#fff' : 'var(--clay-accent-ink)', color: isActive ? 'var(--clay-accent-ink)' : '#fff', border: '2px solid var(--clay-surface)' }}
+                        ? { right: '0.625rem', top: '0.75rem', minWidth: '1.25rem', height: '1.25rem', padding: '0 0.375rem', background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent-ink)', color: isActive ? 'var(--clay-accent)' : 'var(--clay-surface)' }
+                        : { left: '1.625rem', top: '0.25rem', minWidth: '1.0625rem', height: '1.0625rem', padding: '0 0.25rem', background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)', border: '2px solid var(--clay-surface)' }}
                     >
                       {toReview}
                     </span>

@@ -31,7 +31,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             // main, so dragging the dimmed area scrolled the page behind it
             // on a touch screen. Taps still close it.
             className="absolute inset-0 touch-none backdrop-blur-sm"
-            style={{ background: 'rgba(58,48,84,.32)' }}
+            style={{ background: 'rgba(31,58,72,.32)' }}
             onClick={onClose}
           />
           <motion.div

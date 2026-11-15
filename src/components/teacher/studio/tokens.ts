@@ -7,8 +7,8 @@ export const TONES: Record<Tone, [string, string]> = {
   danger: ['var(--clay-danger-bg)', '#B3263C'],
   purple: ['var(--clay-purple-bg)', '#5B3FA8'],
   info: ['var(--clay-tint-sky)', '#24558F'],
-  neutral: ['var(--clay-bg-deep)', '#4F4766'],
-  accent: ['var(--clay-accent-soft)', '#C2452B'],
+  neutral: ['var(--clay-bg-deep)', 'var(--clay-ink-soft)'],
+  accent: ['var(--clay-accent-soft)', 'var(--clay-accent-ink)'],
 }
 
 export function toneColors(tone: Tone): [string, string] {

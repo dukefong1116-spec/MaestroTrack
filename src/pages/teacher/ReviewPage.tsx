@@ -126,7 +126,7 @@ export default function ReviewPage() {
 
       {rows.length === 0 ? <Empty>{filter === 'needs' ? 'Nothing waiting — all caught up.' : 'Nothing here.'}</Empty> : (
         <div role="table" aria-label="Handed-in assignments">
-          <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: '#FBFAFE', borderBottom: '1px solid var(--clay-line)' }}>
+          <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)', borderBottom: '1px solid var(--clay-line)' }}>
             <span role="columnheader" className="w-6"><Check label="Select every row shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown))} /></span>
             <span role="columnheader" className="w-44">Student</span>
             <span role="columnheader" className="flex-1">Assignment</span>
@@ -140,7 +140,7 @@ export default function ReviewPage() {
             const name = nameOf(a)
             const late = a.dueDate && dueness(a) === 'overdue' && st === 'needs'
             return (
-              <div key={a.id} role="row" className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:flex-nowrap md:px-6" style={{ borderBottom: '1px solid var(--clay-line)', background: on ? '#FFF6F2' : undefined }}>
+              <div key={a.id} role="row" className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:flex-nowrap md:px-6" style={{ borderBottom: '1px solid var(--clay-line)', background: on ? 'var(--clay-accent-soft)' : undefined }}>
                 <span role="cell" className="w-6"><Check label={`Select ${name}: ${a.title}`} checked={on} onChange={() => toggle(a.id)} /></span>
                 <span role="cell" className="flex min-w-0 items-center gap-2.5 md:w-44">
                   <Avatar name={name} color={colorFor(a.rosterId ?? a.studentId)} size={30} />
@@ -153,8 +153,8 @@ export default function ReviewPage() {
                     {sub.minutesAtSubmission != null ? ` · ${sub.minutesAtSubmission} min logged` : ''}
                   </span>
                 </span>
-                <span role="cell" className="text-[13px] md:w-32" style={{ color: '#4F4766' }}>{formatDistanceToNowStrict(parseISO(sub.at), { addSuffix: true })}</span>
-                <span role="cell" className="text-[13px] md:w-24" style={{ color: late ? '#B3263C' : '#4F4766', fontWeight: late ? 700 : 400 }}>{a.dueDate ? `${format(parseISO(a.dueDate), 'MMM d')}${late ? ' · late' : ''}` : '—'}</span>
+                <span role="cell" className="text-[13px] md:w-32" style={{ color: 'var(--clay-ink-soft)' }}>{formatDistanceToNowStrict(parseISO(sub.at), { addSuffix: true })}</span>
+                <span role="cell" className="text-[13px] md:w-24" style={{ color: late ? '#B3263C' : 'var(--clay-ink-soft)', fontWeight: late ? 700 : 400 }}>{a.dueDate ? `${format(parseISO(a.dueDate), 'MMM d')}${late ? ' · late' : ''}` : '—'}</span>
                 <span role="cell" className="md:w-28">
                   {st === 'needs' ? <Pill tone="purple">Needs review</Pill> : st === 'back' ? <Pill tone="warning">Sent back</Pill> : <Pill tone="success">Approved</Pill>}
                 </span>

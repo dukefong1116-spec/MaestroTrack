@@ -146,7 +146,7 @@ function mix(a: string, b: string, t: number): string {
   return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`
 }
 
-const DARK_GROUND = '#15121E'
+const DARK_GROUND = '#0E1A21'
 
 /** Puts a set of preferences into effect. Safe to call repeatedly. */
 export function applyPrefs(p: Prefs): void {
@@ -164,7 +164,7 @@ export function applyPrefs(p: Prefs): void {
   // The browser chrome sits right against the app; leaving it on the light
   // value puts a pale bar above a dark screen.
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', isDarkTheme() ? '#15121E' : '#F1ECF8')
+  if (meta) meta.setAttribute('content', isDarkTheme() ? '#0E1A21' : '#FFF8EC')
 
   if (p.accent === 'instrument') {
     themeOverride = null

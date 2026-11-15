@@ -89,7 +89,7 @@ export default function StudentsPage() {
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: '#FBFAFE' }}>
+                <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)' }}>
                   <th className="px-6 py-2 font-semibold">Student</th>
                   <th className="px-2 py-2 font-semibold">Family</th>
                   <th className="px-2 py-2 font-semibold">Weekly lesson</th>
@@ -102,7 +102,7 @@ export default function StudentsPage() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.m.id} className="text-[13.5px]" style={{ borderTop: '1px solid var(--clay-line)', color: '#4F4766' }}>
+                  <tr key={r.m.id} className="text-[13.5px]" style={{ borderTop: '1px solid var(--clay-line)', color: 'var(--clay-ink-soft)' }}>
                     <td className="px-6 py-2.5">
                       <button type="button" onClick={() => open(r.m)} className="flex items-center gap-3 text-left">
                         <Avatar name={r.m.name} color={colorFor(r.m.id)} size={36} />
@@ -120,7 +120,7 @@ export default function StudentsPage() {
                     <td className="px-2 py-2.5">{r.m.onApp ? <Pill tone="success">On the app</Pill> : <Pill>Not on the app</Pill>}</td>
                     <td className="px-6 py-2.5 text-right">
                       {r.m.onApp && (
-                        <button type="button" onClick={() => openMessages(r.m.uid)} aria-label={`Message ${r.m.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-[11px]" style={{ background: 'var(--clay-accent-soft)', color: '#C2452B' }}>
+                        <button type="button" onClick={() => openMessages(r.m.uid)} aria-label={`Message ${r.m.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-[11px]" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}>
                           <MessageCircle size={17} aria-hidden="true" />
                         </button>
                       )}

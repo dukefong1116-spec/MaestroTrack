@@ -28,21 +28,21 @@ export default function MessageDock() {
           type="button"
           onClick={() => show(null)}
           className="fixed bottom-6 right-6 z-40 flex items-center gap-3 rounded-full py-2 pl-2 pr-5 transition-transform active:scale-95"
-          style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', boxShadow: '0 14px 30px -10px rgba(58,48,84,.35)', color: 'var(--clay-ink)' }}
+          style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', boxShadow: '0 14px 30px -10px rgba(31,58,72,.35)', color: 'var(--clay-ink)' }}
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: 'var(--clay-accent)' }}>
+          <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
             <MessageCircle size={16} aria-hidden="true" />
           </span>
           <span className="text-[15px] font-bold">Messages</span>
           {unread.size > 0 && (
-            <span className="rounded-full px-2 py-0.5 text-[12px] font-bold text-white" style={{ background: 'var(--clay-accent-ink)' }}>{unread.size}</span>
+            <span className="rounded-full px-2 py-0.5 text-[12px] font-bold" style={{ background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }}>{unread.size}</span>
           )}
         </button>
       ) : (
         <section
           aria-label="Messages"
           className="fixed bottom-6 right-6 z-40 flex h-[560px] max-h-[calc(100dvh-48px)] w-[380px] flex-col overflow-hidden"
-          style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', borderRadius: 18, boxShadow: '0 24px 60px -16px rgba(58,48,84,.45)' }}
+          style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', borderRadius: 18, boxShadow: '0 24px 60px -16px rgba(31,58,72,.45)' }}
         >
           {studentId
             ? <DockThread studentId={studentId} onBack={back} onClose={close} />
@@ -84,7 +84,7 @@ export function ConversationList({ onOpen }: { onOpen: (studentId: string) => vo
               {last ? `${last.from === 'teacher' ? 'You: ' : ''}${last.text || (last.attachment ? 'Shared an item' : '')}` : 'Say hello'}
             </span>
           </span>
-          {isNew && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: 'var(--clay-accent)' }} aria-label="Unread" />}
+          {isNew && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: 'var(--clay-accent-ink)' }} aria-label="Unread" />}
         </button>
       ))}
       {rows.length === 0 && (

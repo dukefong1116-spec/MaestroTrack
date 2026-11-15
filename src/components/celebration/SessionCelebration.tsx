@@ -195,7 +195,7 @@ export default function SessionCelebration({
               to={reward.minutes}
               delay={0.3}
               className="text-5xl font-bold leading-none"
-              style={{ color: 'var(--clay-accent)' }}
+              style={{ color: 'var(--clay-accent-ink)' }}
             />
             <span className="text-base font-semibold" style={{ color: 'var(--clay-faint)' }}>
               min

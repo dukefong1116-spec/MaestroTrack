@@ -32,7 +32,7 @@ function Toggle({ on, label, onFlip }: { on: boolean; label: string; onFlip: () 
     <button type="button" role="switch" aria-checked={on} onClick={onFlip} className="flex w-full items-center gap-3 py-2.5 text-left" style={{ borderBottom: '1px solid var(--clay-line)' }}>
       <span className="flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>{label}</span>
       <span className="relative inline-block h-[26px] w-11 shrink-0 rounded-full transition-colors" style={{ background: on ? 'var(--clay-accent)' : '#D9D2E8' }}>
-        <span className="absolute top-[3px] h-5 w-5 rounded-full bg-white transition-all" style={{ left: on ? 21 : 3, boxShadow: '0 1px 3px rgba(58,48,84,.3)' }} />
+        <span className="absolute top-[3px] h-5 w-5 rounded-full bg-white transition-all" style={{ left: on ? 21 : 3, boxShadow: '0 1px 3px rgba(31,58,72,.3)' }} />
       </span>
     </button>
   )
@@ -118,7 +118,7 @@ export default function TeacherSettingsPage() {
 
         <p className="mb-1.5 mt-4 text-[12.5px] font-medium" style={{ color: 'var(--clay-dim)' }}>Lesson types and prices</p>
         <div className="overflow-hidden rounded-xl" style={{ border: '1px solid var(--clay-line)' }}>
-          <div className="hidden grid-cols-[minmax(0,1fr)_110px_110px_70px_40px] gap-2 px-3 py-2 text-[12px] font-semibold sm:grid" style={{ background: '#FBFAFE', color: 'var(--clay-dim)' }}>
+          <div className="hidden grid-cols-[minmax(0,1fr)_110px_110px_70px_40px] gap-2 px-3 py-2 text-[12px] font-semibold sm:grid" style={{ background: 'var(--clay-bg)', color: 'var(--clay-dim)' }}>
             <span>Name</span><span>Length</span><span>Price a lesson</span><span>Group</span><span />
           </div>
           {types.map((t, i) => (
