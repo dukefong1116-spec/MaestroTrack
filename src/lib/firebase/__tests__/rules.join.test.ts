@@ -113,7 +113,12 @@ describe('studioInvites', () => {
   })
 
   it('cannot be reopened once spent', async () => {
-    await assertSucceeds(updateDoc(doc(as(ANA), 'studioInvites', TOKEN), { status: 'claimed' }))
+    // Spent the only way it can be: by raising a request with it.
+    const db = as(ANA)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'studioRequests', reqId(ANA, TEACHER)), requestBody(ANA, TEACHER))
+    batch.update(doc(db, 'studioInvites', TOKEN), { status: 'claimed' })
+    await assertSucceeds(batch.commit())
     await assertFails(updateDoc(doc(as(TEACHER), 'studioInvites', TOKEN), { status: 'open' }))
   })
 })

@@ -19,7 +19,7 @@ import type { UserRole, InstrumentType } from '@/types'
 const studentSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   // Derived from the list the picker renders, so an instrument added to
   // one can never be rejected by the other.
   instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
@@ -30,7 +30,7 @@ const studentSchema = z.object({
 const teacherSchema = z.object({
   displayName: z.string().min(2),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   studioName: z.string().min(2, 'Studio name required'),
   instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]], { message: 'Choose the instrument you teach' }),
 })

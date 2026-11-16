@@ -44,6 +44,36 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "comment": "A student's own calendar: lessons that name them, from the teacher they are with now (the rules require that teacher filter).",
+      "collectionGroup": "studioLessons",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "studentUids",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "teacherId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "comment": "A student's own calendar: lessons that name them, from the teacher they are with now (the rules require that teacher filter).",
+      "collectionGroup": "lessonOccurrences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "studentUids",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "teacherId",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

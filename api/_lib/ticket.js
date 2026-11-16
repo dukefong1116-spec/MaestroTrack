@@ -70,15 +70,43 @@ export function creditedSessions(uid, sessions) {
     list.push({ ...s, start, minutes })
     byTicket.set(s.ticket, list)
   }
+  // Real time is spent once. Each ticket covers the real time from its
+  // start to its last session, and earns at most that. Tickets whose spans
+  // overlap form one stretch of real time, and together they earn at most
+  // that stretch — so three timers started together in three tabs share
+  // one allowance instead of tripling it. Sessions that do not overlap
+  // (practice, save, start again) are separate stretches and unaffected.
+  const tickets = [...byTicket.values()]
+    .map((list) => {
+      list.sort((a, b) => a.createdMs - b.createdMs)
+      const start = list[0].start
+      const end = list[list.length - 1].createdMs
+      return { list, start, end, allowance: span(start, end) }
+    })
+    .sort((a, b) => a.start - b.start)
+
   const out = []
-  for (const list of byTicket.values()) {
-    list.sort((a, b) => a.createdMs - b.createdMs)
-    let allowance = Math.ceil((list[list.length - 1].createdMs - list[0].start) / 60_000) + 1
-    for (const s of list) {
-      const minutes = Math.min(s.minutes, allowance)
-      allowance -= minutes
-      if (minutes > 0) out.push({ date: s.date, minutes })
+  let i = 0
+  while (i < tickets.length) {
+    // One stretch: every ticket that starts before the stretch so far ends.
+    let stretchEnd = tickets[i].end
+    let j = i + 1
+    while (j < tickets.length && tickets[j].start <= stretchEnd) stretchEnd = Math.max(stretchEnd, tickets[j++].end)
+    let shared = span(tickets[i].start, stretchEnd)
+    for (const t of tickets.slice(i, j)) {
+      for (const s of t.list) {
+        const minutes = Math.min(s.minutes, t.allowance, shared)
+        t.allowance -= minutes
+        shared -= minutes
+        if (minutes > 0) out.push({ date: s.date, minutes })
+      }
     }
+    i = j
   }
   return out
+}
+
+/** Whole minutes of real time from start to end, with a minute's rounding slack. */
+function span(startMs, endMs) {
+  return Math.ceil((endMs - startMs) / 60_000) + 1
 }

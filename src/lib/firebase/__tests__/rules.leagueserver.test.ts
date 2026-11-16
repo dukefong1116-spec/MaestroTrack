@@ -114,10 +114,25 @@ describe('what counts', () => {
   it('deleting a session takes its XP away', async () => {
     await student('ana')
     const a = await timerSession('ana', 20)
-    await timerSession('ana', 15)
+    // Its timer started an hour ago, so the two sessions fit in the real
+    // time their timers cover. (Two timers covering only the same twenty
+    // minutes would share them — see credit.test.ts.)
+    await timerSession('ana', 15, 60)
     expect((await sync('ana')).xp).toBe(45)
     await a.delete()
     expect((await sync('ana')).xp).toBe(25)
+  })
+  it('the timer-checked minutes are saved where only the server writes — opted out or not', async () => {
+    await student('ana')
+    await timerSession('ana', 20)
+    await store.collection('practiceSessions').doc().set({ userId: 'ana', date: today(), durationMinutes: 500, category: 'Scales', createdAt: new Date().toISOString() })
+    await sync('ana')
+    const v = (await store.doc('verifiedPractice/ana').get()).data()!
+    expect(v.days[today()]).toBe(20)
+    await store.doc('users/ana').update({ leagueOptOut: true })
+    await timerSession('ana', 10, 60)
+    await sync('ana')
+    expect((await store.doc('verifiedPractice/ana').get()).data()!.days[today()]).toBe(30)
   })
   it('teachers have no league', async () => {
     await store.doc('users/t').set({ role: 'teacher', displayName: 'T' })

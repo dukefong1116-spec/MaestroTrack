@@ -185,8 +185,11 @@ describe('rolled-up practice', () => {
     await assertFails(getDoc(doc(as(BEN), 'practiceSummary', ANA)))
   })
 
-  it('but a classmate CAN read the leaderboard figures', async () => {
-    await assertSucceeds(getDoc(doc(as(BEN), 'studioStats', ANA)))
+  // There is no studio leaderboard on screen, so classmates no longer
+  // read each other's daily figures; the student and their teacher do.
+  it('a classmate cannot read the studio figures either', async () => {
+    await assertFails(getDoc(doc(as(BEN), 'studioStats', ANA)))
+    await assertSucceeds(getDoc(doc(as(ANA), 'studioStats', ANA)))
   })
 
   it('someone from another studio cannot', async () => {

@@ -257,12 +257,6 @@ describe("the student's own reads", () => {
     expect(await expectDelivered<unknown[]>((cb) => schedule.subscribeStudentSchedule(ANA, cb))).toHaveLength(1)
   })
 
-  it("subscribeTeacherNotes — a student reading what's been written about them", async () => {
-    await seed('teacherNotes', 'n1', { teacherId: TEACHER, studentId: ANA, content: 'Good bow control' })
-    asAna()
-    expect(await expectDelivered<unknown[]>((cb) => teacher.subscribeTeacherNotes(ANA, cb))).toHaveLength(1)
-  })
-
   it('subscribePracticeSummary / subscribeStudioStats — their own roll-ups', async () => {
     await seed('practiceSummary', ANA, { uid: ANA, days: {} })
     await seed('studioStats', ANA, { uid: ANA, teacherId: TEACHER, days: {} })
@@ -415,12 +409,6 @@ describe("the teacher's reads", () => {
     expect(await expectDelivered<unknown[]>((cb) => schedule.subscribeTeacherSchedule(TEACHER, cb))).toHaveLength(1)
   })
 
-  it('subscribeTeacherNotes — the teacher reading their own notes on a student', async () => {
-    await seed('teacherNotes', 'n1', { teacherId: TEACHER, studentId: ANA, content: 'Good bow control' })
-    asTeacher()
-    expect(await expectDelivered<unknown[]>((cb) => teacher.subscribeTeacherNotes(ANA, cb))).toHaveLength(1)
-  })
-
   it("subscribePracticeSummary — a student's roll-up, which is what the charts draw", async () => {
     await seed('practiceSummary', ANA, { uid: ANA, days: {} })
     asTeacher()
@@ -433,12 +421,26 @@ describe("the teacher's reads", () => {
  * ════════════════════════════════════════════════════════════════════ */
 
 describe('the leaderboard', () => {
-  it("a classmate reads studioStats, and only the studio's", async () => {
+  // No screen shows a studio leaderboard, so classmates no longer read
+  // each other's rows at all — the student and their teacher do.
+  it("a classmate cannot read another student's studioStats; their teacher can", async () => {
     await seed('studioStats', ANA, { uid: ANA, teacherId: TEACHER, days: { '2026-03-01': 30 } })
     await seed('studioStats', CLARE, { uid: CLARE, teacherId: OTHER_TEACHER, days: {} })
     asBen()
-    await expectDocDelivered((cb) => summary.subscribeStudioStats(ANA, cb))
+    await expectDocRefused((cb) => summary.subscribeStudioStats(ANA, cb))
     await expectDocRefused((cb) => summary.subscribeStudioStats(CLARE, cb))
+    asTeacher()
+    await expectDocDelivered((cb) => summary.subscribeStudioStats(ANA, cb))
+  })
+
+  it('subscribeVerifiedPractice — the teacher reads timer-checked minutes; a classmate cannot', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'verifiedPractice', ANA), { uid: ANA, from: '2026-03-01', days: { '2026-03-02': 25 } }))
+    asTeacher()
+    await expectDocDelivered((cb) => summary.subscribeVerifiedPractice(ANA, cb))
+    asBen()
+    await expectDocRefused((cb) => summary.subscribeVerifiedPractice(ANA, cb))
+    asAna()
+    await expectDocDelivered((cb) => summary.subscribeVerifiedPractice(ANA, cb))
   })
 
   it('a classmate cannot reach the richer practiceSummary', async () => {
@@ -574,13 +576,6 @@ describe("the teacher's writes", () => {
     await assertSucceeds(assignments.reviewAssignment('a1', 'approved', 'much better'))
   })
 
-  it('addTeacherNote / updateTeacherNote / deleteTeacherNote', async () => {
-    asTeacher()
-    const id = await assertSucceeds(teacher.addTeacherNote(TEACHER, ANA, 'Good bow control'))
-    await assertSucceeds(teacher.updateTeacherNote(id, 'Bow control much improved'))
-    await assertSucceeds(teacher.deleteTeacherNote(id))
-  })
-
   it('createLessonSlot / updateLessonSlot / deleteLessonSlot', async () => {
     asTeacher()
     const id = await assertSucceeds(
@@ -623,11 +618,6 @@ describe('the app functions, driven by someone with no business calling them', (
     await seed('assignments', 'a1', { teacherId: TEACHER, studentId: ANA, status: 'submitted' })
     asAna()
     await assertFails(assignments.reviewAssignment('a1', 'approved', 'looks great to me'))
-  })
-
-  it('a student cannot write a note about themselves', async () => {
-    asAna()
-    await assertFails(teacher.addTeacherNote(ANA, ANA, 'Teacher says I am excellent'))
   })
 
   it('a student cannot remove a classmate from the studio', async () => {

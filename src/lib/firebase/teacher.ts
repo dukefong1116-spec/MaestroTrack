@@ -1,20 +1,17 @@
 import {
   collection,
-  addDoc,
   updateDoc,
-  deleteDoc,
   doc,
   query,
   where,
   getDocs,
-  onSnapshot,
   setDoc,
   arrayUnion,
   type Unsubscribe,
 } from 'firebase/firestore'
 import { db } from './config'
-import { onSnapshotError, onServerSnapshot } from './snapshotError'
-import type { StreakRuleEntry, TeacherNote, UserProfile } from '@/types'
+import { onServerSnapshot } from './snapshotError'
+import type { StreakRuleEntry, UserProfile } from '@/types'
 const USERS = 'users'
 
 export function subscribeStudents(
@@ -55,41 +52,10 @@ export async function removeStudentFromStudio(studentId: string): Promise<void> 
   })
 }
 
-export async function addTeacherNote(
-  teacherId: string,
-  studentId: string,
-  content: string
-): Promise<string> {
-  const ref = await addDoc(collection(db, 'teacherNotes'), {
-    teacherId,
-    studentId,
-    content,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  })
-  return ref.id
-}
-
-export async function updateTeacherNote(id: string, content: string): Promise<void> {
-  await updateDoc(doc(db, 'teacherNotes', id), {
-    content,
-    updatedAt: new Date().toISOString(),
-  })
-}
-
-export async function deleteTeacherNote(id: string): Promise<void> {
-  await deleteDoc(doc(db, 'teacherNotes', id))
-}
-
-export function subscribeTeacherNotes(
-  studentId: string,
-  callback: (notes: TeacherNote[]) => void
-): Unsubscribe {
-  const q = query(collection(db, 'teacherNotes'), where('studentId', '==', studentId))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as TeacherNote))
-  }, onSnapshotError('teacher'))
-}
+// The old teacher notes (collection teacherNotes) were replaced by lesson
+// notes, and their add/update/subscribe functions removed: nothing called
+// them, and the rules now keep that collection read-only. A student still
+// gets theirs in a data export.
 
 export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<void> {
   await setDoc(doc(db, USERS, uid), { ...data, updatedAt: new Date().toISOString() }, { merge: true })

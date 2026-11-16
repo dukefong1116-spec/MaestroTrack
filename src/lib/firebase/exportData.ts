@@ -18,7 +18,7 @@ const BY_USER = ['practiceSessions', 'pieces', 'performances', 'recordings'] as 
 /** Collections where the person is the student the row is about. */
 const BY_STUDENT = ['assignments', 'lessonSlots'] as const
 /** Documents whose id is the uid. */
-const BY_UID_DOC = ['practiceSummary', 'studioStats'] as const
+const BY_UID_DOC = ['practiceSummary', 'studioStats', 'verifiedPractice'] as const
 
 export interface ExportResult {
   json: string

@@ -90,13 +90,8 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
   const today = localDay(nowMs, offset)
   const tier = user.league?.tier ?? 0
 
-  if (user.leagueOptOut) {
-    if (room) await leaveRoom(uid, roomId)
-    return { optedOut: true, week: week.id, tier, xp: 0, days: [], streak: 0, roomId: null }
-  }
-
-  // 3. XP, from the sessions themselves. Days before Monday are read too,
-  // for a streak carried in from last week.
+  // 3. The sessions themselves. Days before Monday are read too, for a
+  // streak carried in from last week.
   const from = addDays(week.start, -STREAK_LOOKBACK)
   const snaps = await store.collection('practiceSessions')
     .where('userId', '==', uid)
@@ -107,6 +102,19 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
     .orderBy('date', 'desc')
     .get()
   const sessions = snaps.docs.map((d) => ({ ...d.data(), id: d.id, createdMs: d.createTime.toMillis() }))
+  const credited = creditedSessions(uid, sessions)
+
+  // What the timer can vouch for, written where only this server can
+  // write. Everything else a teacher sees — the charts, the totals — the
+  // student's own app works out and writes, so it is only as true as the
+  // log; this is the figure that is checked. Kept whether or not they
+  // play in the league.
+  await writeVerified(uid, credited, from, nowMs)
+
+  if (user.leagueOptOut) {
+    if (room) await leaveRoom(uid, roomId)
+    return { optedOut: true, week: week.id, tier, xp: 0, days: [], streak: 0, roomId: null }
+  }
   // Your lesson day, freezes and comebacks hold the league's streak too —
   // capped at what fair play could produce, since you write those fields.
   const holds = holdDays({
@@ -116,7 +124,7 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
     from,
     to: addDays(week.start, 6),
   })
-  const { xp, days } = weekXp(creditedSessions(uid, sessions), week.start, holds)
+  const { xp, days } = weekXp(credited, week.start, holds)
   const base = { optedOut: false, week: week.id, tier, xp, days, streak: streakOn(days, today) }
 
   if (room) return { ...base, roomId, ...(await updateXp(roomId, uid, xp, nowMs)) }
@@ -130,6 +138,18 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
     joinedAt: iso(nowMs),
   }
   return { ...base, ...(await placeInRoom(uid, week, bandFor(offset), tier, member, nowMs)) }
+}
+
+/** Timer-checked minutes per day, over the days just read. Unchanged → not rewritten. */
+async function writeVerified(uid, credited, from, nowMs) {
+  const days = {}
+  for (const s of credited) days[s.date] = (days[s.date] ?? 0) + s.minutes
+  const ref = db().doc(`verifiedPractice/${uid}`)
+  const before = (await ref.get()).data()
+  const same = before && before.from === from
+    && JSON.stringify(Object.entries(before.days ?? {}).sort()) === JSON.stringify(Object.entries(days).sort())
+  if (same) return
+  await ref.set({ uid, from, days, updatedAt: iso(nowMs) })
 }
 
 /** Your new XP in your room; whoever you passed hears about it. */

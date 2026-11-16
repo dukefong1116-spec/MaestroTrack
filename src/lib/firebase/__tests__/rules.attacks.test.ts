@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, Timestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, Timestamp, writeBatch } from 'firebase/firestore'
 
 /**
  * Adversarial tests: what a determined user can do, rather than what the
@@ -300,8 +300,17 @@ describe('a teacher acting outside their own studio', () => {
     }))
   })
 
-  it('may do both for their own student', async () => {
-    await assertSucceeds(setDoc(doc(as(OTHER_TEACHER), 'teacherNotes', 'ok'), {
+  it('may schedule for their own student', async () => {
+    await assertSucceeds(setDoc(doc(as(OTHER_TEACHER), 'lessonSlots', 'ok'), {
+      teacherId: OTHER_TEACHER, studentId: CLARE, studentName: 'Clare', dayOfWeek: 1,
+      startTime: '08:00', durationMinutes: 30, createdAt: '', updatedAt: '',
+    }))
+  })
+
+  // The old notes are closed: lesson notes replaced them, and nothing
+  // writes to this collection any more — not even about your own student.
+  it('nobody adds to the old teacherNotes, even about their own student', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'teacherNotes', 'ok'), {
       teacherId: OTHER_TEACHER, studentId: CLARE, content: 'Good lesson',
       createdAt: '', updatedAt: '',
     }))
@@ -480,7 +489,8 @@ describe('changing who owns a record', () => {
   it('a teacher must not move a note to another student or teacher', async () => {
     await assertFails(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { studentId: CLARE }))
     await assertFails(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { teacherId: OTHER_TEACHER }))
-    await assertSucceeds(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { content: 'Rhythm is better' }))
+    // Closed collection: no edits at all now, but the writer may delete.
+    await assertFails(updateDoc(doc(as(TEACHER), 'teacherNotes', 'n1'), { content: 'Rhythm is better' }))
     await assertSucceeds(deleteDoc(doc(as(TEACHER), 'teacherNotes', 'n1')))
   })
 
@@ -569,7 +579,12 @@ describe('the invitation system', () => {
   /* spending one twice */
 
   it('a spent invitation cannot be put back', async () => {
-    await assertSucceeds(updateDoc(doc(as(CLARE), 'studioInvites', TOKEN), { status: 'claimed' }))
+    // Spent the only way it can be: by raising a request with it.
+    const db = as(CLARE)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    batch.update(doc(db, 'studioInvites', TOKEN), { status: 'claimed' })
+    await assertSucceeds(batch.commit())
     await assertFails(updateDoc(doc(as(CLARE), 'studioInvites', TOKEN), { status: 'open' }))
     await assertFails(updateDoc(doc(as(TEACHER), 'studioInvites', TOKEN), { status: 'open' }))
   })
@@ -614,15 +629,39 @@ describe('the invitation system', () => {
    * state from before the batch, so the invitation is not there yet. The
    * fix would cost atomicity to buy nothing.
    */
-  it('a teacher can point a code at another teacher’s invitation — and gains nothing by it', async () => {
-    await assertSucceeds(setDoc(doc(as(OTHER_TEACHER), 'inviteCodes', 'SNE4KY'), {
+  it('a teacher cannot point a code at another teacher’s invitation', async () => {
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'inviteCodes', 'SNE4KY'), {
       token: TOKEN, teacherId: OTHER_TEACHER, expiresAt: week(),
     }))
-    // The payoff would be a student in OTHER_TEACHER's studio. There is none:
-    // the invitation still belongs to TEACHER, so a request naming
-    // OTHER_TEACHER is refused outright.
+    // Nor at an invitation that does not exist.
+    await assertFails(setDoc(doc(as(OTHER_TEACHER), 'inviteCodes', 'SNE4KZ'), {
+      token: 'no_such_token', teacherId: OTHER_TEACHER, expiresAt: week(),
+    }))
+    // And even had it, the request it led to would be refused: the
+    // invitation still belongs to TEACHER.
     await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, OTHER_TEACHER)),
       body(CLARE, OTHER_TEACHER, TOKEN)))
+  })
+
+  it('one invitation, one student: a request must spend it, so a second cannot use it', async () => {
+    // Raised without spending it — refused.
+    await assertFails(setDoc(doc(as(CLARE), 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER)))
+    // Raised the app's way, spending it — accepted.
+    const db = as(CLARE)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'studioRequests', rid(CLARE, TEACHER)), body(CLARE, TEACHER))
+    batch.update(doc(db, 'studioInvites', TOKEN), { status: 'claimed' })
+    await assertSucceeds(batch.commit())
+    // Anyone else with the same link — refused, whether they try to spend it or not.
+    const other = as(BEN)
+    const again = writeBatch(other)
+    again.set(doc(other, 'studioRequests', rid(BEN, TEACHER)), body(BEN, TEACHER))
+    again.update(doc(other, 'studioInvites', TOKEN), { status: 'claimed' })
+    await assertFails(again.commit())
+  })
+
+  it('holding a link is not enough to burn it for its student', async () => {
+    await assertFails(updateDoc(doc(as(BEN), 'studioInvites', TOKEN), { status: 'claimed' }))
   })
 
   /* forging the request itself */

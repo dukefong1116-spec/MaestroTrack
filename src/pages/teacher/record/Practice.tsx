@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import type { Member } from '@/hooks/useStudioData'
 import { suggestCorrection, withdrawCorrection, addTeacherPractice, deleteTeacherPractice } from '@/lib/firebase/studio'
 import { getAnalyticsSummary, getDailyData, getCategoryData, getHeatmapData } from '@/lib/utils/analytics'
-import { dayKey, parseDay } from '@/lib/studio/dates'
+import { addDays, dayKey, parseDay } from '@/lib/studio/dates'
+import { subscribeVerifiedPractice, type VerifiedPractice } from '@/lib/firebase/summary'
 import PracticeBarChart from '@/components/charts/PracticeBarChart'
 import CategoryPieChart from '@/components/charts/CategoryPieChart'
 import PracticeHeatmap from '@/components/charts/PracticeHeatmap'
@@ -40,6 +41,15 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
   const mineAdded = added.filter((e) => e.rosterId === m.id).sort((a, b) => b.date.localeCompare(a.date))
   const log = summary?.recentSessions ?? []
 
+  // What the practice timer can vouch for, beside what was logged. The
+  // charts above are the student's own figures — a typed-in session counts
+  // there as much as a timed one — so this is the number that is checked.
+  const [verified, setVerified] = useState<VerifiedPractice | null>(null)
+  useEffect(() => (m.uid ? subscribeVerifiedPractice(m.uid, setVerified) : undefined), [m.uid])
+  const since = addDays(dayKey(new Date()), -13)
+  const timed14 = Object.entries(verified?.days ?? {}).filter(([d]) => d >= since).reduce((a, [, v]) => a + v, 0)
+  const logged14 = daily.reduce((a, d) => a + d.minutes, 0)
+
   async function send(sessionId: string, date: string, from: number) {
     if (!profile || !m.uid) return
     const to = Math.round(Number(mins))
@@ -73,6 +83,10 @@ export default function Practice({ m, sessions, summary }: { m: Member; sessions
               </div>
             ))}
           </div>
+          <p className="px-5 py-2.5 text-[12.5px] sm:px-6" style={{ color: 'var(--clay-dim)', borderBottom: '1px solid var(--clay-line)' }}>
+            <strong style={{ color: 'var(--clay-ink)' }}>Timed with the practice timer, last 14 days: {timed14} min</strong>
+            {' '}of {logged14} min logged. The charts include typed-in practice; this figure is checked by the server.
+          </p>
           <div className="grid grid-cols-1 lg:grid-cols-2">
             <div className="p-5 sm:px-6" style={{ boxShadow: '1px 0 0 var(--clay-line), 0 1px 0 var(--clay-line)' }}>
               <p className="mb-3 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--clay-dim)' }}>Last 14 days</p>

@@ -7,9 +7,10 @@ import type { PracticeSummary, StudioStats } from '@/types'
 /**
  * Rolled-up practice, written by the student's own app.
  *
- * Two documents rather than one, because they have different audiences:
- * a teacher may see the category breakdown, classmates may see only how
- * long someone practised each day. Splitting them means the rules can say
+ * Two documents rather than one, because they were written for different
+ * audiences: the summary carries the category breakdown, the studio row
+ * only how long someone practised each day. (Both are now readable by the
+ * student and their teacher only; classmates read neither.) Splitting them means the rules can say
  * exactly that, instead of relying on the reader to look away — Firestore
  * rules govern whole documents and cannot withhold a field.
  */
@@ -51,5 +52,26 @@ export function subscribeStudioStats(
     doc(db, STUDIO, uid),
     (snap) => callback(snap.exists() ? ({ uid, ...snap.data() } as StudioStats) : null),
     (e) => { onSnapshotError('studioStats')(e); callback(null) }
+  )
+}
+
+/**
+ * Timer-checked minutes per day, written by the league server and nobody
+ * else. Days are 'yyyy-MM-dd'; `from` is the first day the figures cover.
+ */
+export interface VerifiedPractice {
+  from: string
+  days: Record<string, number>
+  updatedAt?: string
+}
+
+export function subscribeVerifiedPractice(
+  uid: string,
+  callback: (v: VerifiedPractice | null) => void
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, 'verifiedPractice', uid),
+    (snap) => callback(snap.exists() ? (snap.data() as VerifiedPractice) : null),
+    (e) => { onSnapshotError('verifiedPractice')(e); callback(null) }
   )
 }

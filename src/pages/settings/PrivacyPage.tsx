@@ -3,6 +3,7 @@ import { Check, Download, Eye, EyeOff, Link2, Trophy } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
 import { authErrorMessage } from '@/lib/firebase/account'
+import { sendVerificationEmail } from '@/lib/firebase/auth'
 import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen, ToggleRow } from '@/components/ui/Panel'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
@@ -39,6 +40,12 @@ export default function PrivacyPage() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState('')
   const [error, setError] = useState('')
+  const [verify, setVerify] = useState<'idle' | 'busy' | 'sent' | 'failed'>('idle')
+
+  async function onVerify() {
+    setVerify('busy')
+    try { await sendVerificationEmail(); setVerify('sent') } catch { setVerify('failed') }
+  }
 
   async function onExport() {
     setBusy(true); setDone(''); setError('')
@@ -145,6 +152,19 @@ export default function PrivacyPage() {
         </Block>
         <FactRow label="Email" value={user?.email ?? '—'} />
         <FactRow label="Email verified" value={user?.emailVerified ? 'Yes' : 'No'} />
+        {user && !user.emailVerified && (
+          <Block>
+            <p className="mb-3 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+              Confirming your address means a password reset can always reach you.
+            </p>
+            <Button variant="outline" onClick={onVerify} loading={verify === 'busy'} disabled={verify === 'sent'}>
+              {verify === 'sent' ? 'Sent. Check your inbox' : 'Send verification email'}
+            </Button>
+            {verify === 'failed' && (
+              <p className="mt-2 text-[13px] font-medium" style={{ color: 'var(--clay-danger)' }}>Could not send it. Try again in a minute.</p>
+            )}
+          </Block>
+        )}
         <FactRow label="Last signed in" value={fmt(user?.metadata.lastSignInTime)} />
         <FactRow label="Account created" value={fmt(user?.metadata.creationTime)} />
       </Panel>

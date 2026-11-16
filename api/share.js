@@ -15,6 +15,19 @@
 
 const PROJECT = process.env.VITE_FIREBASE_PROJECT_ID
 const API_KEY = process.env.VITE_FIREBASE_API_KEY
+const BUCKET = process.env.VITE_FIREBASE_STORAGE_BUCKET
+
+/**
+ * The preview picture is only ever this project's own, from the owner's
+ * own share folder — the same check the Firestore rules make, repeated
+ * here so a share written before the rule was tightened cannot put
+ * somebody else's picture on this domain.
+ */
+function ownImage(image, ownerId) {
+  if (typeof image !== 'string' || !BUCKET || typeof ownerId !== 'string') return undefined
+  const prefix = `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/shares%2F${encodeURIComponent(ownerId)}%2F`
+  return image.startsWith(prefix) && image.length < 1000 ? image : undefined
+}
 
 /**
  * Everything interpolated below came from a user — a display name, a
@@ -134,7 +147,7 @@ export default async function handler(req, res) {
   }
 
   const fields = plain(doc.fields.fields) ?? {}
-  const image = plain(doc.fields.image)
+  const image = ownImage(plain(doc.fields.image), plain(doc.fields.ownerId))
   const name = fields.name
   const minutes = Number(fields.minutes ?? 0)
 

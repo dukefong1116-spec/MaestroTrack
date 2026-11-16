@@ -2,14 +2,14 @@ rules_version = '2';
 
 // MaestroTrack Firestore security rules.
 //
-// These live in the repo so there is a history of them. They are NOT wired
-// to `firebase deploy` — there is deliberately no firebase.json listing
-// them — because the authoritative copy is still the one in the Firebase
-// console, and a stray deploy overwriting it with a stale file is a worse
-// failure than having to paste.
+// This file is the authoritative copy. firebase.json points the emulator
+// at it, and it is published with:
 //
-// To apply: Firebase console -> Firestore Database -> Rules -> paste ->
-// Publish. Then update this file in the same commit as any change.
+//   npx firebase deploy --only firestore:rules,storage --project maestrotrack-3c2cf
+//
+// The --project flag is required on purpose: the default project is the
+// local-only 'demo-maestrotrack', so a bare deploy has no real target.
+// Every change is tested against the emulator (npm run test:rules) first.
 //
 // The governing idea: a student owns their data, and a teacher may read
 // the data of students who have joined their studio. Nobody writes
@@ -63,10 +63,10 @@ service cloud.firestore {
      * teacherId at a studio makes you a classmate, and classmates can read
      * each other's practice figures. The studio code flow was decorative.
      *
-     * So: role never changes after the account is created, a teacher's own
-     * studio code is fixed, and a student may only attach themselves to a
-     * teacher whose code they can actually produce — which is exactly what
-     * the join screen already sends.
+     * So: role never changes after the account is created, the studio
+     * fields are frozen against their owner (joining is a request the
+     * teacher accepts — see /users below), and league standing is the
+     * league server's alone.
      */
     function validProfileChange() {
       let d = request.resource.data;
@@ -255,6 +255,28 @@ service cloud.firestore {
     // the short code that points at the invitation, and the request the
     // student raises by spending it.
 
+    /**
+     * The invitation is spent by this same write.
+     *
+     * An invitation is meant for one student. Checking only that it was
+     * open let a request be raised without spending it, so one forwarded
+     * link could carry any number of strangers to the teacher's door, each
+     * under whatever name they liked. Now a request stands only if the
+     * write that raises it also marks the invitation claimed.
+     */
+    function inviteSpentNow(token) {
+      return getAfter(/databases/$(database)/documents/studioInvites/$(token)).data.status == 'claimed';
+    }
+
+    /** After this write, I have a pending request to that teacher, raised with this token. */
+    function requestRaisedWith(token, teacherId) {
+      let p = /databases/$(database)/documents/studioRequests/$(uid() + '_' + teacherId);
+      return existsAfter(p)
+        && getAfter(p).data.studentId == uid()
+        && getAfter(p).data.status == 'pending'
+        && getAfter(p).data.get('inviteToken', '') == token;
+    }
+
     match /studioInvites/{token} {
       // The one genuinely public read in these rules, and deliberate: the
       // person a link was sent to has no account yet, so there is nobody
@@ -277,6 +299,10 @@ service cloud.firestore {
       // Spent by the student who used it, burnt by the teacher who sent
       // it. Either way it leaves 'open' and never comes back: an
       // invitation is good exactly once.
+      //
+      // Claiming is only ever the other half of raising a request with
+      // this very token, in the same write: holding a link someone else
+      // was sent no longer lets you burn it for them.
       allow update: if signedIn()
                     && resource.data.status == 'open'
                     && request.resource.data.diff(resource.data)
@@ -284,7 +310,8 @@ service cloud.firestore {
                     && (
                          (resource.data.teacherId == uid()
                           && request.resource.data.status == 'revoked')
-                         || request.resource.data.status == 'claimed'
+                         || (request.resource.data.status == 'claimed'
+                             && requestRaisedWith(token, resource.data.teacherId))
                        );
       allow delete: if false;
     }
@@ -297,8 +324,16 @@ service cloud.firestore {
       // only earns a request the teacher has to accept.
       allow get: if signedIn();
       allow list: if false;
+      // A code points at one of your own invitations, written alongside it
+      // — never at somebody else's, and never at nothing. The code itself
+      // is the app's six characters from its unambiguous alphabet.
       allow create: if signedIn() && isTeacher()
-                    && request.resource.data.teacherId == uid();
+                    && request.resource.data.teacherId == uid()
+                    && request.resource.data.keys().hasOnly(['token', 'teacherId', 'expiresAt'])
+                    && request.resource.data.token is string
+                    && code.matches('[A-Z0-9]{6}')
+                    && existsAfter(/databases/$(database)/documents/studioInvites/$(request.resource.data.token))
+                    && getAfter(/databases/$(database)/documents/studioInvites/$(request.resource.data.token)).data.teacherId == uid();
       allow update, delete: if false;
     }
 
@@ -320,7 +355,8 @@ service cloud.firestore {
                     && request.resource.data.studentId == uid()
                     && request.resource.data.status == 'pending'
                     && inviteOpen(request.resource.data.inviteToken,
-                                  request.resource.data.teacherId);
+                                  request.resource.data.teacherId)
+                    && inviteSpentNow(request.resource.data.inviteToken);
 
       // The teacher's answer, once, to a request still waiting.
       allow update: if signedIn()
@@ -349,6 +385,7 @@ service cloud.firestore {
                     && request.resource.data.status == 'pending'
                     && inviteOpen(request.resource.data.inviteToken,
                                   request.resource.data.teacherId)
+                    && inviteSpentNow(request.resource.data.inviteToken)
                     && requestId == uid() + '_' + request.resource.data.teacherId
                     // Already somebody's student: re-asking would put a row
                     // in front of a teacher that the accept clause would
@@ -476,18 +513,25 @@ service cloud.firestore {
                    && request.resource.data.get('uid', userId) == userId;
     }
 
-    // What classmates see: how long someone practised each day, their name
-    // and their streak. Nothing about what they practised.
+    // Timer-checked minutes per day, written only by the league server
+    // (which bypasses these rules). The practice summary above is the
+    // student's own app's arithmetic and only as true as the log; this is
+    // the figure nobody can type in.
+    match /verifiedPractice/{userId} {
+      allow read: if isMe(userId) || teaches(userId);
+      allow write: if false;
+    }
+
+    // How long someone practised each day, their name and their streak.
     //
-    // The studio check reads the viewer's own profile; the teacherId on the
-    // document is what makes a leaderboard a single query rather than a
-    // read of everyone's profile.
+    // Classmates used to be able to read each other's rows, for a studio
+    // leaderboard the app does not show. With nothing on screen to need it,
+    // that was every classmate's daily practice readable by every other —
+    // and, since the name on a row is whatever its owner calls themselves,
+    // a row that could pass for someone else's. Now it is the student's
+    // own and their teacher's, like the practice summary.
     match /studioStats/{userId} {
-      allow read: if isMe(userId)
-                  || teaches(userId)
-                  || (signedIn()
-                      && resource.data.teacherId != null
-                      && resource.data.teacherId == myTeacherId());
+      allow read: if isMe(userId) || teaches(userId);
 
       // The studio written here must be the one the profile actually says.
       // Without this, claiming a studio in your own figures puts you in its
@@ -513,10 +557,15 @@ service cloud.firestore {
       // The teacher who set it may change anything about it — except
       // whose it is: moving it to another student would plant it in a
       // stranger's list, and moving it to another teacher hands it away.
+      //
+      // And only while it is still their student: a teacher the student
+      // has left must not go on rewriting work that student still sees.
+      // ('' is a student with no account yet — the teacher's own record.)
       allow update: if signedIn()
                     && resource.data.teacherId == uid()
                     && request.resource.data.teacherId == resource.data.teacherId
-                    && request.resource.data.studentId == resource.data.studentId;
+                    && request.resource.data.studentId == resource.data.studentId
+                    && studentOk(resource.data.studentId);
 
       // The student may hand work in — and nothing else.
       //
@@ -530,7 +579,9 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data)
                          .affectedKeys().hasOnly(['status', 'submissions', 'updatedAt'])
                     && request.resource.data.status == 'submitted'
-                    && appendsOne('submissions');
+                    && appendsOne('submissions')
+                    // To the teacher they are with now, not one they left.
+                    && resource.data.teacherId == myTeacherId();
 
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
@@ -581,25 +632,17 @@ service cloud.firestore {
                         || (resource.data.from == 'teacher' && resource.data.teacherId == uid()));
     }
 
+    // The old notes, from before lesson notes. Nothing in the app writes
+    // or reads these any more, so they are kept, not grown: the student
+    // they are about can still read (and export) them, the teacher who
+    // wrote them can read or delete them, and nobody adds to them. An
+    // earlier clause let any teacher the student later joined read what a
+    // previous teacher had written.
     match /teacherNotes/{id} {
-      // The app queries these by studentId alone, so a teacher reading a
-      // student's notes is not identifiable from the query's filters. The
-      // teaches() lookup is what makes it permissible — it depends only on
-      // studentId, which the query does pin.
       allow read: if signedIn()
                   && (resource.data.studentId == uid()
-                      || resource.data.teacherId == uid()
-                      || teaches(resource.data.studentId));
-      // teaches() as well as ownership: without it any teacher could write
-      // a note about any child in the system, and the student would read
-      // it, since students can see what is written about them.
-      allow create: if signedIn()
-                    && request.resource.data.teacherId == uid()
-                    && teaches(request.resource.data.studentId);
-      allow update: if signedIn()
-                    && resource.data.teacherId == uid()
-                    && request.resource.data.teacherId == resource.data.teacherId
-                    && request.resource.data.studentId == resource.data.studentId;
+                      || resource.data.teacherId == uid());
+      allow create, update: if false;
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
 
@@ -658,14 +701,22 @@ service cloud.firestore {
         && d.kind in ['session', 'badge', 'streak', 'week']
         && d.createdAt is string
         // The preview picture, which the share page renders. Pinned to
-        // this project's own bucket: the page puts this straight into an
-        // og:image tag, so an arbitrary URL here would be someone else's
-        // picture published under this person's name.
+        // this project's own bucket, and to the owner's own folder in it:
+        // the page puts this straight into an og:image tag, so an
+        // arbitrary URL here would be someone else's picture published
+        // under this person's name. (It used to allow any Firebase
+        // project's bucket.)
         && (!('image' in d.keys())
             || (d.image is string
-                && d.image.matches('https://firebasestorage.googleapis.com/.*')
-                && d.image.size() < 1000))
-        && validShareFields(d.fields);
+                && d.image.size() < 1000
+                && d.image.matches('https://firebasestorage[.]googleapis[.]com/v0/b/maestrotrack-3c2cf[.]firebasestorage[.]app/o/shares%2F'
+                                   + d.ownerId + '%2F[A-Za-z0-9]+[.]png([?][A-Za-z0-9=&_.-]*)?')))
+        && validShareFields(d.fields)
+        // A name on the card is the owner's own, as their profile has it —
+        // not anyone they would like a public link to claim to be.
+        && (!('name' in d.fields)
+            || (exists(/databases/$(database)/documents/users/$(d.ownerId))
+                && d.fields.name == get(/databases/$(database)/documents/users/$(d.ownerId)).data.get('displayName', '')));
     }
 
     /**
@@ -676,17 +727,29 @@ service cloud.firestore {
      * client to have used the right type is not a rule.
      */
     function validShareFields(f) {
+      // Every field bounded: this is a public page, and an unbounded
+      // string is a megabyte of whatever someone likes on this domain.
       return f.keys().hasOnly(['minutes', 'dateLabel', 'name', 'streakDays',
                                'pieceTitle', 'category', 'week', 'badgeId', 'badgeLabel'])
         && f.get('minutes', 0) is int
+        // A week's share carries the week's total, so up to 7 × 24 h.
+        && f.get('minutes', 0) >= 0 && f.get('minutes', 0) <= 10080
         && f.get('dateLabel', '') is string
+        && f.get('dateLabel', '').size() <= 60
         && f.get('name', '') is string
         && f.get('name', '').size() <= 80
+        && f.get('streakDays', 0) is int
+        && f.get('streakDays', 0) >= 0 && f.get('streakDays', 0) <= 100000
         && f.get('pieceTitle', '') is string
         && f.get('pieceTitle', '').size() <= 120
         && f.get('category', '') is string
+        && f.get('category', '').size() <= 60
+        && f.get('week', []) is list
+        && f.get('week', []).size() <= 7
         && f.get('badgeId', '') is string
-        && f.get('badgeLabel', '') is string;
+        && f.get('badgeId', '').size() <= 60
+        && f.get('badgeLabel', '') is string
+        && f.get('badgeLabel', '').size() <= 80;
     }
 
     /* ══ Teacher studio ═══════════════════════════════════════════════
@@ -754,10 +817,14 @@ service cloud.firestore {
     }
 
     /* ── the calendar ─────────────────────────────────────────────────
-     * A student reads the lessons that name them. The teacher's own uid
-     * is on every document, and the student app shows only lessons from
-     * its current teacher, so naming a stranger plants nothing in their
-     * calendar. */
+     * A student reads the lessons that name them — from the teacher they
+     * are with now, and only from them. A rule cannot check each uid in
+     * studentUids at write time, so this is where naming a stranger is
+     * made harmless: the stranger cannot read it. (Their query has to
+     * filter on teacherId for the same reason.) */
+    function myLesson(d) {
+      return uid() in d.studentUids && d.teacherId == myTeacherId();
+    }
     function lessonShape(d) {
       return d.rosterIds is list && d.rosterIds.size() <= 30
         && d.studentUids is list && d.studentUids.size() <= 30
@@ -766,14 +833,14 @@ service cloud.firestore {
     }
     match /studioLessons/{id} {
       allow read: if signedIn()
-                  && (resource.data.teacherId == uid() || uid() in resource.data.studentUids);
+                  && (resource.data.teacherId == uid() || myLesson(resource.data));
       allow create: if signedIn() && mine(request.resource.data) && lessonShape(request.resource.data);
       allow update: if signedIn() && keepsOwner() && lessonShape(request.resource.data);
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
     match /lessonOccurrences/{id} {
       allow read: if signedIn()
-                  && (resource.data.teacherId == uid() || uid() in resource.data.studentUids);
+                  && (resource.data.teacherId == uid() || myLesson(resource.data));
       allow create: if signedIn() && mine(request.resource.data) && lessonShape(request.resource.data)
                     && request.resource.data.date is string;
       allow update: if signedIn() && keepsOwner() && lessonShape(request.resource.data);
@@ -797,10 +864,13 @@ service cloud.firestore {
       allow create: if signedIn() && mine(request.resource.data) && noteShape(request.resource.data)
                     && ownsRoster(request.resource.data.rosterId)
                     && studentOk(request.resource.data.studentUid);
+      // Only while this is still the student's teacher. A teacher a
+      // student has left could otherwise go on rewriting shared notes the
+      // student still receives. Deleting stays open, to tidy up.
       allow update: if signedIn() && keepsOwner() && noteShape(request.resource.data)
                     && request.resource.data.rosterId == resource.data.rosterId
-                    && (request.resource.data.studentUid == resource.data.studentUid
-                        || studentOk(request.resource.data.studentUid));
+                    && studentOk(resource.data.studentUid)
+                    && studentOk(request.resource.data.studentUid);
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
 
@@ -837,9 +907,15 @@ service cloud.firestore {
                     && request.resource.data.minutes is int
                     && request.resource.data.minutes > 0
                     && request.resource.data.minutes <= 600;
+      // The same bounds as when it was written: an edit is not a way
+      // round them.
       allow update: if signedIn() && keepsOwner()
                     && request.resource.data.rosterId == resource.data.rosterId
-                    && studentOk(request.resource.data.studentUid);
+                    && request.resource.data.studentUid is string
+                    && studentOk(request.resource.data.studentUid)
+                    && request.resource.data.minutes is int
+                    && request.resource.data.minutes > 0
+                    && request.resource.data.minutes <= 600;
       allow delete: if signedIn() && resource.data.teacherId == uid();
     }
 
@@ -869,15 +945,3 @@ service cloud.firestore {
     }
   }
 }
-
-// ── Known weakness, recorded rather than hidden ─────────────────────
-//
-// Studio codes are discoverable. Joining a studio looks a teacher up by
-// studioCode, which requires signed-in users to be able to read teacher
-// profiles, so a determined user could enumerate them and join a studio
-// uninvited.
-//
-// The fix is a separate collection keyed by the code — a `studioInvites`
-// type already exists in src/types and is unused — so the lookup becomes a
-// single document read and no profile is exposed. That is a change to the
-// working join flow, so it is written down here rather than done quietly.

@@ -99,10 +99,18 @@ describe('families, settings, invoices', () => {
 describe('calendar', () => {
   it('teacher writes lessons; the student named reads them by array-contains', async () => {
     await assertSucceeds(setDoc(doc(as(T), 'studioLessons', 'L1'), lesson()))
-    await assertSucceeds(getDocs(query(collection(as(ANA), 'studioLessons'), where('studentUids', 'array-contains', ANA))))
+    // The app's query names the student's current teacher; the rules need it.
+    await assertSucceeds(getDocs(query(collection(as(ANA), 'studioLessons'), where('studentUids', 'array-contains', ANA), where('teacherId', '==', T))))
+    await assertFails(getDocs(query(collection(as(ANA), 'studioLessons'), where('studentUids', 'array-contains', ANA))))
     await assertSucceeds(getDoc(doc(as(ANA), 'studioLessons', 'L1')))
     await assertFails(getDoc(doc(as(ZOE), 'studioLessons', 'L1')))
     await assertFails(getDocs(query(collection(as(ZOE), 'studioLessons'), where('studentUids', 'array-contains', ANA))))
+  })
+  it('a lesson from a teacher the student is not with is unreadable to them', async () => {
+    // T2 names ANA (T's student) in a lesson: written, but ANA cannot read it.
+    await assertSucceeds(setDoc(doc(as(T2), 'studioLessons', 'L9'), lesson({ teacherId: T2 })))
+    await assertFails(getDoc(doc(as(ANA), 'studioLessons', 'L9')))
+    await assertFails(getDocs(query(collection(as(ANA), 'studioLessons'), where('studentUids', 'array-contains', ANA), where('teacherId', '==', T2))))
   })
   it('the student cannot change a lesson, another teacher cannot either', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), 'studioLessons', 'L1'), lesson()) })
@@ -113,7 +121,7 @@ describe('calendar', () => {
   })
   it('occurrences: same, and a nonsense length is refused', async () => {
     await assertSucceeds(setDoc(doc(as(T), 'lessonOccurrences', 'L1_2026-11-11'), { ...lesson(), date: '2026-11-11', lessonId: 'L1', originalDate: '2026-11-11', attendance: { 'r-ana': 'present' } }))
-    await assertSucceeds(getDocs(query(collection(as(ANA), 'lessonOccurrences'), where('studentUids', 'array-contains', ANA))))
+    await assertSucceeds(getDocs(query(collection(as(ANA), 'lessonOccurrences'), where('studentUids', 'array-contains', ANA), where('teacherId', '==', T))))
     await assertFails(setDoc(doc(as(T), 'lessonOccurrences', 'x'), { ...lesson({ durationMinutes: 0 }), date: '2026-11-11' }))
     await assertFails(setDoc(doc(as(T), 'lessonOccurrences', 'y'), { ...lesson({ teacherId: T2 }), date: '2026-11-11' }))
   })

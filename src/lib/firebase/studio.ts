@@ -233,12 +233,15 @@ export async function deleteTeacherPractice(id: string): Promise<void> {
 
 /* ── What a student reads ───────────────────────────────────────────── */
 
-export function subscribeMyStudioLessons(uid: string, cb: (l: StudioLesson[]) => void): Unsubscribe {
-  return listOf('myLessons', query(collection(db, 'studioLessons'), where('studentUids', 'array-contains', uid)), cb)
+// Only from the teacher the student is with now. The rules insist on it
+// (a lesson from anyone else is unreadable to the student), so a teacher
+// naming a stranger in a lesson plants nothing anywhere.
+export function subscribeMyStudioLessons(uid: string, teacherId: string, cb: (l: StudioLesson[]) => void): Unsubscribe {
+  return listOf('myLessons', query(collection(db, 'studioLessons'), where('studentUids', 'array-contains', uid), where('teacherId', '==', teacherId)), cb)
 }
 
-export function subscribeMyOccurrences(uid: string, cb: (o: LessonOccurrence[]) => void): Unsubscribe {
-  return listOf('myOccurrences', query(collection(db, 'lessonOccurrences'), where('studentUids', 'array-contains', uid)), cb)
+export function subscribeMyOccurrences(uid: string, teacherId: string, cb: (o: LessonOccurrence[]) => void): Unsubscribe {
+  return listOf('myOccurrences', query(collection(db, 'lessonOccurrences'), where('studentUids', 'array-contains', uid), where('teacherId', '==', teacherId)), cb)
 }
 
 export function subscribeMySharedNotes(uid: string, cb: (n: LessonNote[]) => void): Unsubscribe {
@@ -251,8 +254,12 @@ export function subscribeMyTeacherPractice(uid: string, cb: (e: TeacherPracticeE
 
 /* ── Attachments ────────────────────────────────────────────────────── */
 
+// The same formats storage.rules accepts, so a file it would refuse is
+// turned away here with a reason rather than a permissions error.
 const KINDS: [RegExp, AssignmentAttachment['kind']][] = [
-  [/^audio\//, 'audio'], [/^video\//, 'video'], [/^application\/pdf$/, 'pdf'], [/^image\/(jpeg|png|webp)$/, 'image'],
+  [/^audio\/(webm|ogg|mp4|mpeg|mp3|aac|x-m4a|m4a|wav|x-wav|wave|aiff|x-aiff|flac|x-flac)(;.*)?$/, 'audio'],
+  [/^video\/(mp4|webm|quicktime|x-m4v)(;.*)?$/, 'video'],
+  [/^application\/pdf$/, 'pdf'], [/^image\/(jpeg|png|webp)$/, 'image'],
 ]
 
 export function attachmentKind(type: string): AssignmentAttachment['kind'] | null {
@@ -262,7 +269,7 @@ export function attachmentKind(type: string): AssignmentAttachment['kind'] | nul
 /** Files a teacher attaches to work: under their own folder, read by their students. */
 export async function uploadAttachment(teacherId: string, file: File): Promise<AssignmentAttachment> {
   const kind = attachmentKind(file.type)
-  if (!kind) throw new Error('Audio, video, a PDF or a photo (JPEG, PNG, WebP) only.')
+  if (!kind) throw new Error('Audio (MP3, M4A, WAV, AIFF, FLAC, OGG), video (MP4, MOV, WebM), a PDF or a photo (JPEG, PNG, WebP) only.')
   if (file.size > 100 * 1024 * 1024) throw new Error('That file is over 100 MB.')
   const { storage, ref, uploadBytes } = await loadStorage()
   const safe = file.name.replace(/[^\w.-]+/g, '_').slice(-80)

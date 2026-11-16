@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useMinuteTick } from '@/hooks/useMinuteTick'
 import { usePracticeStore } from '@/stores/practiceStore'
+import { useAuthStore } from '@/stores/authStore'
 import {
   isOpen, awaitingStudent, sortForStudent, deriveProgress, deriveDailyProgress, dueness,
   type AssignmentProgress, type DailyProgress, type Dueness,
@@ -25,6 +26,10 @@ export interface StudentAssignment {
 export function useAssignments() {
   const sessions = usePracticeStore((s) => s.sessions)
   const raw = usePracticeStore((s) => s.assignments)
+  // Work from a teacher the student has since left stays in the history
+  // (`all`, `done`) but is never something to do: it can no longer be
+  // handed in, and that teacher is no longer someone to hear from.
+  const teacherId = useAuthStore((s) => s.profile?.teacherId ?? null)
 
   // One clock for the whole list, so every due date is judged against the
   // same instant, and the list ages without needing a reload.
@@ -42,8 +47,8 @@ export function useAssignments() {
 
   return {
     all,
-    open: useMemo(() => all.filter((x) => isOpen(x.assignment)), [all]),
-    todo: useMemo(() => all.filter((x) => awaitingStudent(x.assignment)), [all]),
+    open: useMemo(() => all.filter((x) => x.assignment.teacherId === teacherId && isOpen(x.assignment)), [all, teacherId]),
+    todo: useMemo(() => all.filter((x) => x.assignment.teacherId === teacherId && awaitingStudent(x.assignment)), [all, teacherId]),
     done: useMemo(() => all.filter((x) => !isOpen(x.assignment)), [all]),
   }
 }

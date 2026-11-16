@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   onAuthStateChanged,
   type User,
@@ -57,7 +58,18 @@ export async function signUp(
     console.error('[Signup] Firestore profile write failed:', e)
     throw new Error('Account created but profile could not be saved to the database. Please try signing in — if that fails, contact support.')
   }
+  // A link to confirm the address is theirs. Nothing waits on it — the
+  // account works either way — and a failure to send is not a failed
+  // sign-up: Privacy & Security offers to send it again.
+  sendEmailVerification(credential.user).catch((e) => console.warn('[Signup] verification email not sent', e))
   return credential.user
+}
+
+/** Sends the signed-in person a link confirming their email address. */
+export async function sendVerificationEmail(): Promise<void> {
+  await auth.authStateReady()
+  if (!auth.currentUser) throw new Error('You are not signed in.')
+  await sendEmailVerification(auth.currentUser)
 }
 
 /** Rebuilds a missing profile through the same service boundary as other writes. */
