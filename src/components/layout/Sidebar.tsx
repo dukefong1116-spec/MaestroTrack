@@ -49,7 +49,7 @@ export default function Sidebar() {
       animate={{ width: collapsed ? 72 : 248 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="relative hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
-      style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(30,40,70,.14)', zIndex: 1 }}
+      style={{ background: 'var(--clay-surface)', borderRight: '1px solid var(--clay-line)', boxShadow: '2px 0 20px -8px rgba(30,40,70,.14)', zIndex: 1 }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5">

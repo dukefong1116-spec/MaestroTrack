@@ -351,7 +351,7 @@ export default function PracticeLogPage() {
   return (
     <div
       className="-mx-6 -my-8 min-h-full px-5 pb-12 pt-7"
-      style={{ background: 'var(--clay-bg)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
+      style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
     >
       <div className="mx-auto w-full max-w-md">
 

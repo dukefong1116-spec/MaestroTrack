@@ -21,7 +21,7 @@ export default function AppLayout() {
       // 100dvh, not 100vh: on mobile Safari the toolbar slides in and out,
       // and vh keeps reporting the taller figure.
       className="flex h-[100dvh] overflow-hidden"
-      style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
+      style={{ background: 'var(--clay-page)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
     >
       {/* A teacher gets the studio's icon rail; a student keeps the sidebar. */}
       {teacher ? <TeacherRail /> : <Sidebar />}

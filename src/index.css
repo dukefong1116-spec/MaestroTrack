@@ -23,17 +23,24 @@
    ───────────────────────────────────────────────────────────── */
 :root {
   /* ground */
-  --clay-bg: #FFFFFF;
+  /* The page itself. White, and in light mode the panels are white too:
+     their edges are the hairlines (--clay-line), not a change of colour. */
+  --clay-page: #FFFFFF;
+  /* The fill for things set into a panel — text boxes, switches, plain
+     buttons, chips, hover rows. It used to be the page colour, which
+     worked while panels were tinted; on a white panel it has to be its
+     own faint tint or those controls vanish. */
+  --clay-bg: #F2F6FA;
   --clay-bg-deep: #E1E7F4;
-  --clay-surface: #E6F4FB;
-  /* Table header rows: a step deeper than the panel so they read as a header. */
-  --clay-head: #D8E5EC;
+  --clay-surface: #FFFFFF;
+  /* Table header rows: a faint tint, so they read as a header on white. */
+  --clay-head: #F1F6FA;
 
   /* ink */
   --clay-ink: #000000;
   --clay-dim: #787EA1;
   --clay-faint: #B6AFC9;
-  --clay-line: #E4DEF0;
+  --clay-line: #E3E9F0;
   /* Between main and secondary text, mixed so it follows both in either mode. */
   --clay-ink-soft: color-mix(in srgb, var(--clay-ink) 72%, var(--clay-dim));
 
@@ -100,6 +107,7 @@
    ───────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --clay-page: #000000;
     --clay-bg: #000000;
     --clay-bg-deep: #161618;
     --clay-surface: #212124;
@@ -145,6 +153,7 @@
 }
 
 :root[data-theme="dark"] {
+  --clay-page: #000000;
   --clay-bg: #000000;
   --clay-bg-deep: #161618;
   --clay-surface: #212124;
@@ -194,12 +203,12 @@
 
 html {
   /* Was an inline style on <html>, which no stylesheet could theme. */
-  background-color: var(--clay-bg);
+  background-color: var(--clay-page);
 }
 
 body {
   margin: 0;
-  background-color: var(--clay-bg);
+  background-color: var(--clay-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--clay-ink);

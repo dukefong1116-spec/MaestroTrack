@@ -64,7 +64,7 @@ export default function TagsPanel({ counts }: { counts: Record<string, number> }
                   Name
                   <input
                     className={`${inputCls} mt-1`}
-                    style={{ background: '#fff', color: 'var(--clay-ink)' }}
+                    style={{ background: 'var(--clay-surface)', color: 'var(--clay-ink)' }}
                     value={names[t.id] ?? t.name}
                     maxLength={40}
                     onChange={(e) => setNames({ ...names, [t.id]: e.target.value })}

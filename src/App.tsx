@@ -160,7 +160,7 @@ function usePrefetchTabs(role: 'student' | 'teacher' | undefined) {
 
 function RouteLoading() {
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center" style={{ background: 'var(--clay-bg)' }}>
+    <div className="min-h-[100dvh] flex items-center justify-center" style={{ background: 'var(--clay-page)' }}>
       <div
         className="w-10 h-10 rounded-full animate-spin"
         style={{ border: '4px solid var(--clay-accent-soft)', borderTopColor: 'var(--clay-accent)' }}

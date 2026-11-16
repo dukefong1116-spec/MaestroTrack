@@ -59,7 +59,7 @@ export default function WaitingToJoin() {
               <select
                 aria-label={`Whose record is ${r.studentName}?`}
                 className="min-h-[38px] min-w-[190px] rounded-[10px] border-0 px-3 text-[13px] font-semibold"
-                style={{ ...inputStyle, background: '#fff' }}
+                style={{ ...inputStyle, background: 'var(--clay-surface)' }}
                 value={linkTo[r.id] ?? ''}
                 onChange={(e) => setLinkTo({ ...linkTo, [r.id]: e.target.value })}
               >
@@ -68,7 +68,7 @@ export default function WaitingToJoin() {
               </select>
             )}
             <div className="flex gap-2">
-              <Btn kind="soft" style={{ background: '#fff' }} disabled={busy === r.id} onClick={() => decide(r, false)}>Decline</Btn>
+              <Btn kind="soft" style={{ background: 'var(--clay-surface)' }} disabled={busy === r.id} onClick={() => decide(r, false)}>Decline</Btn>
               <Btn kind="primary" disabled={busy === r.id} onClick={() => decide(r, true)}>{busy === r.id ? '…' : 'Accept'}</Btn>
             </div>
           </div>

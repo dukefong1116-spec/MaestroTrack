@@ -55,7 +55,7 @@ export default function StudioMessagesPage() {
   return (
     <div
       className="fixed inset-0 z-40 flex flex-col"
-      style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
+      style={{ background: 'var(--clay-page)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
     >
       <div
         className="flex shrink-0 items-center gap-3 px-3 pb-3"

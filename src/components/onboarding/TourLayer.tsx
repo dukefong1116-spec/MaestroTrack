@@ -25,7 +25,7 @@ interface Box { top: number; left: number; width: number; height: number }
 
 const PAD = 6
 /** Everything but the lit element fades back into the page's own colour. */
-const FADE = 'color-mix(in srgb, var(--clay-bg) 80%, transparent)'
+const FADE = 'color-mix(in srgb, var(--clay-page) 80%, transparent)'
 const MISSING_GRACE_MS = 4000
 /** Room between the lit element and the bubble's arrow. */
 const GAP = 14

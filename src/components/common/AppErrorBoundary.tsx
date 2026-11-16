@@ -32,7 +32,7 @@ export default class AppErrorBoundary extends Component<{ children: ReactNode },
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center"
-        style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
+        style={{ background: 'var(--clay-page)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
       >
         <p className="text-[17px] font-semibold">Something went wrong</p>
         <p className="max-w-xs text-[14px]" style={{ color: 'var(--clay-dim)' }}>

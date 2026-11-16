@@ -36,7 +36,7 @@ function AppSkeleton() {
     <div className="animate-pulse" style={{ width: w, height: h, borderRadius: 10, background: 'var(--clay-bg-deep)', ...extra }} />
   )
   return (
-    <div className="min-h-[100dvh] px-4 pt-6" style={{ background: 'var(--clay-bg)' }} aria-busy="true" aria-label="Loading">
+    <div className="min-h-[100dvh] px-4 pt-6" style={{ background: 'var(--clay-page)' }} aria-busy="true" aria-label="Loading">
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="flex items-center gap-3 px-1">
           {bar('40px', 40, { borderRadius: 999 })}

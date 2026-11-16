@@ -16,7 +16,9 @@ export function toneColors(tone: Tone): [string, string] {
 }
 
 export const inputCls = 'block w-full min-h-[40px] rounded-[10px] border-0 px-3 text-[14px] font-semibold outline-none focus:ring-2'
-export const inputStyle: React.CSSProperties = { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
+// Filled with the faint field tint and edged with a hairline, so a text box
+// still reads as one on a white panel.
+export const inputStyle: React.CSSProperties = { background: 'var(--clay-bg)', color: 'var(--clay-ink)', border: '1px solid var(--clay-line)' }
 
 const PALETTE = ['#E05539', '#C98A12', '#3B7DD8', '#2E8B62', '#7A5AC4', '#D64257', '#1F8A96', '#7D7495']
 /** A steady colour per person, for avatars without a photo. */

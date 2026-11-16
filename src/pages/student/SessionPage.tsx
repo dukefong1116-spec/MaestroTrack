@@ -843,7 +843,7 @@ export default function SessionPage() {
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
       className="fixed inset-0 z-50 overflow-y-auto"
-      style={{ background: 'var(--clay-bg)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
+      style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
     >
       <div className="mx-auto w-full max-w-md px-5 pb-10 pt-5">
 

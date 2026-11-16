@@ -105,7 +105,7 @@ export default function BottomTabs() {
                     top: -22,
                     background: isActive ? 'var(--clay-accent)' : 'var(--clay-bg-deep)',
                     color: isActive ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
-                    border: '4px solid var(--clay-bg)',
+                    border: '4px solid var(--clay-page)',
                   }}
                 >
                   <TabIcon icon={icon} active={isActive} raised />

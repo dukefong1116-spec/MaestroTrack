@@ -24,6 +24,9 @@ export function Panel({ children, className }: { children: ReactNode; className?
       style={{
         background: 'var(--clay-surface)',
         borderRadius: 'var(--clay-r-md)',
+        // The panel's edge. In light mode the panel and the page are both
+        // white, so this hairline is what shows where one ends.
+        border: '1px solid var(--clay-line)',
       }}
     >
       {children}

@@ -139,15 +139,15 @@ function Composer({ teacherId, m, onDone }: { teacherId: string; m: Member; onDo
           </button>
         ))}
       </div>
-      <Field label="Title"><input className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === 'daily' ? 'Daily scales' : 'Für Elise — bars 1–16, hands together at 80'} /></Field>
-      <Field label="Instructions (optional)"><textarea rows={2} className="w-full rounded-xl border-0 p-3 text-[14px] outline-none" style={{ ...inputStyle, background: '#fff' }} value={desc} onChange={(e) => setDesc(e.target.value)} /></Field>
+      <Field label="Title"><input className={inputCls} style={{ ...inputStyle, background: 'var(--clay-surface)' }} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === 'daily' ? 'Daily scales' : 'Für Elise — bars 1–16, hands together at 80'} /></Field>
+      <Field label="Instructions (optional)"><textarea rows={2} className="w-full rounded-xl border-0 p-3 text-[14px] outline-none" style={{ ...inputStyle, background: 'var(--clay-surface)' }} value={desc} onChange={(e) => setDesc(e.target.value)} /></Field>
       <div className="flex flex-wrap items-end gap-3">
-        <Field label={kind === 'daily' ? 'Until' : 'Due'} className="w-44"><input type="date" className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={due} onChange={(e) => setDue(e.target.value)} /></Field>
+        <Field label={kind === 'daily' ? 'Until' : 'Due'} className="w-44"><input type="date" className={inputCls} style={{ ...inputStyle, background: 'var(--clay-surface)' }} value={due} onChange={(e) => setDue(e.target.value)} /></Field>
         {kind === 'daily' && (
           <>
-            <Field label="Minutes a day" className="w-32"><input type="number" min={1} className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={daily} onChange={(e) => setDaily(e.target.value)} /></Field>
+            <Field label="Minutes a day" className="w-32"><input type="number" min={1} className={inputCls} style={{ ...inputStyle, background: 'var(--clay-surface)' }} value={daily} onChange={(e) => setDaily(e.target.value)} /></Field>
             <Field label="Counts" className="w-48">
-              <select className={inputCls} style={{ ...inputStyle, background: '#fff' }} value={cat} onChange={(e) => setCat(e.target.value)}>
+              <select className={inputCls} style={{ ...inputStyle, background: 'var(--clay-surface)' }} value={cat} onChange={(e) => setCat(e.target.value)}>
                 <option value="">Any practice</option>{CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>Only {c}</option>)}
               </select>
             </Field>

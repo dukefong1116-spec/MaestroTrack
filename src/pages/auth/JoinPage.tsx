@@ -93,7 +93,7 @@ export default function JoinPage() {
   return (
     <div
       className="flex min-h-[100dvh] items-center justify-center px-5 py-10"
-      style={{ background: 'var(--clay-bg)', fontFamily: 'var(--clay-font)' }}
+      style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)' }}
     >
       <div
         className="w-full max-w-[400px] px-6 py-8"

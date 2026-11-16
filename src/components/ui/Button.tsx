@@ -59,7 +59,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ...VARIANTS[variant],
           // @ts-expect-error -- CSS custom property for the focus ring colour
           '--tw-ring-color': 'var(--clay-accent)',
-          '--tw-ring-offset-color': 'var(--clay-bg)',
+          '--tw-ring-offset-color': 'var(--clay-page)',
           ...style,
         }}
         {...props}
