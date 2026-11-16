@@ -94,6 +94,7 @@ const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage')
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
+const StudioSettingsPage = lazy(() => import('@/pages/teacher/StudioSettingsPage'))
 const loadCalendarPage = lazyPage(() => import('@/pages/teacher/CalendarPage'))
 const loadCalendar = loadCalendarPage.load
 const CalendarPage = loadCalendarPage.Page
@@ -303,6 +304,9 @@ function AppRoutes() {
         <Route path="research" element={<ResearchPage />} />
         <Route path="settings" element={<TeacherSettingsPage />} />
         <Route path="settings/profile" element={<TeacherProfilePage />} />
+        <Route path="settings/lessons" element={<StudioSettingsPage part="lessons" />} />
+        <Route path="settings/cancellations" element={<StudioSettingsPage part="policy" />} />
+        <Route path="settings/calendar" element={<StudioSettingsPage part="calendar" />} />
         {/* The same photo screen the student uses; it knows which Settings
             to send you back to from the signed-in role. */}
         <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />

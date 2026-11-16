@@ -32,6 +32,7 @@ const teacherSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   studioName: z.string().min(2, 'Studio name required'),
+  instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]], { message: 'Choose the instrument you teach' }),
 })
 
 type Step = 'role' | 'info' | 'photo'
@@ -109,9 +110,9 @@ export default function SignupPage() {
   async function onTeacherSubmit(data: z.infer<typeof teacherSchema>) {
     setError('')
     try {
-      const user = await signUp(data.email, data.password, data.displayName, 'teacher', { studioName: data.studioName })
+      const user = await signUp(data.email, data.password, data.displayName, 'teacher', { studioName: data.studioName, instrument: data.instrument })
       localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
-      toPhoto('/teacher', data.displayName)
+      toPhoto('/teacher', data.displayName, data.instrument)
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/email-already-in-use') setError('Email already in use.')
@@ -205,6 +206,13 @@ export default function SignupPage() {
                 <form onSubmit={teacherForm.handleSubmit(onTeacherSubmit)} className="space-y-4">
                   <Input label="Full Name" placeholder="Dr. Sarah Chen" error={teacherForm.formState.errors.displayName?.message} {...teacherForm.register('displayName')} />
                   <Input label="Studio Name" placeholder="Chen Music Studio" error={teacherForm.formState.errors.studioName?.message} {...teacherForm.register('studioName')} />
+                  <Select
+                    label="Instrument You Teach"
+                    options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
+                    placeholder="Select an instrument"
+                    error={teacherForm.formState.errors.instrument?.message}
+                    {...teacherForm.register('instrument')}
+                  />
                   <Input label="Email" type="email" placeholder="sarah@example.com" error={teacherForm.formState.errors.email?.message} {...teacherForm.register('email')} />
                   <Input label="Password" type="password" placeholder="••••••••" error={teacherForm.formState.errors.password?.message} {...teacherForm.register('password')} />
                   <Button type="submit" className="w-full" size="lg" loading={teacherForm.formState.isSubmitting}>Create Teacher Account</Button>

@@ -10,12 +10,17 @@ import { updateUserProfile } from '@/lib/firebase/teacher'
 import Avatar from '@/components/profile/Avatar'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 import type { InstrumentType } from '@/types'
 
 const schema = z.object({
   displayName: z.string().min(2, 'Your name is required'),
   studioName: z.string().min(2, 'A studio name is required'),
+  // Optional here, unlike at signup: a teacher who joined before the
+  // question existed can still save their name without answering it.
+  instrument: z.union([z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]), z.literal('')]),
 })
 type FormData = z.infer<typeof schema>
 
@@ -38,6 +43,7 @@ export default function TeacherProfilePage() {
     defaultValues: {
       displayName: profile?.displayName ?? '',
       studioName: profile?.studioName ?? '',
+      instrument: (profile?.instrument as InstrumentType | undefined) ?? '',
     },
   })
   // Field by field, not the whole form at once: an unset instrument reads
@@ -50,8 +56,11 @@ export default function TeacherProfilePage() {
     setSaving(true)
     setSaved(false)
     try {
-      await updateUserProfile(profile.uid, data)
-      setProfile({ ...profile, ...data })
+      // An unanswered instrument is left off rather than saved as ''.
+      const { instrument, ...rest } = data
+      const patch = instrument ? { ...rest, instrument } : rest
+      await updateUserProfile(profile.uid, patch)
+      setProfile({ ...profile, ...patch })
       // What was saved is now the starting point: nothing left to save.
       reset(data)
       setSaved(true)
@@ -107,6 +116,13 @@ export default function TeacherProfilePage() {
               placeholder="Chen Music Studio"
               error={errors.studioName?.message}
               {...register('studioName')}
+            />
+            <Select
+              label="Instrument you teach"
+              options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
+              placeholder="Select an instrument"
+              error={errors.instrument?.message}
+              {...register('instrument')}
             />
             <Button type="submit" disabled={!isDirty && !saved} loading={isSubmitting || saving}>
               {saved && !saving ? 'Saved' : 'Save'}

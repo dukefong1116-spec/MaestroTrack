@@ -263,6 +263,37 @@ select option {
   color: var(--clay-ink);
 }
 
+/* Drop-downs are drawn by the app, not the browser. Safari's own select
+   keeps a fixed, short height whatever min-height asks for, so a select
+   sat noticeably thinner than the text boxes beside it. The arrow is a
+   background image, and !important because most selects set their colour
+   with an inline `background`, which would otherwise wipe it out. */
+select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237F8BA0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right .7rem center !important;
+  background-size: 12px !important;
+  padding-right: 2rem !important;
+}
+
+/* Safari lays a date or time box out as an inline flexbox with its text
+   centred; `display: block` (which most boxes here carry) undoes that and
+   leaves the text stuck to the top. Flex keeps it a full-width block and
+   puts the text back in the middle. Safari only (only Safari knows the
+   -apple-system-body font): Chrome centres the text already, and as a flex
+   box it would pull its calendar button in from the right-hand edge. */
+@supports (font: -apple-system-body) {
+  input:is([type="date"], [type="time"]) {
+    display: flex;
+    align-items: center;
+  }
+}
+input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* Range inputs pick up the accent so sliders match the theme */
 input[type="range"] {
   accent-color: var(--clay-accent);
