@@ -36,8 +36,8 @@ const C = {
   line: '#E4DEF0',
   accent: '#4BB6EC',
   accentHover: '#3791BE',
-  accentSoft: '#E5FBFF',
-  accentInk: '#4BB6EC',
+  accentSoft: '#C7E9F0',
+  accentInk: '#16658F',
   mint: '#6BCB9B',
   butterSoft: '#FFF6D9',
 }

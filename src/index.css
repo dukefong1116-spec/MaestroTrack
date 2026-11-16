@@ -40,8 +40,8 @@
   /* accent */
   --clay-accent: #4BB6EC;
   --clay-accent-hover: #3791BE;
-  --clay-accent-soft: #E5FBFF;
-  --clay-accent-ink: #4BB6EC;
+  --clay-accent-soft: #C7E9F0;
+  --clay-accent-ink: #16658F;
   --clay-on-accent: #FFFFFF;
 
   /* supporting */
@@ -71,7 +71,7 @@
 
   /* pale fills that have to stop being pale after dark */
   --clay-sticker-ink-fill: #E5E5F6;
-  --clay-sticker-accent-fill: #D6F3FF;
+  --clay-sticker-accent-fill: #C7E9F0;
   --clay-frozen: #BBD9F2;
   --clay-tint-mint: #E7F7EF;
   --clay-tint-butter: #FFF6D9;
