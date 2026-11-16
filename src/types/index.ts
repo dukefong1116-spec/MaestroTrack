@@ -380,6 +380,18 @@ export interface LessonSlot {
    */
   date?: string
   skipDates?: string[]
+  /** Where it happens, if the teacher said (studio calendar only). */
+  where?: string
+  /** For a lesson moved from its usual day: the date it was moved from. */
+  movedFrom?: string
+}
+
+/** A teacher's note to the whole studio. See lib/firebase/announcements. */
+export interface Announcement {
+  id: string
+  teacherId: string
+  text: string
+  createdAt: string
 }
 
 /** One attempt at handing work in. Append-only: a returned assignment is

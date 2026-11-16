@@ -9,8 +9,8 @@ import { correctedSession } from '@/lib/studio/corrections'
 
 /**
  * What the teacher has written for this student in the studio: a
- * correction to their log waiting for their yes or no, the notes shared
- * from recent lessons, and practice the teacher recorded for them.
+ * correction to their log waiting for their yes or no, and practice the
+ * teacher recorded for them. (Lesson notes have their own card.)
  *
  * The log stays theirs: a correction changes nothing until they accept,
  * and accepting changes their own session the ordinary way.
@@ -20,13 +20,13 @@ export default function FromYourTeacher() {
   const sessions = usePracticeStore((s) => s.sessions)
   const teacherId = profile?.teacherId
   const corrections = useStudentStudioStore((s) => s.corrections).filter((c) => c.teacherId === teacherId && c.status === 'pending')
-  const notes = useStudentStudioStore((s) => s.sharedNotes).filter((n) => n.teacherId === teacherId).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 2)
   const added = useStudentStudioStore((s) => s.teacherPractice).filter((e) => e.teacherId === teacherId).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
   const teacher = profile?.teacherName || 'Your teacher'
 
-  if (!corrections.length && !notes.length && !added.length) return null
+  // Lesson notes have their own card (StudioCards: LastLessonNotes).
+  if (!corrections.length && !added.length) return null
 
   async function answer(id: string, accept: boolean) {
     const c = corrections.find((x) => x.id === id)
@@ -61,12 +61,6 @@ export default function FromYourTeacher() {
             <button type="button" disabled={busy === c.id} onClick={() => answer(c.id, true)} className="min-h-[36px] rounded-[10px] px-4 text-[13px] font-bold disabled:opacity-50" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>Accept</button>
             <button type="button" disabled={busy === c.id} onClick={() => answer(c.id, false)} className="min-h-[36px] rounded-[10px] px-4 text-[13px] font-semibold disabled:opacity-50" style={{ background: 'var(--clay-surface)', color: 'var(--clay-ink)' }}>Keep {c.fromMinutes} min</button>
           </div>
-        </div>
-      ))}
-      {notes.map((n) => (
-        <div key={n.id} className="mt-2.5">
-          <p className="text-[12px] font-semibold" style={{ color: 'var(--clay-dim)' }}>Lesson · {format(parseISO(n.date), 'EEE, MMM d')}</p>
-          <p className="mt-0.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--clay-ink)' }}>{n.text}</p>
         </div>
       ))}
       {added.map((e) => (

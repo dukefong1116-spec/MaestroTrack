@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { format, formatDistanceToNowStrict, parseISO } from 'date-fns'
+import { formatDistanceToNowStrict, parseISO } from 'date-fns'
 import { ChevronRight, ClipboardCheck, ClipboardList, Send } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignments } from '@/hooks/useAssignments'
@@ -10,6 +10,7 @@ import AssignmentRow from '@/components/assignments/AssignmentRow'
 import { nextOccurrence } from '@/lib/utils/notifications'
 import { organise } from '@/lib/utils/assignmentGroups'
 import FromYourTeacher from '@/components/studio/FromYourTeacher'
+import { AnnouncementCard, NextLessonCard, LastLessonNotes } from '@/components/studio/StudioCards'
 
 /**
  * A student's studio, at a glance: one panel, top to bottom — who it is,
@@ -83,10 +84,15 @@ export default function StudioPage() {
             <p className="truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{studioName}</p>
             <p className="truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
               {profile.teacherName || 'Your teacher'}
-              {next ? ` · Next lesson ${format(next.when, 'EEE h:mm a')}` : ''}
             </p>
           </div>
         </div>
+
+        {/* What's happening: the latest announcement, the next lesson,
+            and what was said at the last one. */}
+        <AnnouncementCard />
+        <NextLessonCard next={next} />
+        <LastLessonNotes />
 
         {/* The conversation, as a little chat */}
         <Link to="/student/studio/messages" className="block px-5 py-4" style={{ borderTop: '1px solid var(--clay-line)' }}>

@@ -33,6 +33,7 @@ export function studentSlots(
     durationMinutes: l.durationMinutes,
     createdAt: l.createdAt,
     updatedAt: l.updatedAt,
+    ...(l.where ? { where: l.where } : {}),
     skipDates: mineO
       .filter((o) => o.lessonId === l.id && o.originalDate && o.originalDate >= addDays(today, -1)
         && (o.cancelled || o.date !== o.originalDate || o.startTime !== l.startTime))
@@ -55,6 +56,9 @@ export function studentSlots(
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
       date: o.date,
+      ...((o.where ?? parent?.where) ? { where: o.where ?? parent?.where } : {}),
+      // Moved from its usual day — worth saying, so nobody turns up then.
+      ...(parent && o.originalDate && o.originalDate !== o.date ? { movedFrom: o.originalDate } : {}),
     })
   }
   return slots

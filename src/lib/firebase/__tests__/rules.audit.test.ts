@@ -299,6 +299,32 @@ describe('a teacher doing their worst', () => {
   })
 })
 
+describe('announcements', () => {
+  const post = (u: string, d: Record<string, unknown>) => setDoc(doc(fs(u), 'announcements', `au-ann-${Math.random().toString(36).slice(2)}`), d)
+  it('a teacher posts to their own studio; nobody posts in someone else’s name', async () => {
+    await assertSucceeds(setDoc(doc(fs(T), 'announcements', 'au-ann1'), { teacherId: T, text: 'Recital Saturday at 2', createdAt: 'x' }))
+    await assertFails(post(T, { teacherId: T2, text: 'Fake', createdAt: 'x' }))
+    await assertFails(post(A, { teacherId: T, text: 'From a student', createdAt: 'x' }))
+    await assertFails(post(T, { teacherId: T, text: '', createdAt: 'x' }))
+    await assertFails(post(T, { teacherId: T, text: 'x'.repeat(2001), createdAt: 'x' }))
+    await assertFails(post(T, { teacherId: T, text: 'hi', createdAt: 'x', pinned: true }))
+  })
+  it('the studio’s students read it — by asking for their own teacher’s; nobody else does', async () => {
+    await assertSucceeds(getDoc(doc(fs(A), 'announcements', 'au-ann1')))
+    await assertSucceeds(getDocs(query(collection(fs(A), 'announcements'), where('teacherId', '==', T))))
+    await assertFails(getDocs(collection(fs(A), 'announcements')))
+    await assertFails(getDoc(doc(fs(E), 'announcements', 'au-ann1')))
+    await assertFails(getDocs(query(collection(fs(E), 'announcements'), where('teacherId', '==', T))))
+    await assertFails(getDoc(doc(fs(T2), 'announcements', 'au-ann1')))
+  })
+  it('never edited; only its teacher takes it down', async () => {
+    await assertFails(updateDoc(doc(fs(T), 'announcements', 'au-ann1'), { text: 'changed' }))
+    await assertFails(deleteDoc(doc(fs(A), 'announcements', 'au-ann1')))
+    await assertFails(deleteDoc(doc(fs(T2), 'announcements', 'au-ann1')))
+    await assertSucceeds(deleteDoc(doc(fs(T), 'announcements', 'au-ann1')))
+  })
+})
+
 describe('the bucket', () => {
   it('a take is heard by its owner, and by their teacher only once handed in', async () => {
     await assertFails(getBytes(ref(st(A), `recordings/${B}/au-rB/take.webm`)))

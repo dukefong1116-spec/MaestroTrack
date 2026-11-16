@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
-import { useStudentStudioStore } from '@/stores/studentStudioStore'
+import { useStudentStudioStore, liveAnnouncement } from '@/stores/studentStudioStore'
 
 /**
  * Whether this student is in a studio, and how many of their teacher's
@@ -26,5 +26,7 @@ export function useStudio() {
   // A correction to the log waits for their answer: shown with the same
   // dot on the Studio tab as an unread message.
   const pending = useStudentStudioStore((s) => s.corrections.filter((c) => c.status === 'pending' && c.teacherId === teacherId).length)
-  return { inStudio: !!teacherId, unreadMessages, studioAttention: unreadMessages + pending }
+  // An announcement not yet dismissed gets the same dot.
+  const announcement = useStudentStudioStore((s) => liveAnnouncement(s.announcements, s.announcementSeen))
+  return { inStudio: !!teacherId, unreadMessages, studioAttention: unreadMessages + pending + (announcement ? 1 : 0) }
 }

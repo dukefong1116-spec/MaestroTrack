@@ -10,7 +10,8 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import { readSnapshot, writeSnapshot, snapshotKey, type Snapshot } from '@/lib/cache/snapshot'
 import { SNAPSHOT_KEYS } from '@/stores/practiceStore'
 import { useAuthStore } from '@/stores/authStore'
-import { useStudentStudioStore } from '@/stores/studentStudioStore'
+import { useStudentStudioStore, readAnnouncementSeen } from '@/stores/studentStudioStore'
+import { subscribeStudioAnnouncements } from '@/lib/firebase/announcements'
 import {
   subscribeMyStudioLessons, subscribeMyOccurrences, subscribeMySharedNotes, subscribeMyCorrections, subscribeMyTeacherPractice,
 } from '@/lib/firebase/studio'
@@ -58,6 +59,7 @@ export function useStudentData(userId: string | undefined) {
 
     const studio = useStudentStudioStore.getState()
     studio.reset()
+    studio.set({ announcementSeen: readAnnouncementSeen(userId) })
     let legacySlots: LessonSlot[] | null = null
     let studioLessons: StudioLesson[] = []
     let studioDates: LessonOccurrence[] = []
@@ -78,10 +80,13 @@ export function useStudentData(userId: string | undefined) {
       stopStudioLessons = null
       studioLessons = []
       studioDates = []
+      useStudentStudioStore.getState().set({ announcements: [] })
       if (teacherId) {
         const a = subscribeMyStudioLessons(userId, teacherId, (l) => { studioLessons = l; pushLessons() })
         const b = subscribeMyOccurrences(userId, teacherId, (o) => { studioDates = o; pushLessons() })
-        stopStudioLessons = () => { a(); b() }
+        // The studio's announcements, also only from the teacher they are with now.
+        const c = subscribeStudioAnnouncements(teacherId, (announcements) => { if (active) useStudentStudioStore.getState().set({ announcements }) })
+        stopStudioLessons = () => { a(); b(); c() }
       }
       pushLessons()
     }

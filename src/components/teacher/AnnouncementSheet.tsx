@@ -1,16 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { formatDistanceToNowStrict, parseISO } from 'date-fns'
 import Modal from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
 import { useMembers } from '@/hooks/useStudioData'
 import { useTeacherStore } from '@/stores/teacherStore'
-import { sendMessage } from '@/lib/firebase/messages'
+import { postAnnouncement, deleteAnnouncement, subscribeTeacherAnnouncements, ANNOUNCEMENT_MAX } from '@/lib/firebase/announcements'
+import type { Announcement } from '@/types'
 import { Btn } from '@/components/teacher/studio/ui'
 import { inputStyle } from '@/components/teacher/studio/tokens'
 
 /**
- * One note to everybody: a message in each student's conversation, and
- * an email (from your own mail app) to the families of students who are
- * not on the app — the app has no way of emailing for you yet.
+ * One note to everybody. Students on the app see it at the top of their
+ * Studio page (with a dot on the Studio tab) until they dismiss it; the
+ * families of students who are not on the app get it by email, from your
+ * own mail app — the app has no way of emailing for you yet. Earlier
+ * announcements are listed underneath, each one yours to take down.
  */
 export default function AnnouncementSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { profile } = useAuth()
@@ -19,6 +23,8 @@ export default function AnnouncementSheet({ open, onClose }: { open: boolean; on
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState('')
+  const [posted, setPosted] = useState<Announcement[]>([])
+  useEffect(() => (open && profile?.uid ? subscribeTeacherAnnouncements(profile.uid, setPosted) : undefined), [open, profile?.uid])
 
   const onApp = members.filter((m) => m.onApp && m.profile?.teacherId === profile?.uid)
   const offline = members.filter((m) => !m.onApp)
@@ -31,10 +37,11 @@ export default function AnnouncementSheet({ open, onClose }: { open: boolean; on
     if (!profile || !text.trim()) return
     setBusy(true)
     try {
-      await Promise.all(onApp.map((m) => sendMessage({ teacherId: profile.uid, studentId: m.uid as string, from: 'teacher', text: text.trim() })))
-      setDone(`Sent to ${onApp.length} student${onApp.length === 1 ? '' : 's'} on the app.`)
+      await postAnnouncement(profile.uid, text)
+      setDone(`Posted. ${onApp.length} student${onApp.length === 1 ? '' : 's'} on the app will see it on their Studio page.`)
+      setText('')
     } catch {
-      setDone('Some messages could not be sent. Check your connection and try again.')
+      setDone('Could not post it. Check your connection and try again.')
     } finally {
       setBusy(false)
     }
@@ -45,11 +52,12 @@ export default function AnnouncementSheet({ open, onClose }: { open: boolean; on
   return (
     <Modal open={open} onClose={() => { setText(''); setDone(''); onClose() }} title="Announcement to everyone">
       <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
-        Students on the app get it in Messages. Families of students who aren’t get it by email, from your own mail app.
+        Students on the app see it at the top of their Studio page until they dismiss it. Families of students who aren’t get it by email, from your own mail app.
       </p>
       <textarea
         aria-label="Announcement"
         rows={5}
+        maxLength={ANNOUNCEMENT_MAX}
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Winter recital is Saturday, December 5 at 2 PM. Please arrive by 1:30."
@@ -63,10 +71,24 @@ export default function AnnouncementSheet({ open, onClose }: { open: boolean; on
             Email {emails.length} famil{emails.length === 1 ? 'y' : 'ies'}
           </a>
         )}
-        <Btn kind="primary" onClick={send} disabled={busy || !text.trim() || onApp.length === 0}>
-          {busy ? 'Sending…' : `Send to ${onApp.length} on the app`}
+        <Btn kind="primary" onClick={send} disabled={busy || !text.trim()}>
+          {busy ? 'Posting…' : 'Post to the studio'}
         </Btn>
       </div>
+      {posted.length > 0 && (
+        <div className="mt-5" style={{ borderTop: '1px solid var(--clay-line)' }}>
+          <p className="pb-1 pt-3 text-[12.5px] font-semibold" style={{ color: 'var(--clay-dim)' }}>Posted</p>
+          {posted.slice(0, 10).map((a) => (
+            <div key={a.id} className="flex items-start gap-3 py-2" style={{ borderTop: '1px solid var(--clay-line)' }}>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 whitespace-pre-wrap text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>{a.text}</p>
+                <p className="text-[11.5px]" style={{ color: 'var(--clay-dim)' }}>{formatDistanceToNowStrict(parseISO(a.createdAt), { addSuffix: true })}</p>
+              </div>
+              <Btn kind="link" onClick={() => void deleteAnnouncement(a.id).catch(() => setDone('Could not take it down. Try again.'))}>Take down</Btn>
+            </div>
+          ))}
+        </div>
+      )}
     </Modal>
   )
 }

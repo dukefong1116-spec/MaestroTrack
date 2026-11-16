@@ -654,6 +654,26 @@ service cloud.firestore {
     // wrote them can read or delete them, and nobody adds to them. An
     // earlier clause let any teacher the student later joined read what a
     // previous teacher had written.
+    /* ── announcements: one note to the whole studio ───────────────── */
+    // Written once by the teacher, read by the students in their studio
+    // now — the student's query names the teacher, and the rule checks it
+    // is theirs, so a former student stops seeing them. Never edited (post
+    // a new one); the teacher takes one down by deleting it.
+    match /announcements/{id} {
+      allow read: if signedIn()
+                  && (resource.data.teacherId == uid()
+                      || resource.data.teacherId == myTeacherId());
+      allow create: if signedIn() && isTeacher()
+                    && request.resource.data.keys().hasOnly(['teacherId', 'text', 'createdAt'])
+                    && request.resource.data.teacherId == uid()
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 2000
+                    && request.resource.data.createdAt is string;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.teacherId == uid();
+    }
+
     match /teacherNotes/{id} {
       allow read: if signedIn()
                   && (resource.data.studentId == uid()
