@@ -25,9 +25,9 @@
   /* ground */
   --clay-bg: #FFFFFF;
   --clay-bg-deep: #E1E7F4;
-  --clay-surface: #F0F5F9;
+  --clay-surface: #E6F4FB;
   /* Table header rows: a step deeper than the panel so they read as a header. */
-  --clay-head: #E1E7F4;
+  --clay-head: #D8E5EC;
 
   /* ink */
   --clay-ink: #000000;

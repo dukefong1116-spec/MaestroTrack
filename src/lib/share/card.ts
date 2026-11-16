@@ -29,7 +29,7 @@ const H = 1350
 const C = {
   bg: '#FFFFFF',
   bgDeep: '#E1E7F4',
-  surface: '#F0F5F9',
+  surface: '#E6F4FB',
   ink: '#000000',
   dim: '#787EA1',
   faint: '#B6AFC9',
