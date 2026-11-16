@@ -77,7 +77,7 @@ export default function StudioAssignmentsPage() {
           onClick={() => navigate('/student/studio')}
           aria-label="Back to Studio"
           className="flex h-9 w-9 items-center justify-center rounded-full"
-          style={{ background: 'var(--clay-field)' }}
+          style={{ background: 'var(--clay-bg)' }}
         >
           <ChevronLeft size={19} />
         </button>

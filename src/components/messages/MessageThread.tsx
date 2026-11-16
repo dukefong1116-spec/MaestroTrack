@@ -182,7 +182,7 @@ export default function MessageThread({
                 onClick={() => setAttachment(null)}
                 aria-label="Remove"
                 className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                style={{ background: 'var(--clay-field)', color: 'var(--clay-dim)' }}
+                style={{ background: 'var(--clay-bg)', color: 'var(--clay-dim)' }}
               >
                 <X size={14} />
               </button>
@@ -194,7 +194,7 @@ export default function MessageThread({
               onClick={() => setPicking('recording')}
               aria-label="Share a recording or assignment"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-              style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
+              style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
             >
               <Plus size={18} />
             </button>
@@ -206,7 +206,7 @@ export default function MessageThread({
               maxLength={2000}
               placeholder={`Message ${otherName}…`}
               className="max-h-32 min-h-[40px] flex-1 resize-none px-3.5 py-2.5 text-[14px] outline-none"
-              style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)', borderRadius: 20 }}
+              style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)', borderRadius: 20 }}
             />
             <button
               type="button"
@@ -233,7 +233,7 @@ export default function MessageThread({
               className="py-2 text-[13px] font-semibold"
               style={{
                 borderRadius: 999,
-                background: picking === k ? 'var(--clay-accent-soft)' : 'var(--clay-field)',
+                background: picking === k ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
                 color: picking === k ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
               }}
             >
@@ -296,7 +296,7 @@ function PickRow({ title, detail, onPick }: { title: string; detail: string; onP
       type="button"
       onClick={onPick}
       className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left"
-      style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}
+      style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
     >
       <span className="min-w-0">
         <span className="block truncate text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>{title}</span>
@@ -309,7 +309,7 @@ function PickRow({ title, detail, onPick }: { title: string; detail: string; onP
 
 function Gone({ what }: { what: string }) {
   return (
-    <p className="px-3 py-2.5 text-[12.5px] italic" style={{ color: 'var(--clay-dim)', background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+    <p className="px-3 py-2.5 text-[12.5px] italic" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
       {what} no longer available
     </p>
   )

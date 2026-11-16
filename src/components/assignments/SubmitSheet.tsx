@@ -171,7 +171,7 @@ export default function SubmitSheet({
             </p>
             <div className="mb-4 space-y-2">
               {history.map((h, i) => (
-                <div key={i} className="px-3 py-2" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+                <div key={i} className="px-3 py-2" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
                   <p className="text-[10.5px] font-semibold uppercase tracking-[.08em]"
                      style={{ color: h.kind === 'approved' ? 'var(--clay-success-fg)' : h.kind === 'returned' ? 'var(--clay-warning-fg)' : 'var(--clay-dim)' }}>
                     {h.kind === 'submitted' ? 'You handed it in' : h.kind === 'approved' ? 'Approved' : 'Sent back'}
@@ -186,7 +186,7 @@ export default function SubmitSheet({
 
         {!canSubmit && (
           <p className="mt-4 px-3.5 py-3 text-[12.5px]"
-             style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-dim)' }}>
+             style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)', color: 'var(--clay-dim)' }}>
             {state === 'submitted'
               ? 'Handed in. Your teacher will take a look.'
               : state === 'approved' ? 'Approved — nothing more to do.' : 'This one is closed.'}

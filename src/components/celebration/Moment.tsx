@@ -28,7 +28,7 @@ export default function Moment({
   open,
   onDismiss,
   children,
-  scrim = 'rgba(31,58,72,.45)',
+  scrim = 'rgba(30,40,70,.45)',
   autoDismissMs = 3200,
   hideMute,
 }: MomentProps) {

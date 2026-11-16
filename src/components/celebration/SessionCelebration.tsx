@@ -195,7 +195,7 @@ export default function SessionCelebration({
               to={reward.minutes}
               delay={0.3}
               className="text-5xl font-bold leading-none"
-              style={{ color: 'var(--clay-accent-ink)' }}
+              style={{ color: 'var(--clay-accent)' }}
             />
             <span className="text-base font-semibold" style={{ color: 'var(--clay-faint)' }}>
               min
@@ -206,7 +206,7 @@ export default function SessionCelebration({
           {showStreak && (
             <motion.div
               className="mt-6 flex items-center justify-center gap-2.5 rounded-2xl py-3"
-              style={{ background: reward.thawed || reward.stillFrozen ? 'rgba(120,180,240,.16)' : 'var(--clay-wash)' }}
+              style={{ background: reward.thawed || reward.stillFrozen ? 'rgba(120,180,240,.16)' : 'var(--clay-bg)' }}
               initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.4 }}

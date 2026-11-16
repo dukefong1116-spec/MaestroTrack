@@ -41,7 +41,7 @@ export default function TeacherTabs() {
                   <span className="relative flex h-7 w-12 items-center justify-center rounded-full" style={{ background: on ? 'var(--clay-accent-soft)' : 'transparent', color: on ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' }}>
                     <t.icon size={20} aria-hidden="true" />
                     {t.to === '/teacher/review' && toReview > 0 && (
-                      <span className="absolute -right-1 -top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold" style={{ background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }}>
+                      <span className="absolute -right-1 -top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10.5px] font-bold text-white" style={{ background: 'var(--clay-accent-ink)' }}>
                         {toReview}
                       </span>
                     )}

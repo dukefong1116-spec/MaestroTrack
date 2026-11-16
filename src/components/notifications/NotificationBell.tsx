@@ -93,7 +93,7 @@ export default function NotificationBell({ label, floating, rail }: {
           type="button"
           onClick={toggle}
           aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
-          className="relative flex h-11 w-full shrink-0 items-center gap-3.5 overflow-hidden whitespace-nowrap rounded-[0.875rem] px-[0.9375rem] text-sm font-semibold transition-colors hover:bg-[var(--clay-wash)]"
+          className="relative flex h-11 w-full shrink-0 items-center gap-3.5 overflow-hidden whitespace-nowrap rounded-[0.875rem] px-[0.9375rem] text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]"
           style={{ color: 'var(--clay-dim)' }}
         >
           <Bell className="h-[1.125rem] w-[1.125rem] shrink-0" aria-hidden="true" />
@@ -102,8 +102,8 @@ export default function NotificationBell({ label, floating, rail }: {
             <span
               className="absolute flex items-center justify-center rounded-full text-[0.65rem] font-bold"
               style={rail.open
-                ? { right: '0.625rem', top: '0.75rem', minWidth: '1.25rem', height: '1.25rem', padding: '0 0.375rem', background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }
-                : { left: '1.625rem', top: '0.25rem', minWidth: '1.0625rem', height: '1.0625rem', padding: '0 0.25rem', background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)', border: '2px solid var(--clay-surface)' }}
+                ? { right: '0.625rem', top: '0.75rem', minWidth: '1.25rem', height: '1.25rem', padding: '0 0.375rem', background: 'var(--clay-accent)', color: '#fff' }
+                : { left: '1.625rem', top: '0.25rem', minWidth: '1.0625rem', height: '1.0625rem', padding: '0 0.25rem', background: 'var(--clay-accent-ink)', color: '#fff', border: '2px solid var(--clay-surface)' }}
             >
               {unread > 9 ? '9+' : unread}
             </span>
@@ -116,7 +116,7 @@ export default function NotificationBell({ label, floating, rail }: {
         aria-label={unread > 0 ? `Notifications, ${unread} new` : 'Notifications'}
         className={
           label
-            ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-wash)]'
+            ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]'
             : floating
               ? 'relative flex h-11 w-11 items-center justify-center rounded-full'
               : 'relative flex h-9 w-9 items-center justify-center rounded-full'
@@ -128,7 +128,7 @@ export default function NotificationBell({ label, floating, rail }: {
               // On a phone this sits over the page rather than inside the
               // sidebar, so it needs its own surface to read as a control.
               ? { background: 'var(--clay-surface)', color: 'var(--clay-ink)', boxShadow: 'var(--clay-raised)' }
-              : { background: 'var(--clay-field)', color: 'var(--clay-ink)' }
+              : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
         }
       >
         <span className="relative flex shrink-0 items-center justify-center">

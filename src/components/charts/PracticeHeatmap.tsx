@@ -14,7 +14,7 @@ function getIntensity(minutes: number): number {
   return 4
 }
 
-export default function PracticeHeatmap({ data, color = '#FF7A5C' }: Props) {
+export default function PracticeHeatmap({ data, color = 'var(--clay-accent)' }: Props) {
   const weeks = useMemo(() => {
     const end = new Date()
     const start = subDays(end, 364)
@@ -38,9 +38,9 @@ export default function PracticeHeatmap({ data, color = '#FF7A5C' }: Props) {
 
   const intensityColors = [
     'var(--clay-bg-deep)',
-    `${color}40`,
-    `${color}70`,
-    `${color}a0`,
+    `color-mix(in srgb, ${color} 25%, transparent)`,
+    `color-mix(in srgb, ${color} 44%, transparent)`,
+    `color-mix(in srgb, ${color} 63%, transparent)`,
     color,
   ]
 

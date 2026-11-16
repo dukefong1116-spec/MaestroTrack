@@ -179,7 +179,7 @@ export default function StreakPage() {
                 className="flex h-9 w-9 items-center justify-center rounded-xl"
                 style={i < live.held
                   ? { background: 'rgba(120,180,240,.22)', color: ICE }
-                  : { border: '1.5px dashed rgba(31,58,72,.2)', color: 'var(--clay-faint)' }}
+                  : { border: '1.5px dashed rgba(30,40,70,.2)', color: 'var(--clay-faint)' }}
               >
                 <Snowflake size={18} />
               </span>
@@ -267,7 +267,7 @@ function DayCell({ date, day, today, lesson }: { date: string; day?: StreakDay; 
   }
   if (status === 'lesson' || (lesson && date > today)) {
     return (
-      <span className={base} title={`${date} · lesson day`} style={{ border: '1.5px dashed rgba(31,58,72,.2)', color: date > today ? 'var(--clay-faint)' : 'var(--clay-dim)' }}>
+      <span className={base} title={`${date} · lesson day`} style={{ border: '1.5px dashed rgba(30,40,70,.2)', color: date > today ? 'var(--clay-faint)' : 'var(--clay-dim)' }}>
         <Music size={13} />
       </span>
     )
@@ -276,7 +276,7 @@ function DayCell({ date, day, today, lesson }: { date: string; day?: StreakDay; 
     return <span className={`${base} font-bold`} style={{ boxShadow: '0 0 0 1.5px var(--clay-accent)', color: 'var(--clay-ink)' }}>{n}</span>
   }
   if (status === 'missed' && day!.minutes > 0) {
-    return <span className={base} title={`${date} · under your minimum`} style={{ border: '1.5px dotted rgba(31,58,72,.3)', color: 'var(--clay-dim)' }}>{n}</span>
+    return <span className={base} title={`${date} · under your minimum`} style={{ border: '1.5px dotted rgba(30,40,70,.3)', color: 'var(--clay-dim)' }}>{n}</span>
   }
   return <span className={base} style={{ color: 'var(--clay-faint)' }}>{n}</span>
 }

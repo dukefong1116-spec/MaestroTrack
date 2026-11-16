@@ -15,7 +15,7 @@ export default function EmptyState({ icon, title, description, action }: EmptySt
       style={{ background: 'var(--clay-surface)' }}
     >
       {icon && (
-        <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent-ink)', opacity: 0.55 }}>{icon}</div>
+        <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)', opacity: 0.55 }}>{icon}</div>
       )}
       <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>{title}</h3>
       <p className="text-sm max-w-sm mb-6" style={{ color: 'var(--clay-dim)' }}>{description}</p>

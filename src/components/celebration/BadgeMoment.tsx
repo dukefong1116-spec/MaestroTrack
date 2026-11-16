@@ -49,7 +49,7 @@ export default function BadgeMoment({
           className="pointer-events-none absolute left-1/2 top-[76px] -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
             width: 260, height: 260,
-            background: 'radial-gradient(circle, rgba(163,223,241,.45) 0%, transparent 68%)',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--clay-accent) 30%, transparent) 0%, transparent 68%)',
           }}
           initial={reduced ? false : { scale: 0.4, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -71,7 +71,7 @@ export default function BadgeMoment({
           {/* the medallion */}
           <motion.div
             className="flex h-[112px] w-[112px] items-center justify-center"
-            style={{ filter: 'drop-shadow(0 12px 22px rgba(31,58,72,.22))' }}
+            style={{ filter: 'drop-shadow(0 12px 22px rgba(30,40,70,.22))' }}
             initial={reduced ? { opacity: 0 } : { y: 150, opacity: 0, rotateY: -180, scale: 0.6 }}
             animate={
               reduced
@@ -90,7 +90,7 @@ export default function BadgeMoment({
 
         <motion.p
           className="text-[10px] font-bold uppercase tracking-[.18em]"
-          style={{ color: 'var(--clay-accent-ink)' }}
+          style={{ color: 'var(--clay-accent)' }}
           initial={reduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.85 }}

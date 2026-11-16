@@ -210,7 +210,7 @@ export default function TakePlayer({
 
   return (
     <>
-    <div className="px-3.5 py-3" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+    <div className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
       <audio ref={ref} src={audioSrc} preload="none" />
 
       <div className="flex items-center gap-3">
@@ -303,7 +303,7 @@ export default function TakePlayer({
                 href={audioSrc}
                 download
                 className="font-semibold underline"
-                style={{ color: 'var(--clay-accent-ink)' }}
+                style={{ color: 'var(--clay-accent)' }}
               >
                 Download the take
               </a>

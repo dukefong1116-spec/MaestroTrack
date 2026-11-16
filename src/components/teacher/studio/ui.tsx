@@ -77,7 +77,7 @@ export function Segmented<T extends string>({
   className?: string
 }) {
   return (
-    <div role="group" aria-label={label} className={cn('flex flex-wrap gap-0.5 p-[3px]', className)} style={{ background: 'var(--clay-field)', borderRadius: 10 }}>
+    <div role="group" aria-label={label} className={cn('flex flex-wrap gap-0.5 p-[3px]', className)} style={{ background: 'var(--clay-bg)', borderRadius: 10 }}>
       {options.map((o) => {
         const on = o.value === value
         return (
@@ -91,7 +91,7 @@ export function Segmented<T extends string>({
               background: on ? 'var(--clay-surface)' : 'transparent',
               color: on ? 'var(--clay-ink)' : 'var(--clay-dim)',
               fontWeight: on ? 700 : 600,
-              boxShadow: on ? '0 1px 3px rgba(31,58,72,.18)' : 'none',
+              boxShadow: on ? '0 1px 3px rgba(30,40,70,.18)' : 'none',
             }}
           >
             {o.label}
@@ -116,8 +116,8 @@ export function Btn({
   kind = 'soft', children, className, ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: BtnKind }) {
   const style: React.CSSProperties =
-    kind === 'primary' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-surface)' }
-      : kind === 'soft' ? { background: 'var(--clay-field)', color: 'var(--clay-ink)' }
+    kind === 'primary' ? { background: 'var(--clay-accent-ink)', color: '#fff' }
+      : kind === 'soft' ? { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
         : kind === 'quiet' ? { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }
           : { background: 'transparent', color: 'var(--clay-accent-ink)', paddingLeft: 2, paddingRight: 2 }
   return (
@@ -135,7 +135,7 @@ export function Btn({
 /** A dark bar of actions for whatever is selected. */
 export function BulkBar({ label, children, onClear }: { label: string; children: ReactNode; onClear: () => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 sm:px-6" style={{ background: 'var(--clay-ink)', color: 'var(--clay-surface)' }} role="region" aria-label="Selected">
+    <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 sm:px-6" style={{ background: 'var(--clay-ink)', color: '#fff' }} role="region" aria-label="Selected">
       <strong className="flex-1 text-[13.5px]">{label}</strong>
       {children}
       <button type="button" onClick={onClear} aria-label="Clear selection" className="px-2 text-[15px]">✕</button>
@@ -149,7 +149,7 @@ export function BulkButton({ children, primary, ...rest }: React.ButtonHTMLAttri
       type="button"
       {...rest}
       className="min-h-[34px] rounded-[9px] px-3 text-[13px] font-semibold disabled:opacity-50"
-      style={{ background: primary ? 'var(--clay-accent)' : 'color-mix(in srgb, var(--clay-surface) 16%, transparent)', color: primary ? 'var(--clay-on-accent)' : 'var(--clay-surface)', fontWeight: primary ? 700 : 600 }}
+      style={{ background: primary ? 'var(--clay-accent)' : 'rgba(255,255,255,.16)', color: '#fff', fontWeight: primary ? 700 : 600 }}
     >
       {children}
     </button>

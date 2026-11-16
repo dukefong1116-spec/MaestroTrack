@@ -23,12 +23,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           className={cn(
             'w-full rounded-[var(--clay-r-sm)] px-4 py-2.5 text-sm outline-none transition-shadow',
-            'shadow-[inset_0_1px_3px_rgba(31,58,72,.08)]',
+            'shadow-[inset_0_1px_3px_rgba(30,40,70,.08)]',
             'focus:shadow-[inset_0_0_0_2px_var(--clay-accent)]',
             error && 'shadow-[inset_0_0_0_2px_var(--clay-danger)]',
             className
           )}
-          style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
+          style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
           {...props}
         />
         {error && <p className="text-xs font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>}

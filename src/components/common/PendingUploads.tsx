@@ -152,7 +152,7 @@ export default function PendingUploads() {
           <button
             onClick={() => void (state === 'unavailable' ? recheck(uid) : drain(uid))}
             className="mt-2 text-[12px] font-semibold"
-            style={{ color: 'var(--clay-accent-ink)' }}
+            style={{ color: 'var(--clay-accent)' }}
           >
             {state === 'unavailable' ? 'I\u2019ve enabled it \u2014 check again' : 'Try again now'}
           </button>

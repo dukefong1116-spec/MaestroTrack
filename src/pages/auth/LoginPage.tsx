@@ -65,7 +65,7 @@ export default function LoginPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent-ink)' }}><PianoGlyph size={52} /></div>
+          <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><PianoGlyph size={52} /></div>
           <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>MaestroTrack</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>The practice intelligence platform for musicians</p>
         </div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
             <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
             <div className="flex justify-end">
-              <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: 'var(--clay-accent-ink)' }}>
+              <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
                 Forgot password?
               </Link>
             </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm mt-6" style={{ color: 'var(--clay-dim)' }}>
             New here?{' '}
-            <Link to="/signup" className="font-medium transition-colors" style={{ color: 'var(--clay-accent-ink)' }}>
+            <Link to="/signup" className="font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
               Create an account
             </Link>
           </p>

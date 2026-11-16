@@ -52,7 +52,7 @@ export default function TakePicker({
             aria-pressed={on}
             className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors"
             style={{
-              background: on ? 'var(--clay-accent-soft)' : 'var(--clay-field)',
+              background: on ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
               borderRadius: 'var(--clay-r-sm)',
             }}
           >

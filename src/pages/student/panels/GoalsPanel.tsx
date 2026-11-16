@@ -168,7 +168,7 @@ export default function GoalsPanel() {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
             <div
               className="mb-6 space-y-4 p-4"
-              style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}
+              style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
             >
               <p className="text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>Weekly practice goal</p>
               <div className="flex items-center gap-4">

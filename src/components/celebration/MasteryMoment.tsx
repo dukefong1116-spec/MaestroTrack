@@ -65,7 +65,7 @@ export default function MasteryMoment({
       >
         <motion.p
           className="text-[10px] font-bold uppercase tracking-[.18em]"
-          style={{ color: 'var(--clay-accent-ink)' }}
+          style={{ color: 'var(--clay-accent)' }}
           initial={reduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15 }}
@@ -95,7 +95,7 @@ export default function MasteryMoment({
             <svg width="232" height="56" viewBox="0 0 232 56" fill="none" aria-hidden="true">
               <motion.path
                 d={path}
-                stroke="var(--clay-accent-ink)"
+                stroke="var(--clay-accent)"
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -149,7 +149,7 @@ export default function MasteryMoment({
             className="py-3.5 text-[15px] font-semibold"
             style={{
               borderRadius: 'var(--clay-r-lg)',
-              background: 'var(--clay-field)',
+              background: 'var(--clay-bg)',
               color: 'var(--clay-dim)',
             }}
           >

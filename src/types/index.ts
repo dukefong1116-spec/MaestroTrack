@@ -20,7 +20,7 @@ export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'profes
 
 /* ── display and alert preferences ─────────────────────────────── */
 export type ThemeChoice = 'system' | 'light' | 'dark'
-export type AccentName = 'instrument' | 'coral' | 'indigo' | 'teal' | 'amber' | 'rose' | 'slate'
+export type AccentName = 'theme' | 'instrument' | 'coral' | 'indigo' | 'teal' | 'amber' | 'rose' | 'slate'
 /** Each maps to real NotificationKind values the builders emit — see
  *  notifications.ts. Nothing here is a switch wired to nothing. */
 export type NotifyKind =
@@ -129,7 +129,7 @@ export interface UserProfile {
    *  means every preference below is a default the app wrote, not a
    *  choice the person made — see prefs.ts. */
   prefsVersion?: number
-  /** Which colour the app wears. 'instrument' leaves it as the app ships. */
+  /** Which colour the app wears. 'theme' (the default) is the app's own accent everywhere; 'instrument' gives the person's own screens their instrument's colour. */
   accent?: AccentName
   /** Percent; 100 is the app's own sizing. */
   displayScale?: number

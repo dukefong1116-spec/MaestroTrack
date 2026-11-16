@@ -95,7 +95,7 @@ export default function PerformancesPanel() {
                         onClick={() => setSelected(perf)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(perf) } }}
                         className="cursor-pointer p-4 transition-transform active:scale-[.99]"
-                        style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}
+                        style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ export default function PerformancesPanel() {
                     onClick={() => setSelected(perf)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(perf) } }}
                     className="cursor-pointer p-4 opacity-70 transition-transform active:scale-[.99]"
-                    style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}
+                    style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 min-w-0">

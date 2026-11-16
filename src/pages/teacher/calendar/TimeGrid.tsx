@@ -141,7 +141,7 @@ export default function TimeGrid({
                 <span className="text-[11.5px] font-semibold" style={{ color: 'var(--clay-dim)' }}>{d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                 <span
                   className="flex h-[26px] min-w-[26px] items-center justify-center rounded-full px-1 text-[14px] font-bold"
-                  style={isToday ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { color: 'var(--clay-ink)' }}
+                  style={isToday ? { background: 'var(--clay-accent)', color: '#fff' } : { color: 'var(--clay-ink)' }}
                 >
                   {d.getDate()}
                 </span>
@@ -180,7 +180,7 @@ export default function TimeGrid({
                       userSelect: 'none',
                       WebkitUserSelect: 'none',
                       zIndex: it.dragging ? 6 : 2,
-                      boxShadow: it.dragging ? '0 12px 24px -8px rgba(31,58,72,.45)' : 'none',
+                      boxShadow: it.dragging ? '0 12px 24px -8px rgba(30,40,70,.45)' : 'none',
                     }}
                   >
                     {h >= 40 ? (
@@ -196,7 +196,7 @@ export default function TimeGrid({
                       onPointerDown={(e) => begin(e, it, 'resize')}
                       className="absolute inset-x-0 bottom-0 flex h-[11px] cursor-ns-resize items-center justify-center"
                     >
-                      <span className="h-[3px] w-[18px] rounded" style={{ background: 'rgba(31,58,72,.3)' }} />
+                      <span className="h-[3px] w-[18px] rounded" style={{ background: 'rgba(30,40,70,.3)' }} />
                     </span>
                   </button>
                 )

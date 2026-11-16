@@ -22,37 +22,30 @@
    place colours need to change.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* ground — "Mistral accent": Zéphir cream with Mistral blue (palette:
-     Mistral #A3DFF1, Zéphir #FEE4B8, Solara #FFC065, Pulpe #FFA43A) */
-  --clay-bg: #FFF8EC;
-  --clay-bg-deep: #DDE9EF;
-  /* Fills inside a panel, kept off the cream so they read as their own thing:
-     field for inputs, menus, tab groups and soft buttons; wash for table
-     headers, hovers and inset boxes. */
-  --clay-field: #E7F0F4;
-  --clay-wash: #EFF5F8;
+  /* ground */
+  --clay-bg: #F0F5F9;
+  --clay-bg-deep: #E1E7F4;
   --clay-surface: #FFFFFF;
 
-  /* ink — deep navy */
-  --clay-ink: #1F3A48;
-  --clay-ink-soft: #3D5866;
-  --clay-dim: #5C6F7A;
-  --clay-faint: #9AABB4;
-  --clay-line: #EFE6D6;
+  /* ink */
+  --clay-ink: #000000;
+  --clay-dim: #787EA1;
+  --clay-faint: #B6AFC9;
+  --clay-line: #E4DEF0;
+  /* Between main and secondary text, mixed so it follows both in either mode. */
+  --clay-ink-soft: color-mix(in srgb, var(--clay-ink) 72%, var(--clay-dim));
 
-  /* accent — Mistral. Light, so what sits on it is navy, never white;
-     text and icons in the accent colour use the deeper accent-ink. */
-  --clay-accent: #A3DFF1;
-  --clay-accent-hover: #8DD3EA;
-  --clay-accent-soft: #E1F4FA;
-  --clay-accent-ink: #1E6A85;
-  --clay-on-accent: #103746;
+  /* accent */
+  --clay-accent: #4BB6EC;
+  --clay-accent-hover: #3791BE;
+  --clay-accent-soft: #E5FBFF;
+  --clay-accent-ink: #4BB6EC;
+  --clay-on-accent: #FFFFFF;
 
-  /* supporting — Solara and Pulpe */
+  /* supporting */
   --clay-mint: #6BCB9B;
-  --clay-butter: #FFC065;
-  --clay-pulpe: #FFA43A;
-  --clay-danger: #FF5C6E;
+  --clay-butter: #FFC85C;
+  --clay-danger: #5CB8FF;
 
   /* form — squared off a little; 26/20/14 read as a toy, not a tool */
   --clay-r-lg: 16px;
@@ -60,33 +53,27 @@
   --clay-r-sm: 8px;
 
   /* the signature: puffy drop + inner top highlight */
-  --clay-raised: 0 6px 16px -6px rgba(31, 58, 72, .18), inset 0 2px 0 rgba(255, 255, 255, .9);
-  --clay-accent-shadow: 0 10px 22px -6px rgba(91, 184, 214, .45), inset 0 2px 0 rgba(255, 255, 255, .45);
-  --clay-deep: 0 14px 30px -10px rgba(31, 58, 72, .26), inset 0 3px 0 rgba(255, 255, 255, .9);
+  --clay-raised: 0 6px 16px -6px rgba(30, 40, 70, .18), inset 0 2px 0 rgba(255, 255, 255, .9);
+  --clay-accent-shadow: 0 10px 22px -6px rgba(75, 182, 236, .45), inset 0 2px 0 rgba(255, 255, 255, .45);
+  --clay-deep: 0 14px 30px -10px rgba(30, 40, 70, .26), inset 0 3px 0 rgba(255, 255, 255, .9);
 
   /* status — the tones that were literal hexes in 26 files */
   --clay-success-fg: #2E8B62;
   --clay-success-bg: #DFF5EA;
-  --clay-warning-fg: #9A5A00;
-  --clay-warning-bg: #FFF0D6;
+  --clay-warning-fg: #B37A18;
+  --clay-warning-bg: #FFF1D6;
   --clay-danger-fg:  #D64257;
   --clay-danger-bg:  #FFE3E7;
   --clay-purple-fg:  #7A5AC4;
   --clay-purple-bg:  #EDE6FB;
-  /* Text on the tinted chips above: deep in light, bright in dark. */
-  --clay-tone-success: #1F6B4A;
-  --clay-tone-warning: #7A4F05;
-  --clay-tone-danger: #B3263C;
-  --clay-tone-purple: #5B3FA8;
-  --clay-tone-info: #24558F;
 
   /* pale fills that have to stop being pale after dark */
-  --clay-sticker-ink-fill: #F3EADB;
-  --clay-sticker-accent-fill: #D6F0F8;
+  --clay-sticker-ink-fill: #E5E5F6;
+  --clay-sticker-accent-fill: #D6F3FF;
   --clay-frozen: #BBD9F2;
   --clay-tint-mint: #E7F7EF;
-  --clay-tint-butter: #FFF3DC;
-  --clay-tint-sky: #E1F4FA;
+  --clay-tint-butter: #FFF6D9;
+  --clay-tint-sky: #E8F0FD;
 
   /* type */
   /* The device's own font: San Francisco on iPhone and Mac, Roboto on
@@ -111,52 +98,43 @@
    ───────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --clay-bg: #0E1A21;
-    --clay-bg-deep: #15252E;
-    --clay-field: #243B47;
-    --clay-wash: #1F3440;
-    --clay-surface: #1A2C36;
+    --clay-bg: #000000;
+    --clay-bg-deep: #161618;
+    --clay-surface: #212124;
 
-    --clay-ink: #EAF4F8;
-    --clay-ink-soft: #C3D6DE;
-    --clay-dim: #98AFBA;
-    --clay-faint: #7F98A4;
-    --clay-line: #28404C;
+    --clay-ink: #F0ECF8;
+    --clay-dim: #9FB1C1;
+    --clay-faint: #949BB8;
+    --clay-line: #08060F;
 
-    --clay-accent: #A3DFF1;
-    --clay-accent-hover: #BDE8F5;
-    --clay-accent-soft: #16394A;
-    --clay-accent-ink: #A3DFF1;
-    --clay-on-accent: #0D2A36;
+    --clay-accent: #46ABDD;
+    --clay-accent-hover: #2F82AC;
+    --clay-accent-soft: #182B39;
+    --clay-accent-ink: #A8D9FF;
+    --clay-on-accent: #000000;
 
     --clay-mint: #6BCB9B;
-    --clay-butter: #FFC065;
-    --clay-pulpe: #FFA43A;
-    --clay-danger: #FF7183;
+    --clay-butter: #E8C06A;
+    --clay-danger: #70BAFF;
 
     --clay-success-fg: #6BCB9B;
     --clay-success-bg: #1C3A2C;
-    --clay-warning-fg: #FFC065;
+    --clay-warning-fg: #E8C06A;
     --clay-warning-bg: #3A2F16;
     --clay-danger-fg:  #FF8A9B;
     --clay-danger-bg:  #3C1F26;
     --clay-purple-fg:  #BCA6F2;
     --clay-purple-bg:  #2A2342;
-    --clay-tone-success: #6BCB9B;
-    --clay-tone-warning: #FFC065;
-    --clay-tone-danger: #FF8A9B;
-    --clay-tone-purple: #BCA6F2;
-    --clay-tone-info: #9CCBEF;
 
-    --clay-sticker-ink-fill: #253D49;
-    --clay-sticker-accent-fill: #1D4556;
+    --clay-sticker-ink-fill: #344351;
+    --clay-sticker-accent-fill: #1E2A48;
     --clay-frozen: #2B4A66;
     --clay-tint-mint: #1C3A2C;
     --clay-tint-butter: #3A2F16;
-    --clay-tint-sky: #173847;
+    --clay-tint-sky: #213449;
 
     --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
-    --clay-accent-shadow: 0 10px 22px -6px rgba(163, 223, 241, .25), inset 0 1px 0 rgba(255, 255, 255, .16);
+    --clay-accent-shadow: 0 10px 22px -6px rgba(70, 171, 221, .30), inset 0 1px 0 rgba(255, 255, 255, .16);
     --clay-deep: 0 14px 30px -10px rgba(0, 0, 0, .68), inset 0 1px 0 rgba(255, 255, 255, .07);
 
     color-scheme: dark;
@@ -164,52 +142,43 @@
 }
 
 :root[data-theme="dark"] {
-  --clay-bg: #0E1A21;
-  --clay-bg-deep: #15252E;
-  --clay-field: #243B47;
-  --clay-wash: #1F3440;
-  --clay-surface: #1A2C36;
+  --clay-bg: #000000;
+  --clay-bg-deep: #161618;
+  --clay-surface: #212124;
 
-  --clay-ink: #EAF4F8;
-  --clay-ink-soft: #C3D6DE;
-  --clay-dim: #98AFBA;
-  --clay-faint: #7F98A4;
-  --clay-line: #28404C;
+  --clay-ink: #F0ECF8;
+  --clay-dim: #9FB1C1;
+  --clay-faint: #949BB8;
+  --clay-line: #08060F;
 
-  --clay-accent: #A3DFF1;
-  --clay-accent-hover: #BDE8F5;
-  --clay-accent-soft: #16394A;
-  --clay-accent-ink: #A3DFF1;
-  --clay-on-accent: #0D2A36;
+  --clay-accent: #46ABDD;
+  --clay-accent-hover: #2F82AC;
+  --clay-accent-soft: #182B39;
+  --clay-accent-ink: #A8D9FF;
+  --clay-on-accent: #000000;
 
   --clay-mint: #6BCB9B;
-  --clay-butter: #FFC065;
-  --clay-pulpe: #FFA43A;
-  --clay-danger: #FF7183;
+  --clay-butter: #E8C06A;
+  --clay-danger: #70BAFF;
 
   --clay-success-fg: #6BCB9B;
   --clay-success-bg: #1C3A2C;
-  --clay-warning-fg: #FFC065;
+  --clay-warning-fg: #E8C06A;
   --clay-warning-bg: #3A2F16;
   --clay-danger-fg:  #FF8A9B;
   --clay-danger-bg:  #3C1F26;
   --clay-purple-fg:  #BCA6F2;
   --clay-purple-bg:  #2A2342;
-  --clay-tone-success: #6BCB9B;
-  --clay-tone-warning: #FFC065;
-  --clay-tone-danger: #FF8A9B;
-  --clay-tone-purple: #BCA6F2;
-  --clay-tone-info: #9CCBEF;
 
-  --clay-sticker-ink-fill: #253D49;
-  --clay-sticker-accent-fill: #1D4556;
+  --clay-sticker-ink-fill: #344351;
+  --clay-sticker-accent-fill: #1E2A48;
   --clay-frozen: #2B4A66;
   --clay-tint-mint: #1C3A2C;
   --clay-tint-butter: #3A2F16;
-  --clay-tint-sky: #173847;
+  --clay-tint-sky: #213449;
 
   --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
-  --clay-accent-shadow: 0 10px 22px -6px rgba(163, 223, 241, .25), inset 0 1px 0 rgba(255, 255, 255, .16);
+  --clay-accent-shadow: 0 10px 22px -6px rgba(70, 171, 221, .30), inset 0 1px 0 rgba(255, 255, 255, .16);
   --clay-deep: 0 14px 30px -10px rgba(0, 0, 0, .68), inset 0 1px 0 rgba(255, 255, 255, .07);
 
   color-scheme: dark;

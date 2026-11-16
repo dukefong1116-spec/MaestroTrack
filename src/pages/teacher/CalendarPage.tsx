@@ -122,9 +122,9 @@ export default function CalendarPage() {
         <div className="order-1 w-full min-w-0 lg:order-2 lg:w-auto lg:flex-1">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--clay-line)' }}>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => step(-1)} aria-label="Previous" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}><ChevronLeft size={18} /></button>
-              <button type="button" onClick={() => setAnchor(today)} className="h-9 rounded-[10px] px-3 text-[13px] font-semibold" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>Today</button>
-              <button type="button" onClick={() => step(1)} aria-label="Next" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}><ChevronRight size={18} /></button>
+              <button type="button" onClick={() => step(-1)} aria-label="Previous" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}><ChevronLeft size={18} /></button>
+              <button type="button" onClick={() => setAnchor(today)} className="h-9 rounded-[10px] px-3 text-[13px] font-semibold" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>Today</button>
+              <button type="button" onClick={() => step(1)} aria-label="Next" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}><ChevronRight size={18} /></button>
             </div>
             <h2 className="min-w-0 flex-1 truncate text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>{title}</h2>
             <Segmented label="View" value={view} onChange={setView} options={[{ value: 'week', label: wide ? 'Week' : 'Day' }, { value: 'month', label: 'Month' }]} />
@@ -139,10 +139,10 @@ export default function CalendarPage() {
                     const n = items.filter((i) => i.date === d).length
                     return (
                       <button key={d} type="button" aria-pressed={on} onClick={() => setAnchor(d)} className="flex h-[58px] flex-col items-center justify-center rounded-xl"
-                        style={on ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { background: 'var(--clay-field)', color: d === today ? 'var(--clay-accent-ink)' : 'var(--clay-ink)' }}>
+                        style={on ? { background: 'var(--clay-accent)', color: '#fff' } : { background: 'var(--clay-bg)', color: d === today ? 'var(--clay-accent-ink)' : 'var(--clay-ink)' }}>
                         <span className="text-[11px] font-semibold opacity-85">{parseDay(d).toLocaleDateString('en-US', { weekday: 'short' })}</span>
                         <span className="text-[16px] font-bold">{parseDay(d).getDate()}</span>
-                        <span className="h-[5px] w-[5px] rounded-full" style={{ background: n ? (on ? 'var(--clay-on-accent)' : 'var(--clay-accent-ink)') : 'transparent' }} />
+                        <span className="h-[5px] w-[5px] rounded-full" style={{ background: n ? (on ? '#fff' : 'var(--clay-accent)') : 'transparent' }} />
                       </button>
                     )
                   })}
@@ -179,7 +179,7 @@ export default function CalendarPage() {
                 <p className="px-2 pb-1.5 pt-4 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--clay-dim)' }}>
                   {parseDay(anchor).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </p>
-                <div className="overflow-hidden rounded-2xl" style={{ background: 'var(--clay-wash)' }}>
+                <div className="overflow-hidden rounded-2xl" style={{ background: 'var(--clay-bg)' }}>
                   {dayItems.length === 0 && <p className="p-3.5 text-[14px]" style={{ color: 'var(--clay-dim)' }}>Nothing booked.</p>}
                   {dayItems.map((it) => (
                     <button key={it.key} type="button" onClick={() => setOpen(it)} className="flex w-full items-center gap-3 px-3.5 py-3 text-left" style={{ borderTop: '1px solid var(--clay-line)', marginTop: -1 }}>
@@ -201,10 +201,10 @@ export default function CalendarPage() {
       <NewLessonSheet open={adding} onClose={() => setAdding(false)} date={anchor} />
 
       {toast && (
-        <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] lg:bottom-8" style={{ background: 'var(--clay-ink)', color: 'var(--clay-surface)', boxShadow: '0 14px 30px -10px rgba(31,58,72,.45)' }}>
+        <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] text-white lg:bottom-8" style={{ background: 'var(--clay-ink)', boxShadow: '0 14px 30px -10px rgba(30,40,70,.45)' }}>
           <span>{toast.text}</span>
           {toast.action && (
-            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
+            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold" style={{ background: 'var(--clay-accent)' }}>
               {toast.action.label}
             </button>
           )}

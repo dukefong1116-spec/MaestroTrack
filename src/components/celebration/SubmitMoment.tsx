@@ -69,9 +69,9 @@ export default function SubmitMoment({
             aria-hidden="true"
           >
             <rect x="5" y="7" width="38" height="30" rx="6" fill="#FFEFE3" />
-            <path d="M5 13l19 13 19-13" stroke="var(--clay-accent-ink)" strokeWidth="3"
+            <path d="M5 13l19 13 19-13" stroke="var(--clay-accent)" strokeWidth="3"
                   strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <rect x="5" y="7" width="38" height="30" rx="6" stroke="var(--clay-accent-ink)" strokeWidth="3" fill="none" />
+            <rect x="5" y="7" width="38" height="30" rx="6" stroke="var(--clay-accent)" strokeWidth="3" fill="none" />
           </motion.svg>
 
           {/* a short trail, so it reads as travelling */}
@@ -89,7 +89,7 @@ export default function SubmitMoment({
 
         <motion.p
           className="text-[10px] font-bold uppercase tracking-[.18em]"
-          style={{ color: 'var(--clay-accent-ink)' }}
+          style={{ color: 'var(--clay-accent)' }}
           initial={reduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}

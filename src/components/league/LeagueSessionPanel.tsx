@@ -36,7 +36,7 @@ export default function LeagueSessionPanel({ result, climb, uid, instrument }: {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className="mt-5 overflow-hidden text-left"
-      style={{ background: 'var(--clay-wash)', borderRadius: 18 }}
+      style={{ background: 'var(--clay-bg)', borderRadius: 18 }}
     >
       <div className="flex items-center gap-2.5 px-3 pt-3">
         <TierTrophy tier={result.tier} size={30} animated={false} />

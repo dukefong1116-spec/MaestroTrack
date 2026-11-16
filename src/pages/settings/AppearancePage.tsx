@@ -39,7 +39,7 @@ export default function AppearancePage() {
                   onClick={() => void set({ theme: id })}
                   className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[var(--clay-r-sm)] transition-transform active:scale-95"
                   style={{
-                    background: on ? 'var(--clay-accent)' : 'var(--clay-field)',
+                    background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
                     color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
                     boxShadow: on ? 'var(--clay-accent-shadow)' : 'none',
                   }}
@@ -55,9 +55,16 @@ export default function AppearancePage() {
         <Block>
           <Legend
             title="Accent"
-            hint="Match my instrument keeps the colour your instrument gives the app. Anything else replaces it everywhere."
+            hint="App colour is the default. Match my instrument gives your rings and charts your instrument's colour. Anything else replaces both."
           />
           <div className="flex flex-wrap gap-2.5">
+            <Swatch
+              name="theme"
+              label="App colour"
+              colour="var(--clay-accent)"
+              selected={prefs.accent === 'theme'}
+              onPick={() => void set({ accent: 'theme' })}
+            />
             <Swatch
               name="instrument"
               label={`Match my ${instrumentTheme.label.toLowerCase()}`}
@@ -65,7 +72,7 @@ export default function AppearancePage() {
               selected={prefs.accent === 'instrument'}
               onPick={() => void set({ accent: 'instrument' })}
             />
-            {(Object.keys(ACCENTS) as Exclude<AccentName, 'instrument'>[]).map((name) => (
+            {(Object.keys(ACCENTS) as Exclude<AccentName, 'instrument' | 'theme'>[]).map((name) => (
               <Swatch
                 key={name}
                 name={name}
@@ -91,7 +98,7 @@ export default function AppearancePage() {
                   onClick={() => void set({ displayScale: s })}
                   className="min-h-[52px] rounded-[var(--clay-r-sm)] font-semibold transition-transform active:scale-95"
                   style={{
-                    background: on ? 'var(--clay-accent)' : 'var(--clay-field)',
+                    background: on ? 'var(--clay-accent)' : 'var(--clay-bg)',
                     color: on ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
                     boxShadow: on ? 'var(--clay-accent-shadow)' : 'none',
                     fontSize: 11 + (s - 90) * 0.12,

@@ -29,7 +29,7 @@ export const DEFAULT_PREFS: Prefs = {
   // account should see. Following the OS is still a choice on the
   // Appearance screen, just no longer the one nobody made.
   theme: 'light',
-  accent: 'instrument',
+  accent: 'theme',
   displayScale: 100,
   reduceMotion: false,
   notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true, league: true },
@@ -40,12 +40,13 @@ export const DEFAULT_PREFS: Prefs = {
 export const SCALES = [90, 100, 110, 125] as const
 
 /**
- * `instrument` is the default and means "leave it as it is": coral for
- * controls, the instrument's own colour for the hero, rings and bars.
- * Anything else replaces BOTH — one colour the person chose, with the
- * instrument surviving as its icon and the avatar gradient.
+ * `theme` is the default: the app's own accent for controls AND for the
+ * hero, rings and bars. `instrument` keeps the app accent for controls
+ * but gives the person's own screens their instrument's colour. Anything
+ * else replaces both — one colour the person chose, with the instrument
+ * surviving as its icon and the avatar gradient.
  */
-export const ACCENTS: Record<Exclude<AccentName, 'instrument'>, {
+export const ACCENTS: Record<Exclude<AccentName, 'instrument' | 'theme'>, {
   label: string; accent: string; hover: string; soft: string; ink: string; rgb: string
 }> = {
   coral:  { label: 'Coral',  accent: '#FF7A5C', hover: '#F26243', soft: '#FFEDE7', ink: '#E05539', rgb: '255,122,92' },
@@ -64,7 +65,7 @@ function clean(raw: RawPrefs | null | undefined): Prefs {
   if (!raw) return DEFAULT_PREFS
   return {
     theme: raw.theme === 'light' || raw.theme === 'dark' || raw.theme === 'system' ? raw.theme : DEFAULT_PREFS.theme,
-    accent: raw.accent && (raw.accent === 'instrument' || raw.accent in ACCENTS) ? raw.accent : DEFAULT_PREFS.accent,
+    accent: raw.accent && (raw.accent === 'instrument' || raw.accent === 'theme' || raw.accent in ACCENTS) ? raw.accent : DEFAULT_PREFS.accent,
     displayScale: SCALES.includes(raw.displayScale as typeof SCALES[number]) ? raw.displayScale! : DEFAULT_PREFS.displayScale,
     reduceMotion: typeof raw.reduceMotion === 'boolean' ? raw.reduceMotion : DEFAULT_PREFS.reduceMotion,
     notify: { ...DEFAULT_PREFS.notify, ...(raw.notify ?? {}) },
@@ -146,7 +147,7 @@ function mix(a: string, b: string, t: number): string {
   return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`
 }
 
-const DARK_GROUND = '#0E1A21'
+const DARK_GROUND = '#000000'
 
 /** Puts a set of preferences into effect. Safe to call repeatedly. */
 export function applyPrefs(p: Prefs): void {
@@ -164,10 +165,12 @@ export function applyPrefs(p: Prefs): void {
   // The browser chrome sits right against the app; leaving it on the light
   // value puts a pale bar above a dark screen.
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', isDarkTheme() ? '#0E1A21' : '#FFF8EC')
+  if (meta) meta.setAttribute('content', isDarkTheme() ? '#000000' : '#F0F5F9')
 
-  if (p.accent === 'instrument') {
-    themeOverride = null
+  if (p.accent === 'instrument' || p.accent === 'theme') {
+    // 'theme' points the instrument colours at the accent itself, so the
+    // rings and bars follow whatever the stylesheet says, in either mode.
+    themeOverride = p.accent === 'theme' ? { primary: 'var(--clay-accent)', secondary: 'var(--clay-accent-hover)' } : null
     for (const v of ['--clay-accent', '--clay-accent-hover', '--clay-accent-soft', '--clay-accent-ink', '--clay-on-accent', '--clay-accent-shadow']) {
       root.style.removeProperty(v)
     }

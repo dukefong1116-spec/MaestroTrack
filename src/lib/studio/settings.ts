@@ -16,7 +16,7 @@ export const DEFAULT_TAGS: CalendarTag[] = [
 
 /** Eight colours, each at least 3:1 against white so a bar or dot reads. */
 export const TAG_SWATCHES: { color: string; name: string }[] = [
-  { color: '#2A8EB3', name: 'Mistral' },
+  { color: '#2A8EB3', name: 'Sky' },
   { color: '#FF7A5C', name: 'Coral' },
   { color: '#C98A12', name: 'Amber' },
   { color: '#2E8B62', name: 'Green' },

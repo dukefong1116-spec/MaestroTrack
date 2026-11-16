@@ -182,7 +182,7 @@ export default function AssignmentRecorder({
               }}
               disabled={uploading}
               className="px-4 py-2.5 text-[13px] font-semibold disabled:opacity-60"
-              style={{ borderRadius: 'var(--clay-r-sm)', background: 'var(--clay-field)', color: 'var(--clay-dim)' }}
+              style={{ borderRadius: 'var(--clay-r-sm)', background: 'var(--clay-bg)', color: 'var(--clay-dim)' }}
             >
               Again
             </button>
@@ -195,7 +195,7 @@ export default function AssignmentRecorder({
           className="flex w-full items-center justify-center gap-2.5 py-3 text-[13px] font-semibold disabled:opacity-80"
           style={{
             borderRadius: 'var(--clay-r-sm)',
-            background: recording ? 'var(--clay-danger)' : 'var(--clay-field)',
+            background: recording ? 'var(--clay-danger)' : 'var(--clay-bg)',
             color: recording ? '#fff' : 'var(--clay-ink)',
           }}
         >

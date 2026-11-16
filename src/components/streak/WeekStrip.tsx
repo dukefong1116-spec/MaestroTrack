@@ -52,7 +52,7 @@ export default function WeekStrip({
             ? 'var(--clay-frozen)'
             : day.isFuture || (lesson && !day.isToday)
               ? 'transparent'
-              : 'rgba(31,58,72,.09)'
+              : 'rgba(30,40,70,.09)'
 
         return (
           <div key={day.date} className="flex min-w-0 flex-col items-center gap-1">
@@ -66,7 +66,7 @@ export default function WeekStrip({
                 width: size,
                 background: bg,
                 color: frozen ? '#2F6FA8' : lesson ? 'var(--clay-dim)' : '#fff',
-                border: day.isFuture || lesson ? '1.5px dashed rgba(31,58,72,.18)' : 'none',
+                border: day.isFuture || lesson ? '1.5px dashed rgba(30,40,70,.18)' : 'none',
                 boxShadow: done ? 'var(--clay-accent-shadow)' : 'none',
               }}
               animate={pending ? { scale: [1, 1.12, 1] } : { scale: 1 }}

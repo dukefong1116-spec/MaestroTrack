@@ -57,7 +57,7 @@ export default function SoundSetting({ bare }: { bare?: boolean } = {}) {
         role="switch"
         aria-checked={!muted}
         className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
-        style={{ background: 'var(--clay-field)' }}
+        style={{ background: 'var(--clay-bg)' }}
       >
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
@@ -99,13 +99,13 @@ export default function SoundSetting({ bare }: { bare?: boolean } = {}) {
           onClick={check}
           disabled={checking}
           className="text-[12.5px] font-semibold disabled:opacity-50"
-          style={{ color: 'var(--clay-accent-ink)' }}
+          style={{ color: 'var(--clay-accent)' }}
         >
           {checking ? 'Checking…' : 'Check audio on this device'}
         </button>
 
         {result && (
-          <div className="mt-2.5 px-3.5 py-3" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+          <div className="mt-2.5 px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
             <p className="text-[12.5px] font-semibold" style={{ color: result.producesSound ? 'var(--clay-ink)' : 'var(--clay-danger)' }}>
               {result.verdict}
             </p>

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { getInstrumentTheme } from '@/lib/utils/instruments'
+import { getTheme } from '@/lib/utils/instruments'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { useNotifications } from '@/hooks/useNotifications'
@@ -32,8 +32,9 @@ function NavIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
 export default function Sidebar() {
   const { profile, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
-  // Same reasoning as the avatar: this tile is the person, not the chrome.
-  const theme = getInstrumentTheme(profile?.instrument as InstrumentType | undefined)
+  // Follows the accent choice: the app colour by default, the instrument's
+  // own colour for someone who picked "Match my instrument".
+  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
@@ -48,7 +49,7 @@ export default function Sidebar() {
       animate={{ width: collapsed ? 72 : 248 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="relative hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
-      style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(31,58,72,.14)', zIndex: 1 }}
+      style={{ background: 'var(--clay-surface)', boxShadow: '2px 0 20px -8px rgba(30,40,70,.14)', zIndex: 1 }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5">
@@ -110,7 +111,7 @@ export default function Sidebar() {
             data-coach={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
             className={({ isActive }) => cn(
               'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
-              !isActive && 'hover:bg-[var(--clay-wash)]'
+              !isActive && 'hover:bg-[var(--clay-bg)]'
             )}
             style={({ isActive }) =>
               isActive
@@ -128,7 +129,7 @@ export default function Sidebar() {
                 {((unread > 0 && to === homeFor(role)) || (studioAttention > 0 && to === studioNav.to)) && (
                   <span
                     className="ml-auto h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent-ink)' }}
+                    style={{ background: isActive ? 'var(--clay-on-accent)' : 'var(--clay-accent)' }}
                   />
                 )}
               </>
@@ -143,7 +144,7 @@ export default function Sidebar() {
           to={settingsFor(role)}
           className={({ isActive }) => cn(
             'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-150',
-            !isActive && 'hover:bg-[var(--clay-wash)]'
+            !isActive && 'hover:bg-[var(--clay-bg)]'
           )}
           style={({ isActive }) =>
             isActive

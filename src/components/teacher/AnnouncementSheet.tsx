@@ -59,7 +59,7 @@ export default function AnnouncementSheet({ open, onClose }: { open: boolean; on
       {done && <p className="mt-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)' }}>{done}</p>}
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         {emails.length > 0 && (
-          <a href={mailto} className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-semibold" style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
+          <a href={mailto} className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-semibold" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
             Email {emails.length} famil{emails.length === 1 ? 'y' : 'ies'}
           </a>
         )}

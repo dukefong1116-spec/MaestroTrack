@@ -16,10 +16,10 @@ export default function MorePage() {
   const [adding, setAdding] = useState(false)
   const due = invoices.reduce((a, i) => a + balanceCents(i), 0)
   const rows = [
-    { label: 'Families & Invoices', meta: due ? `${money(due)} due` : '', icon: Wallet, bg: 'var(--clay-warning-bg)', fg: 'var(--clay-tone-warning)', go: () => navigate('/teacher/families') },
+    { label: 'Families & Invoices', meta: due ? `${money(due)} due` : '', icon: Wallet, bg: 'var(--clay-warning-bg)', fg: '#7A4F05', go: () => navigate('/teacher/families') },
     { label: 'Messages', meta: unread.size ? `${unread.size} new` : '', icon: MessageCircle, bg: 'var(--clay-accent-soft)', fg: 'var(--clay-accent-ink)', go: () => navigate('/teacher/messages') },
-    { label: 'Reports', meta: '', icon: LineChart, bg: 'var(--clay-success-bg)', fg: 'var(--clay-tone-success)', go: () => navigate('/teacher/reports') },
-    { label: 'Add a student', meta: 'Invite or add', icon: UserPlus, bg: 'var(--clay-purple-bg)', fg: 'var(--clay-tone-purple)', go: () => setAdding(true) },
+    { label: 'Reports', meta: '', icon: LineChart, bg: 'var(--clay-success-bg)', fg: '#1F6B4A', go: () => navigate('/teacher/reports') },
+    { label: 'Add a student', meta: 'Invite or add', icon: UserPlus, bg: 'var(--clay-purple-bg)', fg: '#5B3FA8', go: () => setAdding(true) },
     { label: 'Settings', meta: '', icon: Settings, bg: 'var(--clay-bg-deep)', fg: 'var(--clay-ink-soft)', go: () => navigate('/teacher/settings') },
   ]
   return (

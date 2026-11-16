@@ -123,7 +123,7 @@ function SessionDetailSheet({
 
         <div className="mb-4 grid grid-cols-2 gap-2.5">
           {stats.map((s) => (
-            <div key={s.label} className="px-3 py-2.5 text-center" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+            <div key={s.label} className="px-3 py-2.5 text-center" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
               <p className="text-[15px] font-semibold tabular-nums">{s.value}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>{s.label}</p>
             </div>
@@ -131,7 +131,7 @@ function SessionDetailSheet({
           {/* Only for a session that covered more than one category, and
               across the full width: a split does not fit a third of it. */}
           {split.length > 1 && (
-            <div className="col-span-2 px-3 py-2.5 text-center" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+            <div className="col-span-2 px-3 py-2.5 text-center" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
               <p className="text-[14px] font-semibold tabular-nums">
                 {split.map(([c, m]) => `${m}m ${c}`).join(' · ')}
               </p>
@@ -146,7 +146,7 @@ function SessionDetailSheet({
         </p>
         <div
           className="mb-5 px-3.5 py-3"
-          style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)', minHeight: 62 }}
+          style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)', minHeight: 62 }}
         >
           {session.notes ? (
             <p style={{ fontFamily: 'var(--clay-hand)', fontSize: 19, lineHeight: '26px' }}>{session.notes}</p>
@@ -578,7 +578,7 @@ export default function PracticeLogPage() {
                   className="relative flex items-center gap-1.5 px-6 py-2.5 text-[13px] font-semibold transition-transform active:scale-95"
                   style={{
                     borderRadius: 999,
-                    background: 'var(--clay-field)',
+                    background: 'var(--clay-bg)',
                     color: 'var(--clay-ink)',
                   }}
                 >
@@ -666,7 +666,7 @@ export default function PracticeLogPage() {
                     className="px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-95"
                     style={{
                       borderRadius: 999,
-                      background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-field)',
+                      background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
                       color: picked ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
                       boxShadow: picked ? 'inset 0 0 0 1.5px var(--clay-accent)' : undefined,
                     }}
@@ -701,7 +701,7 @@ export default function PracticeLogPage() {
                       className="px-3.5 py-2 text-[12.5px] font-semibold transition-transform active:scale-95"
                       style={{
                         borderRadius: 999,
-                        background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-field)',
+                        background: picked ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
                         color: picked ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
                         boxShadow: picked ? 'inset 0 0 0 1.5px var(--clay-accent)' : undefined,
                       }}
@@ -729,7 +729,7 @@ export default function PracticeLogPage() {
                     className="flex flex-col items-center gap-1.5 px-2 py-3 transition-transform active:scale-95"
                     style={{
                       borderRadius: 'var(--clay-r-sm)',
-                      background: on ? 'var(--clay-accent-soft)' : 'var(--clay-field)',
+                      background: on ? 'var(--clay-accent-soft)' : 'var(--clay-bg)',
                       boxShadow: on ? 'inset 0 0 0 2px var(--clay-accent)' : undefined,
                     }}
                   >

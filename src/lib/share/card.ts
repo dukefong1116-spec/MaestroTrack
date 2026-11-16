@@ -27,17 +27,17 @@ const W = 1080
 const H = 1350
 
 const C = {
-  bg: '#FFF8EC',
-  bgDeep: '#DDE9EF',
+  bg: '#F0F5F9',
+  bgDeep: '#E1E7F4',
   surface: '#FFFFFF',
-  ink: '#1F3A48',
-  dim: '#5C6F7A',
-  faint: '#9AABB4',
-  line: '#EFE6D6',
-  accent: '#A3DFF1',
-  accentHover: '#8DD3EA',
-  accentSoft: '#E1F4FA',
-  accentInk: '#1E6A85',
+  ink: '#000000',
+  dim: '#787EA1',
+  faint: '#B6AFC9',
+  line: '#E4DEF0',
+  accent: '#4BB6EC',
+  accentHover: '#3791BE',
+  accentSoft: '#E5FBFF',
+  accentInk: '#4BB6EC',
   mint: '#6BCB9B',
   butterSoft: '#FFF6D9',
 }

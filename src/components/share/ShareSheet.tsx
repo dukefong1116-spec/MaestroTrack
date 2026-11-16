@@ -125,7 +125,7 @@ export default function ShareSheet({
   return (
     <motion.div
       className="fixed inset-0 z-[60] flex items-end justify-center p-2 sm:items-center sm:p-4"
-      style={{ background: 'rgba(31,58,72,.42)', paddingTop: 'max(8px, env(safe-area-inset-top))' }}
+      style={{ background: 'rgba(30,40,70,.42)', paddingTop: 'max(8px, env(safe-area-inset-top))' }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}
     >
@@ -152,7 +152,7 @@ export default function ShareSheet({
             onClick={onClose}
             aria-label="Close"
             className="-mr-1.5 flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ color: 'var(--clay-ink)', background: 'var(--clay-field)' }}
+            style={{ color: 'var(--clay-ink)', background: 'var(--clay-bg)' }}
           >
             <X size={17} />
           </button>
@@ -162,7 +162,7 @@ export default function ShareSheet({
           className="mb-3 flex aspect-[4/5] items-center justify-center overflow-hidden"
           // Shorter on a short screen, so the choices below still fit; the
           // card inside keeps its own shape (object-contain).
-          style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-md)', maxHeight: '44dvh', marginInline: 'auto' }}
+          style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-md)', maxHeight: '44dvh', marginInline: 'auto' }}
         >
           {error ? (
             <p className="px-6 text-center text-[12px]" style={{ color: 'var(--clay-dim)' }}>{error}</p>
@@ -182,7 +182,7 @@ export default function ShareSheet({
               style={
                 layout === l.id
                   ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }
-                  : { background: 'var(--clay-field)', color: 'var(--clay-dim)' }
+                  : { background: 'var(--clay-bg)', color: 'var(--clay-dim)' }
               }
             >
               <span className="block text-[12px] font-semibold">{l.label}</span>
@@ -222,7 +222,7 @@ export default function ShareSheet({
             disabled={!preview}
             aria-label={native ? 'Share the image' : 'Save the image'}
             className="flex h-[46px] w-[46px] items-center justify-center rounded-full disabled:opacity-40"
-            style={{ background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
+            style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
           >
             {native ? <Share2 size={15} /> : <Download size={15} />}
           </motion.button>
@@ -274,7 +274,7 @@ function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; labe
       style={
         on
           ? { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }
-          : { background: 'var(--clay-field)', color: 'var(--clay-faint)' }
+          : { background: 'var(--clay-bg)', color: 'var(--clay-faint)' }
       }
     >
       {label}

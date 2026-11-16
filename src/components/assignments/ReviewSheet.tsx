@@ -87,7 +87,7 @@ export default function ReviewSheet({
             <p className="mb-1.5 mt-4 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
               What they said
             </p>
-            <div className="px-3.5 py-3" style={{ background: 'var(--clay-wash)', borderRadius: 'var(--clay-r-sm)' }}>
+            <div className="px-3.5 py-3" style={{ background: 'var(--clay-bg)', borderRadius: 'var(--clay-r-sm)' }}>
               <p style={{ fontFamily: 'var(--clay-hand)', fontSize: 18, lineHeight: '25px' }}>{submission.note}</p>
             </div>
           </>

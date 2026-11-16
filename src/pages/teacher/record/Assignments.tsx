@@ -130,11 +130,11 @@ function Composer({ teacherId, m, onDone }: { teacherId: string; m: Member; onDo
   }
 
   return (
-    <div className="space-y-3 px-5 py-4 sm:px-6" style={{ background: 'var(--clay-wash)', borderBottom: '1px solid var(--clay-line)' }}>
+    <div className="space-y-3 px-5 py-4 sm:px-6" style={{ background: 'var(--clay-bg)', borderBottom: '1px solid var(--clay-line)' }}>
       <div className="flex gap-2">
         {([['task', 'Task', 'handed in once'], ['daily', 'Daily practice', 'minutes every day']] as const).map(([id, label, hint]) => (
           <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)} className="flex-1 rounded-xl px-3 py-2 text-left"
-            style={kind === id ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { background: 'var(--clay-surface)', color: 'var(--clay-dim)' }}>
+            style={kind === id ? { background: 'var(--clay-accent)', color: '#fff' } : { background: 'var(--clay-surface)', color: 'var(--clay-dim)' }}>
             <span className="block text-[13px] font-bold">{label}</span><span className="block text-[11.5px] opacity-80">{hint}</span>
           </button>
         ))}
@@ -196,7 +196,7 @@ function CopyTo({ a, from, teacherId, onClose }: { a: Assignment; from: Member; 
       <div className="flex flex-wrap gap-1.5">
         {members.map((x) => {
           const on = pick.includes(x.id)
-          return <button key={x.id} type="button" aria-pressed={on} onClick={() => setPick(on ? pick.filter((y) => y !== x.id) : [...pick, x.id])} className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold" style={on ? { background: 'var(--clay-ink)', color: 'var(--clay-surface)' } : inputStyle}>{x.name}</button>
+          return <button key={x.id} type="button" aria-pressed={on} onClick={() => setPick(on ? pick.filter((y) => y !== x.id) : [...pick, x.id])} className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold" style={on ? { background: 'var(--clay-ink)', color: '#fff' } : inputStyle}>{x.name}</button>
         })}
       </div>
       <Field label="Due" className="mt-3 w-44"><input type="date" className={inputCls} style={inputStyle} value={due} onChange={(e) => setDue(e.target.value)} /></Field>

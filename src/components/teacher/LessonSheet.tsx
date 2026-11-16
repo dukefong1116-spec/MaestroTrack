@@ -185,7 +185,7 @@ export default function LessonSheet({ item, onClose }: { item: CalendarItem | nu
                         aria-pressed={on}
                         onClick={() => setAtt((cur) => { const n = { ...cur }; if (on) delete n[m.id]; else n[m.id] = a.value; return n })}
                         className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold"
-                        style={on ? { background: bg, color: fg, boxShadow: `inset 0 0 0 2px ${fg}` } : { background: 'var(--clay-field)', color: 'var(--clay-ink)' }}
+                        style={on ? { background: bg, color: fg, boxShadow: `inset 0 0 0 2px ${fg}` } : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
                       >
                         {a.label}
                       </button>
@@ -216,7 +216,7 @@ export default function LessonSheet({ item, onClose }: { item: CalendarItem | nu
                   return (
                     <button key={st} type="button" aria-pressed={on} onClick={() => setCarried({ ...carried, [i]: st })}
                       className="min-h-[30px] rounded-full px-3 text-[12px] font-semibold"
-                      style={on ? { background: st === 'covered' ? 'var(--clay-success-bg)' : 'var(--clay-warning-bg)', color: st === 'covered' ? 'var(--clay-tone-success)' : 'var(--clay-tone-warning)' } : { background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
+                      style={on ? { background: st === 'covered' ? 'var(--clay-success-bg)' : 'var(--clay-warning-bg)', color: st === 'covered' ? '#1F6B4A' : '#7A4F05' } : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
                       {st === 'covered' ? 'Covered' : 'Carry to next lesson'}
                     </button>
                   )

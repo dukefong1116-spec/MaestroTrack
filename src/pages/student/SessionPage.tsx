@@ -965,7 +965,7 @@ export default function SessionPage() {
                 top: 16, width: 26, height: 17, marginLeft: -13,
                 borderRadius: 6,
                 background: 'var(--clay-accent)',
-                boxShadow: '0 4px 10px -2px rgba(91,184,214,.55)',
+                boxShadow: '0 4px 10px -2px color-mix(in srgb, var(--clay-accent) 50%, transparent)',
               }}
             />
           </motion.div>
@@ -1336,7 +1336,7 @@ export default function SessionPage() {
           >
             <div
               className="absolute inset-0"
-              style={{ background: 'rgba(31,58,72,.45)' }}
+              style={{ background: 'rgba(30,40,70,.45)' }}
               onClick={cancelFinish}
             />
             <motion.div
@@ -1406,7 +1406,7 @@ export default function SessionPage() {
                           className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition-opacity"
                           style={{
                             borderRadius: 'var(--clay-r-sm)',
-                            background: 'var(--clay-field)',
+                            background: 'var(--clay-bg)',
                             opacity: keep ? 1 : 0.5,
                           }}
                         >
@@ -1446,7 +1446,7 @@ export default function SessionPage() {
                     className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left"
                     style={{
                       borderRadius: 'var(--clay-r-md)',
-                      background: 'var(--clay-field)',
+                      background: 'var(--clay-bg)',
                       color: 'var(--clay-ink)',
                     }}
                   >

@@ -82,7 +82,7 @@ export default function NewLessonSheet({ open, onClose, date }: { open: boolean;
               return (
                 <button key={m.id} type="button" aria-pressed={on} onClick={() => setWho(on ? who.filter((x) => x !== m.id) : [...who, m.id])}
                   className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold"
-                  style={on ? { background: 'var(--clay-ink)', color: 'var(--clay-surface)' } : { background: 'var(--clay-field)', color: 'var(--clay-ink)' }}>
+                  style={on ? { background: 'var(--clay-ink)', color: '#fff' } : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}>
                   {m.name}
                 </button>
               )
