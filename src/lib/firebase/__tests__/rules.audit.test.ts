@@ -212,6 +212,13 @@ describe('joining a studio', () => {
     await assertFails(updateDoc(doc(fs(T), 'users', C), { teacherId: T, displayName: 'renamed' }))
     await assertSucceeds(updateDoc(doc(fs(T), 'users', C), { teacherId: T, studioName: 'S', teacherName: 'Ms T' }))
   })
+  it('a teacher may refresh their own student’s studio name — and nothing else with it', async () => {
+    await assertSucceeds(updateDoc(doc(fs(T), 'users', A), { studioName: 'Harper Strings', teacherName: 'Ms T', updatedAt: 'x' }))
+    await assertFails(updateDoc(doc(fs(T), 'users', A), { studioName: 'Harper Strings', displayName: 'renamed' }))
+    await assertFails(updateDoc(doc(fs(T), 'users', A), { studioName: 'x'.repeat(200) }))
+    await assertFails(updateDoc(doc(fs(T2), 'users', A), { studioName: 'Poached' }))
+    await assertFails(updateDoc(doc(fs(T), 'users', E), { studioName: 'Poached' }))
+  })
   it('teachers cannot take or release a colleague’s student', async () => {
     await assertFails(updateDoc(doc(fs(T), 'users', E), { teacherId: T, studioName: 'x' }))
     await assertFails(updateDoc(doc(fs(T2), 'users', A), { teacherId: null }))

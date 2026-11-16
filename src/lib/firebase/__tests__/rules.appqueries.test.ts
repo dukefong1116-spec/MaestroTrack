@@ -589,6 +589,11 @@ describe("the teacher's writes", () => {
     asTeacher()
     await assertSucceeds(teacher.removeStudentFromStudio(ANA))
   })
+
+  it("refreshStudioName — keeping a student's copy of the studio name current", async () => {
+    asTeacher()
+    await assertSucceeds(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen'))
+  })
 })
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -623,6 +628,13 @@ describe('the app functions, driven by someone with no business calling them', (
   it('a student cannot remove a classmate from the studio', async () => {
     asAna()
     await assertFails(teacher.removeStudentFromStudio(BEN))
+  })
+
+  it("a student cannot rename a classmate's studio, nor a teacher a student who is not theirs", async () => {
+    asAna()
+    await assertFails(teacher.refreshStudioName(BEN, 'Fake Studio', 'Nobody'))
+    asOtherTeacher()
+    await assertFails(teacher.refreshStudioName(ANA, 'Poached', 'Mr Diaz'))
   })
 
   it("a classmate cannot overwrite someone else's roll-ups", async () => {

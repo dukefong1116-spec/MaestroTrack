@@ -112,13 +112,13 @@ export default function StudioAssignmentsPage() {
               <p className="mb-1.5 px-1 text-[10.5px] font-bold uppercase tracking-[.12em]" style={{ color: GROUP_COLOR[g.group] }}>
                 {GROUP_LABEL[g.group]}
               </p>
-              <div className="px-4" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>{rows(g.items)}</div>
+              <div className="px-4" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>{rows(g.items)}</div>
             </section>
           ))
         ) : tabs[tab].length === 0 ? (
           <Empty text={tab === 'handed' ? 'Nothing waiting on your teacher.' : 'Nothing finished yet.'} />
         ) : (
-          <div className="px-4" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>{rows(tabs[tab])}</div>
+          <div className="px-4" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>{rows(tabs[tab])}</div>
         )}
       </div>
 

@@ -8,6 +8,7 @@ import { useStudentData } from '@/hooks/useStudentData'
 import { useSummarySync } from '@/hooks/useSummarySync'
 import { useTeacherData } from '@/hooks/useTeacherData'
 import { useStudioUpkeep } from '@/hooks/useStudioData'
+import { useStudioNameSync } from '@/hooks/useStudioNameSync'
 import { useLeagueSync } from '@/hooks/useLeagueSync'
 import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
@@ -178,6 +179,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   useTeacherData(profile?.role === 'teacher' ? profile?.uid : undefined)
   // A roster row per student, and lesson lengths that follow the settings.
   useStudioUpkeep(profile?.role === 'teacher' ? profile?.uid : undefined)
+  // Students see the studio's current name, not the one it had when they joined.
+  useStudioNameSync()
   // The weekly league follows the session log; students only.
   useLeagueSync(profile?.role === 'student' ? profile?.uid : undefined, profile?.leagueOptOut, profile?.league?.roomId)
   // Spends a freeze on a missed day and records a finished comeback.

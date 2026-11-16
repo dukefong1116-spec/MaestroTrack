@@ -153,7 +153,7 @@ export default function LeaguePage() {
 
       <div className="mx-auto max-w-2xl px-3">
       {/* The room, or why there is none */}
-      <div className="mt-3 px-2 py-3" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>
+      <div className="mt-3 px-2 py-3" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
         {optedOut ? (
           <Empty
             title="Weekly leagues are off"

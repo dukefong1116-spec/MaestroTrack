@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { format, formatDistanceToNowStrict, parseISO } from 'date-fns'
-import { Send } from 'lucide-react'
+import { ChevronRight, ClipboardCheck, ClipboardList, Send } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useStudio } from '@/hooks/useStudio'
@@ -61,13 +61,16 @@ export default function StudioPage() {
 
   const recent = thread.slice(-PREVIEW_MESSAGES)
   const last = thread.at(-1)
-  const initial = (profile.studioName || teacher).trim().charAt(0).toUpperCase()
+  // The studio's own name; failing that, whose studio it is — never a
+  // generic "Your studio" when we know the teacher.
+  const studioName = profile.studioName || (profile.teacherName ? `${profile.teacherName}’s studio` : 'Your studio')
+  const initial = studioName.trim().charAt(0).toUpperCase()
 
   return (
     <div className="flex min-h-[calc(100dvh-8.5rem)] flex-col lg:min-h-[calc(100dvh-4rem)]">
       <h1 className="mb-4 text-[26px] font-bold" style={{ color: 'var(--clay-ink)' }}>Studio</h1>
 
-      <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>
+      <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
         {/* Who */}
         <div className="flex items-center gap-3 px-5 py-4">
           <span
@@ -77,7 +80,7 @@ export default function StudioPage() {
             {initial}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{profile.studioName || 'Your studio'}</p>
+            <p className="truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{studioName}</p>
             <p className="truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
               {profile.teacherName || 'Your teacher'}
               {next ? ` · Next lesson ${format(next.when, 'EEE h:mm a')}` : ''}
@@ -87,13 +90,13 @@ export default function StudioPage() {
 
         {/* The conversation, as a little chat */}
         <Link to="/student/studio/messages" className="block px-5 py-4" style={{ borderTop: '1px solid var(--clay-line)' }}>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10.5px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
-              Messages
-            </span>
-            <span className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--clay-faint)' }}>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>Messages</h2>
+            {/* The arrow says the whole conversation is a tap away. */}
+            <span className="flex items-center gap-2 text-[11.5px]" style={{ color: 'var(--clay-faint)' }}>
               {last && formatDistanceToNowStrict(parseISO(last.createdAt), { addSuffix: true })}
               {unreadMessages > 0 && <span className="h-2 w-2 rounded-full" style={{ background: 'var(--clay-accent)' }} />}
+              <ChevronRight size={18} aria-hidden="true" style={{ color: 'var(--clay-dim)' }} />
             </span>
           </div>
           {recent.length === 0 ? (
@@ -136,11 +139,9 @@ export default function StudioPage() {
         <FromYourTeacher />
 
         {/* What is most pressing; the rest one tap away. Grows to fill. */}
-        <div className="flex-1 px-5 pb-2 pt-4" style={{ borderTop: '1px solid var(--clay-line)' }}>
+        <div className="flex flex-1 flex-col px-5 pb-2 pt-4" style={{ borderTop: '1px solid var(--clay-line)' }}>
           <div className="flex items-center justify-between">
-            <span className="text-[10.5px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
-              Assignments
-            </span>
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>Assignments</h2>
             {mine.length > 0 && (
               <Link to="/student/studio/assignments" className="text-[12.5px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>
                 See all ({mine.length}) ›
@@ -148,9 +149,23 @@ export default function StudioPage() {
             )}
           </div>
           {top.length === 0 ? (
-            <p className="py-4 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>
-              {mine.length ? 'All caught up ✨' : `Nothing set yet. ${teacher} will add assignments here.`}
-            </p>
+            // Nothing to do: said big, in the middle of the space, rather
+            // than a line of small print at the top of an empty box.
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
+              <span
+                className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]"
+                style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}
+                aria-hidden="true"
+              >
+                {mine.length ? <ClipboardCheck size={38} strokeWidth={1.75} /> : <ClipboardList size={38} strokeWidth={1.75} />}
+              </span>
+              <p className="text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+                {mine.length ? 'All caught up' : 'No assignments yet'}
+              </p>
+              <p className="mt-1 max-w-[260px] text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
+                {mine.length ? `Nothing to hand in right now. New work from ${teacher} will show up here.` : `${teacher} will add assignments here.`}
+              </p>
+            </div>
           ) : (
             <div className="mt-1">
               {top.map((x, i) => (

@@ -42,7 +42,7 @@ function AppSkeleton() {
           {bar('40px', 40, { borderRadius: 999 })}
           <div className="flex-1 space-y-1.5">{bar('30%', 10)}{bar('45%', 14)}</div>
         </div>
-        <div className="space-y-5 p-5" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)' }}>
+        <div className="space-y-5 p-5" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
           <div className="flex justify-center">{bar('178px', 178, { borderRadius: 999 })}</div>
           <div className="flex flex-col items-center gap-1.5">{bar('40%', 16)}{bar('30%', 11)}</div>
           {bar('100%', 30)}

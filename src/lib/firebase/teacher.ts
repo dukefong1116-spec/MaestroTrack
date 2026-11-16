@@ -52,6 +52,23 @@ export async function removeStudentFromStudio(studentId: string): Promise<void> 
   })
 }
 
+/**
+ * Bring a student's copy of the studio's name up to date.
+ *
+ * A student cannot read their teacher's profile, so their own carries the
+ * studio and teacher name, written when they were accepted. A teacher who
+ * named the studio later, or renamed it, left every student showing the
+ * old name (or "Your studio"). The rules let a teacher change exactly
+ * these two fields on their own students' profiles, and nothing else.
+ */
+export async function refreshStudioName(studentId: string, studioName: string, teacherName: string): Promise<void> {
+  await updateDoc(doc(db, USERS, studentId), {
+    studioName: studioName.slice(0, 120),
+    teacherName: teacherName.slice(0, 120),
+    updatedAt: new Date().toISOString(),
+  })
+}
+
 // The old teacher notes (collection teacherNotes) were replaced by lesson
 // notes, and their add/update/subscribe functions removed: nothing called
 // them, and the rules now keep that collection read-only. A student still

@@ -71,7 +71,7 @@ export default function SettingsPage() {
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>Your studio</span>
                 <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--clay-success-fg)' }}>
-                  <Check size={12} /> {profile?.studioName || 'Joined'}
+                  <Check size={12} /> {profile?.studioName || (profile?.teacherName ? `${profile.teacherName}’s studio` : 'Joined')}
                 </span>
               </span>
             </div>
@@ -88,7 +88,7 @@ export default function SettingsPage() {
 
           <FactRow label="Email" value={user?.email ?? '—'} />
           <FactRow label="Role" value={<span className="capitalize">{profile?.role ?? '—'}</span>} />
-          <FactRow label="Studio" value={linked ? (profile?.studioName || 'Joined') : '—'} />
+          <FactRow label="Studio" value={linked ? (profile?.studioName || (profile?.teacherName ? `${profile.teacherName}’s studio` : 'Joined')) : '—'} />
           <FactRow
             label="Member since"
             value={profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString() : '—'}

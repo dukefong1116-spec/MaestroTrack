@@ -245,6 +245,22 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data)
                          .affectedKeys().hasOnly(['teacherId', 'studioCode', 'studioName', 'teacherName', 'updatedAt']);
 
+      // A teacher keeping their student's copy of the studio's name
+      // current. A student cannot read their teacher's profile, so their
+      // own carries the studio and teacher name; without this a teacher
+      // who named or renamed the studio after a student joined left that
+      // student showing the old name for good. Only those two fields, only
+      // on a student who is theirs now, and teacherId stays as it is.
+      allow update: if signedIn()
+                    && resource.data.get('teacherId', '') == uid()
+                    && request.resource.data.get('teacherId', '') == uid()
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['studioName', 'teacherName', 'updatedAt'])
+                    && request.resource.data.get('studioName', '') is string
+                    && request.resource.data.get('studioName', '').size() <= 120
+                    && request.resource.data.get('teacherName', '') is string
+                    && request.resource.data.get('teacherName', '').size() <= 120;
+
       allow delete: if false;
     }
 
