@@ -89,7 +89,7 @@ export default function StudentsPage() {
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[880px] border-collapse text-left">
               <thead>
-                <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)' }}>
+                <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)' }}>
                   <th className="px-6 py-2 font-semibold">Student</th>
                   <th className="px-2 py-2 font-semibold">Family</th>
                   <th className="px-2 py-2 font-semibold">Weekly lesson</th>

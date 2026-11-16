@@ -23,9 +23,11 @@
    ───────────────────────────────────────────────────────────── */
 :root {
   /* ground */
-  --clay-bg: #F0F5F9;
+  --clay-bg: #FFFFFF;
   --clay-bg-deep: #E1E7F4;
-  --clay-surface: #FFFFFF;
+  --clay-surface: #F0F5F9;
+  /* Table header rows: a step deeper than the panel so they read as a header. */
+  --clay-head: #E1E7F4;
 
   /* ink */
   --clay-ink: #000000;
@@ -101,6 +103,7 @@
     --clay-bg: #000000;
     --clay-bg-deep: #161618;
     --clay-surface: #212124;
+    --clay-head: #000000;
 
     --clay-ink: #F0ECF8;
     --clay-dim: #9FB1C1;
@@ -145,6 +148,7 @@
   --clay-bg: #000000;
   --clay-bg-deep: #161618;
   --clay-surface: #212124;
+  --clay-head: #000000;
 
   --clay-ink: #F0ECF8;
   --clay-dim: #9FB1C1;

@@ -165,7 +165,7 @@ export function applyPrefs(p: Prefs): void {
   // The browser chrome sits right against the app; leaving it on the light
   // value puts a pale bar above a dark screen.
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', isDarkTheme() ? '#000000' : '#F0F5F9')
+  if (meta) meta.setAttribute('content', isDarkTheme() ? '#000000' : '#FFFFFF')
 
   if (p.accent === 'instrument' || p.accent === 'theme') {
     // 'theme' points the instrument colours at the accent itself, so the

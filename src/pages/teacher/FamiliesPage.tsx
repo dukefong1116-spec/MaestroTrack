@@ -119,7 +119,7 @@ export default function FamiliesPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left text-[13.5px]">
                 <thead>
-                  <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-bg)' }}>
+                  <tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)' }}>
                     <th className="w-8 py-2 pl-6"><Check label="Select every family shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown.map((r) => r.f.id)))} /></th>
                     <th className="px-2 py-2 font-semibold">Family</th><th className="px-2 py-2 font-semibold">Students</th>
                     <th className="px-2 py-2 font-semibold">Due</th><th className="px-2 py-2 text-right font-semibold">Balance</th><th className="py-2 pl-2 pr-6 font-semibold">Status</th>

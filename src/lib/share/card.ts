@@ -27,9 +27,9 @@ const W = 1080
 const H = 1350
 
 const C = {
-  bg: '#F0F5F9',
+  bg: '#FFFFFF',
   bgDeep: '#E1E7F4',
-  surface: '#FFFFFF',
+  surface: '#F0F5F9',
   ink: '#000000',
   dim: '#787EA1',
   faint: '#B6AFC9',
