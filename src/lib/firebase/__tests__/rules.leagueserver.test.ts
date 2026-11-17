@@ -212,6 +212,19 @@ describe('the end of the week', () => {
     const league = (await store.doc('users/a').get()).data()!.league
     expect(league.lastResult).toMatchObject({ rank: 1, toTier: 3 })
   })
+  it('counts a top-three finish, but not a room of one', async () => {
+    const { after } = await weekOf([['a', 50], ['b', 40], ['c', 30], ['d', 20], ['e', 15]])
+    await sync('a', after)
+    const finishes = async (id: string) => (await store.doc(`users/${id}`).get()).data()!.league.topFinishes ?? 0
+    expect(await finishes('a')).toBe(1)
+    expect(await finishes('c')).toBe(1)
+    expect(await finishes('d')).toBe(0)
+  })
+  it('a room of one is no top-three finish', async () => {
+    const { after } = await weekOf([['solo', 30]])
+    await sync('solo', after)
+    expect((await store.doc('users/solo').get()).data()!.league.topFinishes ?? 0).toBe(0)
+  })
   it('does not finish a room early', async () => {
     const { roomId } = await weekOf([['a', 30], ['b', 20]])
     expect(await L.league.finalizeRoom(roomId, Date.now())).toBe(false)
@@ -252,5 +265,54 @@ describe('the endpoints', () => {
   it('refuse anything but POST', async () => {
     const sync = (await import('../../../../api/league/sync.js')).default
     expect((await call(sync, { method: 'GET' })).status).toBe(405)
+  })
+})
+
+describe('league cards', () => {
+  const BUCKET = 'maestrotrack-3c2cf.firebasestorage.app'
+  const own = (uid: string, file: string) => `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/avatars%2F${uid}%2F${file}?alt=media&token=t`
+  const card = async (uid: string) => (await store.doc(`leagueCards/${uid}`).get()).data()
+
+  it('is written when you are placed, from your profile, with only the card\'s fields', async () => {
+    await student('ana', {
+      instrument: 'violin', experienceLevel: 'intermediate', email: 'secret@example.com', teacherId: 'T1', studioName: 'Hidden',
+      avatar: own('ana', 'profile'), bannerColor: '#123ABC', pinnedBadges: ['first_session', 'Bad Id!', 'century', 'x', 'y'],
+    })
+    await timerSession('ana', 30)
+    const r = await sync('ana')
+    const c = (await card('ana'))!
+    expect(c).toMatchObject({
+      uid: 'ana', roomId: r.roomId, name: 'ana T.', instrument: 'violin', level: 'intermediate',
+      photo: own('ana', 'profile'), bannerColor: '#123ABC', bannerImage: null, xp: 40, badges: ['first_session', 'century', 'x'],
+    })
+    expect(c.days).toHaveLength(7)
+    expect(Object.keys(c)).not.toEqual(expect.arrayContaining(['email']))
+    for (const k of ['email', 'teacherId', 'studioName', 'displayName']) expect(c).not.toHaveProperty(k)
+  })
+  it('copies only pictures in your own folder of this bucket', async () => {
+    await student('ana', { avatar: 'https://evil.example/pixel.png', bannerImage: own('ben', 'banner'), bannerColor: 'red' })
+    await timerSession('ana', 30)
+    await sync('ana')
+    expect(await card('ana')).toMatchObject({ photo: null, bannerImage: null, bannerColor: null })
+  })
+  it('is removed when you hide your profile, and when you leave the league', async () => {
+    await student('ana')
+    await timerSession('ana', 30)
+    await sync('ana')
+    expect(await card('ana')).toBeTruthy()
+    await store.doc('users/ana').update({ leagueProfile: false })
+    await sync('ana')
+    expect(await card('ana')).toBeUndefined()
+    await store.doc('users/ana').update({ leagueProfile: true })
+    await sync('ana')
+    expect(await card('ana')).toBeTruthy()
+    await store.doc('users/ana').update({ leagueOptOut: true })
+    await sync('ana')
+    expect(await card('ana')).toBeUndefined()
+  })
+  it('is not written for someone with no XP and no room', async () => {
+    await student('ana')
+    await sync('ana')
+    expect(await card('ana')).toBeUndefined()
   })
 })

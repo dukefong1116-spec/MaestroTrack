@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Download, Eye, EyeOff, Link2, Trophy } from 'lucide-react'
+import { Check, Download, Eye, EyeOff, Link2, Trophy, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
 import { authErrorMessage } from '@/lib/firebase/account'
@@ -7,6 +7,7 @@ import { sendVerificationEmail } from '@/lib/firebase/auth'
 import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen, ToggleRow } from '@/components/ui/Panel'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { useAuthStore } from '@/stores/authStore'
+import { useLeagueStore } from '@/stores/leagueStore'
 import Button from '@/components/ui/Button'
 
 /**
@@ -103,7 +104,7 @@ export default function PrivacyPage() {
             <Block>
               <Legend
                 title="Weekly leagues"
-                hint="Other players in your room see your first name and last initial, your rank and your weekly XP. Nothing else: no photo, no profile, no studio."
+                hint="Other players in your room see your first name and last initial, your rank and your weekly XP. With your profile shown, they can also open it: your photo and background, instrument, level, this week's practice minutes, league streak and pinned badges. Never your studio, email or full name."
               />
             </Block>
             <ToggleRow
@@ -116,9 +117,28 @@ export default function PrivacyPage() {
                 // and a switch that lags a second behind its tap looks broken.
                 const live = useAuthStore.getState().profile
                 if (live) useAuthStore.getState().setProfile({ ...live, leagueOptOut: !on })
-                if (profile?.uid) void updateUserProfile(profile.uid, { leagueOptOut: !on }).catch(() => {})
+                // Synced at once, so leaving also takes your card off the board now.
+                if (profile?.uid) void updateUserProfile(profile.uid, { leagueOptOut: !on }).then(() => useLeagueStore.getState().sync()).catch(() => {})
               }}
             />
+            {!profile?.leagueOptOut && (
+              <ToggleRow
+                icon={<UserRound size={19} />}
+                label="Show my profile to my league"
+                hint={profile?.leagueProfile === false ? 'Off: your row shows only your initial' : 'On'}
+                checked={profile?.leagueProfile !== false}
+                onChange={(on) => {
+                  const live = useAuthStore.getState().profile
+                  if (live) useAuthStore.getState().setProfile({ ...live, leagueProfile: on })
+                  if (profile?.uid) {
+                    // The server writes or removes the card on its next sync: ask for one now.
+                    void updateUserProfile(profile.uid, { leagueProfile: on })
+                      .then(() => useLeagueStore.getState().sync())
+                      .catch(() => {})
+                  }
+                }}
+              />
+            )}
           </>
         )}
 

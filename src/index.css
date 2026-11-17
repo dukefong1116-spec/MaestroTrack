@@ -83,6 +83,8 @@
   --clay-tint-mint: #E7F7EF;
   --clay-tint-butter: #FFF6D9;
   --clay-tint-sky: #E8F0FD;
+  /* How much of a chosen banner colour shows; after dark it is mixed toward black so it does not glare. */
+  --clay-banner-mix: 100%;
 
   /* type */
   /* The device's own font: San Francisco on iPhone and Mac, Roboto on
@@ -144,6 +146,7 @@
     --clay-tint-mint: #1C3A2C;
     --clay-tint-butter: #3A2F16;
     --clay-tint-sky: #213449;
+    --clay-banner-mix: 42%;
 
     --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
     --clay-accent-shadow: 0 10px 22px -6px rgba(70, 171, 221, .30), inset 0 1px 0 rgba(255, 255, 255, .16);
@@ -190,6 +193,7 @@
   --clay-tint-mint: #1C3A2C;
   --clay-tint-butter: #3A2F16;
   --clay-tint-sky: #213449;
+  --clay-banner-mix: 42%;
 
   --clay-raised: 0 6px 16px -6px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .06);
   --clay-accent-shadow: 0 10px 22px -6px rgba(70, 171, 221, .30), inset 0 1px 0 rgba(255, 255, 255, .16);

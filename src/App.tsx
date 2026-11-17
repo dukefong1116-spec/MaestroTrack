@@ -96,6 +96,7 @@ const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
 const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
 const StudioSettingsPage = lazy(() => import('@/pages/teacher/StudioSettingsPage'))
+const LeaguePlayerPage = lazy(() => import('@/pages/student/LeaguePlayerPage'))
 const loadCalendarPage = lazyPage(() => import('@/pages/teacher/CalendarPage'))
 const loadCalendar = loadCalendarPage.load
 const CalendarPage = loadCalendarPage.Page
@@ -261,6 +262,7 @@ function AppRoutes() {
         <Route path="practice/progress" element={<PracticeProgressPage />} />
         <Route path="progress" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="league" element={<LeaguePage />} />
+        <Route path="league/:uid" element={<LeaguePlayerPage />} />
         <Route path="streak" element={<StreakPage />} />
         <Route path="studio" element={<StudioPage />} />
         <Route path="settings" element={<SettingsPage />} />

@@ -465,6 +465,19 @@ service cloud.firestore {
       allow read: if signedIn() && uid() in resource.data.members;
       allow write: if false;
     }
+    /**
+     * League cards: the profile a player in your room opens from the
+     * board. Written only by the league server, and only while its owner
+     * has "Show my profile to my league" on. Read by its owner and by the
+     * players in the room the card names: nobody outside that room.
+     */
+    match /leagueCards/{userId} {
+      allow read: if isMe(userId)
+                  || (signedIn()
+                      && resource.data.roomId is string
+                      && uid() in get(/databases/$(database)/documents/leagueRooms/$(resource.data.roomId)).data.members);
+      allow write: if false;
+    }
     // The server's own bookkeeping: which room is filling. Nobody else's.
     match /leagueIndex/{id} {
       allow read, write: if false;

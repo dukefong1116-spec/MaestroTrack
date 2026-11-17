@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap } from 'lucide-react'
+import { Check, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -7,6 +7,8 @@ import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
 import Avatar from '@/components/profile/Avatar'
+import Banner from '@/components/profile/Banner'
+import BannerSheet from '@/components/profile/BannerSheet'
 import { Panel, NavRow, FactRow } from '@/components/ui/Panel'
 import type { InstrumentType } from '@/types'
 
@@ -15,6 +17,7 @@ export default function SettingsPage() {
   // Only enough to label the row — the joining itself lives on its own
   // screen now.
   const [waiting, setWaiting] = useState(false)
+  const [banner, setBanner] = useState(false)
 
   // Being in a studio is teacherId and nothing else now. The old check
   // also demanded studioCode, which a student accepted through an
@@ -40,11 +43,28 @@ export default function SettingsPage() {
       <div className="max-w-2xl space-y-6">
         {/* One panel, not a pile of cards: these rows are the same subject. */}
         <Panel>
+          {/* Your banner, with the photo on its edge. The pencil is the
+              only way in: changing it is occasional, so it stays small. */}
+          <div className="relative">
+            <Banner image={profile?.bannerImage} color={profile?.bannerColor} height={88}>
+              <button
+                type="button"
+                onClick={() => setBanner(true)}
+                aria-label="Change profile background"
+                className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ background: 'rgba(0,0,0,.3)', color: '#fff' }}
+              >
+                <Pencil size={15} aria-hidden="true" />
+              </button>
+            </Banner>
+            <Link to="/student/settings/profile" aria-hidden="true" tabIndex={-1} className="absolute -bottom-8 left-4 rounded-full" style={{ border: '4px solid var(--clay-surface)' }}>
+              <Avatar src={profile?.avatar} name={profile?.displayName} instrument={instrument} size={64} />
+            </Link>
+          </div>
           <Link
             to="/student/settings/profile"
-            className="flex items-center gap-4 p-4 transition-transform active:scale-[.99]"
+            className="flex items-center gap-4 px-4 pb-4 pt-10 transition-transform active:scale-[.99]"
           >
-            <Avatar src={profile?.avatar} name={profile?.displayName} instrument={instrument} size={60} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>
                 {profile?.displayName || 'Your profile'}
@@ -99,6 +119,7 @@ export default function SettingsPage() {
             action here, and it should not share a surface with the rest. */}
         <MobileLogOut />
       </div>
+      <BannerSheet open={banner} onClose={() => setBanner(false)} />
     </div>
   )
 }

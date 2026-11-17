@@ -90,3 +90,48 @@ export async function removeAvatar(): Promise<void> {
     { merge: true }
   )
 }
+
+/**
+ * The banner behind the profile photo. A picture lives beside the photo
+ * (same folder, same Storage rule); a plain colour is just a field.
+ * Choosing one clears the other, so the profile never holds both.
+ */
+export async function uploadBanner(file: File): Promise<string> {
+  await auth.authStateReady()
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('You are not signed in.')
+  const problem = checkAvatarFile(file)
+  if (problem) throw new Error(problem)
+  const { storage, ref, uploadBytes, getDownloadURL } = await loadStorage()
+  const objectRef = ref(storage, `avatars/${uid}/banner`)
+  await uploadBytes(objectRef, file, { contentType: file.type })
+  const url = await getDownloadURL(objectRef)
+  await setDoc(doc(db, 'users', uid), { bannerImage: url, updatedAt: new Date().toISOString() }, { merge: true })
+  return url
+}
+
+export async function setBannerColor(color: string): Promise<void> {
+  await auth.authStateReady()
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('You are not signed in.')
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) throw new Error('Not a colour.')
+  await removeBannerImage(uid)
+  await setDoc(doc(db, 'users', uid), { bannerColor: color, bannerImage: '', updatedAt: new Date().toISOString() }, { merge: true })
+}
+
+async function removeBannerImage(uid: string): Promise<void> {
+  try {
+    const { storage, ref, deleteObject } = await loadStorage()
+    await deleteObject(ref(storage, `avatars/${uid}/banner`))
+  } catch {
+    // Never uploaded, or already gone.
+  }
+}
+
+export async function removeBanner(): Promise<void> {
+  await auth.authStateReady()
+  const uid = auth.currentUser?.uid
+  if (!uid) throw new Error('You are not signed in.')
+  await removeBannerImage(uid)
+  await setDoc(doc(db, 'users', uid), { bannerImage: '', updatedAt: new Date().toISOString() }, { merge: true })
+}

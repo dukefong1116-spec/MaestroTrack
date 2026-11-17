@@ -5,7 +5,7 @@ import { playClimb, playLand, playXpTick, playZoneChime, playZoomIn } from '@/li
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import type { Climb } from '@/stores/leagueStore'
 import { AVATAR_COLOURS } from '@/lib/league/themes'
-import type { InstrumentType, LeagueRoom } from '@/types'
+import type { InstrumentType, LeagueCard, LeagueRoom } from '@/types'
 
 /**
  * A league room as a ranked list, with the move-up zone in green at the
@@ -30,19 +30,38 @@ const ZONE_FG: Record<'up' | 'down', string> = {
 }
 
 const CLIMB_S = 1.7
+/** Row heights: the celebration's compact strip, the board's top three, everyone else. */
 const ROW_H = 40
+const ROW_TOP = 66
+const ROW_REST = 56
+
+/** Gold, silver and bronze: the disc, and the number on it. */
+const MEDALS: [string, string][] = [['#F5C542', '#6E5000'], ['#CDD6DF', '#465565'], ['#E3A672', '#6B3A12']]
+
+function Face({ name, photo, size, bg, fg }: { name: string; photo?: string | null; size: number; bg: string; fg: string }) {
+  if (photo) return <img src={photo} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+  return (
+    <span className="flex shrink-0 items-center justify-center rounded-full font-bold" style={{ width: size, height: size, fontSize: Math.round(size * 0.42), background: bg, color: fg }}>
+      {name.charAt(0).toUpperCase()}
+    </span>
+  )
+}
 
 type Phase = 'idle' | 'count' | 'zoom' | 'climb' | 'settle' | 'done'
 
 interface Row { uid: string; name: string; colour: number; xp: number }
 
-export default function LeagueBoard({ room, me, climb, compact, instrument, onClimbDone }: {
+export default function LeagueBoard({ room, me, climb, compact, instrument, onClimbDone, cards, onOpen }: {
   room: LeagueRoom
   me: string
   climb?: Climb | null
   compact?: boolean
   instrument?: InstrumentType
   onClimbDone?: () => void
+  /** Players' public cards, for their photos. */
+  cards?: Record<string, LeagueCard | null>
+  /** Tapping a row opens that player's profile. */
+  onOpen?: (uid: string) => void
 }) {
   const reduced = usePrefersReducedMotion()
   const after = useMemo<Row[]>(
@@ -131,6 +150,10 @@ export default function LeagueBoard({ room, me, climb, compact, instrument, onCl
         // places instead, in gold.
         const maestro = room.tier === TOP_TIER && index < MAESTRO_PLACES && r.xp > 0
         const [bg, fg] = AVATAR_COLOURS[r.colour % AVATAR_COLOURS.length]
+        const top = !compact && index < 3 && r.xp > 0
+        const medal = index < 3 && r.xp > 0 ? MEDALS[index] : null
+        const face = compact ? 24 : top ? 48 : 40
+        const open = onOpen ? () => onOpen(r.uid) : undefined
         return (
           <motion.div
             key={r.uid}
@@ -142,9 +165,14 @@ export default function LeagueBoard({ room, me, climb, compact, instrument, onCl
             <motion.div
               animate={{ scale: mine && zoomed && !reduced ? (compact ? 1.07 : 1.16) : 1 }}
               transition={{ type: 'spring', stiffness: 320, damping: 18 }}
-              className="flex items-center gap-2.5 px-3"
+              className={`flex items-center px-3 ${compact ? 'gap-2.5' : 'gap-3'}${open ? ' cursor-pointer' : ''}`}
+              role={open ? 'button' : undefined}
+              tabIndex={open ? 0 : undefined}
+              aria-label={open ? `${mine ? 'Your' : `${r.name}'s`} profile` : undefined}
+              onClick={open}
+              onKeyDown={open ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } } : undefined}
               style={{
-                height: ROW_H,
+                height: compact ? ROW_H : top ? ROW_TOP : ROW_REST,
                 borderRadius: 12,
                 background: mine ? 'var(--clay-accent-soft)' : maestro ? 'rgba(255,214,107,.28)' : zone ? ZONE_BG[zone] : 'transparent',
                 boxShadow: mine
@@ -153,17 +181,29 @@ export default function LeagueBoard({ room, me, climb, compact, instrument, onCl
                 transition: 'background .6s, box-shadow .45s',
               }}
             >
-              <span className="w-5 shrink-0 text-[12.5px] font-bold tabular-nums" style={{ color: mine ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' }}>
-                {index + 1}
-              </span>
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
-                style={mine ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' } : { background: bg, color: fg }}>
-                {r.name.charAt(0).toUpperCase()}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[13.5px]" style={{ color: 'var(--clay-ink)', fontWeight: mine ? 700 : 500 }}>
+              {medal ? (
+                <span
+                  className="flex shrink-0 items-center justify-center rounded-full font-extrabold tabular-nums"
+                  style={{ width: compact ? 20 : 30, height: compact ? 20 : 30, fontSize: compact ? 11 : 14, background: medal[0], color: medal[1], boxShadow: 'inset 0 -3px 0 rgba(0,0,0,.14)' }}
+                >
+                  {index + 1}
+                </span>
+              ) : (
+                <span className="shrink-0 text-center font-bold tabular-nums" style={{ width: compact ? 20 : 30, fontSize: compact ? 12.5 : 15, color: mine ? 'var(--clay-accent-ink)' : 'var(--clay-dim)' }}>
+                  {index + 1}
+                </span>
+              )}
+              <Face
+                name={r.name}
+                photo={cards?.[r.uid]?.photo}
+                size={face}
+                bg={mine ? 'var(--clay-accent)' : bg}
+                fg={mine ? 'var(--clay-on-accent)' : fg}
+              />
+              <span className="min-w-0 flex-1 truncate" style={{ color: 'var(--clay-ink)', fontWeight: mine || !compact ? 700 : 500, fontSize: compact ? 13.5 : top ? 16.5 : 15.5 }}>
                 {mine ? 'You' : r.name}
               </span>
-              <span className="shrink-0 text-[12.5px] font-bold tabular-nums" style={{ color: maestro && !mine ? '#A87A12' : zone && !mine ? ZONE_FG[zone] : 'var(--clay-ink)' }}>
+              <span className="shrink-0 font-bold tabular-nums" style={{ fontSize: compact ? 12.5 : top ? 15.5 : 14.5, color: maestro && !mine ? '#A87A12' : zone && !mine ? ZONE_FG[zone] : 'var(--clay-ink)' }}>
                 {mine && shownXp !== null ? shownXp : r.xp} XP
               </span>
             </motion.div>

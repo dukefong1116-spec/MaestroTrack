@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Clock, Crown, Info, ArrowBigUpDash, ArrowBigDownDash } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { useAuth } from '@/hooks/useAuth'
@@ -7,6 +7,7 @@ import { useLeagueStore, type Climb } from '@/stores/leagueStore'
 import { TierGround, TierTrophy } from '@/components/league/TierArt'
 import { TIER_THEMES, themeFor } from '@/lib/league/themes'
 import LeagueBoard from '@/components/league/LeagueBoard'
+import { useLeagueCards } from '@/hooks/useLeagueCards'
 import StreakFlame from '@/components/icons/StreakFlame'
 import {
   moveCounts, TOP_TIER, MAESTRO_PLACES, DAILY_CAP, DAY_MIN, DAY_BONUS, STREAK_BONUS, STREAK_DAYS,
@@ -44,6 +45,8 @@ export default function LeaguePage() {
   const [climb, setClimb] = useState<Climb | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const [howOpen, setHowOpen] = useState(false)
+  const navigate = useNavigate()
+  const cards = useLeagueCards(room ? Object.keys(room.members ?? {}) : [])
 
   useEffect(() => { void useLeagueStore.getState().sync() }, [])
   useEffect(() => {
@@ -91,17 +94,17 @@ export default function LeaguePage() {
       <TierGround
         tier={tier}
         className="flex flex-col items-center justify-center px-5 text-center"
-        style={{ minHeight: 'min(46vh, 420px)', paddingTop: 30, paddingBottom: 26 }}
+        style={{ minHeight: 'min(52vh, 480px)', paddingTop: 34, paddingBottom: 28 }}
       >
-        <p className="text-[11px] font-semibold uppercase tracking-[.14em]" style={{ color: theme.sub }}>
+        <p className="text-[12.5px] font-bold uppercase tracking-[.16em]" style={{ color: theme.sub }}>
           {room ? 'This week' : 'Your tier'}
         </p>
-        <div className="mx-auto mt-2 flex justify-center"><TierTrophy tier={tier} size={124} /></div>
-        <p className="mt-1 text-[17px] font-semibold" style={{ color: theme.sub }}>{theme.id}</p>
-        <p className="text-[25px] font-bold leading-tight">{theme.name} league</p>
+        <div className="mx-auto mt-2 flex justify-center"><TierTrophy tier={tier} size={168} /></div>
+        <p className="mt-1 text-[19px] font-semibold" style={{ color: theme.sub }}>{theme.id}</p>
+        <p className="text-[32px] font-extrabold leading-tight tracking-[-.01em]">{theme.name} league</p>
         {room && (
-          <p className="mt-1 flex items-center justify-center gap-1.5 text-[13px]" style={{ color: theme.sub }}>
-            <Clock size={13} /> {timeLeft(room.endsAt, now)} · {n} player{n === 1 ? '' : 's'}
+          <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[15px] font-medium" style={{ color: theme.sub }}>
+            <Clock size={15} /> {timeLeft(room.endsAt, now)} · {n} player{n === 1 ? '' : 's'}
           </p>
         )}
         <div className="mt-3.5 flex justify-center gap-1.5">
@@ -117,17 +120,17 @@ export default function LeaguePage() {
                 opacity: i > tier ? 0.35 : 1,
               }}
             >
-              <TierTrophy tier={i} size={28} animated={false} />
+              <TierTrophy tier={i} size={36} animated={false} />
             </span>
           ))}
         </div>
         {/* Your streak and XP, on the tier itself. */}
         {!optedOut && (
           <span
-            className="mt-3.5 inline-flex max-w-full items-center gap-2 rounded-full py-1.5 pl-2 pr-3.5 text-[12.5px] font-semibold"
+            className="mt-3.5 inline-flex max-w-full items-center gap-2 rounded-full py-2 pl-2.5 pr-4 text-[14px] font-semibold"
             style={{ background: pill, color: theme.ink }}
           >
-            <StreakFlame streak={streak} size={18} />
+            <StreakFlame streak={streak} size={22} />
             <span className="truncate">
               {streak >= STREAK_DAYS
                 ? `${streak}-day league streak · bonus on, +${STREAK_BONUS} a day`
@@ -184,6 +187,8 @@ export default function LeaguePage() {
               me={uid}
               climb={climb}
               instrument={profile.instrument as InstrumentType | undefined}
+              cards={cards}
+              onOpen={(id) => navigate(`/student/league/${encodeURIComponent(id)}`)}
             />
           </>
         )}

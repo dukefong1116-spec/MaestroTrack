@@ -113,6 +113,7 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
 
   if (user.leagueOptOut) {
     if (room) await leaveRoom(uid, roomId)
+    await dropCard(uid)
     return { optedOut: true, week: week.id, tier, xp: 0, days: [], streak: 0, roomId: null }
   }
   // Your lesson day, freezes and comebacks hold the league's streak too —
@@ -127,8 +128,15 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
   const { xp, days } = weekXp(credited, week.start, holds)
   const base = { optedOut: false, week: week.id, tier, xp, days, streak: streakOn(days, today) }
 
-  if (room) return { ...base, roomId, ...(await updateXp(roomId, uid, xp, nowMs)) }
-  if (xp <= 0) return { ...base, roomId: null, oldRank: null, newRank: null, oldXp: 0 }
+  if (room) {
+    const out = { ...base, roomId, ...(await updateXp(roomId, uid, xp, nowMs)) }
+    await writeCard(uid, user, out, nowMs)
+    return out
+  }
+  if (xp <= 0) {
+    await dropCard(uid)
+    return { ...base, roomId: null, oldRank: null, newRank: null, oldXp: 0 }
+  }
 
   const member = {
     name: publicName(user.displayName),
@@ -137,7 +145,67 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
     xpAt: iso(nowMs),
     joinedAt: iso(nowMs),
   }
-  return { ...base, ...(await placeInRoom(uid, week, bandFor(offset), tier, member, nowMs)) }
+  const out = { ...base, ...(await placeInRoom(uid, week, bandFor(offset), tier, member, nowMs)) }
+  await writeCard(uid, user, out, nowMs)
+  return out
+}
+
+/**
+ * Your public league card: what the players in your room see when they
+ * tap your row. Written here and nowhere else, from your profile, so it
+ * carries only these fields — and only while "Show my profile to my
+ * league" is on. Readable by the players in the room it names (rules).
+ *
+ * Pictures are copied only when they are your own uploads in this
+ * project's bucket. A profile field is yours to write, and a link to
+ * anywhere else, shown to other students, would tell that site who opened
+ * your card and when.
+ */
+// The same bucket the storage rules and share links are pinned to.
+const BUCKET = process.env.VITE_FIREBASE_STORAGE_BUCKET || 'maestrotrack-3c2cf.firebasestorage.app'
+function ownPicture(url, uid) {
+  if (typeof url !== 'string' || url.length > 1000) return null
+  const folder = `/o/avatars%2F${encodeURIComponent(uid)}%2F`
+  if (url.startsWith(`https://firebasestorage.googleapis.com/v0/b/${BUCKET}${folder}`)) return url
+  // Under the emulators (local only), whatever bucket the dev app names.
+  const local = process.env.FIRESTORE_EMULATOR_HOST && /^http:\/\/(127\.0\.0\.1|localhost):9199\/v0\/b\/[a-z0-9.-]+\//.test(url)
+  return local && url.includes(folder) ? url : null
+}
+const short = (v, n) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, n) : null)
+
+async function writeCard(uid, user, { roomId, days, streak, xp, tier }, nowMs) {
+  if (!roomId || user.leagueProfile === false) return dropCard(uid)
+  const card = {
+    uid,
+    roomId,
+    name: publicName(user.displayName),
+    colour: colourFor(uid),
+    instrument: short(user.instrument, 40),
+    level: short(user.experienceLevel, 40),
+    photo: ownPicture(user.avatar, uid),
+    bannerImage: ownPicture(user.bannerImage, uid),
+    bannerColor: typeof user.bannerColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(user.bannerColor) ? user.bannerColor : null,
+    // Timer minutes, Monday to Sunday: the line on the card's graph.
+    days: (days ?? []).map((d) => d.minutes),
+    streak: streak ?? 0,
+    xp: xp ?? 0,
+    tier: tier ?? 0,
+    topFinishes: user.league?.topFinishes ?? 0,
+    badges: (Array.isArray(user.pinnedBadges) ? user.pinnedBadges : [])
+      .filter((b) => typeof b === 'string' && /^[a-z0-9_]{1,40}$/.test(b)).slice(0, 3),
+  }
+  const ref = db().doc(`leagueCards/${uid}`)
+  const before = (await ref.get()).data()
+  if (before) {
+    const { updatedAt: _ignored, ...rest } = before
+    if (JSON.stringify(Object.entries(rest).sort()) === JSON.stringify(Object.entries(card).sort())) return
+  }
+  await ref.set({ ...card, updatedAt: iso(nowMs) })
+}
+
+async function dropCard(uid) {
+  const ref = db().doc(`leagueCards/${uid}`)
+  if ((await ref.get()).exists) await ref.delete()
 }
 
 /** Timer-checked minutes per day, over the days just read. Unchanged → not rewritten. */
@@ -256,6 +324,8 @@ export async function finalizeRoom(roomId, nowMs = Date.now()) {
       if (!u.exists || u.data().league?.roomId !== roomId) return
       tx.update(userRefs[i], {
         'league.tier': r.toTier,
+        // Shown on the league card. A room of one is not a finish.
+        ...(r.rank <= 3 && r.of > 1 ? { 'league.topFinishes': FieldValue.increment(1) } : {}),
         // Done with this room: the result keeps its id, the profile stops
         // pointing at it, and the next session places you afresh.
         'league.roomId': null,

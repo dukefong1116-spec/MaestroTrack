@@ -1,7 +1,7 @@
 import { onServerSnapshot } from './snapshotError'
-import { doc, type Unsubscribe } from 'firebase/firestore'
+import { doc, getDoc, type Unsubscribe } from 'firebase/firestore'
 import { auth, db } from './config'
-import type { LeagueRoom } from '@/types'
+import type { LeagueCard, LeagueRoom } from '@/types'
 import type { DayLine } from '@/lib/league/rules'
 
 /**
@@ -55,4 +55,17 @@ export function subscribeRoom(roomId: string, cb: (room: LeagueRoom | null) => v
     (snap) => cb(snap.exists() ? ({ id: snap.id, ...snap.data() } as LeagueRoom) : null),
     () => cb(null),
   )
+}
+
+/**
+ * A player's league card, or null: their profile is hidden, they are not
+ * in your room, or there is none yet. All three read the same on screen.
+ */
+export async function getLeagueCard(uid: string): Promise<LeagueCard | null> {
+  try {
+    const snap = await getDoc(doc(db, 'leagueCards', uid))
+    return snap.exists() ? (snap.data() as LeagueCard) : null
+  } catch {
+    return null
+  }
 }

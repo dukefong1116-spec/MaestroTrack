@@ -123,3 +123,34 @@ describe('timer fields on sessions', () => {
     await assertSucceeds(updateDoc(doc(as(ANA), 'practiceSessions', 'timed'), { notes: 'Better today' }))
   })
 })
+
+describe('league cards', () => {
+  const card = (uid: string, roomId: string) => ({ uid, roomId, name: 'Ben L.', colour: 1, days: [10, 0, 0, 0, 0, 0, 0], xp: 30 })
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'leagueCards', BEN), card(BEN, ROOM))
+      await setDoc(doc(db, 'leagueCards', EVE), card(EVE, 'room-elsewhere'))
+    })
+  })
+  it('a player CAN read the card of someone in their room', async () => {
+    await assertSucceeds(getDoc(doc(as(ANA), 'leagueCards', BEN)))
+  })
+  it('the owner CAN read their own card', async () => {
+    await assertSucceeds(getDoc(doc(as(BEN), 'leagueCards', BEN)))
+  })
+  it('someone outside the room CANNOT read a card', async () => {
+    await assertFails(getDoc(doc(as(EVE), 'leagueCards', BEN)))
+  })
+  it('a card naming a room you are not in CANNOT be read', async () => {
+    await assertFails(getDoc(doc(as(ANA), 'leagueCards', EVE)))
+  })
+  it('nobody signed out can read a card', async () => {
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'leagueCards', BEN)))
+  })
+  it('nobody CAN write a card, not even its owner', async () => {
+    await assertFails(setDoc(doc(as(BEN), 'leagueCards', BEN), card(BEN, ROOM)))
+    await assertFails(setDoc(doc(as(ANA), 'leagueCards', ANA), card(ANA, ROOM)))
+    await assertFails(updateDoc(doc(as(BEN), 'leagueCards', BEN), { roomId: 'room-elsewhere' }))
+  })
+})

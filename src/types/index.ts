@@ -73,6 +73,29 @@ export interface LeagueState {
   roomId?: string | null
   week?: string | null
   lastResult?: LeagueResult
+  /** Weeks finished in the top three of a room of two or more. */
+  topFinishes?: number
+}
+
+/** What a player in your room sees when they tap your row. Server-written. */
+export interface LeagueCard {
+  uid: string
+  roomId: string
+  name: string
+  colour: number
+  instrument: string | null
+  level: string | null
+  photo: string | null
+  bannerImage: string | null
+  bannerColor: string | null
+  /** Timer minutes, Monday to Sunday. */
+  days: number[]
+  streak: number
+  xp: number
+  tier: number
+  topFinishes: number
+  badges: string[]
+  updatedAt: string
 }
 
 export interface LeagueMember {
@@ -176,6 +199,11 @@ export interface UserProfile {
   leagueSeen?: string
   /** Settings → Privacy → Weekly leagues, switched off. */
   leagueOptOut?: boolean
+  /** Settings → Privacy → "Show my profile to my league". On unless false. */
+  leagueProfile?: boolean
+  /** The strip behind the profile photo: an uploaded picture, else a plain colour (#rrggbb). */
+  bannerImage?: string
+  bannerColor?: string
   /** Teacher: per student, messages up to here have been read. */
   threadsReadAt?: Record<string, string>
   onboarding?: {
