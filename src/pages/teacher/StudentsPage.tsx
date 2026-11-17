@@ -9,7 +9,7 @@ import { hasOwnLength, hasOwnPrice, lessonMinutes, lessonPriceCents } from '@/li
 import { clock, money } from '@/lib/studio/dates'
 import AddStudentSheet from '@/components/teacher/AddStudentSheet'
 import WaitingToJoin from '@/components/teacher/WaitingToJoin'
-import { StudioPage, Segmented, Pill, Btn, Avatar, Empty } from '@/components/teacher/studio/ui'
+import { StudioPage, Segmented, Pill, Btn, Avatar, Empty, AppStatus } from '@/components/teacher/studio/ui'
 import { colorFor, inputStyle } from '@/components/teacher/studio/tokens'
 
 const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -75,7 +75,7 @@ export default function StudentsPage() {
           <div className="md:hidden">
             {rows.map((r) => (
               <button key={r.m.id} type="button" onClick={() => open(r.m)} className="flex w-full items-center gap-3 px-4 py-3 text-left" style={{ borderTop: '1px solid var(--clay-line)' }}>
-                <Avatar name={r.m.name} color={colorFor(r.m.id)} size={40} />
+                <Avatar name={r.m.name} color={colorFor(r.m.id)} size={40} src={r.m.profile?.avatar} />
                 <span className="min-w-0 flex-1">
                   <span className="block font-bold" style={{ color: 'var(--clay-ink)' }}>{r.m.name}</span>
                   <span className="block truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{r.m.instrument ?? '—'} · {r.lesson} · {r.minutes} min</span>
@@ -105,7 +105,7 @@ export default function StudentsPage() {
                   <tr key={r.m.id} className="text-[13.5px]" style={{ borderTop: '1px solid var(--clay-line)', color: 'var(--clay-ink-soft)' }}>
                     <td className="px-6 py-2.5">
                       <button type="button" onClick={() => open(r.m)} className="flex items-center gap-3 text-left">
-                        <Avatar name={r.m.name} color={colorFor(r.m.id)} size={36} />
+                        <Avatar name={r.m.name} color={colorFor(r.m.id)} size={36} src={r.m.profile?.avatar} />
                         <span>
                           <span className="block font-bold" style={{ color: 'var(--clay-ink)' }}>{r.m.name}</span>
                           <span className="block text-[12px] capitalize" style={{ color: 'var(--clay-dim)' }}>{r.m.instrument ?? '—'}</span>
@@ -117,7 +117,7 @@ export default function StudentsPage() {
                     <td className="whitespace-nowrap px-2 py-2.5">{r.minutes} min {r.ownLength && <Pill tone="purple">Own length</Pill>}</td>
                     <td className="whitespace-nowrap px-2 py-2.5">{money(r.price)}{r.ownPrice ? ' · own price' : ''}</td>
                     <td className="px-2 py-2.5">{r.week == null ? '—' : `${r.week} min`}</td>
-                    <td className="px-2 py-2.5">{r.m.onApp ? <Pill tone="success">On the app</Pill> : <Pill>Not on the app</Pill>}</td>
+                    <td className="px-2 py-2.5"><AppStatus on={r.m.onApp} /></td>
                     <td className="px-6 py-2.5 text-right">
                       {r.m.onApp && (
                         <button type="button" onClick={() => openMessages(r.m.uid)} aria-label={`Message ${r.m.name}`} className="inline-flex h-9 w-9 items-center justify-center rounded-[11px]" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}>

@@ -11,11 +11,10 @@ import { removeStudentFromStudio } from '@/lib/firebase/teacher'
 import { updateRosterStudent } from '@/lib/firebase/studio'
 import { sessionsFromSummary } from '@/lib/utils/summary'
 import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
-import ProfileAvatar from '@/components/profile/Avatar'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
 import InviteSheet from '@/components/teacher/InviteSheet'
 import TakePlayer from '@/components/recordings/TakePlayer'
-import { StudioPage, Btn, Pill, Avatar, Empty } from '@/components/teacher/studio/ui'
+import { StudioPage, Btn, Avatar, Empty, AppStatus } from '@/components/teacher/studio/ui'
 import { colorFor } from '@/components/teacher/studio/tokens'
 import Overview from './record/Overview'
 import Lessons from './record/Lessons'
@@ -103,11 +102,9 @@ export default function StudentDetailPage() {
       back={{ to: '/teacher/students', label: 'All students' }}
       title={
         <span className="flex items-center gap-3">
-          {m.profile?.avatar
-            ? <ProfileAvatar src={m.profile.avatar} name={m.name} size={44} />
-            : <Avatar name={m.name} color={colorFor(m.id)} size={44} />}
+          <Avatar name={m.name} color={colorFor(m.id)} size={44} src={m.profile?.avatar} />
           <span className="min-w-0 truncate">{m.name}</span>
-          {m.onApp ? <Pill tone="success">On the app</Pill> : <Pill>Not on the app</Pill>}
+          <AppStatus on={m.onApp} />
         </span>
       }
       subtitle={`${m.instrument ? `${m.instrument} · ` : ''}${family?.name ?? 'Not in a family'}${m.profile?.experienceLevel ? ` · ${m.profile.experienceLevel}` : ''}`}

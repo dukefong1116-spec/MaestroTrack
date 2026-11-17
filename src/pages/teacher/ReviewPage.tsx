@@ -36,7 +36,8 @@ export default function ReviewPage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
 
-  const nameOf = (a: Assignment) => members.find((m) => (a.studentId && m.uid === a.studentId) || (a.rosterId && m.id === a.rosterId))?.name ?? 'Student'
+  const memberOf = (a: Assignment) => members.find((m) => (a.studentId && m.uid === a.studentId) || (a.rosterId && m.id === a.rosterId))
+  const nameOf = (a: Assignment) => memberOf(a)?.name ?? 'Student'
 
   const handedIn = useMemo(() => all
     .map((a) => {
@@ -143,7 +144,7 @@ export default function ReviewPage() {
               <div key={a.id} role="row" className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 md:flex-nowrap md:px-6" style={{ borderBottom: '1px solid var(--clay-line)', background: on ? 'var(--clay-accent-soft)' : undefined }}>
                 <span role="cell" className="w-6"><Check label={`Select ${name}: ${a.title}`} checked={on} onChange={() => toggle(a.id)} /></span>
                 <span role="cell" className="flex min-w-0 items-center gap-2.5 md:w-44">
-                  <Avatar name={name} color={colorFor(a.rosterId ?? a.studentId)} size={30} />
+                  <Avatar name={name} color={colorFor(a.rosterId ?? a.studentId)} size={30} src={memberOf(a)?.profile?.avatar} />
                   <span className="truncate font-bold" style={{ color: 'var(--clay-ink)' }}>{name}</span>
                 </span>
                 <span role="cell" className="min-w-0 basis-full md:basis-auto md:flex-1">

@@ -9,7 +9,6 @@ import type { CalendarTag, LessonType, RosterStudent, StudioSettings } from '@/t
 export const DEFAULT_TAGS: CalendarTag[] = [
   { id: 'private', name: 'Private lesson', color: '#2A8EB3' },
   { id: 'group', name: 'Group class', color: '#7A5AC4' },
-  { id: 'makeup', name: 'Make-up', color: '#2E8B62' },
   { id: 'event', name: 'Recital or event', color: '#3B7DD8' },
   { id: 'cancelled', name: 'Cancelled', color: '#8B82A3' },
 ]

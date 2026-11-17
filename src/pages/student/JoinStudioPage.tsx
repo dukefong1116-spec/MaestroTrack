@@ -185,7 +185,7 @@ export default function JoinStudioPage() {
                 placeholder="ABC123"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                className="max-w-[160px] font-mono tracking-[0.18em]"
+                className="max-w-[160px] tabular-nums tracking-[0.18em]"
                 maxLength={7}
                 onKeyDown={(e) => { if (e.key === 'Enter') void submitCode() }}
               />

@@ -47,7 +47,7 @@ export default class AppErrorBoundary extends Component<{ children: ReactNode },
           Reload
         </button>
         {this.state.detail && (
-          <p className="mt-6 max-w-xs break-words text-[11px]" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+          <p className="mt-6 max-w-xs break-words text-[11px]" style={{ color: 'var(--clay-faint)' }}>
             {this.state.detail}
           </p>
         )}

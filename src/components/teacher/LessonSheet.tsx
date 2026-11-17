@@ -194,13 +194,6 @@ export default function LessonSheet({ item, onClose }: { item: CalendarItem | nu
                 </div>
               ))}
             </div>
-            {Object.values(att).some((v) => v === 'teacher_cancel' || v === 'student_cancel') && (
-              <p className="mt-2 rounded-lg px-3 py-2 text-[12.5px]" style={{ background: '#FFF6E3', color: '#6B4605' }}>
-                {settings.policy.teacherCancelCredit || settings.policy.noticeCredit
-                  ? 'Cancelled: a make-up credit is added if your policy gives one for this (Settings › Cancellations).'
-                  : 'Your policy gives no make-up credit for cancellations.'}
-              </p>
-            )}
           </div>
         )}
 

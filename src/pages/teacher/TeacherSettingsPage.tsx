@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CalendarClock, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, Undo2, UserPlus } from 'lucide-react'
+import { Bell, CalendarClock, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useStudioSettings } from '@/hooks/useStudioData'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
@@ -49,7 +49,6 @@ export default function TeacherSettingsPage() {
   const [inviting, setInviting] = useState(false)
 
   const instrument = INSTRUMENT_THEMES[profile?.instrument as InstrumentType]?.label
-  const expiry = settings.policy.creditExpiryDays
   const types = settings.lessonTypes.length
 
   return (
@@ -70,8 +69,6 @@ export default function TeacherSettingsPage() {
       <Section title="Studio" hint="How lessons are booked, priced and shown.">
         <NavRow icon={<Tags size={18} />} label="Lessons and prices" to="/teacher/settings/lessons"
           value={`${settings.defaultLessonMinutes} min default · ${types} ${types === 1 ? 'type' : 'types'}`} />
-        <NavRow icon={<Undo2 size={18} />} label="Cancellations and make-ups" to="/teacher/settings/cancellations"
-          value={expiry ? `Credits last ${expiry} days` : 'Credits never expire'} />
         <NavRow icon={<CalendarClock size={18} />} label="Calendar hours" to="/teacher/settings/calendar"
           value={`${hour(settings.dayStart)} – ${hour(settings.dayEnd)}`} />
         <button type="button" onClick={() => setInviting(true)} className={rowCls} style={rowStyle}>

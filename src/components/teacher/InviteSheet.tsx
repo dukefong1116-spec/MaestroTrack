@@ -122,7 +122,7 @@ export default function InviteSheet({
                 <button
                   type="button"
                   onClick={() => copy('code')}
-                  className="mt-1 font-mono text-[30px] font-bold leading-none tracking-[0.18em] transition-transform active:scale-95"
+                  className="mt-1 text-[30px] tabular-nums font-bold leading-none tracking-[0.18em] transition-transform active:scale-95"
                   style={{ color: 'var(--clay-ink)' }}
                   aria-label={`Copy the code ${invite.code.split('').join(' ')}`}
                 >
@@ -155,7 +155,7 @@ export default function InviteSheet({
               }}
             >
               <Link2 size={13} className="shrink-0" />
-              <span className="truncate font-mono">{invite.url}</span>
+              <span className="truncate">{invite.url}</span>
             </div>
 
             <button

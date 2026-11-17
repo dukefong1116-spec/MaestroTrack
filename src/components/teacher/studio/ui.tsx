@@ -111,6 +111,16 @@ export function Pill({ tone = 'neutral', children }: { tone?: Tone; children: Re
   )
 }
 
+/** Whether a student uses the app: a small dot and plain words, quieter than a pill. */
+export function AppStatus({ on }: { on: boolean }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[12.5px] font-semibold" style={{ color: on ? 'var(--clay-success-fg)' : 'var(--clay-dim)' }}>
+      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: on ? 'var(--clay-success-fg)' : 'var(--clay-faint)' }} />
+      {on ? 'On the app' : 'Not on the app'}
+    </span>
+  )
+}
+
 type BtnKind = 'primary' | 'soft' | 'quiet' | 'link'
 export function Btn({
   kind = 'soft', children, className, ...rest
@@ -183,7 +193,11 @@ export function Empty({ children }: { children: ReactNode }) {
   return <p className="px-5 py-6 text-[14px] sm:px-6" style={{ color: 'var(--clay-dim)' }}>{children}</p>
 }
 
-export function Avatar({ name, color, size = 34 }: { name: string; color?: string; size?: number }) {
+/** A student's profile photo when they have set one; their initials on a colour when not. */
+export function Avatar({ name, color, size = 34, src }: { name: string; color?: string; size?: number; src?: string | null }) {
+  if (src) {
+    return <img src={src} alt="" aria-hidden="true" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+  }
   const initials = name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   return (
     <span

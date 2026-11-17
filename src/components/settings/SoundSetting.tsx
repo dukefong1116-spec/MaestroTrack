@@ -109,7 +109,7 @@ export default function SoundSetting({ bare }: { bare?: boolean } = {}) {
             <p className="text-[12.5px] font-semibold" style={{ color: result.producesSound ? 'var(--clay-ink)' : 'var(--clay-danger)' }}>
               {result.verdict}
             </p>
-            <p className="mt-1.5 text-[10.5px] leading-relaxed" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+            <p className="mt-1.5 text-[10.5px] leading-relaxed" style={{ color: 'var(--clay-faint)' }}>
               context: {result.state} · rate: {result.sampleRate ?? '—'} · signal: {result.peak}
             </p>
           </div>

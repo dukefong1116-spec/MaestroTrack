@@ -15,14 +15,13 @@ import type { LessonType, StudioSettings } from '@/types'
  * Settings page itself, which made it a long form; now Settings is a list
  * of rows and each row opens one of these.
  */
-export type StudioSettingsPart = 'lessons' | 'policy' | 'calendar'
+export type StudioSettingsPart = 'lessons' | 'calendar'
 
 /** A drop-down that sits in a line of text, so sized to its contents rather than the row. */
 const inlineSelect = 'min-h-[40px] min-w-[120px] rounded-[10px] border-0 px-3 text-[14px] font-semibold outline-none focus:ring-2'
 
 const TITLES: Record<StudioSettingsPart, { title: string; subtitle: string }> = {
   lessons: { title: 'Lessons and prices', subtitle: 'Default length, lesson types and what each costs' },
-  policy: { title: 'Cancellations and make-ups', subtitle: 'When a missed lesson earns a make-up credit' },
   calendar: { title: 'Calendar hours', subtitle: 'The hours the week view shows' },
 }
 
@@ -35,17 +34,6 @@ function Section({ title, hint, children, first }: { title: string; hint?: strin
       </div>
       <div className="min-w-0 flex-1 basis-[380px]">{children}</div>
     </div>
-  )
-}
-
-function Toggle({ on, label, onFlip }: { on: boolean; label: string; onFlip: () => void }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} onClick={onFlip} className="flex w-full items-center gap-3 py-2.5 text-left" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-      <span className="flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>{label}</span>
-      <span className="relative inline-block h-[26px] w-11 shrink-0 rounded-full transition-colors" style={{ background: on ? 'var(--clay-accent)' : '#D9D2E8' }}>
-        <span className="absolute top-[3px] h-5 w-5 rounded-full bg-white transition-all" style={{ left: on ? 21 : 3, boxShadow: '0 1px 3px rgba(30,40,70,.3)' }} />
-      </span>
-    </button>
   )
 }
 
@@ -127,19 +115,6 @@ export default function StudioSettingsPage({ part }: { part: StudioSettingsPart 
             ))}
           </Section>
         </>
-      )}
-
-      {part === 'policy' && (
-        <Section title="Make-up credits" hint="A credit lets the student book a make-up lesson instead." first>
-          <Toggle on={settings.policy.teacherCancelCredit} label="A lesson you cancel gives a make-up credit" onFlip={() => save({ policy: { ...settings.policy, teacherCancelCredit: !settings.policy.teacherCancelCredit } })} />
-          <Toggle on={settings.policy.noticeCredit} label="A lesson the student cancels with notice gives a make-up credit" onFlip={() => save({ policy: { ...settings.policy, noticeCredit: !settings.policy.noticeCredit } })} />
-          <label className="flex items-center gap-3 py-2.5 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>
-            <span className="flex-1">Make-up credits expire after</span>
-            <select className={inlineSelect} style={inputStyle} value={settings.policy.creditExpiryDays ?? 0} onChange={(e) => save({ policy: { ...settings.policy, creditExpiryDays: Number(e.target.value) || null } })}>
-              <option value={30}>30 days</option><option value={60}>60 days</option><option value={90}>90 days</option><option value={180}>6 months</option><option value={0}>Never</option>
-            </select>
-          </label>
-        </Section>
       )}
 
       {part === 'calendar' && (

@@ -18,7 +18,7 @@ export default function ReportsPage() {
         const s = m.uid ? getAnalyticsSummary(sessions[m.uid] ?? [], m.profile?.weeklyGoalMinutes ?? 300) : null
         return (
           <button key={m.id} type="button" onClick={() => navigate(`/teacher/students/${encodeURIComponent(m.id)}?tab=report`)} className="flex w-full items-center gap-3 px-5 py-3 text-left sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-            <Avatar name={m.name} color={colorFor(m.id)} size={38} />
+            <Avatar name={m.name} color={colorFor(m.id)} size={38} src={m.profile?.avatar} />
             <span className="min-w-0 flex-1">
               <span className="block font-bold" style={{ color: 'var(--clay-ink)' }}>{m.name}</span>
               <span className="block text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{s ? `${s.totalMinutesThisWeek} min this week · ${s.currentStreak}-day streak` : 'Lessons and notes only'}</span>

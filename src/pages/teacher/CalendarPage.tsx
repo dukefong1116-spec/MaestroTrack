@@ -11,7 +11,6 @@ import { StudioPage, Segmented, Btn } from '@/components/teacher/studio/ui'
 import TimeGrid, { type DragResult } from './calendar/TimeGrid'
 import MonthGrid from './calendar/MonthGrid'
 import TagsPanel from './calendar/TagsPanel'
-import MakeupsPanel from './calendar/MakeupsPanel'
 import NewLessonSheet from './calendar/NewLessonSheet'
 
 function useWide() {
@@ -111,13 +110,12 @@ export default function CalendarPage() {
   return (
     <StudioPage
       title="Calendar & Attendance"
-      subtitle="Lessons, make-ups and events"
+      subtitle="Lessons and events"
       actions={<Btn kind="primary" onClick={() => setAdding(true)}>+ Lesson or event</Btn>}
     >
       <div className="flex flex-wrap">
         <aside className="order-2 w-full lg:order-1 lg:w-[260px] lg:shrink-0" style={{ borderRight: '1px solid var(--clay-line)' }}>
           <TagsPanel counts={counts} />
-          <MakeupsPanel />
         </aside>
         <div className="order-1 w-full min-w-0 lg:order-2 lg:w-auto lg:flex-1">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--clay-line)' }}>

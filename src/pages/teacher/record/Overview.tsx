@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useAllLessons, useCalendar, useStudioSettings, type Member } from '@/hooks/useStudioData'
 import { updateRosterStudent } from '@/lib/firebase/studio'
-import { creditsFor } from '@/lib/studio/billing'
 import { addDays, clock, dayKey, money } from '@/lib/studio/dates'
 import { LENGTH_CHOICES, hasOwnLength, hasOwnPrice, lessonMinutes, lessonPriceCents, typePriceCents } from '@/lib/studio/settings'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
@@ -31,7 +30,6 @@ export default function Overview({ m }: { m: Member }) {
   const r = m.roster
   const fam = families.find((f) => f.id === r.familyId)
   const weekly = lessons.filter((l) => l.rosterIds.includes(m.id) && (!l.endsOn || l.endsOn >= today))
-  const credits = creditsFor(m.id, items, settings, r.creditAdjust ?? 0, today)
   const len = lessonMinutes(r, settings)
   const [price, setPrice] = useState(r.priceCents != null ? String(r.priceCents / 100) : '')
   useEffect(() => setPrice(r.priceCents != null ? String(r.priceCents / 100) : ''), [r.priceCents])
@@ -94,11 +92,6 @@ export default function Overview({ m }: { m: Member }) {
         <p className="mt-2 text-[12px]" style={{ color: 'var(--clay-dim)' }}>
           {m.name.split(' ')[0]} pays {money(lessonPriceCents(r, settings))} for {len} min{hasOwnLength(r) || hasOwnPrice(r) ? ', set just for them' : ', the studio default'}. One lesson can still differ: drag it in the calendar.
         </p>
-        <div className="mt-3 flex items-center gap-2.5 pt-3" style={{ borderTop: '1px solid var(--clay-line)' }}>
-          <span className="flex-1 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>Make-up credits <strong className="ml-1.5 text-[16px]">{credits}</strong></span>
-          <button type="button" aria-label="Remove a make-up credit" disabled={credits === 0} onClick={() => void updateRosterStudent(m.id, { creditAdjust: (r.creditAdjust ?? 0) - 1 })} className="h-9 w-9 rounded-[10px] text-[16px] disabled:opacity-40" style={inputStyle}>−</button>
-          <button type="button" aria-label="Add a make-up credit" onClick={() => void updateRosterStudent(m.id, { creditAdjust: (r.creditAdjust ?? 0) + 1 })} className="h-9 w-9 rounded-[10px] text-[16px]" style={inputStyle}>+</button>
-        </div>
       </Cell>
 
       <Cell title="At a glance">

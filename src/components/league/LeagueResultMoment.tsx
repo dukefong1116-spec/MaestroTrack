@@ -188,7 +188,7 @@ export default function Reveal({ result }: { result: LeagueResult }) {
             {outcome !== 'stay' && outcome !== 'maestro' && (
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: showTo ? 1 : 0 }} transition={{ delay: 0.6 }}
-                className="text-[18px] font-semibold italic" style={{ fontFamily: 'Georgia, serif', color: to.sub }}
+                className="text-[18px] font-semibold" style={{ color: to.sub }}
               >
                 {from.id} → {to.id}
               </motion.p>

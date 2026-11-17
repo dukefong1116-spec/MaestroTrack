@@ -77,7 +77,7 @@ export function ConversationList({ onOpen }: { onOpen: (studentId: string) => vo
           onClick={() => onOpen(m.uid as string)}
           className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-[var(--clay-bg)]"
         >
-          <Avatar name={m.name} color={colorFor(m.id)} size={44} />
+          <Avatar name={m.name} color={colorFor(m.id)} size={44} src={m.profile?.avatar} />
           <span className="min-w-0 flex-1">
             <span className="block text-[14.5px]" style={{ color: 'var(--clay-ink)', fontWeight: isNew ? 800 : 600 }}>{m.name}</span>
             <span className="block truncate text-[13px]" style={{ color: 'var(--clay-dim)' }}>
@@ -132,7 +132,7 @@ function DockThread({ studentId, onBack, onClose }: { studentId: string; onBack:
         <button type="button" onClick={onBack} aria-label="All messages" className="flex h-9 w-9 items-center justify-center rounded-[10px]" style={{ color: 'var(--clay-ink)' }}>
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
-        <Avatar name={name} color={colorFor(member?.id ?? studentId)} size={34} />
+        <Avatar name={name} color={colorFor(member?.id ?? studentId)} size={34} src={member?.profile?.avatar} />
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold" style={{ color: 'var(--clay-ink)' }}>{name}</span>
           <span className="block text-[12px]" style={{ color: 'var(--clay-dim)' }}>{member?.instrument ?? ''} · on the app</span>

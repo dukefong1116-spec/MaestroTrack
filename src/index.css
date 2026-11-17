@@ -88,7 +88,8 @@
   /* The device's own font: San Francisco on iPhone and Mac, Roboto on
      Android, Segoe on Windows. Nothing to download. */
   --clay-font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --clay-hand: 'Caveat', cursive;
+  /* Was a handwriting face for notes; every face in the app is the device's own now. */
+  --clay-hand: var(--clay-font);
 }
 
 /* ─────────────────────────────────────────────────────────────

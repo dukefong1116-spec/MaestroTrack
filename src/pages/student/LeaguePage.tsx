@@ -97,7 +97,7 @@ export default function LeaguePage() {
           {room ? 'This week' : 'Your tier'}
         </p>
         <div className="mx-auto mt-2 flex justify-center"><TierTrophy tier={tier} size={124} /></div>
-        <p className="mt-1 text-[17px] font-semibold italic" style={{ fontFamily: 'Georgia, serif', color: theme.sub }}>{theme.id}</p>
+        <p className="mt-1 text-[17px] font-semibold" style={{ color: theme.sub }}>{theme.id}</p>
         <p className="text-[25px] font-bold leading-tight">{theme.name} league</p>
         {room && (
           <p className="mt-1 flex items-center justify-center gap-1.5 text-[13px]" style={{ color: theme.sub }}>

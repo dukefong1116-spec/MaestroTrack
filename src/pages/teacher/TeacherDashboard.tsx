@@ -8,7 +8,7 @@ import { useMembers, useStudioSettings, useCalendar, saveItem } from '@/hooks/us
 import { useOpenMessages, useUnreadThreads } from '@/hooks/useTeacherMessages'
 import { needsReview, awaitingStudent, dueness } from '@/lib/utils/assignments'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
-import { creditsFor, balanceCents } from '@/lib/studio/billing'
+import { balanceCents } from '@/lib/studio/billing'
 import { endTime, type CalendarItem } from '@/lib/studio/calendar'
 import { addDays, clock, dayKey, money, parseDay } from '@/lib/studio/dates'
 import { tagFor } from '@/lib/studio/settings'
@@ -54,7 +54,6 @@ export default function TeacherDashboard() {
   const recorded = todays.filter((i) => i.rosterIds.length && i.rosterIds.every((r) => i.attendance[r])).length
   const nameOf = (uidOrRoster: string) => members.find((m) => m.uid === uidOrRoster || m.id === uidOrRoster)?.name ?? 'Student'
 
-  const owed = members.filter((m) => creditsFor(m.id, items, settings, m.roster.creditAdjust ?? 0, today) > 0)
   const overdue = assignments.filter((a) => awaitingStudent(a) && dueness(a) === 'overdue')
   const quiet = members.filter((m) => {
     if (!m.uid) return false
@@ -64,7 +63,6 @@ export default function TeacherDashboard() {
   const attention: { head: string; text: string; color: string; go: () => void }[] = [
     ...(requests.length ? [{ head: `${requests.length} waiting to join`, text: requests.map((r) => r.studentName).join(', '), color: 'var(--clay-accent-ink)', go: () => navigate('/teacher/students') }] : []),
     ...(toReview.length ? [{ head: `${toReview.length} assignment${toReview.length === 1 ? '' : 's'} to review`, text: [...new Set(toReview.map((a) => nameOf(a.studentId || a.rosterId || '')))].join(', '), color: '#7A5AC4', go: () => navigate('/teacher/review') }] : []),
-    ...(owed.length ? [{ head: `Make-up${owed.length === 1 ? '' : 's'} to book`, text: owed.map((m) => m.name).join(', '), color: '#2E8B62', go: () => navigate('/teacher/calendar') }] : []),
     ...overdue.slice(0, 3).map((a) => ({ head: 'Assignment overdue', text: `${nameOf(a.studentId || a.rosterId || '')} · ${a.title}`, color: '#D64257', go: () => navigate(`/teacher/students/${encodeURIComponent(a.rosterId ?? a.studentId)}?tab=assignments`) })),
     ...quiet.slice(0, 3).map((m) => ({ head: 'Gone quiet', text: `${m.name} hasn’t practised in 5 days`, color: '#C98A12', go: () => navigate(`/teacher/students/${encodeURIComponent(m.id)}?tab=practice`) })),
     ...[...unread].slice(0, 3).map((uid) => ({ head: `Message from ${nameOf(uid).split(' ')[0]}`, text: 'Unread', color: '#3B7DD8', go: () => openMessages(uid) })),
@@ -161,7 +159,7 @@ export default function TeacherDashboard() {
           {recent.length === 0 && <p className="px-6 pb-4 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>Nothing in the last few days.</p>}
           {recent.map(({ m, d, mins }) => (
             <button key={`${m.id}${d}`} type="button" onClick={() => navigate(`/teacher/students/${encodeURIComponent(m.id)}?tab=practice`)} className="flex w-full items-center gap-3 px-5 py-2.5 text-left sm:px-6" style={{ borderTop: '1px solid var(--clay-line)' }}>
-              <Avatar name={m.name} color={colorFor(m.id)} size={30} />
+              <Avatar name={m.name} color={colorFor(m.id)} size={30} src={m.profile?.avatar} />
               <span className="flex-1 text-[13.5px]"><strong style={{ color: 'var(--clay-ink)' }}>{m.name}</strong><span style={{ color: 'var(--clay-dim)' }}> · {mins} min</span></span>
               <span className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>{d === today ? 'Today' : d === addDays(today, -1) ? 'Yesterday' : parseDay(d).toLocaleDateString('en-US', { weekday: 'short' })}</span>
             </button>

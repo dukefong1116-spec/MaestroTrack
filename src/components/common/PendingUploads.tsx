@@ -140,7 +140,7 @@ export default function PendingUploads() {
             are on screen because Safari keeps its console behind a settings
             flag. */}
         {state === 'stalled' && lastError && lastAttempt && (
-          <p className="mt-1 break-all text-[10px]" style={{ color: 'var(--clay-faint)', fontFamily: 'ui-monospace, monospace' }}>
+          <p className="mt-1 break-all text-[10px]" style={{ color: 'var(--clay-faint)' }}>
             {lastError} · {lastAttempt.path}
             {lastAttempt.contentType ? ` · sent ${lastAttempt.contentType}` : ''}
             {typeof lastAttempt.bytes === 'number' ? ` · ${Math.round(lastAttempt.bytes / 1024)} KB` : ''}
