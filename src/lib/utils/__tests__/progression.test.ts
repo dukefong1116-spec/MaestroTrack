@@ -254,3 +254,43 @@ describe('the legacy credit', () => {
     expect(step1).toBeLessThan(240 + 25 + 50)
   })
 })
+
+describe('the newer badges', () => {
+  // A timer session that stopped at `hour`:`min` local time on 2026-11-14 (a Saturday).
+  const timed = (hour: number, minutes: number, min = 0): PracticeSession => ({
+    ...S('2026-11-14', minutes), id: `t-${hour}-${min}`, source: 'timer',
+    createdAt: new Date(2026, 10, 14, hour, min).toISOString(),
+  })
+  const ids = (sessions: PracticeSession[], extra = {}) => earnedBadges(buildBadgeContext(sessions, [], 1, extra)).map((b) => b.id)
+
+  it('Early Bird: a timer session that started before 8 AM', () => {
+    expect(ids([timed(7, 30, 50)])).toContain('early_bird') // 7:20 to 7:50
+    expect(ids([timed(8, 30, 20)])).toContain('early_bird') // 7:50 to 8:20
+    expect(ids([timed(8, 30, 40)])).not.toContain('early_bird') // 8:10 start
+  })
+  it('Night Owl: a timer session still going at 9 PM', () => {
+    expect(ids([timed(21, 20, 10)])).toContain('night_owl')
+    expect(ids([timed(20, 30, 50)])).not.toContain('night_owl')
+  })
+  it('a session typed in counts for neither, whatever time it was typed', () => {
+    const typed = { ...timed(6, 30), source: undefined }
+    expect(ids([typed])).not.toContain('early_bird')
+  })
+  it('Weekend Regular: the Saturday and the Sunday of one weekend', () => {
+    expect(ids([S('2026-11-14'), S('2026-11-15')])).toContain('weekend')
+    expect(ids([S('2026-11-15'), S('2026-11-16')])).not.toContain('weekend') // Sunday and Monday
+    expect(ids([S('2026-11-14'), S('2026-11-21')])).not.toContain('weekend') // two Saturdays
+  })
+  it('Encore and Mastered come from recordings and pieces', () => {
+    expect(ids([], { recordings: 1 })).toContain('encore')
+    expect(ids([], { masteredPieces: 1 })).toContain('mastered')
+    expect(ids([])).not.toContain('encore')
+  })
+  it('the tiers in each family climb', () => {
+    for (const fam of new Set(BADGES.map((b) => b.family))) {
+      const tiers = BADGES.filter((b) => b.family === fam).sort((a, b) => a.tier - b.tier)
+      tiers.forEach((b, i) => expect(b.tier).toBe(i + 1))
+      for (let i = 1; i < tiers.length; i++) expect(tiers[i].target).toBeGreaterThan(tiers[i - 1].target)
+    }
+  })
+})

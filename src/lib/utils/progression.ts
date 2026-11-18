@@ -230,12 +230,23 @@ export type BadgeId =
   | 'marathon'
   | 'consistency'
   | 'ten_hours'
+  | 'early_bird'
+  | 'night_owl'
+  | 'weekend'
+  | 'fortnight'
+  | 'unbreakable'
+  | 'half_century'
+  | 'fifty_hours'
+  | 'deep_focus'
+  | 'encore'
+  | 'mastered'
 
 /** What a badge is counting, so the detail screen can say it in words. */
-export type BadgeUnit = 'sessions' | 'days' | 'minutes' | 'level'
+export type BadgeUnit = 'sessions' | 'days' | 'minutes' | 'level' | 'weekends' | 'recordings' | 'pieces'
 
 /** Tiered badges belong to a family; the grid shows one tile per family. */
 export type BadgeFamily = 'hours' | 'sessions' | 'streak' | 'level' | 'session_length'
+  | 'early' | 'night' | 'weekend' | 'recordings' | 'repertoire'
 
 /**
  * A badge is a target and a way of reading the current number off the
@@ -267,24 +278,53 @@ export interface BadgeContext {
   longestSessionMinutes: number
   totalMinutes: number
   level: number
+  /** Timer sessions started before 8 AM (and after 4 AM). */
+  earlySessions: number
+  /** Timer sessions still going at 9 PM or later. */
+  lateSessions: number
+  /** Weekends with practice on both the Saturday and the Sunday. */
+  fullWeekends: number
+  recordings: number
+  masteredPieces: number
 }
 
 export const BADGES: BadgeDef[] = [
   { id: 'first_session', label: 'First Note', description: 'Logged your first practice session',
     family: 'sessions', tier: 1, unit: 'sessions', target: 1, current: (c) => c.sessionCount },
+  { id: 'half_century', label: 'Half Century', description: 'Logged 50 practice sessions',
+    family: 'sessions', tier: 2, unit: 'sessions', target: 50, current: (c) => c.sessionCount },
   { id: 'century', label: 'Century Club', description: 'Logged 100 practice sessions',
-    family: 'sessions', tier: 2, unit: 'sessions', target: 100, current: (c) => c.sessionCount },
+    family: 'sessions', tier: 3, unit: 'sessions', target: 100, current: (c) => c.sessionCount },
 
   { id: 'week_warrior', label: 'Week Warrior', description: 'Practised every day for a week',
     family: 'streak', tier: 1, unit: 'days', target: 7, current: (c) => c.longestStreak },
+  { id: 'fortnight', label: 'Fortnight Flame', description: 'Reached a 14-day streak',
+    family: 'streak', tier: 2, unit: 'days', target: 14, current: (c) => c.longestStreak },
   { id: 'consistency', label: 'Iron Discipline', description: 'Reached a 30-day streak',
-    family: 'streak', tier: 2, unit: 'days', target: 30, current: (c) => c.longestStreak },
+    family: 'streak', tier: 3, unit: 'days', target: 30, current: (c) => c.longestStreak },
+  { id: 'unbreakable', label: 'Unbreakable', description: 'Reached a 100-day streak',
+    family: 'streak', tier: 4, unit: 'days', target: 100, current: (c) => c.longestStreak },
 
   { id: 'marathon', label: 'Marathon', description: 'Practised 60+ minutes in one session',
     family: 'session_length', tier: 1, unit: 'minutes', target: 60, current: (c) => c.longestSessionMinutes },
+  { id: 'deep_focus', label: 'Deep Focus', description: 'Practised 90+ minutes in one session',
+    family: 'session_length', tier: 2, unit: 'minutes', target: 90, current: (c) => c.longestSessionMinutes },
 
   { id: 'ten_hours', label: '10 Hours Strong', description: 'Accumulated 600 minutes of practice',
     family: 'hours', tier: 1, unit: 'minutes', target: 600, current: (c) => c.totalMinutes },
+  { id: 'fifty_hours', label: 'Fifty Hours', description: 'Accumulated 3,000 minutes of practice',
+    family: 'hours', tier: 2, unit: 'minutes', target: 3000, current: (c) => c.totalMinutes },
+
+  { id: 'early_bird', label: 'Early Bird', description: 'Practised with the timer before 8 AM',
+    family: 'early', tier: 1, unit: 'sessions', target: 1, current: (c) => c.earlySessions },
+  { id: 'night_owl', label: 'Night Owl', description: 'Practised with the timer after 9 PM',
+    family: 'night', tier: 1, unit: 'sessions', target: 1, current: (c) => c.lateSessions },
+  { id: 'weekend', label: 'Weekend Regular', description: 'Practised on the Saturday and the Sunday of one weekend',
+    family: 'weekend', tier: 1, unit: 'weekends', target: 1, current: (c) => c.fullWeekends },
+  { id: 'encore', label: 'Encore', description: 'Saved your first recording',
+    family: 'recordings', tier: 1, unit: 'recordings', target: 1, current: (c) => c.recordings },
+  { id: 'mastered', label: 'Mastered', description: 'Marked your first piece as mastered',
+    family: 'repertoire', tier: 1, unit: 'pieces', target: 1, current: (c) => c.masteredPieces },
 ]
 
 /** Won, or not. The one definition — nothing else decides this. */
@@ -309,7 +349,8 @@ export function badgeProgress(badge: BadgeDef, ctx: BadgeContext): number {
 export function buildBadgeContext(
   sessions: PracticeSession[],
   plan: StreakPlan | string[] = [],
-  level = 1
+  level = 1,
+  extra: { recordings?: number; masteredPieces?: number } = {}
 ): BadgeContext {
   const { current, longest } = computeStreak(sessions, plan)
   const totalMinutes = sessions.reduce((s, p) => s + p.durationMinutes, 0)
@@ -320,7 +361,47 @@ export function buildBadgeContext(
     longestSessionMinutes: sessions.reduce((m, s) => Math.max(m, s.durationMinutes), 0),
     totalMinutes,
     level,
+    ...timeOfDay(sessions),
+    fullWeekends: fullWeekends(sessions),
+    recordings: extra.recordings ?? 0,
+    masteredPieces: extra.masteredPieces ?? 0,
   }
+}
+
+/**
+ * Early and late sessions, from timer sessions only: their saved time is
+ * when the timer stopped, so the start is that minus the minutes. A
+ * session typed in later carries the time it was typed, not played.
+ */
+function timeOfDay(sessions: PracticeSession[]): { earlySessions: number; lateSessions: number } {
+  let earlySessions = 0
+  let lateSessions = 0
+  for (const s of sessions) {
+    if (s.source !== 'timer') continue
+    const end = new Date(s.createdAt)
+    if (Number.isNaN(end.getTime())) continue
+    const start = new Date(end.getTime() - s.durationMinutes * 60_000)
+    const sh = start.getHours()
+    const eh = end.getHours()
+    if (sh >= 4 && sh < 8) earlySessions++
+    if (eh >= 21 || eh < 4) lateSessions++
+  }
+  return { earlySessions, lateSessions }
+}
+
+/** Weekends with a session on both the Saturday and the Sunday after it. */
+function fullWeekends(sessions: PracticeSession[]): number {
+  const days = new Set(sessions.map((s) => s.date.slice(0, 10)))
+  let n = 0
+  for (const d of days) {
+    const [y, m, dd] = d.split('-').map(Number)
+    const sat = new Date(y, m - 1, dd)
+    if (sat.getDay() !== 6) continue
+    const sun = new Date(y, m - 1, dd + 1)
+    const key = `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, '0')}-${String(sun.getDate()).padStart(2, '0')}`
+    if (days.has(key)) n++
+  }
+  return n
 }
 
 /** What each family is called where a person reads it. */
@@ -330,6 +411,11 @@ export const FAMILY_LABEL: Record<BadgeFamily, string> = {
   hours: 'Hours practised',
   level: 'Level',
   session_length: 'One long session',
+  early: 'Early mornings',
+  night: 'Late nights',
+  weekend: 'Weekends',
+  recordings: 'Recordings',
+  repertoire: 'Pieces mastered',
 }
 
 export interface FamilyState {
@@ -355,7 +441,7 @@ export interface FamilyState {
  * and anything later all read the same ladder.
  */
 export function badgeFamilies(ctx: BadgeContext): FamilyState[] {
-  const order: BadgeFamily[] = ['sessions', 'streak', 'hours', 'session_length', 'level']
+  const order: BadgeFamily[] = ['sessions', 'streak', 'hours', 'session_length', 'early', 'night', 'weekend', 'recordings', 'repertoire', 'level']
   const out: FamilyState[] = []
 
   for (const family of order) {

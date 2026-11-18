@@ -253,7 +253,7 @@ export default function GoalsPanel() {
                   <>
                     <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--clay-faint)' }}>
                       {amountShort(fam.next.current(badgeCtx), fam.next.unit)} of {amountShort(fam.next.target, fam.next.unit)}
-                      {fam.next.unit === 'sessions' ? ' sessions' : fam.next.unit === 'days' ? ' days' : ''}
+                      {fam.next.unit === 'minutes' || fam.next.unit === 'level' ? '' : ` ${fam.next.unit}`}
                     </p>
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
                       <div

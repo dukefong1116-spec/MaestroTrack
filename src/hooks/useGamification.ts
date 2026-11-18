@@ -58,6 +58,8 @@ export function useGamification(): Gamification {
   const { profile, profileLive } = useAuth()
   const setProfile = useAuthStore((s) => s.setProfile)
   const { sessions, pieces } = usePracticeStore()
+  const recordingCount = usePracticeStore((s) => s.recordings.length)
+  const masteredCount = useMemo(() => pieces.filter((p) => p.status === 'mastered').length, [pieces])
   // Badges are recorded, celebrated and pinned only from live data — not
   // from the copy saved on this device, which may be a step behind and
   // would replay a celebration or overwrite a date.
@@ -87,8 +89,8 @@ export function useGamification(): Gamification {
   // The level goes in rather than being patched over the top afterwards —
   // buildBadgeContext no longer invents one.
   const badgeCtx = useMemo(
-    () => buildBadgeContext(sessions, plan, progression.level),
-    [sessions, plan, progression.level]
+    () => buildBadgeContext(sessions, plan, progression.level, { recordings: recordingCount, masteredPieces: masteredCount }),
+    [sessions, plan, progression.level, recordingCount, masteredCount]
   )
   const badges = useMemo(() => earnedBadges(badgeCtx), [badgeCtx])
   const families = useMemo(() => badgeFamilies(badgeCtx), [badgeCtx])
