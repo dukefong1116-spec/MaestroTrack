@@ -413,15 +413,17 @@ export function playSubmitChime(): void {
 }
 
 /* ── Badge unlocks: one sound per reveal ─────────────────────────────
- * Each is timed to its animation in BadgeMoment and starts when the
- * moment opens, so the build-up is heard while it is seen. Every one
- * lands on a bright chord, in a key picked at random from a few, so two
- * unlocks in a row never sound identical.
+ * Sound effects first, music second: the flip sounds like a card, the
+ * shatter like ice giving way, the charge like something powering up and
+ * ringing when full. Each is timed to its animation in BadgeMoment and
+ * starts when the moment opens. A small chime in a random key marks the
+ * unlock itself, so two in a row are never identical.
  */
 
 const BADGE_KEYS = [392.0, 440.0, 349.23, 523.25] // G4, A4, F4, C5
+const pickKey = () => BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
 
-function badgeBus(audio: AudioContext, level = 0.85): GainNode {
+function badgeBus(audio: AudioContext, level = 0.9): GainNode {
   const bus = audio.createGain()
   bus.gain.value = level
   bus.connect(audio.destination)
@@ -437,102 +439,140 @@ function tone(audio: AudioContext, bus: AudioNode, freq: number, at: number, dur
   o.connect(g)
   o.start(at)
   o.stop(at + dur + 0.05)
-  envelope(g, at, peak, 0.008, dur)
+  envelope(g, at, peak, 0.004, dur)
 }
 
-function burst(audio: AudioContext, bus: AudioNode, at: number, dur: number, freq: number, peak: number) {
-  const len = Math.floor(audio.sampleRate * dur)
+/** A short grain of filtered noise: the raw material of paper, ice and crackle. */
+function grain(
+  audio: AudioContext, bus: AudioNode, at: number, dur: number,
+  filter: BiquadFilterType, freq: number, q: number, peak: number,
+  sweepTo?: number,
+) {
+  const len = Math.max(1, Math.floor(audio.sampleRate * dur))
   const buf = audio.createBuffer(1, len, audio.sampleRate)
   const data = buf.getChannelData(0)
-  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len)
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1
   const src = audio.createBufferSource()
   src.buffer = buf
-  const hp = audio.createBiquadFilter()
-  hp.type = 'highpass'
-  hp.frequency.value = freq
+  const f = audio.createBiquadFilter()
+  f.type = filter
+  f.Q.value = q
+  f.frequency.setValueAtTime(freq, at)
+  if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, at + dur)
   const g = audio.createGain()
-  src.connect(hp).connect(g).connect(bus)
-  envelope(g, at, peak, 0.004, dur)
+  src.connect(f).connect(g).connect(bus)
+  envelope(g, at, peak, 0.002, dur)
   src.start(at)
-  src.stop(at + dur + 0.05)
+  src.stop(at + dur + 0.02)
 }
 
-/** The landing: a major chord with a sparkle on top. */
-function landing(audio: AudioContext, bus: AudioNode, root: number, at: number) {
-  for (const s of [0, 4, 7, 12]) tone(audio, bus, semitone(root, s), at, 1.2, 0.09)
-  for (let i = 0; i < 5; i++) tone(audio, bus, semitone(root, 24 + [0, 4, 7, 12, 16][i]), at + 0.05 + i * 0.06, 0.4, 0.035, 'sine')
+/** The unlock's own small chime, on top of whichever effect. */
+function chime(audio: AudioContext, bus: AudioNode, root: number, at: number, level = 1) {
+  for (const s of [0, 4, 7]) tone(audio, bus, semitone(root, s + 12), at, 0.9, 0.05 * level, 'sine')
+  tone(audio, bus, semitone(root, 24), at + 0.06, 0.6, 0.03 * level, 'sine')
 }
 
-/** Flip: a coin's quickening ting-ting-ting as it spins, then the chord. */
+/**
+ * Card flip: the papery "fwip" of a card turning over, quickening as it
+ * spins, then the soft slap of it landing face up.
+ */
 export function playBadgeFlip(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
   const bus = badgeBus(audio)
-  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
   const now = audio.currentTime
-  // The spin runs from about 0.6s to 1.25s, the pings closing up as it goes.
-  const pings = [0.6, 0.76, 0.89, 0.99, 1.07, 1.13, 1.18]
-  pings.forEach((t, i) => tone(audio, bus, semitone(root, 19 + (i % 2) * 5), now + t, 0.12, 0.05, 'sine'))
-  landing(audio, bus, root, now + 1.35)
+  // The spin (0.6s to 1.25s): each half-turn is one flick of card past air.
+  const flicks = [0.62, 0.8, 0.94, 1.04, 1.12, 1.18]
+  flicks.forEach((t, i) => {
+    grain(audio, bus, now + t, 0.07, 'bandpass', 2600 + i * 250, 1.4, 0.32, 5200)
+    // A faint low body under each, the card's own weight.
+    grain(audio, bus, now + t, 0.05, 'lowpass', 600, 0.7, 0.12)
+  })
+  // Landing (1.35s): a flat slap, then a tick as it settles.
+  grain(audio, bus, now + 1.33, 0.09, 'lowpass', 1400, 0.8, 0.45)
+  grain(audio, bus, now + 1.33, 0.04, 'highpass', 3500, 0.7, 0.18)
+  grain(audio, bus, now + 1.43, 0.025, 'bandpass', 3000, 2, 0.12)
+  chime(audio, bus, pickKey(), now + 1.38)
 }
 
-/** Shatter: a creak as it cracks, glass breaking, then the chord. */
+/**
+ * Ice cracking: creaks and sharp ticks spreading through the shell, a
+ * groan, then the break — a crack, and a spray of tinkling ice shards.
+ */
 export function playBadgeShatter(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
   const bus = badgeBus(audio)
-  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
   const now = audio.currentTime
-  // Crack, at 0.6s: a short dry tick and a low knock.
-  burst(audio, bus, now + 0.6, 0.06, 2500, 0.25)
-  tone(audio, bus, 110, now + 0.6, 0.18, 0.12, 'square')
-  // Break, at 1.05s: bright noise and a scatter of glassy pings falling away.
-  burst(audio, bus, now + 1.05, 0.45, 4000, 0.35)
-  for (let i = 0; i < 8; i++) {
-    tone(audio, bus, 1800 + Math.random() * 2600, now + 1.06 + i * 0.035 + Math.random() * 0.03, 0.18, 0.03, 'sine')
+  // Cracking (0.55s to 1.0s): irregular ticks, each ringing briefly like ice under stress.
+  let t = 0.55
+  while (t < 1.0) {
+    const f = 1800 + Math.random() * 3200
+    grain(audio, bus, now + t, 0.03, 'bandpass', f, 9, 0.35 + Math.random() * 0.2)
+    // The ring of the ice: a short high resonance after each tick.
+    tone(audio, bus, f * (1.5 + Math.random()), now + t + 0.005, 0.12, 0.012, 'sine')
+    t += 0.035 + Math.random() * 0.07
   }
-  landing(audio, bus, root, now + 1.12)
+  // The groan under it: a low resonant creak bending down.
+  grain(audio, bus, now + 0.6, 0.4, 'bandpass', 420, 12, 0.22, 260)
+  // The break (1.05s): one hard crack…
+  grain(audio, bus, now + 1.05, 0.08, 'highpass', 1500, 0.7, 0.6)
+  grain(audio, bus, now + 1.05, 0.14, 'lowpass', 300, 0.9, 0.35)
+  // …and the shards: dozens of tiny glassy tinkles scattering and fading.
+  for (let i = 0; i < 26; i++) {
+    const at = now + 1.08 + i * 0.022 + Math.random() * 0.04
+    const f = 3000 + Math.random() * 5000
+    tone(audio, bus, f, at, 0.08 + Math.random() * 0.12, 0.012 + Math.random() * 0.015, 'sine')
+    if (i % 3 === 0) grain(audio, bus, at, 0.02, 'bandpass', f, 15, 0.12)
+  }
+  chime(audio, bus, pickKey(), now + 1.2, 0.8)
 }
 
-/** Charge: a rising hum while the ring fills, a zap, then the chord. */
+/**
+ * Charging ring: a pulsing tone climbing as the ring fills, its pulse
+ * speeding up as it nears full, then a bell rings out at 100%.
+ */
 export function playBadgeCharge(): void {
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
   const bus = badgeBus(audio)
-  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
+  const root = pickKey()
   const now = audio.currentTime
   const start = now + 0.35
   const end = now + 1.45
-  // The hum: a sawtooth swept up an octave and a half through a filter that opens with it.
-  const o = audio.createOscillator()
-  o.type = 'sawtooth'
-  o.frequency.setValueAtTime(root / 2, start)
-  o.frequency.exponentialRampToValueAtTime(root * 1.4, end)
-  const lp = audio.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.setValueAtTime(400, start)
-  lp.frequency.exponentialRampToValueAtTime(3500, end)
+  // The charge: two detuned sines climbing two octaves…
   const g = audio.createGain()
+  g.gain.value = 0
+  const tremolo = audio.createGain()
+  tremolo.gain.value = 0.5
+  const lfo = audio.createOscillator()
+  const lfoDepth = audio.createGain()
+  lfo.frequency.setValueAtTime(6, start)
+  lfo.frequency.exponentialRampToValueAtTime(28, end) // …pulsing faster as it fills
+  lfoDepth.gain.value = 0.5
+  lfo.connect(lfoDepth).connect(tremolo.gain)
+  for (const detune of [0, 7]) {
+    const o = audio.createOscillator()
+    o.type = 'sine'
+    o.detune.value = detune
+    o.frequency.setValueAtTime(root / 2, start)
+    o.frequency.exponentialRampToValueAtTime(root * 2, end)
+    o.connect(tremolo)
+    o.start(start)
+    o.stop(end + 0.05)
+  }
+  tremolo.connect(g).connect(bus)
   g.gain.setValueAtTime(0.0001, start)
-  g.gain.exponentialRampToValueAtTime(0.06, start + 0.15)
-  g.gain.setValueAtTime(0.07, end - 0.05)
-  g.gain.exponentialRampToValueAtTime(0.0001, end + 0.05)
-  o.connect(lp).connect(g).connect(bus)
-  o.start(start)
-  o.stop(end + 0.1)
-  // Zap at full: a quick downward chirp and a crackle.
-  const z = audio.createOscillator()
-  z.type = 'square'
-  z.frequency.setValueAtTime(2400, end)
-  z.frequency.exponentialRampToValueAtTime(300, end + 0.12)
-  const zg = audio.createGain()
-  z.connect(zg).connect(bus)
-  envelope(zg, end, 0.06, 0.003, 0.14)
-  z.start(end)
-  z.stop(end + 0.2)
-  burst(audio, bus, end, 0.12, 3000, 0.15)
-  landing(audio, bus, root, end + 0.03)
+  g.gain.exponentialRampToValueAtTime(0.09, start + 0.2)
+  g.gain.setValueAtTime(0.11, end - 0.04)
+  g.gain.exponentialRampToValueAtTime(0.0001, end + 0.03)
+  lfo.start(start)
+  lfo.stop(end + 0.05)
+  // Full: a bell. Inharmonic partials, like struck metal, ringing out.
+  const partials: [number, number, number][] = [[1, 0.16, 2.2], [2.76, 0.07, 1.4], [5.4, 0.04, 0.9], [8.93, 0.025, 0.6]]
+  for (const [ratio, peak, dur] of partials) tone(audio, bus, root * 2 * ratio, end, dur, peak, 'sine')
+  grain(audio, bus, end, 0.03, 'highpass', 5000, 0.7, 0.2)
 }
