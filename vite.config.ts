@@ -56,8 +56,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'MaestroTrack',
-        short_name: 'MaestroTrack',
+        name: 'MutifTrack',
+        short_name: 'Mutif',
         description: 'Practice tracking for musicians.',
         start_url: '/student',
         scope: '/',

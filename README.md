@@ -1,4 +1,4 @@
-# MaestroTrack
+# MutifTrack
 
 Practice tracking for music students and their teachers. A student logs what
 they practise; the app turns that log into streaks, XP, badges and charts.

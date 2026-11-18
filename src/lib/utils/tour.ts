@@ -152,7 +152,7 @@ export function whatToShow(i: TourInput): Decision {
       case 'welcome': return step({
         id: 'welcome', button: "Let's go", block: true, big: true,
         title: `Hi ${i.firstName}! 👋`,
-        text: 'Welcome to MaestroTrack 🎵 Let me show you around — it only takes a minute.',
+        text: 'Welcome to MutifTrack 🎵 Let me show you around — it only takes a minute.',
       })
       case 'today': return step({
         id: 'today', target: 'week-ring', button: 'Next', block: true,

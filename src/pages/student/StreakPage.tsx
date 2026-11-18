@@ -22,7 +22,6 @@ import { saveRuleChoice } from '@/lib/streak/save'
  */
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-const DAY_NAMES = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
 const ICE = '#2F6FA8'
 
 function monthLabel(month: string) {
@@ -49,7 +48,6 @@ export default function StreakPage() {
   const plan = useMemo(() => cleanRules(profile?.streakRules), [profile?.streakRules])
   const ruleState = useMemo(() => currentRules(profile?.streakRules, today), [profile?.streakRules, today])
   const chosen = ruleState.next ?? ruleState.now
-  const pending = chosen.min !== ruleState.now.min || chosen.lessonDay !== ruleState.now.lessonDay
 
   const state: FlameState = live.todayLit ? 'lit' : live.flameFrozen ? 'frozen' : 'unlit'
   const look = lookFor(Math.max(1, live.current))
@@ -172,23 +170,23 @@ export default function StreakPage() {
 
         <Block>
           <Legend title="Freezes" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {Array.from({ length: MAX_FREEZES }, (_, i) => (
               <span
                 key={i}
-                className="flex h-9 w-9 items-center justify-center rounded-xl"
+                className="flex h-16 w-16 items-center justify-center rounded-2xl"
                 style={i < live.held
                   ? { background: 'rgba(120,180,240,.22)', color: ICE }
                   : { border: '1.5px dashed rgba(30,40,70,.2)', color: 'var(--clay-faint)' }}
               >
-                <Snowflake size={18} />
+                <Snowflake size={32} />
               </span>
             ))}
-            <span className="ml-1 text-[14px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
+            <span className="ml-2 text-[18px] font-bold" style={{ color: 'var(--clay-ink)' }}>
               {live.held} of {MAX_FREEZES}
             </span>
           </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
+          <div className="mt-4 h-2.5 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
@@ -197,12 +195,6 @@ export default function StreakPage() {
               }}
             />
           </div>
-          <p className="mt-2 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
-            {live.nextFreezeIn === null
-              ? 'Freezes full.'
-              : `Next freeze in ${live.nextFreezeIn} day${live.nextFreezeIn === 1 ? '' : 's'}.`}
-            {' '}You earn one for every {DAYS_PER_FREEZE} days in a row. Miss a day and one freezes your flame, keeping the streak safe.
-          </p>
         </Block>
 
         <Block>
@@ -226,16 +218,12 @@ export default function StreakPage() {
 
         <Block>
           <Legend title="Your streak rules" />
-          <StreakRulesEditor value={chosen} onChange={(v) => void choose(v)} pending={pending} />
+          <StreakRulesEditor value={chosen} onChange={(v) => void choose(v)} inStudio={!!profile?.teacherId} />
           {(saving || saveError) && (
             <p className="mt-2 text-[12px]" style={{ color: saveError ? 'var(--clay-danger-fg)' : 'var(--clay-dim)' }}>
               {saveError || 'Saving…'}
             </p>
           )}
-          <p className="mt-3 text-[12px]" style={{ color: 'var(--clay-dim)' }}>
-            {ruleState.now.lessonDay !== null ? `Lesson day: ${DAY_NAMES[ruleState.now.lessonDay]}. ` : ''}
-            Miss a day with no freezes left and you get one comeback a month: practise the next two days and the streak comes back.
-          </p>
         </Block>
       </Panel>
     </div>

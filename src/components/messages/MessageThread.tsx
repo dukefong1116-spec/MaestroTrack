@@ -130,10 +130,13 @@ export default function MessageThread({
           const mine = m.from === me
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className="max-w-[85%]">
+              {/* A column that hugs its bubble: as a plain block the bubble
+                  stretched to the timestamp under it, leaving a short
+                  message like "hi" with a wide empty tail. */}
+              <div className={`flex max-w-[85%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
                 <div
                   onClick={() => mine && setSelected((s) => (s === m.id ? null : m.id))}
-                  className={`space-y-2 px-3.5 py-2.5 ${mine ? 'cursor-pointer' : ''}`}
+                  className={`max-w-full space-y-2 px-3.5 py-2.5 ${m.attachment ? 'w-full' : ''} ${mine ? 'cursor-pointer' : ''}`}
                   style={{
                     background: mine ? 'var(--clay-accent-soft)' : 'var(--clay-bg-deep)',
                     color: 'var(--clay-ink)',

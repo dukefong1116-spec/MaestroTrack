@@ -83,7 +83,7 @@ export default function NotificationsPage() {
           <Block>
             <Legend
               title="Practice reminder"
-              hint="A nudge at the time you pick. It can only appear while MaestroTrack is open in a tab — the app has no way to reach you when it is closed."
+              hint="A nudge at the time you pick. It can only appear while MutifTrack is open in a tab — the app has no way to reach you when it is closed."
             />
           </Block>
           <ToggleRow

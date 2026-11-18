@@ -46,7 +46,7 @@ export default function SettingsPage() {
           {/* Your banner, with the photo on its edge. The pencil is the
               only way in: changing it is occasional, so it stays small. */}
           <div className="relative">
-            <Banner image={profile?.bannerImage} color={profile?.bannerColor} height={88}>
+            <Banner image={profile?.bannerImage} color={profile?.bannerColor} height={170}>
               <button
                 type="button"
                 onClick={() => setBanner(true)}

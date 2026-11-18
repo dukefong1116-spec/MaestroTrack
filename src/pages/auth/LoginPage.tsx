@@ -66,7 +66,7 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><PianoGlyph size={52} /></div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>MaestroTrack</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>MutifTrack</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>The practice intelligence platform for musicians</p>
         </div>
 

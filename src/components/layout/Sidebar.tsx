@@ -62,7 +62,7 @@ export default function Sidebar() {
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0">
             <p className="font-bold text-sm leading-tight" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>
-              MaestroTrack
+              MutifTrack
             </p>
             <p className="truncate text-xs" style={{ color: 'var(--clay-dim)' }}>{profile?.displayName}</p>
           </motion.div>

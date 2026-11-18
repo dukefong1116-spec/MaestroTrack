@@ -69,7 +69,7 @@ export default function LeaguePlayerPage() {
   if (!card) {
     return (
       <div className="-mx-6 -mt-8">
-        <Banner height={120}>{back}</Banner>
+        <Banner height={220}>{back}</Banner>
         {!loading && (
           <div className="flex flex-col items-center px-6 py-12 text-center">
             <Lock size={28} style={{ color: 'var(--clay-dim)' }} aria-hidden="true" />
@@ -96,7 +96,7 @@ export default function LeaguePlayerPage() {
   return (
     <div className="-mx-6 -mt-8 pb-8">
       <div className="relative">
-        <Banner image={card.bannerImage} color={card.bannerColor} height={140}>{back}</Banner>
+        <Banner image={card.bannerImage} color={card.bannerColor} height={230}>{back}</Banner>
         <div className="absolute -bottom-11 left-5 rounded-full" style={{ border: '4px solid var(--clay-page)' }}>
           {card.photo
             ? <img src={card.photo} alt="" className="rounded-full object-cover" style={{ width: 88, height: 88 }} />

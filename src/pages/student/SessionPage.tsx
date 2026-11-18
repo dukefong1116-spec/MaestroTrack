@@ -20,6 +20,8 @@ import { unlock, peek } from '@/lib/audio/engine'
 import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
+import StreakLitMoment from '@/components/celebration/StreakLitMoment'
+import GoalMoment from '@/components/celebration/GoalMoment'
 import LeagueSessionPanel from '@/components/league/LeagueSessionPanel'
 import { requestTicket, type SyncResult } from '@/lib/firebase/league'
 import { useLeagueStore, type Climb } from '@/stores/leagueStore'
@@ -157,6 +159,9 @@ export default function SessionPage() {
       : 'Repertoire'
   )
   const [reward, setReward] = useState<SessionReward | null>(null)
+  /** Full-screen moments that play before the summary card, in order. */
+  const [intro, setIntro] = useState<('streak' | 'goal')[]>([])
+  const [goalMinutes, setGoalMinutes] = useState(0)
   const [justSaved, setJustSaved] = useState<PracticeSession | null>(null)
   /** The league's word on the session just saved, for the celebration. */
   const [league, setLeague] = useState<{ result: SyncResult; climb: Climb | null } | null>(null)
@@ -817,6 +822,14 @@ export default function SessionPage() {
     // no-ops rather than scheduling notes onto a stopped clock, which is
     // how the sound used to vanish with nothing reported.
     playSessionChime(profile?.instrument as InstrumentType | undefined, minutes)
+    // Today lit by this session, and today's goal crossed by it (not one
+    // already reached earlier today): each gets its own screen first.
+    const goal = Math.round((profile?.weeklyGoalMinutes ?? 300) / 7)
+    setGoalMinutes(goal)
+    setIntro([
+      ...((earned.streakState === 'started' || earned.streakState === 'extended') ? ['streak' as const] : []),
+      ...(earned.hitDailyGoal && earned.minutesToday - earned.minutes < goal ? ['goal' as const] : []),
+    ])
     setReward(earned)
     // The league's part of the celebration: your new XP, and the climb if
     // this session moved you. Arrives a moment after the rest.
@@ -1520,8 +1533,21 @@ export default function SessionPage() {
         onConfirm={() => { if (deletingClip) removeClip(deletingClip); setDeletingClip(null) }}
       />
 
+      <StreakLitMoment
+        open={!!reward && intro[0] === 'streak'}
+        before={reward?.streakBefore ?? 0}
+        after={reward?.streakAfter ?? 0}
+        onDone={() => setIntro((q) => q.slice(1))}
+      />
+      <GoalMoment
+        open={!!reward && intro[0] === 'goal'}
+        before={reward ? reward.minutesToday - reward.minutes : 0}
+        after={reward?.minutesToday ?? 0}
+        goal={goalMinutes}
+        onDone={() => setIntro((q) => q.slice(1))}
+      />
       <SessionCelebration
-        reward={reward}
+        reward={intro.length ? null : reward}
         instrument={profile?.instrument as InstrumentType | undefined}
         // In the tour, Today is next — the streak step waits there.
         extra={league && (profile?.uid ?? user?.uid) ? (

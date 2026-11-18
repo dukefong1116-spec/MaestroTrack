@@ -60,7 +60,7 @@ export default function TeacherRail() {
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></svg>
           </span>
           <span className="min-w-0" style={{ opacity: open ? 1 : 0, transition: reduce ? 'none' : 'opacity 120ms ease' }}>
-            <span className="block text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>MaestroTrack</span>
+            <span className="block text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>MutifTrack</span>
             <span className="block truncate text-xs" style={{ color: 'var(--clay-dim)' }}>
               {profile?.displayName}{profile?.studioName ? ` · ${profile.studioName}` : ''}
             </span>

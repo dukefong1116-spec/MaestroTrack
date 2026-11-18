@@ -126,7 +126,7 @@ export default function SignupPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><NoteGlyph size={52} /></div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>Join MaestroTrack</h1>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>Join MutifTrack</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>Your musical journey starts here</p>
         </div>
 

@@ -220,7 +220,7 @@ function wordmark(ctx: CanvasRenderingContext2D, x: number, y: number, onDark = 
     roundRect(ctx, x + bx, y + by, bw, bh, 4)
     ctx.fill()
   }
-  text(ctx, 'MaestroTrack', x + 72, y + 36, 30, '600', onDark ? '#FFFFFF' : C.ink)
+  text(ctx, 'MutifTrack', x + 72, y + 36, 30, '600', onDark ? '#FFFFFF' : C.ink)
 }
 
 /** Monday-first week strip. Today is the last bar, and mint. */

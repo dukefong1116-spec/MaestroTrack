@@ -74,7 +74,7 @@ export default function JoinStudioPage() {
   async function handleScan(text: string) {
     const token = tokenFromScan(text)
     if (!token) {
-      setError('That code is not a MaestroTrack invitation.')
+      setError('That code is not a MutifTrack invitation.')
       setMode('choose')
       return
     }

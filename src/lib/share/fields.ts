@@ -87,5 +87,5 @@ export function buildShareText(f: ShareFields): string {
   const bits = [`${plural(f.minutes, 'minute')} of practice`]
   if (f.pieceTitle) bits.push(`on ${f.pieceTitle}`)
   if (f.streakDays) bits.push(`· ${f.streakDays}-day streak`)
-  return `${bits.join(' ')} — tracked with MaestroTrack`
+  return `${bits.join(' ')} — tracked with MutifTrack`
 }

@@ -52,7 +52,6 @@ export default function GoalsPanel() {
   const chosenRules = ruleState.next ?? ruleState.now
   const [ruleDraft, setRuleDraft] = useState<RuleChoice | null>(null)
   const rules = ruleDraft ?? chosenRules
-  const rulesPending = rules.min !== ruleState.now.min || rules.lessonDay !== ruleState.now.lessonDay
   const [openFamily, setOpenFamily] = useState<BadgeFamily | null>(null)
   const { pinned, togglePin } = usePinnedBadges()
   const [shareNote, setShareNote] = useState<string | null>(null)
@@ -75,7 +74,7 @@ export default function GoalsPanel() {
       ...(profile?.displayName ? { name: profile.displayName } : {}),
       badgeId: badge.id,
       badgeLabel: badge.label,
-    }, `I earned ${badge.label} on MaestroTrack`)
+    }, `I earned ${badge.label} on MutifTrack`)
     if (outcome === 'cancelled') return
     setShareNote(outcome === 'failed' ? 'Could not publish the link.' : outcome === 'shared' ? 'Shared' : 'Link copied')
     setTimeout(() => setShareNote(null), 2200)
@@ -183,7 +182,7 @@ export default function GoalsPanel() {
               <StreakRulesEditor
                 value={rules}
                 onChange={setRuleDraft}
-                pending={rulesPending}
+                inStudio={!!profile?.teacherId}
               />
               <Button onClick={saveGoals} loading={saving}>Save</Button>
             </div>
