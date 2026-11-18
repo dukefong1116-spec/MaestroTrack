@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { isStaleChunk, reloadForUpdate } from '@/lib/utils/reloadForUpdate'
+import { isStaleChunk, reloadForUpdate, freshReload } from '@/lib/utils/reloadForUpdate'
 
 /**
  * What happens when the app breaks, instead of a blank page.
@@ -40,7 +40,7 @@ export default class AppErrorBoundary extends Component<{ children: ReactNode },
         </p>
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={() => void freshReload()}
           className="px-6 py-3 text-[15px] font-semibold"
           style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', borderRadius: 'var(--clay-r-md)' }}
         >

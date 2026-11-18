@@ -29,6 +29,37 @@ export function reloadForUpdate(): boolean {
     // risks a loop, so offer the button instead.
     return false
   }
-  window.location.reload()
+  void freshReload()
   return true
+}
+
+/**
+ * A reload that really fetches the new version.
+ *
+ * A plain reload is answered by the service worker from the copy saved on
+ * the phone — the same old page that just failed, so it failed again,
+ * and after one try the app gave up on an error screen. So: if the new
+ * version is already downloaded and waiting, switch to it; otherwise let
+ * go of the saved copy entirely, so the reload goes to the network. The
+ * service worker registers itself again on the next start.
+ */
+export async function freshReload(): Promise<void> {
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration()
+    if (reg?.waiting) {
+      const done = new Promise<void>((resolve) => {
+        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(), { once: true })
+        setTimeout(resolve, 3000)
+      })
+      reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+      await done
+    } else if (reg) {
+      await reg.unregister()
+      const keys = await caches.keys()
+      await Promise.all(keys.filter((k) => k.startsWith('workbox-precache')).map((k) => caches.delete(k)))
+    }
+  } catch {
+    // Nothing more to try than the reload itself.
+  }
+  window.location.reload()
 }
