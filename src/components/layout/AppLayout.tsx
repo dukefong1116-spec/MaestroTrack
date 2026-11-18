@@ -1,11 +1,25 @@
+import { Suspense, lazy } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
 import { usePrefs } from '@/hooks/usePrefs'
 import { useAuth } from '@/hooks/useAuth'
-import TeacherRail from '@/components/teacher/layout/TeacherRail'
-import TeacherTabs from '@/components/teacher/layout/TeacherTabs'
-import MessageDock from '@/components/teacher/layout/MessageDock'
+
+/**
+ * The teacher's rail, tab bar and message dock, loaded only for teachers:
+ * a student's app used to download all three (and the studio code under
+ * them) on every start. Opening a teacher page starts the download at
+ * once, alongside signing in, so they are there by the first draw.
+ */
+const loadRail = () => import('@/components/teacher/layout/TeacherRail')
+const loadTabs = () => import('@/components/teacher/layout/TeacherTabs')
+const loadDock = () => import('@/components/teacher/layout/MessageDock')
+if (typeof window !== 'undefined' && window.location.pathname.startsWith('/teacher')) {
+  void loadRail(); void loadTabs(); void loadDock()
+}
+const TeacherRail = lazy(loadRail)
+const TeacherTabs = lazy(loadTabs)
+const MessageDock = lazy(loadDock)
 
 export default function AppLayout() {
   // Mounted once for the whole signed-in app: reading the preferences is
@@ -24,7 +38,7 @@ export default function AppLayout() {
       style={{ background: 'var(--clay-page)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
     >
       {/* A teacher gets the studio's icon rail; a student keeps the sidebar. */}
-      {teacher ? <TeacherRail /> : <Sidebar />}
+      {teacher ? <Suspense fallback={null}><TeacherRail /></Suspense> : <Sidebar />}
 
       {/*
         A column, so the tab bar is a sibling of the scroll area rather than
@@ -41,9 +55,9 @@ export default function AppLayout() {
             <Outlet />
           </div>
         </main>
-        {teacher ? <TeacherTabs /> : <BottomTabs />}
+        {teacher ? <Suspense fallback={null}><TeacherTabs /></Suspense> : <BottomTabs />}
       </div>
-      {teacher && <MessageDock />}
+      {teacher && <Suspense fallback={null}><MessageDock /></Suspense>}
     </div>
   )
 }

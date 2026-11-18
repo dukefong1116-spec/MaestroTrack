@@ -37,6 +37,46 @@ export function checkAvatarFile(file: File): string | null {
 }
 
 /**
+ * A picture made the size it is shown at. A phone photo is several
+ * megabytes and 4000 pixels across; as an avatar it is drawn at 40, so
+ * every list it appears in (the league board, the teacher's students)
+ * downloaded the whole thing. Drawn onto a canvas no larger than `max` on
+ * its longer side and saved as JPEG — a few dozen kilobytes. EXIF
+ * rotation is applied, so a sideways phone photo comes out upright. If
+ * the browser cannot do any of this, the original goes up as before.
+ */
+async function shrink(file: File, max: number): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height))
+    const w = Math.round(bitmap.width * scale)
+    const h = Math.round(bitmap.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return file
+    // JPEG has no transparency: a see-through PNG would turn black.
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(bitmap, 0, 0, w, h)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.85))
+    if (!blob) return file
+    // Bigger than it is ever shown: always the resized one. Already small
+    // enough: whichever file is lighter.
+    return scale < 1 || blob.size < file.size ? blob : file
+  } catch {
+    return file
+  }
+}
+
+/** Big enough for the largest place a face is drawn (the league profile, 88px) on a 3x screen. */
+const AVATAR_MAX = 512
+/** A banner spans a phone or a settings column, never more. */
+const BANNER_MAX = 1600
+
+/**
  * Uploads and points the profile at it. Returns the new URL.
  *
  * The uid comes from `auth.currentUser`, not from the profile: the profile
@@ -54,10 +94,11 @@ export async function uploadAvatar(file: File): Promise<string> {
 
   const { storage, ref, uploadBytes, getDownloadURL } = await loadStorage()
   const objectRef = ref(storage, avatarPath(uid))
+  const body = await shrink(file, AVATAR_MAX)
   // Stated rather than inferred: the rule matches on contentType, so a blob
   // that arrives with an empty type is refused as a permissions error for
   // what is really a labelling problem.
-  await uploadBytes(objectRef, file, { contentType: file.type })
+  await uploadBytes(objectRef, body, { contentType: body.type || file.type })
   const url = await getDownloadURL(objectRef)
 
   await setDoc(
@@ -104,7 +145,8 @@ export async function uploadBanner(file: File): Promise<string> {
   if (problem) throw new Error(problem)
   const { storage, ref, uploadBytes, getDownloadURL } = await loadStorage()
   const objectRef = ref(storage, `avatars/${uid}/banner`)
-  await uploadBytes(objectRef, file, { contentType: file.type })
+  const body = await shrink(file, BANNER_MAX)
+  await uploadBytes(objectRef, body, { contentType: body.type || file.type })
   const url = await getDownloadURL(objectRef)
   await setDoc(doc(db, 'users', uid), { bannerImage: url, updatedAt: new Date().toISOString() }, { merge: true })
   return url

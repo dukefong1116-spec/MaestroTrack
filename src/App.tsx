@@ -68,7 +68,8 @@ const PracticeProgressPage = loadPracticeProgressPage.Page
 const LeaguePage = loadLeaguePage.Page
 const StreakPage = loadStreakPage.Page
 const StudioPage = loadStudioPage.Page
-const StudioMessagesPage = lazy(() => import('@/pages/student/StudioMessagesPage'))
+const loadStudioMessagesPage = lazyPage(() => import('@/pages/student/StudioMessagesPage'))
+const StudioMessagesPage = loadStudioMessagesPage.Page
 const StudioAssignmentsPage = lazy(() => import('@/pages/student/StudioAssignmentsPage'))
 const loadSettingsPage = lazyPage(() => import('@/pages/student/SettingsPage'))
 const loadSettings = loadSettingsPage.load
@@ -93,21 +94,28 @@ const loadStudentsPage = lazyPage(() => import('@/pages/teacher/StudentsPage'))
 const loadStudents = loadStudentsPage.load
 const TeacherDashboard = loadTeacherDashboardPage.Page
 const StudentsPage = loadStudentsPage.Page
-const StudentDetailPage = lazy(() => import('@/pages/teacher/StudentDetailPage'))
+const loadStudentDetailPage = lazyPage(() => import('@/pages/teacher/StudentDetailPage'))
+const StudentDetailPage = loadStudentDetailPage.Page
 const ResearchPage = lazy(() => import('@/pages/teacher/ResearchPage'))
-const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPage'))
+const loadTeacherSettingsPage = lazyPage(() => import('@/pages/teacher/TeacherSettingsPage'))
+const TeacherSettingsPage = loadTeacherSettingsPage.Page
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
 const StudioSettingsPage = lazy(() => import('@/pages/teacher/StudioSettingsPage'))
-const LeaguePlayerPage = lazy(() => import('@/pages/student/LeaguePlayerPage'))
-const BadgesPage = lazy(() => import('@/pages/student/BadgesPage'))
+const loadLeaguePlayerPage = lazyPage(() => import('@/pages/student/LeaguePlayerPage'))
+const LeaguePlayerPage = loadLeaguePlayerPage.Page
+const loadBadgesPage = lazyPage(() => import('@/pages/student/BadgesPage'))
+const BadgesPage = loadBadgesPage.Page
 const loadCalendarPage = lazyPage(() => import('@/pages/teacher/CalendarPage'))
 const loadCalendar = loadCalendarPage.load
 const CalendarPage = loadCalendarPage.Page
 const loadReviewPage = lazyPage(() => import('@/pages/teacher/ReviewPage'))
 const ReviewPage = loadReviewPage.Page
-const FamiliesPage = lazy(() => import('@/pages/teacher/FamiliesPage'))
-const ReportsPage = lazy(() => import('@/pages/teacher/ReportsPage'))
-const TeacherMessagesPage = lazy(() => import('@/pages/teacher/MessagesPage'))
+const loadFamiliesPage = lazyPage(() => import('@/pages/teacher/FamiliesPage'))
+const FamiliesPage = loadFamiliesPage.Page
+const loadReportsPage = lazyPage(() => import('@/pages/teacher/ReportsPage'))
+const ReportsPage = loadReportsPage.Page
+const loadTeacherMessagesPage = lazyPage(() => import('@/pages/teacher/MessagesPage'))
+const TeacherMessagesPage = loadTeacherMessagesPage.Page
 const MorePage = lazy(() => import('@/pages/teacher/MorePage'))
 
 /**
@@ -122,10 +130,22 @@ const OPENING: [RegExp, () => Promise<unknown>][] = [
   [/^\/student\/practice\/progress/, loadPracticeProgress],
   [/^\/student\/session/, loadSession],
   [/^\/student\/library/, loadLibrary],
+  [/^\/student\/league\/./, loadLeaguePlayerPage.load],
   [/^\/student\/league/, loadLeague],
   [/^\/student\/streak/, loadStreak],
+  [/^\/student\/practice\/badges/, loadBadgesPage.load],
+  [/^\/student\/studio\/messages/, loadStudioMessagesPage.load],
+  [/^\/student\/studio/, loadStudio],
+  [/^\/student\/settings\/?$/, loadSettings],
   [/^\/teacher\/?$/, loadTeacherDashboard],
   [/^\/teacher\/calendar/, loadCalendar],
+  [/^\/teacher\/students\/./, loadStudentDetailPage.load],
+  [/^\/teacher\/students/, loadStudents],
+  [/^\/teacher\/review/, loadReviewPage.load],
+  [/^\/teacher\/messages/, loadTeacherMessagesPage.load],
+  [/^\/teacher\/reports/, loadReportsPage.load],
+  [/^\/teacher\/families/, loadFamiliesPage.load],
+  [/^\/teacher\/settings\/?$/, loadTeacherSettingsPage.load],
 ]
 /**
  * Ready when the page being opened has its code — main.tsx waits on it
@@ -144,8 +164,15 @@ setOpeningPage(OPENING.find(([path]) => path.test(window.location.pathname))?.[1
  * asked to keep light.
  */
 const NEXT_TABS = {
-  student: [loadPracticeLog, loadPracticeProgress, loadSession, loadLeague, loadStreak, loadLibrary, loadStudentDashboard, loadSettings, loadStudio],
-  teacher: [loadTeacherDashboard, loadStudents, loadCalendar, loadReviewPage.load],
+  student: [
+    loadPracticeLog, loadPracticeProgress, loadSession, loadLeague, loadStreak, loadLibrary, loadStudentDashboard, loadSettings, loadStudio,
+    // One tap further in from the tabs above.
+    loadLeaguePlayerPage.load, loadBadgesPage.load, loadStudioMessagesPage.load,
+  ],
+  teacher: [
+    loadTeacherDashboard, loadStudents, loadCalendar, loadReviewPage.load,
+    loadStudentDetailPage.load, loadTeacherMessagesPage.load, loadReportsPage.load, loadFamiliesPage.load, loadTeacherSettingsPage.load,
+  ],
 }
 function usePrefetchTabs(role: 'student' | 'teacher' | undefined) {
   useEffect(() => {

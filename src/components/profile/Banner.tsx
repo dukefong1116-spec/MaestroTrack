@@ -20,7 +20,7 @@ export default function Banner({ image, color, height, children }: {
   const fill = color ? `color-mix(in srgb, ${color} var(--clay-banner-mix), #000)` : 'var(--clay-accent-soft)'
   return (
     <div className="relative overflow-hidden" style={{ height, background: fill, borderBottom: '1px solid var(--clay-line)' }}>
-      {image && <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+      {image && <img src={image} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
       {children}
     </div>
   )

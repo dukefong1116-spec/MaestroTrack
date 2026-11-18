@@ -196,7 +196,7 @@ export function Empty({ children }: { children: ReactNode }) {
 /** A student's profile photo when they have set one; their initials on a colour when not. */
 export function Avatar({ name, color, size = 34, src }: { name: string; color?: string; size?: number; src?: string | null }) {
   if (src) {
-    return <img src={src} alt="" aria-hidden="true" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+    return <img src={src} alt="" aria-hidden="true" loading="lazy" decoding="async" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
   }
   const initials = name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   return (

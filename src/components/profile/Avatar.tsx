@@ -42,6 +42,7 @@ export default function Avatar({ src, name, instrument, size = 60, className }: 
         // reader rather than help.
         alt=""
         src={src}
+        decoding="async"
         className={cn('shrink-0 object-cover', className)}
         style={{ ...common, background: 'var(--clay-bg-deep)' }}
       />

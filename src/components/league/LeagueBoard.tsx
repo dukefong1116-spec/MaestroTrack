@@ -39,7 +39,7 @@ const ROW_REST = 56
 const MEDALS: [string, string][] = [['#F5C542', '#6E5000'], ['#CDD6DF', '#465565'], ['#E3A672', '#6B3A12']]
 
 function Face({ name, photo, size, bg, fg }: { name: string; photo?: string | null; size: number; bg: string; fg: string }) {
-  if (photo) return <img src={photo} alt="" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
+  if (photo) return <img src={photo} alt="" loading="lazy" decoding="async" className="shrink-0 rounded-full object-cover" style={{ width: size, height: size }} />
   return (
     <span className="flex shrink-0 items-center justify-center rounded-full font-bold" style={{ width: size, height: size, fontSize: Math.round(size * 0.42), background: bg, color: fg }}>
       {name.charAt(0).toUpperCase()}

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import BadgeMoment from './BadgeMoment'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { useGamification } from '@/hooks/useGamification'
 import { useMomentStore } from '@/stores/momentStore'
 
@@ -12,6 +11,9 @@ import { useMomentStore } from '@/stores/momentStore'
  * Waits only while another celebration has the screen (the session's own
  * moments), then shows; once showing it stays until dismissed.
  */
+/** The animation and its artwork arrive only when there is a badge to show. */
+const BadgeMoment = lazy(() => import('./BadgeMoment'))
+
 export default function BadgeMomentHost() {
   const game = useGamification()
   const busy = useMomentStore((s) => s.open)
@@ -23,11 +25,17 @@ export default function BadgeMomentHost() {
     if (!badge && showing) setShowing(false)
   }, [badge, showing, busy])
 
+  // Once loaded it stays mounted, so dismissing still plays the exit.
+  const [wanted, setWanted] = useState(false)
+  useEffect(() => { if (badge) setWanted(true) }, [badge])
+  if (!badge && !wanted) return null
   return (
+    <Suspense fallback={null}>
     <BadgeMoment
       badge={badge ? { id: badge.id, label: badge.label, description: badge.description } : null}
       open={showing && !!badge}
       onDismiss={() => { setShowing(false); game.dismissBadge() }}
     />
+    </Suspense>
   )
 }
