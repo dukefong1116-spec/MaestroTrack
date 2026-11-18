@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import Moment from './Moment'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import BadgeArt, { badgePalette, type BadgeArtName } from '@/components/badges/BadgeArt'
-import { playBadgeFanfare } from '@/lib/utils/sound'
+import { playBadgeFanfare, playBadgeFlip, playBadgeShatter, playBadgeCharge } from '@/lib/utils/sound'
 
 export interface BadgeAward {
   id: BadgeArtName
@@ -27,6 +27,8 @@ const STYLES: Style[] = ['flip', 'shatter', 'charge']
 /** When the colour arrives, per style (ms): the sparks, sound and words follow it. */
 const REVEAL: Record<Style, number> = { flip: 1350, shatter: 1050, charge: 1480 }
 const SIZE = 170
+/** Each reveal's own sound, timed to it from the moment it opens. */
+const SOUND: Record<Style, () => void> = { flip: playBadgeFlip, shatter: playBadgeShatter, charge: playBadgeCharge }
 
 /** The grey shell's pieces, as polygons over the badge (percent). */
 const SHARDS = [
@@ -55,7 +57,9 @@ export default function BadgeMoment({
     if (!open || !badge) return
     setPhase('in')
     const at = reduced ? 0 : REVEAL[style]
-    const timers = [setTimeout(() => { setPhase('shown'); playBadgeFanfare() }, at)]
+    if (reduced) playBadgeFanfare()
+    else SOUND[style]()
+    const timers = [setTimeout(() => setPhase('shown'), at)]
     if (style === 'shatter' && !reduced) timers.push(setTimeout(() => setPhase('crack'), 600))
     return () => timers.forEach(clearTimeout)
   }, [open, badge, style, reduced])

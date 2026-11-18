@@ -89,8 +89,8 @@ export function useGamification(): Gamification {
   // The level goes in rather than being patched over the top afterwards —
   // buildBadgeContext no longer invents one.
   const badgeCtx = useMemo(
-    () => buildBadgeContext(sessions, plan, progression.level, { recordings: recordingCount, masteredPieces: masteredCount }),
-    [sessions, plan, progression.level, recordingCount, masteredCount]
+    () => buildBadgeContext(sessions, plan, progression.level, { recordings: recordingCount, masteredPieces: masteredCount, kept: [...Object.keys(earnedAt), ...seen] }),
+    [sessions, plan, progression.level, recordingCount, masteredCount, earnedAt, seen]
   )
   const badges = useMemo(() => earnedBadges(badgeCtx), [badgeCtx])
   const families = useMemo(() => badgeFamilies(badgeCtx), [badgeCtx])
@@ -184,9 +184,11 @@ export function useGamification(): Gamification {
       .catch(() => {})
   }, [profile?.uid, profile?.role, profile?.badgePinsTouched, pinned, families, dataLive, setProfile])
 
+  const unseenQueue = badgeQueue.filter((b) => !seen.includes(b.id))
+
   function dismissBadge() {
-    const shown = badgeQueue[0]
-    setBadgeQueue((q) => q.slice(1))
+    const shown = unseenQueue[0]
+    setBadgeQueue((q) => q.filter((b) => b.id !== shown?.id))
     if (!shown || !profile?.uid) return
 
     markBadgesSeen(profile.uid, [shown.id])
@@ -239,12 +241,14 @@ export function useGamification(): Gamification {
     badges,
     badgeCtx,
     families,
-    // A freeze always takes priority — it explains why the streak survived.
-    pendingBadge: pendingFreeze ? null : (badgeQueue[0] ?? null),
+    // Shown the moment it is won, from any page (BadgeMomentHost). The
+    // queue is read against `seen`, so every copy of this hook drops a
+    // badge once any of them has shown it.
+    pendingBadge: unseenQueue[0] ?? null,
     pendingFreeze,
     // One moment at a time, and mastery yields to both — the streak rescue
     // and the badge auto-dismiss, whereas this one waits for an answer.
-    pendingMastery: pendingFreeze || badgeQueue.length > 0 ? null : pendingMastery,
+    pendingMastery: pendingFreeze || unseenQueue.length > 0 ? null : pendingMastery,
     dismissBadge,
     dismissFreeze: () => useStreakMoments.getState().setFreeze(null),
     dismissMastery,

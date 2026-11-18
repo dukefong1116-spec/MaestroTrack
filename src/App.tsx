@@ -13,6 +13,7 @@ import { useLessonDaySync } from '@/hooks/useLessonDaySync'
 import { useLeagueSync } from '@/hooks/useLeagueSync'
 import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
+import BadgeMomentHost from '@/components/celebration/BadgeMomentHost'
 import StudioJoinedMoment from '@/components/celebration/StudioJoinedMoment'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
@@ -98,6 +99,7 @@ const TeacherSettingsPage = lazy(() => import('@/pages/teacher/TeacherSettingsPa
 const TeacherProfilePage = lazy(() => import('@/pages/teacher/TeacherProfilePage'))
 const StudioSettingsPage = lazy(() => import('@/pages/teacher/StudioSettingsPage'))
 const LeaguePlayerPage = lazy(() => import('@/pages/student/LeaguePlayerPage'))
+const BadgesPage = lazy(() => import('@/pages/student/BadgesPage'))
 const loadCalendarPage = lazyPage(() => import('@/pages/teacher/CalendarPage'))
 const loadCalendar = loadCalendarPage.load
 const CalendarPage = loadCalendarPage.Page
@@ -203,6 +205,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       <LeagueResultGate />
       {/* "You're in": a teacher accepted you, seen from any page. */}
       <StudioJoinedMoment />
+      {/* A badge, the moment it is won, from any page. */}
+      {profile?.role === 'student' && <BadgeMomentHost />}
     </>
   )
 }
@@ -262,6 +266,7 @@ function AppRoutes() {
         <Route path="library" element={<LibraryPage />} />
         {/* Progress lives inside Practice now; League took its tab. */}
         <Route path="practice/progress" element={<PracticeProgressPage />} />
+        <Route path="practice/badges" element={<BadgesPage />} />
         <Route path="progress" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="league" element={<LeaguePage />} />
         <Route path="league/:uid" element={<LeaguePlayerPage />} />

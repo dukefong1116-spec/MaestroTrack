@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { format } from 'date-fns'
-import { xpForLevel, levelForXp, computeProgression, BADGES, buildBadgeContext, earnedBadges } from '../progression'
+import { xpForLevel, levelForXp, computeProgression, BADGES, buildBadgeContext, earnedBadges, badgeProgress } from '../progression'
 import type { PracticeSession } from '@/types'
 
 const d = (n: number) => { const x = new Date(); x.setDate(x.getDate() - n); return format(x, 'yyyy-MM-dd') }
@@ -292,5 +292,21 @@ describe('the newer badges', () => {
       tiers.forEach((b, i) => expect(b.tier).toBe(i + 1))
       for (let i = 1; i < tiers.length; i++) expect(tiers[i].target).toBeGreaterThan(tiers[i - 1].target)
     }
+  })
+})
+
+describe('a badge, once won, is kept', () => {
+  it('stays earned when what earned it is gone', () => {
+    const before = earnedBadges(buildBadgeContext([], [], 1, { masteredPieces: 1 })).map((b) => b.id)
+    expect(before).toContain('mastered')
+    // The piece is deleted: nothing counts toward it any more, but it was won.
+    const after = earnedBadges(buildBadgeContext([], [], 1, { masteredPieces: 0, kept: ['mastered'] })).map((b) => b.id)
+    expect(after).toContain('mastered')
+    expect(earnedBadges(buildBadgeContext([], [], 1, { masteredPieces: 0 })).map((b) => b.id)).not.toContain('mastered')
+  })
+  it('shows as complete, not as progress back toward it', () => {
+    const ctx = buildBadgeContext([], [], 1, { kept: ['century'] })
+    const century = BADGES.find((b) => b.id === 'century')!
+    expect(badgeProgress(century, ctx)).toBe(1)
   })
 })

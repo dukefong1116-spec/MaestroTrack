@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Volume2, VolumeX } from 'lucide-react'
 import { isSoundMuted, setSoundMuted } from '@/lib/utils/sound'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
+import { useHoldMoment } from '@/stores/momentStore'
 
 interface MomentProps {
   open: boolean
@@ -34,6 +35,7 @@ export default function Moment({
 }: MomentProps) {
   const [muted, setMuted] = useState(isSoundMuted)
   const reduced = usePrefersReducedMotion()
+  useHoldMoment(open)
 
   useEffect(() => {
     if (!open) return

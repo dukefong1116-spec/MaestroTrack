@@ -411,3 +411,128 @@ export function playSubmitChime(): void {
   noise.start(at)
   envelope(ng, at, 0.1, 0.02, 0.38)
 }
+
+/* ── Badge unlocks: one sound per reveal ─────────────────────────────
+ * Each is timed to its animation in BadgeMoment and starts when the
+ * moment opens, so the build-up is heard while it is seen. Every one
+ * lands on a bright chord, in a key picked at random from a few, so two
+ * unlocks in a row never sound identical.
+ */
+
+const BADGE_KEYS = [392.0, 440.0, 349.23, 523.25] // G4, A4, F4, C5
+
+function badgeBus(audio: AudioContext, level = 0.85): GainNode {
+  const bus = audio.createGain()
+  bus.gain.value = level
+  bus.connect(audio.destination)
+  return bus
+}
+
+function tone(audio: AudioContext, bus: AudioNode, freq: number, at: number, dur: number, peak: number, type: OscillatorType = 'triangle') {
+  const g = audio.createGain()
+  g.connect(bus)
+  const o = audio.createOscillator()
+  o.type = type
+  o.frequency.value = freq
+  o.connect(g)
+  o.start(at)
+  o.stop(at + dur + 0.05)
+  envelope(g, at, peak, 0.008, dur)
+}
+
+function burst(audio: AudioContext, bus: AudioNode, at: number, dur: number, freq: number, peak: number) {
+  const len = Math.floor(audio.sampleRate * dur)
+  const buf = audio.createBuffer(1, len, audio.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len)
+  const src = audio.createBufferSource()
+  src.buffer = buf
+  const hp = audio.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = freq
+  const g = audio.createGain()
+  src.connect(hp).connect(g).connect(bus)
+  envelope(g, at, peak, 0.004, dur)
+  src.start(at)
+  src.stop(at + dur + 0.05)
+}
+
+/** The landing: a major chord with a sparkle on top. */
+function landing(audio: AudioContext, bus: AudioNode, root: number, at: number) {
+  for (const s of [0, 4, 7, 12]) tone(audio, bus, semitone(root, s), at, 1.2, 0.09)
+  for (let i = 0; i < 5; i++) tone(audio, bus, semitone(root, 24 + [0, 4, 7, 12, 16][i]), at + 0.05 + i * 0.06, 0.4, 0.035, 'sine')
+}
+
+/** Flip: a coin's quickening ting-ting-ting as it spins, then the chord. */
+export function playBadgeFlip(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  const bus = badgeBus(audio)
+  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
+  const now = audio.currentTime
+  // The spin runs from about 0.6s to 1.25s, the pings closing up as it goes.
+  const pings = [0.6, 0.76, 0.89, 0.99, 1.07, 1.13, 1.18]
+  pings.forEach((t, i) => tone(audio, bus, semitone(root, 19 + (i % 2) * 5), now + t, 0.12, 0.05, 'sine'))
+  landing(audio, bus, root, now + 1.35)
+}
+
+/** Shatter: a creak as it cracks, glass breaking, then the chord. */
+export function playBadgeShatter(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  const bus = badgeBus(audio)
+  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
+  const now = audio.currentTime
+  // Crack, at 0.6s: a short dry tick and a low knock.
+  burst(audio, bus, now + 0.6, 0.06, 2500, 0.25)
+  tone(audio, bus, 110, now + 0.6, 0.18, 0.12, 'square')
+  // Break, at 1.05s: bright noise and a scatter of glassy pings falling away.
+  burst(audio, bus, now + 1.05, 0.45, 4000, 0.35)
+  for (let i = 0; i < 8; i++) {
+    tone(audio, bus, 1800 + Math.random() * 2600, now + 1.06 + i * 0.035 + Math.random() * 0.03, 0.18, 0.03, 'sine')
+  }
+  landing(audio, bus, root, now + 1.12)
+}
+
+/** Charge: a rising hum while the ring fills, a zap, then the chord. */
+export function playBadgeCharge(): void {
+  if (isSoundMuted()) return
+  const audio = getContext()
+  if (!audio) return
+  const bus = badgeBus(audio)
+  const root = BADGE_KEYS[Math.floor(Math.random() * BADGE_KEYS.length)]
+  const now = audio.currentTime
+  const start = now + 0.35
+  const end = now + 1.45
+  // The hum: a sawtooth swept up an octave and a half through a filter that opens with it.
+  const o = audio.createOscillator()
+  o.type = 'sawtooth'
+  o.frequency.setValueAtTime(root / 2, start)
+  o.frequency.exponentialRampToValueAtTime(root * 1.4, end)
+  const lp = audio.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(400, start)
+  lp.frequency.exponentialRampToValueAtTime(3500, end)
+  const g = audio.createGain()
+  g.gain.setValueAtTime(0.0001, start)
+  g.gain.exponentialRampToValueAtTime(0.06, start + 0.15)
+  g.gain.setValueAtTime(0.07, end - 0.05)
+  g.gain.exponentialRampToValueAtTime(0.0001, end + 0.05)
+  o.connect(lp).connect(g).connect(bus)
+  o.start(start)
+  o.stop(end + 0.1)
+  // Zap at full: a quick downward chirp and a crackle.
+  const z = audio.createOscillator()
+  z.type = 'square'
+  z.frequency.setValueAtTime(2400, end)
+  z.frequency.exponentialRampToValueAtTime(300, end + 0.12)
+  const zg = audio.createGain()
+  z.connect(zg).connect(bus)
+  envelope(zg, end, 0.06, 0.003, 0.14)
+  z.start(end)
+  z.stop(end + 0.2)
+  burst(audio, bus, end, 0.12, 3000, 0.15)
+  landing(audio, bus, root, end + 0.03)
+}

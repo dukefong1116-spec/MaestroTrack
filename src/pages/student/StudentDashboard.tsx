@@ -16,7 +16,6 @@ import { normaliseStatus } from '@/lib/utils/assignments'
 import NudgeList from '@/components/common/NudgeList'
 import { usePracticeNudges } from '@/hooks/usePracticeNudges'
 import WeekStrip from '@/components/streak/WeekStrip'
-import BadgeMoment from '@/components/celebration/BadgeMoment'
 import FreezeMoment from '@/components/celebration/FreezeMoment'
 import MasteryMoment from '@/components/celebration/MasteryMoment'
 import { useGamification } from '@/hooks/useGamification'
@@ -333,7 +332,8 @@ export default function StudentDashboard() {
       <SubmitSheet assignment={opened} open={!!opened} onClose={() => setOpened(null)} />
 
       <FreezeMoment
-        open={!!game.pendingFreeze}
+        // After any badge on screen: one celebration at a time.
+        open={!!game.pendingFreeze && !game.pendingBadge}
         streak={game.pendingFreeze?.streak ?? 0}
         days={game.pendingFreeze?.days ?? []}
         remaining={game.pendingFreeze?.remaining ?? 0}
@@ -344,15 +344,6 @@ export default function StudentDashboard() {
         open={!!game.pendingMastery}
         onConfirm={game.confirmMastery}
         onDismiss={game.dismissMastery}
-      />
-      <BadgeMoment
-        badge={game.pendingBadge ? {
-          id: game.pendingBadge.id,
-          label: game.pendingBadge.label,
-          description: game.pendingBadge.description,
-        } : null}
-        open={!!game.pendingBadge}
-        onDismiss={game.dismissBadge}
       />
     </div>
   )

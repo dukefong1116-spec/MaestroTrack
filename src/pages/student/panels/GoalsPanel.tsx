@@ -13,9 +13,11 @@ import { getTheme } from '@/lib/utils/instruments'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import BadgeSheet from '@/components/badges/BadgeSheet'
 import { usePinnedBadges } from '@/hooks/usePinnedBadges'
-import { publishAndShare } from '@/lib/share/link'
+import { useShareBadge } from '@/hooks/useShareBadge'
+import { useNavigate } from 'react-router-dom'
 import { BADGES } from '@/lib/utils/progression'
-import { Block, Legend } from '@/components/ui/Panel'
+import { ChevronRight } from 'lucide-react'
+import { Block } from '@/components/ui/Panel'
 import ProgressRing from '@/components/ui/ProgressRing'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -54,32 +56,12 @@ export default function GoalsPanel() {
   const rules = ruleDraft ?? chosenRules
   const [openFamily, setOpenFamily] = useState<BadgeFamily | null>(null)
   const { pinned, togglePin } = usePinnedBadges()
-  const [shareNote, setShareNote] = useState<string | null>(null)
-
-  /**
-   * Publishing a badge as a link.
-   *
-   * Only the badge's own name and the date it was won leave the device —
-   * no session, no notes, no piece. The name rides along on the same
-   * opt-in the session card uses, which is on by default.
-   */
-  async function shareBadge(id: string) {
-    const uid = profile?.uid
-    const badge = BADGES.find((b) => b.id === id)
-    if (!uid || !badge) return
-    const wonAt = earnedAt[id]
-    const outcome = await publishAndShare(uid, 'badge', {
-      minutes: 0,
-      dateLabel: wonAt ? new Date(wonAt).toLocaleDateString(undefined, { dateStyle: 'long' }) : '',
-      ...(profile?.displayName ? { name: profile.displayName } : {}),
-      badgeId: badge.id,
-      badgeLabel: badge.label,
-    }, `I earned ${badge.label} on MutifTrack`)
-    if (outcome === 'cancelled') return
-    setShareNote(outcome === 'failed' ? 'Could not publish the link.' : outcome === 'shared' ? 'Shared' : 'Link copied')
-    setTimeout(() => setShareNote(null), 2200)
-  }
+  const { shareBadge, shareNote } = useShareBadge()
+  const navigate = useNavigate()
   const { families, badgeCtx } = game
+  const shown = useMemo(() => [...families]
+    .sort((a, b) => Number(!!b.highest) - Number(!!a.highest) || b.progress - a.progress)
+    .slice(0, 6), [families])
   const earnedAt = profile?.badgeEarnedAt ?? {}
 
   const streak = game.streak
@@ -227,9 +209,20 @@ export default function GoalsPanel() {
       </Block>
 
       <Block>
-        <Legend title="Achievement badges" />
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>Achievement badges</p>
+          <button
+            type="button"
+            onClick={() => navigate('/student/practice/badges')}
+            className="inline-flex items-center gap-0.5 text-[13px] font-bold"
+            style={{ color: 'var(--clay-accent-ink)' }}
+          >
+            All {BADGES.length} <ChevronRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+        {/* A few here — what you hold, then what is closest — and the rest on All. */}
         <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3">
-          {families.map((fam) => {
+          {shown.map((fam) => {
             const got = !!fam.highest
             const pct = Math.round(fam.progress * 100)
             return (

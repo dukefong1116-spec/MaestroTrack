@@ -286,6 +286,12 @@ export interface BadgeContext {
   fullWeekends: number
   recordings: number
   masteredPieces: number
+  /**
+   * Badges already won (the ids in badgeEarnedAt). Won is won: deleting the
+   * mastered piece, the recording or old sessions afterwards does not take
+   * a badge back, and so winning it "again" cannot replay the celebration.
+   */
+  kept?: string[]
 }
 
 export const BADGES: BadgeDef[] = [
@@ -329,12 +335,12 @@ export const BADGES: BadgeDef[] = [
 
 /** Won, or not. The one definition — nothing else decides this. */
 export function isEarned(badge: BadgeDef, ctx: BadgeContext): boolean {
-  return badge.current(ctx) >= badge.target
+  return badge.current(ctx) >= badge.target || !!ctx.kept?.includes(badge.id)
 }
 
 /** 0 to 1, for the bar. Capped, so an overshoot does not overflow it. */
 export function badgeProgress(badge: BadgeDef, ctx: BadgeContext): number {
-  if (badge.target <= 0) return 1
+  if (badge.target <= 0 || ctx.kept?.includes(badge.id)) return 1
   return Math.max(0, Math.min(1, badge.current(ctx) / badge.target))
 }
 
@@ -350,7 +356,7 @@ export function buildBadgeContext(
   sessions: PracticeSession[],
   plan: StreakPlan | string[] = [],
   level = 1,
-  extra: { recordings?: number; masteredPieces?: number } = {}
+  extra: { recordings?: number; masteredPieces?: number; kept?: string[] } = {}
 ): BadgeContext {
   const { current, longest } = computeStreak(sessions, plan)
   const totalMinutes = sessions.reduce((s, p) => s + p.durationMinutes, 0)
@@ -365,6 +371,7 @@ export function buildBadgeContext(
     fullWeekends: fullWeekends(sessions),
     recordings: extra.recordings ?? 0,
     masteredPieces: extra.masteredPieces ?? 0,
+    kept: extra.kept ?? [],
   }
 }
 

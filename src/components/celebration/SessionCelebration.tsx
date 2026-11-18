@@ -12,6 +12,7 @@ import { ThawFlame } from '@/components/streak/FlameIce'
 import { lookReachedAt } from '@/lib/streak/looks'
 import { playFreezeEarned } from '@/lib/streak/sounds'
 import type { InstrumentType } from '@/types'
+import { useHoldMoment } from '@/stores/momentStore'
 
 interface SessionCelebrationProps {
   reward: SessionReward | null
@@ -59,6 +60,7 @@ export default function SessionCelebration({
   extra,
 }: SessionCelebrationProps) {
   const [muted, setMuted] = useState(isSoundMuted)
+  useHoldMoment(!!reward)
 
   const reduced =
     typeof window !== 'undefined' &&
