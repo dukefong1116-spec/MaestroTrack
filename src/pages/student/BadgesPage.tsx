@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, ChevronLeft } from 'lucide-react'
+import { Check, ChevronLeft, Pin } from 'lucide-react'
 import PageHeader from '@/components/common/PageHeader'
 import BadgeArt from '@/components/badges/BadgeArt'
 import BadgeSheet from '@/components/badges/BadgeSheet'
@@ -27,7 +27,7 @@ export default function BadgesPage() {
   const { families, badgeCtx } = useGamification()
   const { pinned, togglePin } = usePinnedBadges()
   const { shareBadge, shareNote } = useShareBadge()
-  const [open, setOpen] = useState<BadgeFamily | null>(null)
+  const [open, setOpen] = useState<{ family: BadgeFamily; id: string } | null>(null)
   const earnedAt = profile?.badgeEarnedAt ?? {}
   const won = BADGES.filter((b) => isEarned(b, badgeCtx)).length
 
@@ -50,10 +50,21 @@ export default function BadgesPage() {
                   <button
                     key={b.id}
                     type="button"
-                    onClick={() => setOpen(fam.family)}
+                    onClick={() => setOpen({ family: fam.family, id: b.id })}
                     className="flex flex-col items-center text-center transition-transform active:scale-[.97]"
                   >
-                    <BadgeArt name={b.id} size={72} locked={!got} />
+                    <span className="relative">
+                      <BadgeArt name={b.id} size={72} locked={!got} />
+                      {got && pinned.includes(b.id) && (
+                        <span
+                          className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full"
+                          style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', border: '2px solid var(--clay-surface)' }}
+                          aria-label="Pinned to Today"
+                        >
+                          <Pin size={12} aria-hidden="true" />
+                        </span>
+                      )}
+                    </span>
                     <p className="mt-2 text-[13px] font-semibold leading-tight" style={{ color: got ? 'var(--clay-ink)' : 'var(--clay-dim)' }}>{b.label}</p>
                     {got ? (
                       <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--clay-success-fg)' }}>
@@ -78,7 +89,8 @@ export default function BadgesPage() {
       </Panel>
 
       <BadgeSheet
-        family={families.find((f) => f.family === open) ?? null}
+        family={families.find((f) => f.family === open?.family) ?? null}
+        focusId={open?.id}
         ctx={badgeCtx}
         pinned={pinned}
         earnedAt={earnedAt}

@@ -21,9 +21,15 @@ function amount(value: number, unit: string): string {
 }
 
 export default function BadgeSheet({
-  family, ctx, pinned, earnedAt, onClose, onTogglePin, onShare,
+  family, focusId, ctx, pinned, earnedAt, onClose, onTogglePin, onShare,
 }: {
   family: FamilyState | null
+  /**
+   * The badge that was tapped. Without it the sheet is about the family's
+   * own representative — and on the All page, where every tier is its own
+   * tile, that showed one badge's pin under another badge's name.
+   */
+  focusId?: string | null
   ctx: BadgeContext
   pinned: string[]
   earnedAt: Record<string, string>
@@ -34,11 +40,12 @@ export default function BadgeSheet({
   if (!family) return null
 
   // The tier on show: the one you hold, or the one you are working toward.
-  const focus = family.display
+  const focus = family.tiers.find((t) => t.id === focusId) ?? family.display
   const focusEarned = isEarned(focus, ctx)
-  const target = family.next ?? focus
+  const target = focusId ? focus : family.next ?? focus
   const pct = Math.round(badgeProgress(target, ctx) * 100)
-  const isPinned = pinned.includes(focus.id)
+  // Today shows only pins that are earned; call it pinned on exactly those.
+  const isPinned = focusEarned && pinned.includes(focus.id)
   const full = pinned.length >= MAX_PINNED && !isPinned
   const wonAt = earnedAt[focus.id]
 
@@ -60,12 +67,13 @@ export default function BadgeSheet({
       </div>
 
       {/* Progress toward whatever is still open */}
-      {family.next && (
+      {/* A tapped badge not yet won shows its own progress; otherwise the family's next rung. */}
+      {(focusId ? !focusEarned : !!family.next) && (
         <div className="mt-6">
           <div className="mb-1.5 flex items-baseline justify-between text-xs" style={{ color: 'var(--clay-dim)' }}>
-            <span>Next: {family.next.label}</span>
+            <span>{focusId ? 'Progress' : `Next: ${target.label}`}</span>
             <span className="tabular-nums">
-              {amount(family.next.current(ctx), family.next.unit)} of {amount(family.next.target, family.next.unit)}
+              {amount(target.current(ctx), target.unit)} of {amount(target.target, target.unit)}
             </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
