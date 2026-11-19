@@ -156,7 +156,7 @@ export function whatToShow(i: TourInput): Decision {
       })
       case 'today': return step({
         id: 'today', target: 'week-ring', button: 'Next', block: true,
-        text: 'This is Today 📅 your week at a glance. It fills up as you practice.',
+        text: 'This is Today 🔥 your streak, your week and today’s goal at a glance.',
       })
       case 'start': return step({
         id: 'start', target: 'start-practising', mustTap: true, block: true,

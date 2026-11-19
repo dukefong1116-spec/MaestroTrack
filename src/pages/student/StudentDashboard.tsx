@@ -8,19 +8,16 @@ import PinnedBadges from '@/components/badges/PinnedBadges'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { getAnalyticsSummary } from '@/lib/utils/analytics'
-import { getTheme } from '@/lib/utils/instruments'
 import AssignmentCard from '@/components/assignments/AssignmentCard'
 import SubmitSheet from '@/components/assignments/SubmitSheet'
 import { useAssignments } from '@/hooks/useAssignments'
 import { normaliseStatus } from '@/lib/utils/assignments'
 import NudgeList from '@/components/common/NudgeList'
 import { usePracticeNudges } from '@/hooks/usePracticeNudges'
-import WeekStrip from '@/components/streak/WeekStrip'
 import FreezeMoment from '@/components/celebration/FreezeMoment'
 import MasteryMoment from '@/components/celebration/MasteryMoment'
 import { useGamification } from '@/hooks/useGamification'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
-import ProgressRing from '@/components/ui/ProgressRing'
 import Avatar from '@/components/profile/Avatar'
 import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import { useStreak } from '@/hooks/useStreak'
@@ -88,7 +85,6 @@ export default function StudentDashboard() {
   const comeback = live.comeback && !live.comeback.complete && freezesToSpend(live).length === 0
     ? live.comeback
     : null
-  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
 
   const summary = useMemo(() =>
     getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300),
@@ -125,16 +121,18 @@ export default function StudentDashboard() {
   // around it has to ask the same question or it draws an empty rule.
   const showNudges = profile?.notify?.nudges !== false && nudges.length > 0
 
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const firstName = (profile?.displayName ?? '').trim().split(/\s+/)[0] || 'there'
+  // Today's minutes against a seventh of the weekly goal.
+  const dailyGoal = Math.max(1, Math.round(weeklyGoal / 7))
+  const todayMinutes = sessions.filter((x) => x.date.slice(0, 10) === live.today).reduce((a, x) => a + x.durationMinutes, 0)
+  const goalReached = todayMinutes >= dailyGoal
 
   return (
     <div className="space-y-5">
-      {/* Who you are is one line. It was a third of the screen, spent on a
-          greeting nobody needs told twice. */}
-      <div className="flex items-center gap-3 px-1">
-        {/* Your photo opens Settings — for a student in a studio, the Studio
-            tab has Settings' place in the bar. */}
+      {/* Hello, with your face big enough to be yours. The photo opens
+          Settings — for a student in a studio, the Studio tab has
+          Settings' place in the bar. */}
+      <div className="flex items-center gap-4 px-1">
         <button
           type="button"
           onClick={() => navigate('/student/settings')}
@@ -146,14 +144,14 @@ export default function StudentDashboard() {
             src={profile?.avatar}
             name={profile?.displayName}
             instrument={profile?.instrument as InstrumentType | undefined}
-            size={40}
+            size={64}
           />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{greeting}</p>
-          <p className="truncate text-[16px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-            {profile?.displayName ?? 'Musician'}
+          <p className="truncate text-[26px] font-bold leading-tight" style={{ color: 'var(--clay-ink)' }}>
+            Hi {firstName}
           </p>
+          <div className="mt-1"><PinnedBadges size={26} /></div>
         </div>
         {/* The bell belongs to this screen, not to every screen. Gone at
             lg, where the sidebar carries it. */}
@@ -162,69 +160,66 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* The week, made the subject: it is the question the page answers. */}
       <Panel>
+        {/* The streak, made the subject: the flame, the count, the week. */}
         <Block first>
-          <div className="flex flex-col items-center" data-coach="week-ring">
-            <ProgressRing
-              percentage={summary.weeklyGoalPercentage}
-              size={178}
-              strokeWidth={14}
-              color={theme.primary}
-            >
-              <div className="text-center">
-                <p className="text-[40px] font-bold leading-none" style={{ color: 'var(--clay-ink)' }}>
-                  {summary.weeklyGoalPercentage}%
-                </p>
-                <p className="mt-1.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>of your week</p>
-              </div>
-            </ProgressRing>
-            <p className="mt-3.5 text-[19px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-              {summary.totalMinutesThisWeek} of {weeklyGoal} min
-            </p>
-            <p className="mt-0.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
-              {minutesLeft > 0
-                ? `${minutesLeft} to go · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`
-                : 'Goal reached'}
-            </p>
-          </div>
-        </Block>
-
-        {/* The seven days, labelled, so a gap in them is legible. */}
-        <Block>
-          <div data-coach="week-strip">
-            <WeekStrip days={game.week} className="justify-between" />
-          </div>
-        </Block>
-
-        {/* Streak and the badges you pinned share one line. The streak
-            opens its own page. */}
-        <Block>
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => navigate('/student/streak')}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity active:opacity-70"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center">
-                <StreakFlame streak={live.current} size={28} state={flameState} />
+          <button
+            type="button"
+            onClick={() => navigate('/student/streak')}
+            className="flex w-full flex-col items-center text-center transition-opacity active:opacity-80"
+            data-coach="week-ring"
+          >
+            <span className="flex h-[132px] items-center justify-center">
+              <StreakFlame streak={live.current} size={112} state={flameState} />
+            </span>
+            <span className="mt-1 flex items-baseline gap-2">
+              <span
+                className="text-[44px] font-extrabold leading-none tabular-nums"
+                style={{ color: live.flameFrozen && !live.todayLit ? '#2F6FA8' : 'var(--clay-ink)' }}
+              >
+                {live.current}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14.5px] font-semibold leading-tight" style={{ color: live.flameFrozen && !live.todayLit ? '#2F6FA8' : 'var(--clay-ink)' }}>
-                  {live.current > 0 ? `${live.current}-day streak` : 'No streak yet'}
+              <span className="text-[20px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+                day streak
+              </span>
+            </span>
+            <span className="mt-1.5 flex items-center gap-1.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
+              <span>{streakLine}</span>
+              {live.held > 0 && (
+                <span className="flex shrink-0 items-center gap-0.5 font-semibold" style={{ color: '#2F6FA8' }} aria-label={`${live.held} freeze${live.held === 1 ? '' : 's'}`}>
+                  · <Snowflake size={12} /> {live.held}
                 </span>
-                <span className="mt-0.5 flex items-center gap-1.5 text-[12px]" style={{ color: 'var(--clay-dim)' }}>
-                  <span className="truncate">{streakLine}</span>
-                  {live.held > 0 && (
-                    <span className="flex shrink-0 items-center gap-0.5 font-semibold" style={{ color: '#2F6FA8' }} aria-label={`${live.held} freeze${live.held === 1 ? '' : 's'}`}>
-                      · <Snowflake size={11} /> {live.held}
-                    </span>
-                  )}
+              )}
+            </span>
+          </button>
+
+          {/* The week as flames: lit where you practised, ice where a
+              freeze held it, a ring round today. */}
+          <button
+            type="button"
+            onClick={() => navigate('/student/streak')}
+            data-coach="week-strip"
+            aria-label="Your week"
+            className="mt-4 flex w-full items-end justify-between rounded-2xl px-3 py-3 transition-opacity active:opacity-80"
+            style={{ background: 'var(--clay-bg)' }}
+          >
+            {game.week.map((d) => (
+              <span key={d.date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
+                  style={d.isToday ? { boxShadow: '0 0 0 2px var(--clay-accent)' } : undefined}
+                >
+                  {d.frozen && !d.practised
+                    ? <span style={{ color: '#2F6FA8' }}><Snowflake size={20} /></span>
+                    : <StreakFlame streak={d.practised ? Math.max(1, live.current) : 0} size={24} state={d.practised ? 'lit' : 'unlit'} still />}
+                </span>
+                <span className="text-[11px] font-semibold" style={{ color: d.isToday ? 'var(--clay-ink)' : 'var(--clay-dim)' }}>
+                  {d.label}
                 </span>
               </span>
-            </button>
-            <PinnedBadges size={28} />
-          </div>
+            ))}
+          </button>
+
           {comeback && (
             <button
               type="button"
@@ -242,22 +237,15 @@ export default function StudentDashboard() {
           )}
         </Block>
 
-        {/* Timely prompts — previously buried on the Reminders page */}
-        {showNudges && (
-          <Block>
-            <NudgeList />
-          </Block>
-        )}
-
-        {/* A button, not a slab. */}
+        {/* Start practice: the one thing to do here. */}
         <Block>
           <button
             type="button"
             data-coach="start-practising"
             onClick={() => navigate('/student/session')}
-            className="flex min-h-[54px] w-full items-center justify-center gap-2.5 text-[16.5px] font-bold transition-transform active:scale-[.99]"
+            className="flex min-h-[58px] w-full items-center justify-center gap-2.5 text-[17px] font-bold transition-transform active:scale-[.99]"
             style={{
-              borderRadius: 'var(--clay-r-sm)',
+              borderRadius: 'var(--clay-r-md)',
               background: 'var(--clay-accent)',
               color: 'var(--clay-on-accent)',
             }}
@@ -266,6 +254,38 @@ export default function StudentDashboard() {
             {live.current > 0 ? 'Keep it going' : 'Start practising'}
           </button>
         </Block>
+
+        {/* Today's goal, as a bar that fills. */}
+        <Block>
+          <div className="flex items-baseline justify-between">
+            <p className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>
+              {goalReached ? 'Daily goal reached' : 'Daily goal'}
+            </p>
+            <p className="text-[13px] font-semibold tabular-nums" style={{ color: goalReached ? 'var(--clay-success-fg)' : 'var(--clay-dim)' }}>
+              {todayMinutes} / {dailyGoal} min
+            </p>
+          </div>
+          <div className="mt-2.5 h-3 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.min(100, Math.round((todayMinutes / Math.max(1, dailyGoal)) * 100))}%`,
+                background: goalReached ? 'var(--clay-success-fg)' : 'var(--clay-accent)',
+              }}
+            />
+          </div>
+          <p className="mt-2 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
+            This week {summary.totalMinutesThisWeek} of {weeklyGoal} min
+            {minutesLeft > 0 ? ` · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left` : ' · week done'}
+          </p>
+        </Block>
+
+        {/* Timely prompts — previously buried on the Reminders page */}
+        {showNudges && (
+          <Block>
+            <NudgeList />
+          </Block>
+        )}
       </Panel>
 
       {/* What is coming, quietly. */}
