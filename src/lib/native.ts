@@ -23,3 +23,15 @@ export function publicOrigin(): string {
 export function apiUrl(path: string): string {
   return isNativeApp ? `${WEB_ORIGIN}${path}` : path
 }
+
+/**
+ * An app does not zoom. Safari zooms into any text box whose text is under
+ * 16px, and lets a pinch or double-tap scale the page — right for a web
+ * page, wrong for an app, where the layout is the screen. Inside the app
+ * only; the website keeps zoom for anyone who needs it.
+ */
+export function lockNativeZoom(): void {
+  if (!isNativeApp || typeof document === 'undefined') return
+  const meta = document.querySelector('meta[name="viewport"]')
+  meta?.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover')
+}

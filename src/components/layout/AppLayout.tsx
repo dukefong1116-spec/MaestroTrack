@@ -49,7 +49,12 @@ export default function AppLayout() {
         come apart, and the content no longer needs padding to dodge a bar
         that is overlapping it.
       */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* The status bar's strip, kept clear: on a phone the app draws
+          edge to edge (viewport-fit=cover), and without this the top of
+          every page sat under the clock and the Dynamic Island. Its own
+          height on each iPhone; nothing on a computer. Outside the scroll
+          area, so content scrolls under it rather than into it. */}
+      <div className="flex min-w-0 flex-1 flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
           <div className={teacher ? 'clay-zoom mx-auto max-w-[1320px] px-3 py-4 sm:px-5 lg:px-4 lg:pb-24' : 'clay-zoom max-w-7xl mx-auto px-6 py-8'}>
             <Outlet />

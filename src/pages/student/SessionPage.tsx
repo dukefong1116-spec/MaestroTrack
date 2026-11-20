@@ -855,13 +855,17 @@ export default function SessionPage() {
       initial={{ y: '100%' }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-      className="fixed inset-0 z-50 overflow-y-auto"
-      style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
+      // One screen: the session in the middle, Finish fixed at the bottom.
+      // Only the middle scrolls (when a tool's drawer is open), so Finish is
+      // never below the fold. The top keeps clear of the status bar.
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)', paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="mx-auto w-full max-w-md px-5 pb-10 pt-5">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto w-full max-w-md px-5 pb-4 pt-3">
 
         {/* header */}
-        <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           {inTour ? <span className="h-10 w-10 shrink-0" aria-hidden /> : (
           <button
             onClick={() => navigate('/student/practice')}
@@ -897,7 +901,7 @@ export default function SessionPage() {
         {/* Pieces: tap any you are working on. More than one shares the
             session's minutes evenly. A row of chips rather than a dropdown,
             because a dropdown picks one. */}
-        <div className="mb-5 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
           {activePieces.length > 0 && (
             <div className="flex shrink-0 gap-2" data-coach="session-pieces">
               {activePieces.map((p) => {
@@ -933,14 +937,14 @@ export default function SessionPage() {
         </div>
 
         {/* thoughts */}
-        <div className="mb-6 p-4" style={{ ...surface, boxShadow: 'none' }}>
+        <div className="mb-3 px-4 py-3" style={{ ...surface, boxShadow: 'none' }}>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
             Thoughts
           </p>
           <textarea
             value={thoughts}
             onChange={(e) => setThoughts(e.target.value)}
-            rows={3}
+            rows={2}
             placeholder="what's working? what isn't?"
             className="w-full resize-none bg-transparent outline-none"
             style={{
@@ -959,10 +963,10 @@ export default function SessionPage() {
           than it, so the top third — and the weight — stays visible above the
           face while it swings. It doubles as the metronome's visual beat.
         */}
-        <div className="relative mb-7 flex h-[268px] items-end justify-center">
+        <div className="relative mb-3 flex h-[214px] items-end justify-center">
           <motion.div
             className="absolute bottom-[34px] left-1/2 origin-bottom rounded-full"
-            style={{ width: 5, height: 226, marginLeft: -2.5, background: 'var(--clay-bg-deep)' }}
+            style={{ width: 5, height: 180, marginLeft: -2.5, background: 'var(--clay-bg-deep)' }}
             animate={{ rotate: metroOn ? [-16, 16] : [-4, 4] }}
             transition={{
               duration: metroOn ? 60 / bpm : 3.2,
@@ -985,7 +989,7 @@ export default function SessionPage() {
 
           <motion.button
             onClick={() => (timerRunning ? pauseTimer() : startTimer())}
-            className="relative z-10 mb-5 flex h-[168px] w-[168px] flex-col items-center justify-center rounded-full"
+            className="relative z-10 mb-3 flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full"
             style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-deep)' }}
             whileTap={{ scale: 0.94 }}
           >
@@ -999,7 +1003,7 @@ export default function SessionPage() {
         </div>
 
         {/* tool dock */}
-        <div className="mb-4 grid grid-cols-3 gap-3" data-coach="session-tools">
+        <div className="mb-3 grid grid-cols-3 gap-3" data-coach="session-tools">
           {([
             { id: 'metro', label: 'Metronome', on: metroOn },
             { id: 'tuner', label: 'Tuner', on: tool === 'tuner' },
@@ -1011,7 +1015,7 @@ export default function SessionPage() {
                 key={t.id}
                 onClick={() => pickTool(t.id)}
                 whileTap={{ scale: 0.93 }}
-                className="flex flex-col items-center gap-1.5 py-3"
+                className="flex flex-col items-center gap-1 py-2.5"
                 style={{
                   ...surface,
                   background: t.on ? 'var(--clay-accent)' : 'var(--clay-surface)',
@@ -1306,6 +1310,11 @@ export default function SessionPage() {
           })}
         </div>
 
+      </div>
+      </div>
+
+      {/* Finish, always on screen. */}
+      <div className="mx-auto w-full max-w-md shrink-0 px-5 pt-2" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
         {saveError && (
           <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {saveError}

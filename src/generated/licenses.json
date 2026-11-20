@@ -1,5 +1,23 @@
 [
   {
+    "name": "@capacitor/cli",
+    "version": "8.6.2",
+    "license": "MIT",
+    "homepage": "https://capacitorjs.com"
+  },
+  {
+    "name": "@capacitor/core",
+    "version": "8.6.2",
+    "license": "MIT",
+    "homepage": "https://capacitorjs.com"
+  },
+  {
+    "name": "@capacitor/ios",
+    "version": "8.6.2",
+    "license": "MIT",
+    "homepage": "https://capacitorjs.com"
+  },
+  {
     "name": "@firebase/rules-unit-testing",
     "version": "5.0.2",
     "license": "Apache-2.0",

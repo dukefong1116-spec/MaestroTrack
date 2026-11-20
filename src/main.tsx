@@ -5,6 +5,9 @@ import App from './App.tsx'
 import { openingPageReady } from '@/lib/openingPage'
 import AppErrorBoundary from '@/components/common/AppErrorBoundary'
 import { reloadForUpdate } from '@/lib/utils/reloadForUpdate'
+import { lockNativeZoom } from '@/lib/native'
+
+lockNativeZoom()
 
 // A page's file from before a deploy failed to load: reload to get the
 // new one, before React ever sees the failure. See AppErrorBoundary.

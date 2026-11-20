@@ -39,7 +39,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 16 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-            className={`relative flex max-h-[calc(100dvh-2rem)] w-full ${widths[size]} flex-col overflow-hidden`}
+            className={`relative flex max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] w-full ${widths[size]} flex-col overflow-hidden`}
             style={{
               background: 'var(--clay-surface)',
               borderRadius: 'var(--clay-r-lg)',
