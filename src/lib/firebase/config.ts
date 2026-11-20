@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
-import { getAuth, connectAuthEmulator } from 'firebase/auth'
+import { getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, connectAuthEmulator, type Auth } from 'firebase/auth'
+import { isNativeApp } from '@/lib/native'
 import { initializeFirestore, getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import type { FirebaseStorage } from 'firebase/storage'
 
@@ -33,7 +34,24 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
-export const auth = getAuth(app)
+/**
+ * Inside the iPhone app, sign-in is set up without the pop-up/redirect
+ * helper. getAuth() includes it, and it loads a hidden Google iframe
+ * (apis.google.com) before deciding who is signed in — which in the app's
+ * web view can hang for a minute or never finish, so everything waiting
+ * on "who is this?" hung with it. Email and password need none of it. The
+ * session is kept on the phone as before.
+ */
+function makeAuth(): Auth {
+  if (!isNativeApp) return getAuth(app)
+  try {
+    return initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence] })
+  } catch {
+    return getAuth(app) // already initialised (hot reload)
+  }
+}
+
+export const auth = makeAuth()
 
 // No offline persistence — writes go directly to Firestore server.
 //
@@ -43,8 +61,14 @@ export const auth = getAuth(app)
 // updates (messages, sessions, assignments) arrived later, over more
 // requests. Auto-detect streams where it can and falls back to long
 // polling by itself where it cannot, so those networks are still covered.
+//
+// Inside the iPhone app it is long polling from the start: the app's web
+// view can leave a streaming connection open but silent, and detecting
+// that costs the very wait this is meant to avoid.
 try {
-  initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
+  initializeFirestore(app, isNativeApp
+    ? { experimentalForceLongPolling: true }
+    : { experimentalAutoDetectLongPolling: true })
 } catch {
   // Already initialized (HMR hot reload) — safe to ignore
 }
