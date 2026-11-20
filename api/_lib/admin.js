@@ -76,9 +76,28 @@ export function send(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
+/**
+ * The iPhone app (Capacitor) runs the same web code from its own address,
+ * capacitor://localhost, so its calls here are cross-origin. Only that
+ * exact origin is let through — not every site: the browser app is
+ * same-origin and needs nothing.
+ */
+const APP_ORIGINS = new Set(['capacitor://localhost', 'ionic://localhost'])
+function allowApp(req, res) {
+  const origin = req.headers?.origin
+  if (!origin || !APP_ORIGINS.has(origin)) return
+  res.setHeader('access-control-allow-origin', origin)
+  res.setHeader('vary', 'Origin')
+  res.setHeader('access-control-allow-methods', 'POST, OPTIONS')
+  res.setHeader('access-control-allow-headers', 'authorization, content-type')
+  res.setHeader('access-control-max-age', '86400')
+}
+
 /** POST-only, errors as JSON, nothing internal leaked. */
 export function handler(fn) {
   return async (req, res) => {
+    allowApp(req, res)
+    if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end() }
     if (req.method !== 'POST') return send(res, 405, { error: 'POST only' })
     try {
       send(res, 200, await fn(req))

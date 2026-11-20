@@ -1,3 +1,4 @@
+import { publicOrigin } from '@/lib/native'
 import {
   Timestamp, doc, getDoc, writeBatch,
 } from 'firebase/firestore'
@@ -55,8 +56,7 @@ export function generateInviteCode(): string {
  * without throwing — the path is the part that matters.
  */
 export function inviteUrl(token: string): string {
-  const origin = typeof window === 'undefined' ? '' : window.location.origin
-  return `${origin}/join/${token}`
+  return `${publicOrigin()}/join/${token}`
 }
 
 export interface NewInvite {

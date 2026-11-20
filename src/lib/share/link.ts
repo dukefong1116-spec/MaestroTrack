@@ -1,3 +1,4 @@
+import { publicOrigin } from '@/lib/native'
 import {
   collection, deleteDoc, doc, getDocs, orderBy, query, setDoc, where,
 } from 'firebase/firestore'
@@ -53,7 +54,7 @@ export function newSlug(): string {
 
 /** Where the published page lives. */
 export function shareUrl(slug: string): string {
-  return `${window.location.origin}/s/${slug}`
+  return `${publicOrigin()}/s/${slug}`
 }
 
 export function sharePath(ownerId: string, slug: string): string {

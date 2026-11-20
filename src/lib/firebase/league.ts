@@ -1,6 +1,7 @@
 import { onServerSnapshot } from './snapshotError'
 import { doc, getDoc, type Unsubscribe } from 'firebase/firestore'
 import { auth, db } from './config'
+import { apiUrl } from '@/lib/native'
 import type { LeagueCard, LeagueRoom } from '@/types'
 import type { DayLine } from '@/lib/league/rules'
 
@@ -29,7 +30,7 @@ async function post<T>(path: string, body: unknown = {}): Promise<T> {
   await auth.authStateReady()
   const user = auth.currentUser
   if (!user) throw new Error('Not signed in')
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${await user.getIdToken()}` },
     body: JSON.stringify(body),

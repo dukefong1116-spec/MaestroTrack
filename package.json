@@ -14,9 +14,13 @@
     "emulate:lan": "firebase emulators:start --config firebase.lan.json --only auth,firestore,storage,functions",
     "test": "TZ=America/Los_Angeles vitest run --exclude '**/rules*.test.ts' --exclude '**/node_modules/**'",
     "test:rules": "vitest run --no-file-parallelism src/lib/firebase/__tests__/rules.test.ts src/lib/firebase/__tests__/rules.attacks.test.ts src/lib/firebase/__tests__/rules.storage.test.ts src/lib/firebase/__tests__/rules.appqueries.test.ts src/lib/firebase/__tests__/rules.protected.test.ts src/lib/firebase/__tests__/rules.upload.test.ts src/lib/firebase/__tests__/rules.shares.test.ts src/lib/firebase/__tests__/rules.join.test.ts src/lib/firebase/__tests__/rules.league.test.ts src/lib/firebase/__tests__/rules.leagueserver.test.ts src/lib/firebase/__tests__/rules.studio.test.ts src/lib/firebase/__tests__/rules.audit.test.ts",
-    "licenses": "node scripts/licenses.mjs"
+    "licenses": "node scripts/licenses.mjs",
+    "ios": "vite build && cap sync ios && cap open ios",
+    "ios:sync": "vite build && cap sync ios"
   },
   "dependencies": {
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
     "@hookform/resolvers": "^5.4.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
@@ -36,6 +40,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "@firebase/rules-unit-testing": "^5.0.2",
     "@tailwindcss/vite": "^4.3.1",
     "@types/node": "^24.13.2",

@@ -1,5 +1,6 @@
 import { registerSW } from 'virtual:pwa-register'
 import { usePracticeStore } from '@/stores/practiceStore'
+import { isNativeApp } from '@/lib/native'
 
 /**
  * The service worker: the app's own files kept on the phone, so opening it
@@ -20,7 +21,8 @@ const LAUNCH_WINDOW_MS = 4000
 const CALM = /^\/(student|teacher)(\/(league|streak|practice\/progress|library))?\/?$/
 
 export function startServiceWorker(): void {
-  if (!('serviceWorker' in navigator) || import.meta.env.DEV) return
+  // Inside the iPhone app the files ship with the app itself: nothing to cache or update here.
+  if (!('serviceWorker' in navigator) || import.meta.env.DEV || isNativeApp) return
 
   const openedAt = performance.now()
   let touched = false
