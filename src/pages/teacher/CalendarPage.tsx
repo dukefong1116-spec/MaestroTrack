@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useStudioSettings, useCalendar, saveItem, updateSeries } from '@/hooks/useStudioData'
@@ -7,7 +7,7 @@ import { monthGrid, endTime, type CalendarItem } from '@/lib/studio/calendar'
 import { addDays, clock, dayKey, mondayOf, parseDay, toMinutes, weekday } from '@/lib/studio/dates'
 import { tagFor } from '@/lib/studio/settings'
 import LessonSheet from '@/components/teacher/LessonSheet'
-import { StudioPage, Segmented, Btn } from '@/components/teacher/studio/ui'
+import { StudioPage, Segmented } from '@/components/teacher/studio/ui'
 import TimeGrid, { type DragResult } from './calendar/TimeGrid'
 import MonthGrid from './calendar/MonthGrid'
 import TagsPanel from './calendar/TagsPanel'
@@ -108,11 +108,23 @@ export default function CalendarPage() {
   const dayItems = items.filter((i) => i.date === anchor)
 
   return (
-    <StudioPage
-      title="Calendar & Attendance"
-      subtitle="Lessons and events"
-      actions={<Btn kind="primary" onClick={() => setAdding(true)}>+ Lesson or event</Btn>}
-    >
+    <StudioPage>
+      {/* Adding is one round button, floating bottom right: above the tab
+          bar on a phone, above the Messages button on a computer. */}
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        aria-label="Add a lesson or event"
+        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95 lg:right-6"
+        style={{
+          bottom: 'calc(84px + env(safe-area-inset-bottom))',
+          background: 'var(--clay-accent-ink)',
+          color: '#fff',
+          boxShadow: '0 12px 26px -8px rgba(22,101,143,.6)',
+        }}
+      >
+        <Plus size={26} strokeWidth={2.4} aria-hidden="true" />
+      </button>
       <div className="flex flex-wrap">
         <aside className="order-2 w-full lg:order-1 lg:w-[260px] lg:shrink-0" style={{ borderRight: '1px solid var(--clay-line)' }}>
           <TagsPanel counts={counts} />

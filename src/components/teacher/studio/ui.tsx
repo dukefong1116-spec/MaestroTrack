@@ -13,7 +13,8 @@ import { TONES, type Tone } from './tokens'
 export function StudioPage({
   title, subtitle, actions, back, children, flush,
 }: {
-  title: ReactNode
+  /** Left out, and with no actions or back link, the page has no header at all. */
+  title?: ReactNode
   subtitle?: ReactNode
   actions?: ReactNode
   /** Where the back arrow goes, with its label. */
@@ -23,7 +24,7 @@ export function StudioPage({
   flush?: boolean
 }) {
   const navigate = useNavigate()
-  const header = (
+  const header = !title && !actions && !back ? null : (
     <header className="flex flex-wrap items-center gap-3 px-5 py-4 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
       <div className="min-w-0 flex-1 basis-60">
         {back && (
@@ -36,7 +37,7 @@ export function StudioPage({
             <ChevronLeft size={16} /> {back.label}
           </button>
         )}
-        <h1 className="truncate text-[21px] font-bold leading-tight lg:text-[22px]" style={{ color: 'var(--clay-ink)' }}>{title}</h1>
+        {title && <h1 className="truncate text-[21px] font-bold leading-tight lg:text-[22px]" style={{ color: 'var(--clay-ink)' }}>{title}</h1>}
         {subtitle && <p className="mt-0.5 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -44,9 +45,12 @@ export function StudioPage({
   )
   if (flush) return <div>{header}{children}</div>
   return (
+    // On a phone the sheet is the screen: no outline and no rounded top,
+    // which drew a stray line under the status bar on every teacher page.
+    // From sm up it is a card again.
     <div
-      className="-mx-3 overflow-hidden sm:mx-0"
-      style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-lg)', border: '1px solid var(--clay-line)' }}
+      className="-mx-3 overflow-hidden sm:mx-0 sm:rounded-[var(--clay-r-lg)] sm:border"
+      style={{ background: 'var(--clay-surface)', borderColor: 'var(--clay-line)' }}
     >
       {header}
       {children}

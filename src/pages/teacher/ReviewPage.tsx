@@ -1,3 +1,4 @@
+import { ClipboardCheck } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO, formatDistanceToNowStrict } from 'date-fns'
@@ -93,17 +94,27 @@ export default function ReviewPage() {
     }
   }
 
-  const n = count('needs')
   return (
-    <StudioPage title="Assignments to review" subtitle={n ? `${n} handed in and waiting for you` : 'All caught up'}>
+    <StudioPage>
       <div className="flex flex-wrap items-center gap-2.5 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        <Segmented label="Status" value={filter} onChange={(v) => { setFilter(v); setSel(new Set()) }} options={[
-          { value: 'needs', label: `Needs review · ${count('needs')}` },
-          { value: 'back', label: `Sent back · ${count('back')}` },
-          { value: 'approved', label: `Approved · ${count('approved')}` },
-          { value: 'all', label: `All · ${count('all')}` },
-        ]} />
-        <span className="flex-1" />
+        {/* Four equal tabs on one line, each its name over its count:
+            "Needs review · 0" and friends wrapped onto two rows on a phone. */}
+        <Segmented
+          label="Status"
+          className="grid w-full grid-cols-4 sm:w-auto sm:min-w-[420px]"
+          value={filter}
+          onChange={(v) => { setFilter(v); setSel(new Set()) }}
+          options={([['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const).map(([value, name]) => ({
+            value,
+            label: (
+              <span className="flex flex-col items-center py-1 leading-tight">
+                <span className="whitespace-nowrap text-[12.5px]">{name}</span>
+                <span className="text-[15px] font-bold tabular-nums">{count(value)}</span>
+              </span>
+            ),
+          }))}
+        />
+        <span className="hidden flex-1 sm:block" />
         <label className="flex items-center gap-1.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>Type
           <select value={kind} onChange={(e) => { setKind(e.target.value as Kind); setSel(new Set()) }} className="min-h-[36px] rounded-[10px] border-0 px-2.5 text-[13px] font-semibold" style={inputStyle}>
             <option value="all">Everything</option><option value="rec">Recordings</option><option value="check">Checked off</option>
@@ -125,7 +136,18 @@ export default function ReviewPage() {
       )}
       {notice && <p className="px-6 py-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)', borderBottom: '1px solid var(--clay-line)' }}>{notice}</p>}
 
-      {rows.length === 0 ? <Empty>{filter === 'needs' ? 'Nothing waiting — all caught up.' : 'Nothing here.'}</Empty> : (
+      {rows.length === 0 ? (filter === 'needs' ? (
+        // Nothing to review: said big, like the student's own caught-up state.
+        <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+          <span className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }} aria-hidden="true">
+            <ClipboardCheck size={38} strokeWidth={1.75} />
+          </span>
+          <p className="text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>All caught up</p>
+          <p className="mt-1 max-w-[260px] text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
+            Nothing waiting for review. Work your students hand in will show up here.
+          </p>
+        </div>
+      ) : <Empty>Nothing here.</Empty>) : (
         <div role="table" aria-label="Handed-in assignments">
           <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)', borderBottom: '1px solid var(--clay-line)' }}>
             <span role="columnheader" className="w-6"><Check label="Select every row shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown))} /></span>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { MessageCircle } from 'lucide-react'
+import { CalendarCheck, ClipboardCheck, MessageCircle, TrendingUp, Wallet } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useMembers, useStudioSettings, useCalendar, saveItem } from '@/hooks/useStudioData'
@@ -94,9 +94,16 @@ export default function TeacherDashboard() {
     }
   }
 
-  const stat = (glyph: string, bg: string, fg: string, value: string, label: string, go?: () => void) => (
+  // Each figure with its own icon on a solid tile of its colour.
+  const stat = (icon: React.ReactNode, color: string, value: string, label: string, go?: () => void) => (
     <button type="button" onClick={go} className="flex items-center gap-3.5 px-5 py-4 text-left sm:px-6" style={{ boxShadow: '-1px 0 0 var(--clay-line), 0 -1px 0 var(--clay-line)' }}>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[17px] font-extrabold" style={{ background: bg, color: fg }} aria-hidden="true">{glyph}</span>
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px]"
+        style={{ background: color, color: '#fff', boxShadow: `0 6px 14px -6px ${color}` }}
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
       <span className="min-w-0"><span className="block text-[19px] font-bold leading-tight" style={{ color: 'var(--clay-ink)' }}>{value}</span><span className="block text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{label}</span></span>
     </button>
   )
@@ -116,10 +123,10 @@ export default function TeacherDashboard() {
       }
     >
       <div className="grid grid-cols-2 xl:grid-cols-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        {stat('♪', 'var(--clay-accent-soft)', 'var(--clay-accent-ink)', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
-        {stat('✓', 'var(--clay-purple-bg)', '#5B3FA8', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
-        {stat('↑', 'var(--clay-success-bg)', '#1F6B4A', `${weekMinutes} min`, 'studio practice this week')}
-        {stat('$', 'var(--clay-warning-bg)', '#7A4F05', money(outstanding), 'outstanding', () => navigate('/teacher/families'))}
+        {stat(<CalendarCheck size={21} strokeWidth={2.2} />, '#3B9BD9', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
+        {stat(<ClipboardCheck size={21} strokeWidth={2.2} />, '#8B6BD6', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
+        {stat(<TrendingUp size={21} strokeWidth={2.2} />, '#3DAE7C', `${weekMinutes} min`, 'studio practice this week')}
+        {stat(<Wallet size={21} strokeWidth={2.2} />, '#E0A12B', money(outstanding), 'outstanding', () => navigate('/teacher/families'))}
       </div>
 
       <div className="flex flex-wrap">
