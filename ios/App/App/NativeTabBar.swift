@@ -74,7 +74,12 @@ public class NativeTabBarPlugin: CAPPlugin, CAPBridgedPlugin, UITabBarDelegate {
         let built: [UITabBarItem] = items.enumerated().map { index, item in
             let title = item["title"] as? String ?? ""
             let symbol = item["symbol"] as? String ?? "circle"
-            let tabItem = UITabBarItem(title: title, image: UIImage(systemName: symbol), tag: index)
+            // Light strokes at rest, regular when selected: the default weight
+            // read heavy beside the app's own thin icons.
+            let rest = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(weight: .light))
+            let lit = UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(weight: .regular))
+            let tabItem = UITabBarItem(title: title, image: rest, selectedImage: lit)
+            tabItem.tag = index
             if let badge = item["badge"] as? String, !badge.isEmpty { tabItem.badgeValue = badge }
             tabItem.accessibilityLabel = title
             return tabItem
