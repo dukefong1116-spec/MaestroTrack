@@ -22,9 +22,14 @@ interface Drag {
  * (15-minute steps, and across days), drag its bottom edge to change its
  * length, click it to open it. With a finger, hold for a moment first —
  * so a quick swipe is never mistaken for a drag.
+ *
+ * Hold on an empty stretch of a day, as in the iPhone's Calendar, and a
+ * new lesson appears there (on the nearest quarter hour) for its details
+ * to be filled in.
  */
+const HOLD_MS = 450
 export default function TimeGrid({
-  days, items, tags, startHour, endHour, pxPerHour, today, nowMinutes, onOpen, onDrop, compact,
+  days, items, tags, startHour, endHour, pxPerHour, today, nowMinutes, onOpen, onDrop, compact, onHoldEmpty, ghost,
 }: {
   days: string[]
   items: CalendarItem[]
@@ -38,6 +43,10 @@ export default function TimeGrid({
   onDrop: (item: CalendarItem, to: DragResult, mode: 'move' | 'resize') => void
   /** One column: no day headers (the phone's day view has its own). */
   compact?: boolean
+  /** A hold on an empty part of a day: a new lesson starting then. */
+  onHoldEmpty?: (date: string, startTime: string) => void
+  /** The new lesson being made, drawn where it will go until it is saved or dropped. */
+  ghost?: { date: string; startTime: string; durationMinutes: number } | null
 }) {
   const cols = useRef<(HTMLDivElement | null)[]>([])
   const drag = useRef<Drag | null>(null)
@@ -117,6 +126,37 @@ export default function TimeGrid({
     onDrop(it, { date: p.date, startTime: p.startTime, durationMinutes: p.durationMinutes }, d.mode)
   }
 
+  // ── hold to create ──────────────────────────────────────────────
+  const hold = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null)
+  useEffect(() => () => { if (hold.current) clearTimeout(hold.current.timer) }, [])
+  function cancelHold() {
+    if (hold.current) clearTimeout(hold.current.timer)
+    hold.current = null
+  }
+  function startHold(e: React.PointerEvent<HTMLDivElement>, date: string) {
+    if (!onHoldEmpty || e.button !== 0 || e.target !== e.currentTarget) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = e.clientY - rect.top
+    cancelHold()
+    hold.current = {
+      x: e.clientX,
+      y: e.clientY,
+      timer: setTimeout(() => {
+        hold.current = null
+        const raw = startHour * 60 + (y / pxPerHour) * 60
+        const snapped = Math.max(startHour * 60, Math.min(endHour * 60 - 15, Math.floor(raw / 15) * 15))
+        const hh = String(Math.floor(snapped / 60)).padStart(2, '0')
+        const mm = String(snapped % 60).padStart(2, '0')
+        navigator.vibrate?.(10)
+        onHoldEmpty(date, `${hh}:${mm}`)
+      }, HOLD_MS),
+    }
+  }
+  function moveHold(e: React.PointerEvent) {
+    // Moving is scrolling, not holding.
+    if (hold.current && (Math.abs(e.clientX - hold.current.x) > 8 || Math.abs(e.clientY - hold.current.y) > 8)) cancelHold()
+  }
+
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i)
 
   return (
@@ -150,8 +190,37 @@ export default function TimeGrid({
             <div
               ref={(el) => { cols.current[ci] = el }}
               className="relative"
-              style={{ height, backgroundImage: 'linear-gradient(var(--clay-line) 1px, transparent 1px)', backgroundSize: `100% ${pxPerHour}px` }}
+              onPointerDown={(e) => startHold(e, date)}
+              onPointerMove={moveHold}
+              onPointerUp={cancelHold}
+              onPointerCancel={cancelHold}
+              onPointerLeave={cancelHold}
+              onContextMenu={(e) => { if (onHoldEmpty) e.preventDefault() }}
+              style={{
+                height,
+                backgroundImage: 'linear-gradient(var(--clay-line) 1px, transparent 1px)',
+                backgroundSize: `100% ${pxPerHour}px`,
+                // No text selection or iOS "callout" on a long press here.
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none',
+              }}
             >
+              {ghost && ghost.date === date && (
+                <div
+                  className="pointer-events-none absolute left-[3px] right-[3px] z-[5] rounded-lg px-[7px] py-[3px] text-[11.5px] font-bold leading-tight"
+                  style={{
+                    top: ((toMinutes(ghost.startTime) - startHour * 60) / 60) * pxPerHour + 1,
+                    height: Math.max(24, (ghost.durationMinutes / 60) * pxPerHour - 3),
+                    background: 'var(--clay-accent)',
+                    color: '#fff',
+                    boxShadow: '0 10px 22px -8px rgba(30,40,70,.45)',
+                  }}
+                >
+                  New lesson
+                  <span className="block font-semibold" style={{ opacity: 0.85 }}>{clock(ghost.startTime)}</span>
+                </div>
+              )}
               {isToday && nowMinutes >= startHour * 60 && nowMinutes <= endHour * 60 && (
                 <div className="pointer-events-none absolute inset-x-0 z-[4] h-0.5" style={{ top: ((nowMinutes - startHour * 60) / 60) * pxPerHour, background: 'var(--clay-accent-ink)' }} />
               )}

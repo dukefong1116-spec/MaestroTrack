@@ -96,7 +96,7 @@ export default function ReviewPage() {
 
   return (
     <StudioPage>
-      <div className="flex flex-wrap items-center gap-2.5 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-4 px-5 py-4 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {/* Four equal tabs on one line, each its name over its count:
             "Needs review · 0" and friends wrapped onto two rows on a phone. */}
         <Segmented

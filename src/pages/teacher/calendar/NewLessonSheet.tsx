@@ -12,7 +12,7 @@ import { inputCls, inputStyle } from '@/components/teacher/studio/tokens'
  * A new lesson, class or event. A private lesson starts at the student's
  * own length (or the studio default); a weekly one repeats from its date.
  */
-export default function NewLessonSheet({ open, onClose, date }: { open: boolean; onClose: () => void; date?: string }) {
+export default function NewLessonSheet({ open, onClose, date, time: atTime }: { open: boolean; onClose: () => void; date?: string; /** Start time, from a hold on the calendar. */ time?: string }) {
   const { profile } = useAuth()
   const members = useMembers()
   const settings = useStudioSettings()
@@ -27,7 +27,7 @@ export default function NewLessonSheet({ open, onClose, date }: { open: boolean;
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => { if (open) { setDay(date ?? dayKey(new Date())); setWho([]); setTitle(''); setMinutes(null); setError(''); setTagId('private') } }, [open, date])
+  useEffect(() => { if (open) { setDay(date ?? dayKey(new Date())); if (atTime) setTime(atTime); setWho([]); setTitle(''); setMinutes(null); setError(''); setTagId('private') } }, [open, date, atTime])
 
   const chosen = members.filter((m) => who.includes(m.id))
   const autoMinutes = chosen.length === 1 ? lessonMinutes(chosen[0].roster, settings) : settings.defaultLessonMinutes

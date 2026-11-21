@@ -48,6 +48,8 @@ export default function CalendarPage() {
   const [anchor, setAnchor] = useState(today)
   const [open, setOpen] = useState<CalendarItem | null>(null)
   const [adding, setAdding] = useState(false)
+  // A hold on the calendar: the new lesson's day and time, drawn until the sheet closes.
+  const [held, setHeld] = useState<{ date: string; startTime: string } | null>(null)
   const [toast, setToast] = useState<Toast | null>(null)
   const [now, setNow] = useState(() => new Date())
 
@@ -103,7 +105,8 @@ export default function CalendarPage() {
     ? a.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : wide
       ? weekTitle(monday)
-      : a.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      // Short on a phone ("Fri, Nov 20"): the long form was cut off beside the buttons.
+      : a.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
   const dayItems = items.filter((i) => i.date === anchor)
 
@@ -158,9 +161,7 @@ export default function CalendarPage() {
                   })}
                 </div>
               )}
-              <p className="px-4 py-2 text-[12.5px]" style={{ color: 'var(--clay-dim)', borderBottom: wide ? '1px solid var(--clay-line)' : undefined }}>
-                {wide ? 'Drag a lesson to move it. Drag its bottom edge to make it longer or shorter. Click it to open.' : 'Hold a lesson, then drag to move it or its bottom edge to change the length. Tap to open.'}
-              </p>
+              {wide && <div style={{ borderBottom: '1px solid var(--clay-line)' }} />}
               <div className={wide ? 'overflow-x-auto' : 'px-2 pb-3'}>
                 <TimeGrid
                   days={wide ? weekDays : [anchor]}
@@ -174,6 +175,8 @@ export default function CalendarPage() {
                   onOpen={setOpen}
                   onDrop={onDrop}
                   compact={!wide}
+                  onHoldEmpty={(date, startTime) => { setHeld({ date, startTime }); setAdding(true) }}
+                  ghost={held ? { ...held, durationMinutes: settings.defaultLessonMinutes } : null}
                 />
               </div>
             </>
@@ -208,7 +211,7 @@ export default function CalendarPage() {
       </div>
 
       <LessonSheet item={open} onClose={() => setOpen(null)} />
-      <NewLessonSheet open={adding} onClose={() => setAdding(false)} date={anchor} />
+      <NewLessonSheet open={adding} onClose={() => { setAdding(false); setHeld(null) }} date={held?.date ?? anchor} time={held?.startTime} />
 
       {toast && (
         <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] text-white lg:bottom-8" style={{ background: 'var(--clay-ink)', boxShadow: '0 14px 30px -10px rgba(30,40,70,.45)' }}>
