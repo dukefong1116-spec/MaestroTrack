@@ -170,11 +170,9 @@ export default function CalendarPage() {
                   onOpen={setOpen}
                   onDrop={onDrop}
                   compact={!wide}
-                  onHoldEmpty={(date, startTime) => {
-                    // The block first, then the form a beat later — not both at once.
-                    setHeld({ date, startTime })
-                    setTimeout(() => setAdding(true), 650)
-                  }}
+                  onHoldEmpty={(date, startTime) => setHeld({ date, startTime })}
+                  onHoldMove={(date, startTime) => setHeld({ date, startTime })}
+                  onHoldRelease={() => setAdding(true)}
                   ghost={held ? { ...held, durationMinutes: settings.defaultLessonMinutes } : null}
                 />
               </div>

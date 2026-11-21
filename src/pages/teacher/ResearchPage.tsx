@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import { useMemo } from 'react'
 import Sticker from '@/components/stickers/Sticker'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -55,6 +57,9 @@ export default function ResearchPage() {
 
   return (
     <div>
+      <Link to="/teacher/reports" className="mb-2 inline-flex items-center gap-0.5 text-[13px] font-semibold lg:hidden" style={{ color: 'var(--clay-accent-ink)' }}>
+        <ChevronLeft size={16} aria-hidden="true" /> Reports
+      </Link>
       <PageHeader
         title="Research Dashboard"
         subtitle="Anonymous aggregate analytics across your studio. All data anonymized."

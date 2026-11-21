@@ -327,6 +327,20 @@ html, body {
   overflow-x: hidden;
   overscroll-behavior-x: none;
 }
+/* The same for every scrolling box inside the app: a box that scrolls up
+   and down does not also slide sideways (left to itself, overflow-y:auto
+   makes overflow-x auto too — that was the page "moving everywhere"), and
+   a row that scrolls sideways on purpose — tabs, chips, a wide table —
+   does not also move up and down, and does not drag the page with it. */
+.overflow-y-auto:not(.overflow-x-auto) {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+.overflow-x-auto:not(.overflow-y-auto) {
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: none;
+}
 
 /* Range inputs pick up the accent so sliders match the theme */
 input[type="range"] {

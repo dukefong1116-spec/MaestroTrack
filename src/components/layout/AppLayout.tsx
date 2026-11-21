@@ -4,6 +4,9 @@ import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
 import { usePrefs } from '@/hooks/usePrefs'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils/cn'
+import { isNativeApp } from '@/lib/native'
+import { useAppNativeTabs } from './useAppNativeTabs'
 
 /**
  * The teacher's rail, tab bar and message dock, loaded only for teachers:
@@ -32,7 +35,19 @@ export default function AppLayout() {
   // Pages whose colour runs to the top edge, behind the clock: they keep
   // their own content clear of it (LeaguePage, LeaguePlayerPage).
   const { pathname } = useLocation()
-  const underStatusBar = /^\/student\/league(\/|$)/.test(pathname)
+  const underStatusBar = /^\/student\/league\/?$|^\/student\/league\//.test(pathname)
+  // The tab bar only on the tabs themselves, as in an iPhone app: a page
+  // opened from one (a student's record, Settings, a badge, a player) has
+  // the screen to itself and a back arrow. A student in a studio reaches
+  // Settings from their photo rather than a tab, so for them it is one of
+  // those pages too.
+  const inStudio = !!profile?.teacherId
+  const roots = teacher
+    ? ['/teacher', '/teacher/calendar', '/teacher/students', '/teacher/review', '/teacher/more']
+    : ['/student', '/student/practice', '/student/practice/progress', '/student/library', '/student/league', '/student/studio', ...(inStudio ? [] : ['/student/settings'])]
+  const here = pathname.replace(/\/+$/, '') || '/'
+  const showTabs = roots.includes(here)
+  useAppNativeTabs(teacher, inStudio, here, showTabs)
 
   return (
     <div
@@ -65,13 +80,20 @@ export default function AppLayout() {
           ends with room for it (the pb- below). */}
       <div className="relative flex min-w-0 flex-1 flex-col" style={{ paddingTop: underStatusBar ? 0 : 'env(safe-area-inset-top)' }}>
         <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
-          <div className={teacher
-            ? 'clay-zoom mx-auto max-w-[1320px] px-3 pt-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-5 lg:px-4 lg:pb-24'
-            : 'clay-zoom max-w-7xl mx-auto px-6 pt-8 pb-[calc(104px+env(safe-area-inset-bottom))] lg:pb-8'}>
+          <div
+            className={teacher
+              ? 'clay-zoom mx-auto max-w-[1320px] px-3 pt-4 pb-[var(--tab-room)] sm:px-5 lg:px-4 lg:pb-24'
+              : 'clay-zoom max-w-7xl mx-auto px-6 pt-8 pb-[var(--tab-room)] lg:pb-8'}
+            // Room at the end of the page for the floating tab bar, or just
+            // the home indicator where there is no tab bar.
+            style={{ '--tab-room': showTabs ? `calc(${teacher ? 96 : 104}px + env(safe-area-inset-bottom))` : 'calc(24px + env(safe-area-inset-bottom))' } as React.CSSProperties}
+          >
             <Outlet />
           </div>
         </main>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-3 lg:hidden" style={{ paddingBottom: 'calc(6px + env(safe-area-inset-bottom))' }}>
+        {/* Inside the iPhone app Apple's own tab bar is shown instead
+            (useNativeTabBar, below); this is the web's. */}
+        <div className={cn('pointer-events-none absolute inset-x-0 bottom-0 z-30 px-3 lg:hidden', (!showTabs || isNativeApp) && 'hidden')} style={{ paddingBottom: 'calc(6px + env(safe-area-inset-bottom))' }}>
           <div className="pointer-events-auto">
             {teacher ? <Suspense fallback={null}><TeacherTabs /></Suspense> : <BottomTabs />}
           </div>

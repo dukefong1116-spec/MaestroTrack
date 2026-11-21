@@ -30,7 +30,7 @@ interface Drag {
  */
 const HOLD_MS = 550
 export default function TimeGrid({
-  days, items, tags, startHour, endHour, pxPerHour, today, nowMinutes, onOpen, onDrop, compact, onHoldEmpty, ghost,
+  days, items, tags, startHour, endHour, pxPerHour, today, nowMinutes, onOpen, onDrop, compact, onHoldEmpty, onHoldMove, onHoldRelease, ghost,
 }: {
   days: string[]
   items: CalendarItem[]
@@ -46,6 +46,10 @@ export default function TimeGrid({
   compact?: boolean
   /** A hold on an empty part of a day: a new lesson starting then. */
   onHoldEmpty?: (date: string, startTime: string) => void
+  /** Still holding, the finger slid: the new lesson's time follows it. */
+  onHoldMove?: (date: string, startTime: string) => void
+  /** Let go after a hold: now open its details. */
+  onHoldRelease?: () => void
   /** The new lesson being made, drawn where it will go until it is saved or dropped. */
   ghost?: { date: string; startTime: string; durationMinutes: number } | null
 }) {
@@ -128,34 +132,68 @@ export default function TimeGrid({
   }
 
   // ── hold to create ──────────────────────────────────────────────
-  const hold = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null)
-  useEffect(() => () => { if (hold.current) clearTimeout(hold.current.timer) }, [])
-  function cancelHold() {
-    if (hold.current) clearTimeout(hold.current.timer)
+  // As in the iPhone's Calendar: hold still and a new lesson appears under
+  // the finger; keep holding and slide to move it to another time; let go
+  // and its details open. Moving before the hold registers is a scroll.
+  const hold = useRef<{
+    timer: ReturnType<typeof setTimeout>
+    x: number; y: number; date: string; top: number; armed: boolean
+    off?: () => void
+  } | null>(null)
+  // Unmounting mid-hold: drop the listeners and the timer.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => endHold(false), [])
+  function timeAt(clientY: number, top: number): string {
+    const raw = startHour * 60 + ((clientY - top) / pxPerHour) * 60
+    const snapped = Math.max(startHour * 60, Math.min(endHour * 60 - 15, Math.floor(raw / 15) * 15))
+    return `${String(Math.floor(snapped / 60)).padStart(2, '0')}:${String(snapped % 60).padStart(2, '0')}`
+  }
+  function endHold(released: boolean) {
+    const h = hold.current
+    if (!h) return
+    clearTimeout(h.timer)
+    h.off?.()
     hold.current = null
+    if (released && h.armed) {
+      noClickUntil.current = Date.now() + 400
+      onHoldRelease?.()
+    }
   }
   function startHold(e: React.PointerEvent<HTMLDivElement>, date: string) {
     if (!onHoldEmpty || e.button !== 0 || e.target !== e.currentTarget) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const y = e.clientY - rect.top
-    cancelHold()
-    hold.current = {
-      x: e.clientX,
-      y: e.clientY,
+    endHold(false)
+    const top = e.currentTarget.getBoundingClientRect().top
+    const h = {
+      x: e.clientX, y: e.clientY, date, top, armed: false,
       timer: setTimeout(() => {
-        hold.current = null
-        const raw = startHour * 60 + (y / pxPerHour) * 60
-        const snapped = Math.max(startHour * 60, Math.min(endHour * 60 - 15, Math.floor(raw / 15) * 15))
-        const hh = String(Math.floor(snapped / 60)).padStart(2, '0')
-        const mm = String(snapped % 60).padStart(2, '0')
+        h.armed = true
         navigator.vibrate?.(10)
-        onHoldEmpty(date, `${hh}:${mm}`)
+        onHoldEmpty(date, timeAt(h.y, top))
       }, HOLD_MS),
+    } as NonNullable<typeof hold.current>
+    // Window listeners, so the finger can wander off the column while it
+    // drags the new lesson. Once armed, touch scrolling is held back.
+    const onMove = (ev: PointerEvent) => {
+      if (!h.armed) {
+        if (Math.abs(ev.clientX - h.x) > 8 || Math.abs(ev.clientY - h.y) > 8) endHold(false)
+        return
+      }
+      onHoldMove?.(h.date, timeAt(ev.clientY, h.top))
     }
-  }
-  function moveHold(e: React.PointerEvent) {
-    // Moving is scrolling, not holding.
-    if (hold.current && (Math.abs(e.clientX - hold.current.x) > 8 || Math.abs(e.clientY - hold.current.y) > 8)) cancelHold()
+    const onTouchMove = (ev: TouchEvent) => { if (h.armed && ev.cancelable) ev.preventDefault() }
+    const onUp = () => endHold(true)
+    const onCancel = () => endHold(h.armed)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    h.off = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+      window.removeEventListener('touchmove', onTouchMove)
+    }
+    hold.current = h
   }
 
   const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i)
@@ -192,10 +230,6 @@ export default function TimeGrid({
               ref={(el) => { cols.current[ci] = el }}
               className="relative"
               onPointerDown={(e) => startHold(e, date)}
-              onPointerMove={moveHold}
-              onPointerUp={cancelHold}
-              onPointerCancel={cancelHold}
-              onPointerLeave={cancelHold}
               onContextMenu={(e) => { if (onHoldEmpty) e.preventDefault() }}
               style={{
                 height,
@@ -209,12 +243,14 @@ export default function TimeGrid({
             >
               {ghost && ghost.date === date && (
                 // Grows out of the spot that was held, with a soft spring and a
-                // lift, as the iPhone's Calendar does — then the form follows.
+                // lift, as the iPhone's Calendar does; while the finger is down
+                // it glides with it; the form opens on release.
                 <motion.div
-                  key={`${ghost.date}${ghost.startTime}`}
+                  key={ghost.date}
+                  layout="position"
                   initial={{ opacity: 0, scaleX: 0.86, scaleY: 0.4 }}
                   animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 22, mass: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 22, mass: 0.9, layout: { type: 'spring', stiffness: 500, damping: 38 } }}
                   className="pointer-events-none absolute left-[3px] right-[3px] z-[5] rounded-lg px-[7px] py-[3px] text-[11.5px] font-bold leading-tight"
                   style={{
                     transformOrigin: 'center top',
@@ -225,8 +261,15 @@ export default function TimeGrid({
                     boxShadow: '0 10px 22px -8px rgba(30,40,70,.45)',
                   }}
                 >
-                  New lesson
-                  <span className="block font-semibold" style={{ opacity: 0.85 }}>{clock(ghost.startTime)}</span>
+                  {(ghost.durationMinutes / 60) * pxPerHour >= 44 ? (
+                    <>
+                      New lesson
+                      <span className="block font-semibold" style={{ opacity: 0.85 }}>{clock(ghost.startTime)}</span>
+                    </>
+                  ) : (
+                    // Short: one line, so nothing is cut off.
+                    <span className="block truncate">New lesson <span className="font-semibold" style={{ opacity: 0.85 }}>· {clock(ghost.startTime)}</span></span>
+                  )}
                 </motion.div>
               )}
               {isToday && nowMinutes >= startHour * 60 && nowMinutes <= endHour * 60 && (

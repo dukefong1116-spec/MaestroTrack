@@ -51,6 +51,7 @@ export default function MessagesPage() {
 
   return (
     <StudioPage
+      back={{ to: '/teacher/more', label: 'More', phoneOnly: true }}
       title="Messages"
       actions={<button type="button" onClick={() => setAnnouncing(true)} aria-label="Announcement to every student" className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}><Megaphone size={18} /></button>}
     >

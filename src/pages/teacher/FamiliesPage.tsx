@@ -91,7 +91,7 @@ export default function FamiliesPage() {
   }
 
   return (
-    <StudioPage title="Families & Invoices" subtitle="Balances, invoices and payments" actions={<Btn kind="soft" onClick={() => setEditing('new')}>+ New family</Btn>}>
+    <StudioPage back={{ to: '/teacher/more', label: 'More', phoneOnly: true }} title="Families & Invoices" subtitle="Balances, invoices and payments" actions={<Btn kind="soft" onClick={() => setEditing('new')}>+ New family</Btn>}>
       <div className="flex flex-wrap">
         <section className="min-w-0 flex-[3_1_540px]" style={{ borderRight: '1px solid var(--clay-line)' }}>
           <div className="flex flex-wrap items-center gap-2.5 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>

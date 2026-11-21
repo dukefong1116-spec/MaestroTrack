@@ -96,24 +96,46 @@ export default function ReviewPage() {
 
   return (
     <StudioPage>
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-6 px-5 py-5 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        {/* Four equal tabs on one line, each its name over its count:
-            "Needs review · 0" and friends wrapped onto two rows on a phone. */}
-        <Segmented
-          label="Status"
-          className="grid w-full grid-cols-4 sm:w-auto sm:min-w-[420px]"
-          value={filter}
-          onChange={(v) => { setFilter(v); setSel(new Set()) }}
-          options={([['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const).map(([value, name]) => ({
-            value,
-            label: (
-              <span className="flex flex-col items-center py-1 leading-tight">
-                <span className="whitespace-nowrap text-[12.5px]">{name}</span>
-                <span className="text-[15px] font-bold tabular-nums">{count(value)}</span>
-              </span>
-            ),
-          }))}
-        />
+      {/* On a phone the status tabs live at the bottom, in reach of a
+          thumb, as a glass bar above the tab bar; the selection pill takes
+          their place while rows are ticked. On a computer they stay up top. */}
+      {chosen.length === 0 && (
+        <div className="glass fixed inset-x-3 z-30 rounded-[18px] p-1 lg:hidden" style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))' }}>
+          <Segmented
+            label="Status"
+            className="grid w-full grid-cols-4"
+            value={filter}
+            onChange={(v) => { setFilter(v); setSel(new Set()) }}
+            options={([['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const).map(([value, name]) => ({
+              value,
+              label: (
+                <span className="flex flex-col items-center py-1 leading-tight">
+                  <span className="whitespace-nowrap text-[12.5px]">{name}</span>
+                  <span className="text-[15px] font-bold tabular-nums">{count(value)}</span>
+                </span>
+              ),
+            }))}
+          />
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3 px-5 pb-3 pt-1 sm:px-6 lg:py-5" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        <div className="hidden lg:block">
+          <Segmented
+            label="Status"
+            className="grid min-w-[420px] grid-cols-4"
+            value={filter}
+            onChange={(v) => { setFilter(v); setSel(new Set()) }}
+            options={([['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const).map(([value, name]) => ({
+              value,
+              label: (
+                <span className="flex flex-col items-center py-1 leading-tight">
+                  <span className="whitespace-nowrap text-[12.5px]">{name}</span>
+                  <span className="text-[15px] font-bold tabular-nums">{count(value)}</span>
+                </span>
+              ),
+            }))}
+          />
+        </div>
         <span className="hidden flex-1 sm:block" />
         <label className="flex items-center gap-1.5 text-[13px]" style={{ color: 'var(--clay-dim)' }}>Type
           <select value={kind} onChange={(e) => { setKind(e.target.value as Kind); setSel(new Set()) }} className="min-h-[36px] rounded-[10px] border-0 px-2.5 text-[13px] font-semibold" style={inputStyle}>
@@ -139,7 +161,7 @@ export default function ReviewPage() {
       {rows.length === 0 ? (filter === 'needs' ? (
         // Nothing to review: said big, like the student's own caught-up state.
         // In the middle of the screen, not just under the filters.
-        <div className="flex min-h-[calc(100dvh-330px)] flex-col items-center justify-center px-6 py-14 text-center">
+        <div className="flex min-h-[calc(100dvh-300px)] flex-col items-center justify-center px-6 py-14 text-center">
           <span className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }} aria-hidden="true">
             <ClipboardCheck size={38} strokeWidth={1.75} />
           </span>
@@ -198,7 +220,7 @@ export default function ReviewPage() {
         open={!!reviewing}
         onClose={() => setReviewing(null)}
       />
-      {chosen.length > 0 && <BulkSpacer />}
+      <BulkSpacer />
     </StudioPage>
   )
 }

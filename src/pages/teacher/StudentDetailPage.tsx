@@ -1,3 +1,4 @@
+import { MoreHorizontal, UserMinus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
@@ -53,6 +54,7 @@ export default function StudentDetailPage() {
   const [recordings, setRecordings] = useState<Recording[]>([])
   const [reviewing, setReviewing] = useState<Assignment | null>(null)
   const [inviting, setInviting] = useState(false)
+  const [menu, setMenu] = useState(false)
   const uid = m?.uid ?? null
 
   useEffect(() => {
@@ -114,8 +116,42 @@ export default function StudentDetailPage() {
           {m.onApp
             ? <Btn kind="quiet" onClick={() => openMessages(m.uid)}>Message</Btn>
             : emails.length > 0 && <a className="inline-flex min-h-[36px] items-center rounded-[10px] px-3.5 text-[13.5px] font-bold" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }} href={`mailto:${encodeURIComponent(emails.join(','))}?subject=${encodeURIComponent(`${first}’s lessons`)}`}>Email family</a>}
-          <Btn kind="link" onClick={remove}>Remove</Btn>
         </>
+      }
+      corner={
+        // Less used, and destructive: behind "…" rather than beside Message.
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setMenu((v) => !v)}
+            aria-label="More options"
+            aria-expanded={menu}
+            className="flex h-9 w-9 items-center justify-center rounded-full"
+            style={{ background: 'var(--clay-bg)', color: 'var(--clay-ink)' }}
+          >
+            <MoreHorizontal size={19} aria-hidden="true" />
+          </button>
+          {menu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} aria-hidden="true" />
+              <div
+                role="menu"
+                className="absolute right-0 top-11 z-50 min-w-[190px] overflow-hidden rounded-2xl py-1"
+                style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', boxShadow: '0 16px 36px -12px rgba(30,40,70,.35)' }}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => { setMenu(false); remove() }}
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[14.5px] font-semibold"
+                  style={{ color: 'var(--clay-danger-fg)' }}
+                >
+                  <UserMinus size={17} aria-hidden="true" /> Remove student
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       }
     >
       <div role="tablist" aria-label="Student record" className="no-scrollbar flex gap-0.5 overflow-x-auto px-3 sm:px-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>

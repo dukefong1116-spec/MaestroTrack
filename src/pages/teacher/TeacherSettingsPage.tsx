@@ -52,7 +52,7 @@ export default function TeacherSettingsPage() {
   const types = settings.lessonTypes.length
 
   return (
-    <StudioPage title="Settings">
+    <StudioPage back={{ to: '/teacher/more', label: 'More', phoneOnly: true }} title="Settings">
       <Section title="You and your studio" first>
         <Link to="/teacher/settings/profile" className="flex items-center gap-3">
           <Avatar src={profile?.avatar} name={profile?.displayName} instrument={profile?.instrument as InstrumentType | undefined} size={48} />
