@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -29,6 +29,10 @@ export default function AppLayout() {
   const { profile, user } = useAuth()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const teacher = (profile?.role ?? cachedRole) === 'teacher'
+  // Pages whose colour runs to the top edge, behind the clock: they keep
+  // their own content clear of it (LeaguePage, LeaguePlayerPage).
+  const { pathname } = useLocation()
+  const underStatusBar = /^\/student\/league(\/|$)/.test(pathname)
 
   return (
     <div
@@ -54,7 +58,7 @@ export default function AppLayout() {
           every page sat under the clock and the Dynamic Island. Its own
           height on each iPhone; nothing on a computer. Outside the scroll
           area, so content scrolls under it rather than into it. */}
-      <div className="flex min-w-0 flex-1 flex-col" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="flex min-w-0 flex-1 flex-col" style={{ paddingTop: underStatusBar ? 0 : 'env(safe-area-inset-top)' }}>
         <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
           <div className={teacher ? 'clay-zoom mx-auto max-w-[1320px] px-3 py-4 sm:px-5 lg:px-4 lg:pb-24' : 'clay-zoom max-w-7xl mx-auto px-6 py-8'}>
             <Outlet />

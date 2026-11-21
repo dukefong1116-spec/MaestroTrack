@@ -86,15 +86,15 @@ export default function LeaguePage() {
         type="button"
         onClick={() => setHowOpen(true)}
         aria-label="How weekly XP works"
-        className="absolute right-3 top-3 z-10 rounded-full p-1.5 transition-opacity active:opacity-60"
-        style={{ color: theme.ink, background: pill }}
+        className="absolute right-3 z-10 rounded-full p-1.5 transition-opacity active:opacity-60"
+        style={{ top: 'calc(12px + env(safe-area-inset-top))', color: theme.ink, background: pill }}
       >
         <Info size={20} />
       </button>
       <TierGround
         tier={tier}
         className="flex flex-col items-center justify-center px-5 text-center"
-        style={{ minHeight: 'min(52vh, 480px)', paddingTop: 34, paddingBottom: 28 }}
+        style={{ minHeight: 'min(52vh, 480px)', paddingTop: 'calc(34px + env(safe-area-inset-top))', paddingBottom: 28 }}
       >
         <p className="text-[12.5px] font-bold uppercase tracking-[.16em]" style={{ color: theme.sub }}>
           {room ? 'This week' : 'Your tier'}

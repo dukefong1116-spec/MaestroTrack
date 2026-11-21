@@ -1,10 +1,9 @@
-import { Check, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { subscribeMyStudioRequest } from '@/lib/firebase/requests'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
-import PageHeader from '@/components/common/PageHeader'
 import MobileLogOut from '@/components/layout/MobileLogOut'
 import Avatar from '@/components/profile/Avatar'
 import Banner from '@/components/profile/Banner'
@@ -14,6 +13,7 @@ import type { InstrumentType } from '@/types'
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
+  const navigate = useNavigate()
   // Only enough to label the row — the joining itself lives on its own
   // screen now.
   const [waiting, setWaiting] = useState(false)
@@ -38,7 +38,20 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="Settings" />
+      {/* Back the way you came — Settings is opened from your photo on
+          Today, and a student in a studio has no Settings tab to leave by. */}
+      <div className="mb-6 flex items-center gap-3 lg:mb-8">
+        <button
+          type="button"
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/student'))}
+          aria-label="Back"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
+          style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <h1 className="text-[22px] font-bold leading-tight lg:text-[26px]" style={{ color: 'var(--clay-ink)' }}>Settings</h1>
+      </div>
 
       <div className="max-w-2xl space-y-6">
         {/* One panel, not a pile of cards: these rows are the same subject. */}

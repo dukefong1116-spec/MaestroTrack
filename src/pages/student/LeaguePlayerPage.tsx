@@ -59,8 +59,8 @@ export default function LeaguePlayerPage() {
       type="button"
       onClick={() => navigate('/student/league')}
       aria-label="Back to the league"
-      className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full"
-      style={{ background: 'rgba(255,255,255,.75)', color: '#000' }}
+      className="absolute left-3 flex h-9 w-9 items-center justify-center rounded-full"
+      style={{ top: 'calc(12px + env(safe-area-inset-top))', background: 'rgba(255,255,255,.75)', color: '#000' }}
     >
       <ChevronLeft size={20} aria-hidden="true" />
     </button>
@@ -69,7 +69,7 @@ export default function LeaguePlayerPage() {
   if (!card) {
     return (
       <div className="-mx-6 -mt-8">
-        <Banner height={220}>{back}</Banner>
+        <Banner height="calc(220px + env(safe-area-inset-top))">{back}</Banner>
         {!loading && (
           <div className="flex flex-col items-center px-6 py-12 text-center">
             <Lock size={28} style={{ color: 'var(--clay-dim)' }} aria-hidden="true" />
@@ -96,7 +96,7 @@ export default function LeaguePlayerPage() {
   return (
     <div className="-mx-6 -mt-8 pb-8">
       <div className="relative">
-        <Banner image={card.bannerImage} color={card.bannerColor} height={230}>{back}</Banner>
+        <Banner image={card.bannerImage} color={card.bannerColor} height="calc(230px + env(safe-area-inset-top))">{back}</Banner>
         <div className="absolute -bottom-11 left-5 rounded-full" style={{ border: '4px solid var(--clay-page)' }}>
           {card.photo
             ? <img src={card.photo} alt="" className="rounded-full object-cover" style={{ width: 88, height: 88 }} />

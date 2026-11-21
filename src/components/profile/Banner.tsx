@@ -14,7 +14,7 @@ import type { ReactNode } from 'react'
 export default function Banner({ image, color, height, children }: {
   image?: string | null
   color?: string | null
-  height: number
+  height: number | string
   children?: ReactNode
 }) {
   const fill = color ? `color-mix(in srgb, ${color} var(--clay-banner-mix), #000)` : 'var(--clay-accent-soft)'
