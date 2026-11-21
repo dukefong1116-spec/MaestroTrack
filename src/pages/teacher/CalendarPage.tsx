@@ -118,13 +118,8 @@ export default function CalendarPage() {
         type="button"
         onClick={() => setAdding(true)}
         aria-label="Add a lesson or event"
-        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95 lg:right-6"
-        style={{
-          bottom: 'calc(84px + env(safe-area-inset-bottom))',
-          background: 'var(--clay-accent-ink)',
-          color: '#fff',
-          boxShadow: '0 12px 26px -8px rgba(22,101,143,.6)',
-        }}
+        className="glass glass-tint fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95 lg:right-6"
+        style={{ bottom: 'calc(92px + env(safe-area-inset-bottom))' }}
       >
         <Plus size={26} strokeWidth={2.4} aria-hidden="true" />
       </button>
@@ -175,7 +170,11 @@ export default function CalendarPage() {
                   onOpen={setOpen}
                   onDrop={onDrop}
                   compact={!wide}
-                  onHoldEmpty={(date, startTime) => { setHeld({ date, startTime }); setAdding(true) }}
+                  onHoldEmpty={(date, startTime) => {
+                    // The block first, then the form a beat later — not both at once.
+                    setHeld({ date, startTime })
+                    setTimeout(() => setAdding(true), 650)
+                  }}
                   ghost={held ? { ...held, durationMinutes: settings.defaultLessonMinutes } : null}
                 />
               </div>

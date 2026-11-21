@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { endTime, movedStart, resizedLength, type CalendarItem } from '@/lib/studio/calendar'
 import { clock, parseDay, toMinutes } from '@/lib/studio/dates'
 import { tagFor } from '@/lib/studio/settings'
@@ -27,7 +28,7 @@ interface Drag {
  * new lesson appears there (on the nearest quarter hour) for its details
  * to be filled in.
  */
-const HOLD_MS = 450
+const HOLD_MS = 550
 export default function TimeGrid({
   days, items, tags, startHour, endHour, pxPerHour, today, nowMinutes, onOpen, onDrop, compact, onHoldEmpty, ghost,
 }: {
@@ -207,9 +208,16 @@ export default function TimeGrid({
               }}
             >
               {ghost && ghost.date === date && (
-                <div
+                // Grows out of the spot that was held, with a soft spring and a
+                // lift, as the iPhone's Calendar does — then the form follows.
+                <motion.div
+                  key={`${ghost.date}${ghost.startTime}`}
+                  initial={{ opacity: 0, scaleX: 0.86, scaleY: 0.4 }}
+                  animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 22, mass: 0.9 }}
                   className="pointer-events-none absolute left-[3px] right-[3px] z-[5] rounded-lg px-[7px] py-[3px] text-[11.5px] font-bold leading-tight"
                   style={{
+                    transformOrigin: 'center top',
                     top: ((toMinutes(ghost.startTime) - startHour * 60) / 60) * pxPerHour + 1,
                     height: Math.max(24, (ghost.durationMinutes / 60) * pxPerHour - 3),
                     background: 'var(--clay-accent)',
@@ -219,7 +227,7 @@ export default function TimeGrid({
                 >
                   New lesson
                   <span className="block font-semibold" style={{ opacity: 0.85 }}>{clock(ghost.startTime)}</span>
-                </div>
+                </motion.div>
               )}
               {isToday && nowMinutes >= startHour * 60 && nowMinutes <= endHour * 60 && (
                 <div className="pointer-events-none absolute inset-x-0 z-[4] h-0.5" style={{ top: ((nowMinutes - startHour * 60) / 60) * pxPerHour, background: 'var(--clay-accent-ink)' }} />

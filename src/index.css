@@ -308,6 +308,26 @@ input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
   text-align: left;
 }
 
+/* iPhone draws date and time boxes its own way: a built-in minimum width
+   that ignores width:100% (so they stuck out past a form, and the form
+   could be dragged sideways), and a height that ignores min-height. Drawn
+   by the app instead, they size like every other box; tapping one still
+   opens the iPhone's own date or time picker. */
+input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"]) {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* An app scrolls up and down, not sideways: nothing on a page should let
+   the whole screen be dragged left or right. Rows that scroll sideways on
+   purpose (chips, the calendar week) have their own overflow and keep it. */
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
 /* Range inputs pick up the accent so sliders match the theme */
 input[type="range"] {
   accent-color: var(--clay-accent);
@@ -339,3 +359,82 @@ input[type="range"] {
 /* Scrolls as ever, without the scrollbar strip down the right edge. */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ─────────────────────────────────────────────────────────────
+   Liquid glass, after Apple's iOS 26 material, for the controls that
+   float over content: the tab bars, floating buttons, the selection pill.
+   Never for the content itself — pages and cards stay solid so text
+   stays readable, and glass never sits on glass.
+
+   What makes it read as glass rather than frosted plastic:
+     - see-through, with what passes behind blurred and lifted in
+       saturation (the "lensing" of colour through it);
+     - a bright rim and a specular sheen from the top-left, like light
+       catching a curved edge;
+     - a soft shadow underneath, so it floats.
+   Reduce Transparency turns it solid, as the system does.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --glass-fill: rgba(255, 255, 255, .58);
+  --glass-rim: rgba(255, 255, 255, .7);
+  --glass-edge: rgba(30, 40, 70, .1);
+  --glass-sheen: rgba(255, 255, 255, .55);
+  --glass-shadow: 0 12px 32px -10px rgba(30, 40, 70, .32), 0 2px 6px -2px rgba(30, 40, 70, .12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --glass-fill: rgba(44, 44, 48, .55);
+    --glass-rim: rgba(255, 255, 255, .22);
+    --glass-edge: rgba(0, 0, 0, .4);
+    --glass-sheen: rgba(255, 255, 255, .14);
+    --glass-shadow: 0 14px 34px -10px rgba(0, 0, 0, .7), 0 2px 6px -2px rgba(0, 0, 0, .4);
+  }
+}
+:root[data-theme="dark"] {
+  --glass-fill: rgba(44, 44, 48, .55);
+  --glass-rim: rgba(255, 255, 255, .22);
+  --glass-edge: rgba(0, 0, 0, .4);
+  --glass-sheen: rgba(255, 255, 255, .14);
+  --glass-shadow: 0 14px 34px -10px rgba(0, 0, 0, .7), 0 2px 6px -2px rgba(0, 0, 0, .4);
+}
+
+/* In the components layer, so a utility on the same element (fixed,
+   absolute, a colour) still wins over these defaults. */
+@layer components {
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(20px) saturate(185%) brightness(1.04);
+  backdrop-filter: blur(20px) saturate(185%) brightness(1.04);
+  border: 1px solid var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 rgba(255, 255, 255, .08), var(--glass-shadow);
+}
+/* The specular sheen: light falling across the top-left of the curve. */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 12% 0%, var(--glass-sheen), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, .12), transparent 40%);
+}
+/* A tinted glass for the one primary action in view (Apple's "prominent"). */
+.glass-tint {
+  background: color-mix(in srgb, var(--clay-accent-ink) 82%, transparent);
+  color: #fff;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--clay-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-tint { background: var(--clay-accent-ink); }
+  .glass::before { display: none; }
+}
+}

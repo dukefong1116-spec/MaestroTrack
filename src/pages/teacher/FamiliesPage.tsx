@@ -1,3 +1,4 @@
+import { BadgeCheck, BellRing, Download, Mail } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -7,7 +8,7 @@ import { saveFamily, createInvoice, recordPayment, updateInvoice, markInvoicesRe
 import { balanceCents, draftInvoice, paidCents, standing, toCsv, type FamilyStanding } from '@/lib/studio/billing'
 import { addDays, dayKey, moneyExact, parseDay } from '@/lib/studio/dates'
 import Modal from '@/components/ui/Modal'
-import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, Btn, Empty, Field } from '@/components/teacher/studio/ui'
+import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, BulkSpacer, Btn, Empty, Field } from '@/components/teacher/studio/ui'
 import { inputCls, inputStyle } from '@/components/teacher/studio/tokens'
 import type { Family, FamilyContact, Invoice } from '@/types'
 
@@ -107,10 +108,10 @@ export default function FamiliesPage() {
           </div>
           {chosen.length > 0 && (
             <BulkBar label={`${chosen.length} famil${chosen.length === 1 ? 'y' : 'ies'} selected`} onClear={() => setSel(new Set())}>
-              <BulkButton onClick={remind}>Send payment reminder</BulkButton>
-              <BulkButton onClick={() => { window.location.href = mailto(chosen.flatMap((r) => emailsOf(r.f)), `Your invoice from ${studio}`, chosen.map((r) => `${r.f.name}: ${moneyExact(r.balance)} due`).join('\n')) }}>Email invoices</BulkButton>
-              <BulkButton primary onClick={markPaid}>Mark as paid</BulkButton>
-              <BulkButton onClick={exportCsv}>Export</BulkButton>
+              <BulkButton tone="warning" icon={<BellRing size={18} strokeWidth={2.3} />} onClick={remind}>Send payment reminder</BulkButton>
+              <BulkButton tone="info" icon={<Mail size={18} strokeWidth={2.3} />} onClick={() => { window.location.href = mailto(chosen.flatMap((r) => emailsOf(r.f)), `Your invoice from ${studio}`, chosen.map((r) => `${r.f.name}: ${moneyExact(r.balance)} due`).join('\n')) }}>Email invoices</BulkButton>
+              <BulkButton tone="success" icon={<BadgeCheck size={19} strokeWidth={2.3} />} onClick={markPaid}>Mark as paid</BulkButton>
+              <BulkButton tone="neutral" icon={<Download size={18} strokeWidth={2.3} />} onClick={exportCsv}>Export</BulkButton>
             </BulkBar>
           )}
           {notice && <p className="px-6 py-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)', borderBottom: '1px solid var(--clay-line)' }}>{notice}</p>}
@@ -160,6 +161,7 @@ export default function FamiliesPage() {
         </section>
       </div>
       {editing && <FamilyEditor family={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {chosen.length > 0 && <BulkSpacer />}
     </StudioPage>
   )
 }

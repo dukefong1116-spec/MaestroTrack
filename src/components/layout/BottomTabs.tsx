@@ -65,16 +65,10 @@ export default function BottomTabs() {
       aria-label="Main"
       // Not clipped: the raised tab breaks the top edge of the bar on
       // purpose, which is the whole point of it.
-      className="relative grid shrink-0 grid-cols-5 lg:hidden"
-      style={{
-        background: 'var(--clay-surface)',
-        borderTop: '1px solid var(--clay-line)',
-        // The home indicator sits in the bottom inset on a modern iPhone;
-        // without this the last row of labels lands underneath it.
-        paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
-        paddingTop: 7,
-        overflow: 'visible',
-      }}
+      // A floating glass capsule (Liquid Glass); the layout keeps it above
+      // the home indicator.
+      className="glass grid grid-cols-5 rounded-[30px] lg:hidden"
+      style={{ padding: '7px 4px 6px', overflow: 'visible' }}
     >
       {tabs.map(({ to, icon, label, short, end }) => {
         const raised = to === home
@@ -105,7 +99,10 @@ export default function BottomTabs() {
                     top: -22,
                     background: isActive ? 'var(--clay-accent)' : 'var(--clay-bg-deep)',
                     color: isActive ? 'var(--clay-on-accent)' : 'var(--clay-dim)',
-                    border: '4px solid var(--clay-page)',
+                    // A bright rim instead of a cut-out ring: on glass there
+                    // is no solid bar for a ring of page colour to cut into.
+                    border: '3px solid var(--glass-rim)',
+                    boxShadow: 'var(--glass-shadow)',
                   }}
                 >
                   <TabIcon icon={icon} active={isActive} raised />

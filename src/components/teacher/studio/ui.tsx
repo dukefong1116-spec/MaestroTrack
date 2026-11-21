@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TONES, type Tone } from './tokens'
 
@@ -147,25 +147,64 @@ export function Btn({
 }
 
 /** A dark bar of actions for whatever is selected. */
+/**
+ * What to do with the rows ticked: a floating pill above the tab bar (on a
+ * computer, centred at the bottom) rather than a dark band across the
+ * panel. The count, then a round button per action, then close. Pages
+ * end their list with <BulkSpacer /> so the last rows can scroll clear of it.
+ */
 export function BulkBar({ label, children, onClear }: { label: string; children: ReactNode; onClear: () => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 px-5 py-2.5 sm:px-6" style={{ background: 'var(--clay-ink)', color: '#fff' }} role="region" aria-label="Selected">
-      <strong className="flex-1 text-[13.5px]">{label}</strong>
-      {children}
-      <button type="button" onClick={onClear} aria-label="Clear selection" className="px-2 text-[15px]">✕</button>
-    </div>
+    <>
+      <div
+        role="region"
+        aria-label="Selected"
+        className="glass fixed left-3 right-3 z-40 flex items-center gap-1.5 rounded-full py-1.5 pl-4 pr-1.5 lg:bottom-6 lg:left-1/2 lg:right-auto lg:-translate-x-1/2"
+        style={{
+          bottom: 'calc(86px + env(safe-area-inset-bottom))',
+          color: 'var(--clay-ink)',
+        }}
+      >
+        <strong className="min-w-0 flex-1 truncate pr-2 text-[14px]">{label}</strong>
+        {children}
+        <button
+          type="button"
+          onClick={onClear}
+          aria-label="Clear selection"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+          style={{ background: 'var(--clay-bg)', color: 'var(--clay-dim)' }}
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
+      </div>
+    </>
   )
 }
 
-export function BulkButton({ children, primary, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & { primary?: boolean }) {
+/** Room at the end of a list for the floating pill to sit over. */
+export function BulkSpacer() {
+  return <div aria-hidden="true" className="h-24 lg:h-16" />
+}
+
+/** One action in the pill: a round, coloured icon; its words are its label. */
+export function BulkButton({ children, icon, tone = 'neutral', primary, ...rest }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  icon?: ReactNode
+  tone?: Tone
+  /** Kept for callers; the tone carries the emphasis now. */
+  primary?: boolean
+}) {
+  const [bg, fg] = TONES[tone]
+  const words = typeof children === 'string' ? children : undefined
   return (
     <button
       type="button"
       {...rest}
-      className="min-h-[34px] rounded-[9px] px-3 text-[13px] font-semibold disabled:opacity-50"
-      style={{ background: primary ? 'var(--clay-accent)' : 'rgba(255,255,255,.16)', color: '#fff', fontWeight: primary ? 700 : 600 }}
+      aria-label={words}
+      title={words}
+      className="flex h-10 shrink-0 items-center justify-center rounded-full text-[13px] font-bold transition-transform active:scale-95 disabled:opacity-50"
+      style={{ background: bg, color: fg, width: icon ? 40 : undefined, padding: icon ? 0 : '0 14px', boxShadow: primary ? `0 0 0 2px ${fg}` : undefined }}
     >
-      {children}
+      {icon ?? children}
     </button>
   )
 }

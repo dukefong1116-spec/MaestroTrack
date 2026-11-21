@@ -58,13 +58,24 @@ export default function AppLayout() {
           every page sat under the clock and the Dynamic Island. Its own
           height on each iPhone; nothing on a computer. Outside the scroll
           area, so content scrolls under it rather than into it. */}
-      <div className="flex min-w-0 flex-1 flex-col" style={{ paddingTop: underStatusBar ? 0 : 'env(safe-area-inset-top)' }}>
+      {/* The tab bar floats over the bottom of the page as a glass capsule
+          (Liquid Glass), so content scrolls on behind it. It is placed
+          inside this column, not fixed to the window, which keeps it clear
+          of the iOS Safari drift the comment above describes. Every page
+          ends with room for it (the pb- below). */}
+      <div className="relative flex min-w-0 flex-1 flex-col" style={{ paddingTop: underStatusBar ? 0 : 'env(safe-area-inset-top)' }}>
         <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
-          <div className={teacher ? 'clay-zoom mx-auto max-w-[1320px] px-3 py-4 sm:px-5 lg:px-4 lg:pb-24' : 'clay-zoom max-w-7xl mx-auto px-6 py-8'}>
+          <div className={teacher
+            ? 'clay-zoom mx-auto max-w-[1320px] px-3 pt-4 pb-[calc(96px+env(safe-area-inset-bottom))] sm:px-5 lg:px-4 lg:pb-24'
+            : 'clay-zoom max-w-7xl mx-auto px-6 pt-8 pb-[calc(104px+env(safe-area-inset-bottom))] lg:pb-8'}>
             <Outlet />
           </div>
         </main>
-        {teacher ? <Suspense fallback={null}><TeacherTabs /></Suspense> : <BottomTabs />}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 px-3 lg:hidden" style={{ paddingBottom: 'calc(6px + env(safe-area-inset-bottom))' }}>
+          <div className="pointer-events-auto">
+            {teacher ? <Suspense fallback={null}><TeacherTabs /></Suspense> : <BottomTabs />}
+          </div>
+        </div>
       </div>
       {teacher && <Suspense fallback={null}><MessageDock /></Suspense>}
     </div>

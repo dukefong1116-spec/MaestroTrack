@@ -16,13 +16,8 @@ export default function TeacherTabs() {
   return (
     <nav
       aria-label="Main"
-      className="grid shrink-0 grid-cols-5 lg:hidden"
-      style={{
-        background: 'var(--clay-surface)',
-        borderTop: '1px solid var(--clay-line)',
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
-        paddingTop: 6,
-      }}
+      className="glass grid grid-cols-5 rounded-[30px] lg:hidden"
+      style={{ padding: '6px 4px' }}
     >
       {TEACHER_TABS.map((t) => {
         const extra = t.also?.some((p) => pathname.startsWith(p)) ?? false

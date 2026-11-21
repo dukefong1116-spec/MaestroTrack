@@ -118,7 +118,7 @@ export default function NotificationBell({ label, floating, rail }: {
           label
             ? 'flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition-colors hover:bg-[var(--clay-bg)]'
             : floating
-              ? 'relative flex h-11 w-11 items-center justify-center rounded-full'
+              ? 'glass flex h-11 w-11 items-center justify-center rounded-full'
               : 'relative flex h-9 w-9 items-center justify-center rounded-full'
         }
         style={
@@ -127,7 +127,7 @@ export default function NotificationBell({ label, floating, rail }: {
             : floating
               // On a phone this sits over the page rather than inside the
               // sidebar, so it needs its own surface to read as a control.
-              ? { background: 'var(--clay-surface)', color: 'var(--clay-ink)', boxShadow: 'var(--clay-raised)' }
+              ? { color: 'var(--clay-ink)' }
               : { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
         }
       >

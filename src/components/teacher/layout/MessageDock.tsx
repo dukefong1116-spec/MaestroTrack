@@ -27,8 +27,8 @@ export default function MessageDock() {
         <button
           type="button"
           onClick={() => show(null)}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-3 rounded-full py-2 pl-2 pr-5 transition-transform active:scale-95"
-          style={{ background: 'var(--clay-surface)', border: '1px solid var(--clay-line)', boxShadow: '0 14px 30px -10px rgba(30,40,70,.35)', color: 'var(--clay-ink)' }}
+          className="glass fixed bottom-6 right-6 z-40 flex items-center gap-3 rounded-full py-2 pl-2 pr-5 transition-transform active:scale-95"
+          style={{ color: 'var(--clay-ink)' }}
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: 'var(--clay-accent)' }}>
             <MessageCircle size={16} aria-hidden="true" />

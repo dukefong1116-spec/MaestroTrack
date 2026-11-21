@@ -1,4 +1,4 @@
-import { ClipboardCheck } from 'lucide-react'
+import { ClipboardCheck, Check as Tick, MessageCircle, Undo2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO, formatDistanceToNowStrict } from 'date-fns'
@@ -9,7 +9,7 @@ import { normaliseStatus, latestSubmission, dueness } from '@/lib/utils/assignme
 import { reviewAssignment } from '@/lib/firebase/assignments'
 import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
-import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, Avatar, Empty, Btn } from '@/components/teacher/studio/ui'
+import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, BulkSpacer, Avatar, Empty, Btn } from '@/components/teacher/studio/ui'
 import { colorFor, inputStyle } from '@/components/teacher/studio/tokens'
 import type { Assignment, Recording } from '@/types'
 
@@ -96,7 +96,7 @@ export default function ReviewPage() {
 
   return (
     <StudioPage>
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-4 px-5 py-4 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-6 px-5 py-5 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {/* Four equal tabs on one line, each its name over its count:
             "Needs review · 0" and friends wrapped onto two rows on a phone. */}
         <Segmented
@@ -129,16 +129,17 @@ export default function ReviewPage() {
 
       {chosen.length > 0 && (
         <BulkBar label={`${chosen.length} selected`} onClear={() => setSel(new Set())}>
-          <BulkButton primary disabled={busy} onClick={() => bulk('approved')}>Approve</BulkButton>
-          <BulkButton disabled={busy} onClick={() => bulk('returned')}>Send back</BulkButton>
-          <BulkButton onClick={() => openMessages(null)}>Message students</BulkButton>
+          <BulkButton tone="success" icon={<Tick size={19} strokeWidth={2.6} />} disabled={busy} onClick={() => bulk('approved')}>Approve</BulkButton>
+          <BulkButton tone="warning" icon={<Undo2 size={18} strokeWidth={2.4} />} disabled={busy} onClick={() => bulk('returned')}>Send back</BulkButton>
+          <BulkButton tone="info" icon={<MessageCircle size={18} strokeWidth={2.3} />} onClick={() => openMessages(null)}>Message students</BulkButton>
         </BulkBar>
       )}
       {notice && <p className="px-6 py-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)', borderBottom: '1px solid var(--clay-line)' }}>{notice}</p>}
 
       {rows.length === 0 ? (filter === 'needs' ? (
         // Nothing to review: said big, like the student's own caught-up state.
-        <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+        // In the middle of the screen, not just under the filters.
+        <div className="flex min-h-[calc(100dvh-330px)] flex-col items-center justify-center px-6 py-14 text-center">
           <span className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }} aria-hidden="true">
             <ClipboardCheck size={38} strokeWidth={1.75} />
           </span>
@@ -197,6 +198,7 @@ export default function ReviewPage() {
         open={!!reviewing}
         onClose={() => setReviewing(null)}
       />
+      {chosen.length > 0 && <BulkSpacer />}
     </StudioPage>
   )
 }

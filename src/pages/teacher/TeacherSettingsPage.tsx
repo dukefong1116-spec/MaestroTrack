@@ -52,8 +52,8 @@ export default function TeacherSettingsPage() {
   const types = settings.lessonTypes.length
 
   return (
-    <StudioPage title="Settings" subtitle="Your studio, lessons, prices and policies">
-      <Section title="You and your studio" hint="Shown to students and on invoices." first>
+    <StudioPage title="Settings">
+      <Section title="You and your studio" first>
         <Link to="/teacher/settings/profile" className="flex items-center gap-3">
           <Avatar src={profile?.avatar} name={profile?.displayName} instrument={profile?.instrument as InstrumentType | undefined} size={48} />
           <span className="min-w-0 flex-1">
