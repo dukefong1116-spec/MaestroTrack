@@ -1,7 +1,10 @@
 import { Suspense, lazy, useEffect } from 'react'
+import { onWidgetLink, routeForLink } from '@/lib/nativeWidgets'
+import { useLiveActivity } from '@/hooks/useLiveActivity'
+import { useStudentWidgets, useTeacherWidgets } from '@/hooks/useWidgetSync'
 import { lazyPage } from '@/lib/lazyPage'
 import { setOpeningPage } from '@/lib/openingPage'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
@@ -223,6 +226,10 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   // Spends a freeze on a missed day and records a finished comeback.
   useStreakUpkeep(profile?.role === 'student' ? profile?.uid : undefined)
   usePrefetchTabs(profile?.role === 'student' || profile?.role === 'teacher' ? profile.role : undefined)
+  // The iPhone app's widgets and the practice Live Activity.
+  useStudentWidgets(profile?.role === 'student')
+  useTeacherWidgets(profile?.role === 'teacher')
+  useLiveActivity(profile?.role === 'student')
   // Remembered for the sign-in screen's "Last signed in as".
   useEffect(() => {
     if (profile?.email) rememberLogin({ email: profile.email, name: profile.displayName, avatar: profile.avatar, instrument: profile.instrument })
@@ -273,6 +280,12 @@ const TEACHER_TAB_PAGES = {
 
 function AppRoutes() {
   useAuthInit()
+  // A widget or the Live Activity opened the app at one of its pages.
+  const navigate = useNavigate()
+  useEffect(() => onWidgetLink((url) => {
+    const to = routeForLink(url)
+    if (to) navigate(to)
+  }), [navigate])
 
   return (
     <Routes>

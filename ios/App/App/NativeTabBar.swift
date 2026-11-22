@@ -8,6 +8,7 @@ class MutifViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(NativeTabBarPlugin())
         bridge?.registerPluginInstance(NativeGlassPlugin())
+        bridge?.registerPluginInstance(FemataWidgetsPlugin())
         // Femata blue behind the page until it paints, so the launch screen
         // runs straight into the web one with no white flash. The page
         // paints its own background over it from then on.

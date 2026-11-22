@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { isNativeApp } from '@/lib/native'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Eye, EyeOff, Medal, Music2, Sprout, Trophy } from 'lucide-react'
@@ -440,28 +441,42 @@ function WelcomeBurst({ onDone }: { onDone: () => void }) {
   )
 }
 
-/* ── The widget (to come) ─────────────────────────────────── */
+/* ── The widget ───────────────────────────────────────────── */
 function WidgetStep({ onDone }: { onDone: () => void }) {
-  const [soon, setSoon] = useState(false)
+  const [how, setHow] = useState(false)
+  const steps = [
+    'Touch and hold an empty spot on your Home Screen.',
+    'Tap Edit, then Add Widget.',
+    'Search for Femata and pick a size.',
+  ]
   return (
     <div className="flex flex-1 flex-col">
       <Ask mood="excited">I'll cheer you on from your Home Screen!</Ask>
-      <div className="mx-auto mt-4 grid w-[230px] grid-cols-4 gap-3 rounded-[34px] p-5" style={{ background: STAGE.ink3 }}>
-        <div className="col-span-2 row-span-2 flex aspect-square flex-col justify-between rounded-[18px] bg-white p-2.5 text-[12px] font-black" style={{ color: '#14202E' }}>
-          <span className="text-[20px]" style={{ color: '#F2852A' }}>🔥 1</span>
-          <span className="leading-tight">Ready to practise?</span>
-          <span className="self-end"><Femata size={44} /></span>
+      {!how ? (
+        <div className="mx-auto mt-4 grid w-[230px] grid-cols-4 gap-3 rounded-[34px] p-5" style={{ background: STAGE.ink3 }}>
+          <div className="relative col-span-2 row-span-2 flex aspect-square flex-col overflow-hidden rounded-[18px] bg-white p-2.5 text-[12px] font-black" style={{ color: '#14202E' }}>
+            <span className="text-[20px]" style={{ color: '#F2852A' }}>🔥 1</span>
+            <span className="leading-tight">Ready to practise?</span>
+            <span className="absolute -bottom-1 -right-1"><Femata mood="sleepy" size={54} /></span>
+          </div>
+          {Array.from({ length: 8 }, (_, k) => <div key={k} className="aspect-square rounded-[12px]" style={{ background: '#3A4866' }} />)}
         </div>
-        {Array.from({ length: 8 }, (_, k) => <div key={k} className="aspect-square rounded-[12px]" style={{ background: '#3A4866' }} />)}
-      </div>
-      {soon && (
-        <p className="mx-auto mt-5 max-w-[280px] text-center text-[14px] font-bold" style={{ color: STAGE.sky }}>
-          The widget is on its way. I'll let you know when it's ready!
-        </p>
+      ) : (
+        <ol className="mx-auto mt-4 flex w-full max-w-[320px] flex-col gap-3">
+          {steps.map((t, i) => (
+            <li key={t} className="flex items-center gap-3 rounded-[16px] px-4 py-3 text-[15px] font-bold" style={{ background: 'rgba(14,22,38,.55)', border: `2px solid ${STAGE.ink3}` }}>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[14px] font-black" style={{ background: STAGE.sky, color: '#04223A' }}>{i + 1}</span>
+              {t}
+            </li>
+          ))}
+          {!isNativeApp && (
+            <p className="text-center text-[13px] font-semibold" style={{ color: STAGE.muted }}>Widgets come with the Femata iPhone app.</p>
+          )}
+        </ol>
       )}
       <div className="mt-auto flex flex-col gap-1 pt-4">
-        <BigButton onClick={() => { if (soon) onDone(); else setSoon(true) }}>{soon ? "LET'S GO" : 'ADD WIDGET'}</BigButton>
-        {!soon && <BigButton kind="ghost" onClick={onDone}>NOT NOW</BigButton>}
+        <BigButton onClick={() => { if (how) onDone(); else setHow(true) }}>{how ? "GOT IT, LET'S GO" : 'ADD WIDGET'}</BigButton>
+        {!how && <BigButton kind="ghost" onClick={onDone}>NOT NOW</BigButton>}
       </div>
     </div>
   )

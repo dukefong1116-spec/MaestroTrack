@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { liveDone, setLivePiece } from '@/lib/nativeWidgets'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Minus, Check, Pencil, Trash2 } from 'lucide-react'
@@ -834,6 +835,8 @@ export default function SessionPage() {
       ...(earned.hitDailyGoal && earned.minutesToday - earned.minutes < goal ? ['goal' as const] : []),
     ])
     setReward(earned)
+    // The Dynamic Island celebrates the saved minutes, then goes.
+    liveDone(minutes)
     // The league's part of the celebration: your new XP, and the climb if
     // this session moved you. Arrives a moment after the rest.
     if (isStudent && !profile?.leagueOptOut) {
@@ -851,6 +854,18 @@ export default function SessionPage() {
     .map((id) => pieces.find((p) => p.id === id)?.title)
     .filter(Boolean)
     .join(' + ')
+  // The piece's name for the Dynamic Island and Lock Screen.
+  useEffect(() => { setLivePiece(pickedTitles) }, [pickedTitles])
+  // Finish pressed on the Live Activity: go straight to finishing.
+  const finishAsked = useRef(false)
+  useEffect(() => {
+    if (finishAsked.current || params.get('finish') !== '1') return
+    const t = usePracticeStore.getState()
+    if (!t.timerRunning && t.timerAccumulatedSec === 0) return
+    finishAsked.current = true
+    beginFinish()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params])
 
   /* ── render ────────────────────────────────────────────── */
   return (
