@@ -196,7 +196,7 @@ function CopyTo({ a, from, teacherId, onClose }: { a: Assignment; from: Member; 
       <div className="flex flex-wrap gap-1.5">
         {members.map((x) => {
           const on = pick.includes(x.id)
-          return <button key={x.id} type="button" aria-pressed={on} onClick={() => setPick(on ? pick.filter((y) => y !== x.id) : [...pick, x.id])} className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold" style={on ? { background: 'var(--clay-ink)', color: '#fff' } : inputStyle}>{x.name}</button>
+          return <button key={x.id} type="button" aria-pressed={on} onClick={() => setPick(on ? pick.filter((y) => y !== x.id) : [...pick, x.id])} className="min-h-[34px] rounded-full px-3 text-[13px] font-semibold" style={on ? { background: 'var(--clay-ink)', color: 'var(--clay-page)' } : inputStyle}>{x.name}</button>
         })}
       </div>
       <Field label="Due" className="mt-3 w-44"><input type="date" className={inputCls} style={inputStyle} value={due} onChange={(e) => setDue(e.target.value)} /></Field>

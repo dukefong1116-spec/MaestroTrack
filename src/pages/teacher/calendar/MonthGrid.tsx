@@ -43,7 +43,7 @@ export default function MonthGrid({
           return (
             <button key={date} type="button" aria-label={label} aria-pressed={on} onClick={() => onPick(date)} className="flex h-12 flex-col items-center gap-0.5 pt-1">
               <span className="flex h-7 w-7 items-center justify-center rounded-full text-[14px]"
-                style={on ? { background: 'var(--clay-ink)', color: '#fff', fontWeight: 700 } : isToday ? { background: 'var(--clay-accent)', color: '#fff', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)' }}>
+                style={on ? { background: 'var(--clay-ink)', color: 'var(--clay-page)', fontWeight: 700 } : isToday ? { background: 'var(--clay-accent)', color: '#fff', fontWeight: 700 } : { color: inMonth ? 'var(--clay-ink)' : 'var(--clay-faint)' }}>
                 {d.getDate()}
               </span>
               <span className="flex gap-0.5">{dots.map((c) => <span key={c} className="h-[5px] w-[5px] rounded-full" style={{ background: c }} />)}</span>
