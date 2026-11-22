@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import Femata from '@/components/femata/Femata'
 import { useNavigate } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -492,10 +493,10 @@ export default function PracticeLogPage() {
         {/* history */}
         {grouped.length === 0 ? (
           <div className="px-6 py-12 text-center">
-            <Sticker name="note" size={46} tone="accent" className="mx-auto mb-3" />
+            <Femata mood="sleepy" size={104} className="mx-auto mb-3" />
             <p className="text-[15px] font-semibold">No sessions yet</p>
             <p className="mt-1 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
-              Hit Start Session and the clock does the rest.
+              Wake me up with your first session. Hit Start and I’ll keep time.
             </p>
           </div>
         ) : (

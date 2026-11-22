@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import Femata, { type FemataMood } from '@/components/femata/Femata'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import AssignmentRow from '@/components/assignments/AssignmentRow'
@@ -106,7 +107,7 @@ export default function StudioAssignmentsPage() {
 
         {tab === 'todo' ? (
           groups.length === 0 ? (
-            <Empty text="Nothing to do — all caught up ✨" />
+            <Empty mood="celebrate" text="Nothing to do. You’re all caught up!" />
           ) : groups.map((g) => (
             <section key={g.group} className="mb-4">
               <p className="mb-1.5 px-1 text-[10.5px] font-bold uppercase tracking-[.12em]" style={{ color: GROUP_COLOR[g.group] }}>
@@ -116,7 +117,7 @@ export default function StudioAssignmentsPage() {
             </section>
           ))
         ) : tabs[tab].length === 0 ? (
-          <Empty text={tab === 'handed' ? 'Nothing waiting on your teacher.' : 'Nothing finished yet.'} />
+          <Empty mood={tab === 'handed' ? 'cool' : 'thinking'} text={tab === 'handed' ? 'Nothing waiting on your teacher. Your desk is clear.' : 'Nothing finished yet. Your first one will be a good one.'} />
         ) : (
           <div className="px-4" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>{rows(tabs[tab])}</div>
         )}
@@ -127,6 +128,11 @@ export default function StudioAssignmentsPage() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className="py-12 text-center text-[14px]" style={{ color: 'var(--clay-dim)' }}>{text}</p>
+function Empty({ text, mood = 'happy' }: { text: string; mood?: FemataMood }) {
+  return (
+    <div className="flex flex-col items-center py-10 text-center">
+      <Femata mood={mood} size={100} />
+      <p className="mt-3 max-w-[280px] text-[14px] font-semibold" style={{ color: 'var(--clay-dim)' }}>{text}</p>
+    </div>
+  )
 }

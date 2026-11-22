@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Femata from '@/components/femata/Femata'
 import { format, parseISO } from 'date-fns'
 import { Plus, Send, X } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
@@ -122,9 +123,12 @@ export default function MessageThread({
     <div className={full ? 'flex h-full min-h-0 flex-col' : ''}>
       <div className={full ? 'min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4' : 'space-y-2.5'}>
         {messages.length === 0 && (
-          <p className="py-6 text-center text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>
-            {canSend ? `Say hi to ${otherName} 👋` : 'No messages.'}
-          </p>
+          <div className="flex flex-col items-center py-8 text-center">
+            <Femata mood={canSend ? 'wink' : 'sleepy'} size={92} />
+            <p className="mt-2 text-[13.5px] font-semibold" style={{ color: 'var(--clay-dim)' }}>
+              {canSend ? `Say hi to ${otherName}! A first message breaks the ice.` : 'No messages yet.'}
+            </p>
+          </div>
         )}
         {messages.map((m) => {
           const mine = m.from === me

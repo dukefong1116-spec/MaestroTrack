@@ -50,7 +50,7 @@ export default function Assignments({ m, sessions, onReview }: { m: Member; sess
         {canSet && <Btn kind={composing ? 'soft' : 'primary'} onClick={() => setComposing((v) => !v)}>{composing ? 'Cancel' : '+ New assignment'}</Btn>}
       </div>
       {composing && profile && <Composer teacherId={profile.uid} m={m} onDone={() => setComposing(false)} />}
-      {mine.length === 0 && !composing && <Empty>No assignments yet.</Empty>}
+      {mine.length === 0 && !composing && <Empty mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
       {mine.map((a) => {
         const st = normaliseStatus(a.status)
         const [label, tone] = STATUS[st]

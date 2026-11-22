@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, X } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { TONES, type Tone } from './tokens'
+import Femata, { type FemataMood } from '@/components/femata/Femata'
 
 /**
  * The teacher pages' building blocks: one connected sheet per page, split
@@ -240,8 +241,19 @@ export function Field({ label, children, className }: { label: string; children:
   )
 }
 
-export function Empty({ children }: { children: ReactNode }) {
-  return <p className="px-5 py-6 text-[14px] sm:px-6" style={{ color: 'var(--clay-dim)' }}>{children}</p>
+/**
+ * An empty list. With a mood, Femata says it (a different face on each
+ * page); without one, just the line, for small spots like a loading note.
+ */
+export function Empty({ children, mood, title }: { children?: ReactNode; mood?: FemataMood; title?: string }) {
+  if (!mood) return <p className="px-5 py-6 text-[14px] sm:px-6" style={{ color: 'var(--clay-dim)' }}>{children}</p>
+  return (
+    <div className="flex flex-col items-center px-6 pb-10 pt-8 text-center">
+      <Femata mood={mood} size={104} />
+      {title && <p className="mt-3 text-[16.5px] font-bold" style={{ color: 'var(--clay-ink)' }}>{title}</p>}
+      {children && <p className="mt-1 max-w-[300px] text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>{children}</p>}
+    </div>
+  )
 }
 
 /** A student's profile photo when they have set one; their initials on a colour when not. */

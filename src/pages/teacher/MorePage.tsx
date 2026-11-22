@@ -36,9 +36,9 @@ export default function MorePage() {
   ]
   return (
     <StudioPage>
-      {/* You, at the top, as on the student's Settings: your banner with
-          your photo on its edge, and your name and studio under it. */}
-      <div className="px-4 pt-3 sm:px-5">
+      {/* One panel, as on the student's Settings: your banner with your
+          photo on its edge, your name and studio, then everything else. */}
+      <div className="px-4 pb-4 pt-3 sm:px-5">
         <div className="overflow-hidden rounded-[22px]" style={{ border: '1px solid var(--clay-line)', background: 'var(--clay-surface)' }}>
           <div className="relative">
             <Banner image={profile?.bannerImage} color={profile?.bannerColor} height={150}>
@@ -63,16 +63,14 @@ export default function MorePage() {
             </span>
             <ChevronRight size={18} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
           </Link>
-        </div>
-      </div>
-      <div className="py-2">
-        {rows.map((r, i) => (
+      <div>
+        {rows.map((r) => (
           <button
             key={r.label}
             type="button"
             onClick={r.go}
-            className="flex w-full items-center gap-4 px-5 py-5 text-left transition-colors active:bg-[var(--clay-bg)] sm:px-6"
-            style={i ? { borderTop: '1px solid var(--clay-line)' } : undefined}
+            className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors active:bg-[var(--clay-bg)]"
+            style={{ borderTop: '1px solid var(--clay-line)' }}
           >
             <span
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px]"
@@ -89,6 +87,8 @@ export default function MorePage() {
             <ChevronRight size={18} style={{ color: 'var(--clay-faint)' }} aria-hidden="true" />
           </button>
         ))}
+      </div>
+        </div>
       </div>
       <BannerSheet open={banner} onClose={() => setBanner(false)} />
       <AddStudentSheet open={adding} onClose={() => setAdding(false)} onAdded={(id) => navigate(`/teacher/students/${encodeURIComponent(id)}`)} />

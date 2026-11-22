@@ -119,8 +119,11 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
     <div
       // 100dvh, not 100vh: on mobile Safari the toolbar slides in and out,
       // and vh keeps reporting the taller figure.
-      className="flex h-[100dvh] overflow-hidden"
-      style={{ background: 'var(--clay-page)', color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
+      // A teacher's page on a phone is one sheet edge to edge, so the ground
+      // around it takes the sheet's colour: in dark mode the page colour
+      // showed as black bands above and below it.
+      className={cn('flex h-[100dvh] overflow-hidden', teacher ? 'bg-[var(--clay-page)] max-sm:bg-[var(--clay-surface)]' : 'bg-[var(--clay-page)]')}
+      style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
     >
       {/* A teacher gets the studio's icon rail; a student keeps the sidebar. */}
       {teacher ? <Suspense fallback={null}><TeacherRail /></Suspense> : <Sidebar />}

@@ -10,9 +10,9 @@ import InviteSheet from '@/components/teacher/InviteSheet'
 import { StudioPage } from '@/components/teacher/studio/ui'
 import type { InstrumentType } from '@/types'
 
-function Section({ title, hint, children, first }: { title: string; hint?: string; children: ReactNode; first?: boolean }) {
+function Section({ title, hint, children, first, className }: { title: string; hint?: string; children: ReactNode; first?: boolean; className?: string }) {
   return (
-    <div className="flex flex-wrap gap-x-8 gap-y-2 px-5 py-5 sm:px-6" style={first ? undefined : { borderTop: '1px solid var(--clay-line)' }}>
+    <div className={`flex flex-wrap gap-x-8 gap-y-2 px-5 py-5 sm:px-6 ${first ? '' : 'border-t'} ${className ?? ''}`} style={{ borderColor: 'var(--clay-line)' }}>
       <div className="w-full sm:w-56 sm:shrink-0">
         <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--clay-ink)' }}>{title}</h2>
         {hint && <p className="mt-1 text-[12.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>{hint}</p>}
@@ -53,7 +53,9 @@ export default function TeacherSettingsPage() {
 
   return (
     <StudioPage back={{ to: '/teacher/more', label: 'More', phoneOnly: true }} title="Settings">
-      <Section title="You and your studio" first>
+      {/* On a phone your profile is the top of More now, so it is not
+          repeated here; a computer has no More page, so it stays. */}
+      <Section title="You and your studio" first className="hidden lg:flex">
         <Link to="/teacher/settings/profile" className="flex items-center gap-3">
           <Avatar src={profile?.avatar} name={profile?.displayName} instrument={profile?.instrument as InstrumentType | undefined} size={48} />
           <span className="min-w-0 flex-1">
@@ -66,7 +68,7 @@ export default function TeacherSettingsPage() {
         </Link>
       </Section>
 
-      <Section title="Studio" hint="How lessons are booked, priced and shown.">
+      <Section title="Studio" hint="How lessons are booked, priced and shown." className="max-lg:border-t-0">
         <NavRow icon={<Tags size={18} />} label="Lessons and prices" to="/teacher/settings/lessons"
           value={`${settings.defaultLessonMinutes} min default · ${types} ${types === 1 ? 'type' : 'types'}`} />
         <NavRow icon={<CalendarClock size={18} />} label="Calendar hours" to="/teacher/settings/calendar"

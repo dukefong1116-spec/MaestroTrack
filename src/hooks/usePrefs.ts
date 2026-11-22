@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
+import { nativeAppearance } from '@/lib/nativeGlass'
 import { applyPrefs, cachePrefs, prefsFromProfile, PREFS_VERSION, type Prefs } from '@/lib/utils/prefs'
 
 /**
@@ -16,7 +17,19 @@ export function usePrefs() {
   const { profile, user } = useAuth()
   const { setProfile } = useAuthStore()
 
-  const prefs = useMemo(() => prefsFromProfile(profile), [profile])
+  // What was just tapped, held over the profile until the saved copy says
+  // the same. Without it, an older copy of the profile arriving from the
+  // database just after a tap (as can happen in the iPhone app) flipped
+  // the switch straight back.
+  const held = usePending()
+  const prefs = useMemo(() => {
+    const base = prefsFromProfile(profile)
+    const h = held.current
+    if (!h) return base
+    const settled = Object.entries(h.patch).every(([k, v]) => k === 'notify' || JSON.stringify((base as unknown as Record<string, unknown>)[k]) === JSON.stringify(v))
+    if (settled || Date.now() > h.until) { held.current = null; return base }
+    return { ...base, ...h.patch, notify: { ...base.notify, ...(h.patch.notify ?? {}) } } as Prefs
+  }, [profile, held])
 
   /**
    * On 'system', the theme can change without anything in React changing.
@@ -38,6 +51,7 @@ export function usePrefs() {
   useEffect(() => {
     applyPrefs(prefs)
     cachePrefs(prefs)
+    nativeAppearance(prefs.theme)
   }, [prefs])
 
   type PrefPatch = Partial<Omit<Prefs, 'notify'>> & { notify?: Partial<Prefs['notify']> }
@@ -48,6 +62,7 @@ export function usePrefs() {
 
     // Apply and cache before the write: the effect above will run again
     // when the profile lands, but the control should not wait for it.
+    held.current = { patch, until: Date.now() + 8000 }
     applyPrefs(next)
     cachePrefs(next)
 
@@ -61,8 +76,17 @@ export function usePrefs() {
       await updateUserProfile(uid, { ...patch, prefsVersion: PREFS_VERSION } as Record<string, unknown>)
     } catch (e) {
       console.error('[prefs] could not save', e)
+      held.current = null
+      window.dispatchEvent(new CustomEvent('femata:prefs-failed'))
     }
   }, [prefs, profile, user?.uid, setProfile])
 
   return { prefs, set }
+}
+
+/** One shared hold for every usePrefs on screen (the layout and the settings page). */
+type Held = { patch: Partial<Omit<Prefs, 'notify'>> & { notify?: Partial<Prefs['notify']> }; until: number } | null
+const shared: { current: Held } = { current: null }
+function usePending() {
+  return useRef(shared).current
 }

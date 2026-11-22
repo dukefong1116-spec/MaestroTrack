@@ -13,7 +13,7 @@ export default function ReportsPage() {
   const sessions = useTeacherStore((s) => s.studentSessions)
   return (
     <StudioPage back={{ to: '/teacher/more', label: 'More', phoneOnly: true }} title="Reports" subtitle="A progress report for any student, over any period" actions={<Btn kind="soft" onClick={() => navigate('/teacher/research')}>Practice research</Btn>}>
-      {members.length === 0 && <Empty>No students yet.</Empty>}
+      {members.length === 0 && <Empty mood="thinking" title="No one to report on yet">Reports fill in as soon as a student joins your studio.</Empty>}
       {members.map((m) => {
         const s = m.uid ? getAnalyticsSummary(sessions[m.uid] ?? [], m.profile?.weeklyGoalMinutes ?? 300) : null
         return (

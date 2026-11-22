@@ -68,7 +68,9 @@ export default function StudentsPage() {
       </div>
 
       {rows.length === 0 ? (
-        <Empty>{members.length ? 'Nobody matches.' : 'No students yet. Add one with the button above — an invitation, or a record for someone not on the app.'}</Empty>
+        members.length
+          ? <Empty mood="surprised" title="Nobody by that name">Try another spelling, or clear the search.</Empty>
+          : <Empty mood="excited" title="Your studio is waiting">Add your first student with the button above: an invitation, or a record for someone not on the app.</Empty>
       ) : (
         <>
           {/* Phone: one row each. */}

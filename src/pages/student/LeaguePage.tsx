@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Femata, { type FemataMood } from '@/components/femata/Femata'
 import { Link, useNavigate } from 'react-router-dom'
 import { Clock, Crown, Info, ArrowBigUpDash, ArrowBigDownDash } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
@@ -159,6 +160,7 @@ export default function LeaguePage() {
       <div className="mt-3 px-2 py-3" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
         {optedOut ? (
           <Empty
+            mood="sleepy"
             title="Weekly leagues are off"
             text="You're not in a league, and nobody sees your practice. Turn them back on any time."
             action={<Link to="/student/settings/privacy" className="text-[13px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>Privacy settings ›</Link>}
@@ -167,6 +169,7 @@ export default function LeaguePage() {
           <div className="space-y-2 p-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-xl" style={{ background: 'var(--clay-bg-deep)' }} />)}</div>
         ) : !room ? (
           <Empty
+            mood="excited"
             title="Join this week's league"
             text={`Practise with the timer to join a ${theme.name} room. Your first session this week puts you in.`}
             action={<Link to="/student/session" className="rounded-full px-5 py-2.5 text-[13.5px] font-bold" style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>Start practising</Link>}
@@ -211,9 +214,10 @@ export default function LeaguePage() {
   )
 }
 
-function Empty({ title, text, action }: { title: string; text: string; action: React.ReactNode }) {
+function Empty({ title, text, action, mood }: { title: string; text: string; action: React.ReactNode; mood: FemataMood }) {
   return (
     <div className="flex flex-col items-center px-4 py-6 text-center">
+      <Femata mood={mood} size={92} className="mb-2" />
       <p className="text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>{title}</p>
       <p className="mb-4 mt-1 max-w-xs text-[13px]" style={{ color: 'var(--clay-dim)' }}>{text}</p>
       {action}

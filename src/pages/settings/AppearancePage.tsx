@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Sun, Moon, Monitor, Zap } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -16,6 +17,13 @@ const THEMES: { id: ThemeChoice; label: string; icon: typeof Sun }[] = [
 export default function AppearancePage() {
   const { profile } = useAuth()
   const { prefs, set } = usePrefs()
+  // A change the database would not take: said plainly, not silently undone.
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    const on = () => setFailed(true)
+    window.addEventListener('femata:prefs-failed', on)
+    return () => window.removeEventListener('femata:prefs-failed', on)
+  }, [])
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const instrument = profile?.instrument as InstrumentType | undefined
   // Raw, not getTheme: this swatch is a preview of what 'match my
@@ -25,6 +33,11 @@ export default function AppearancePage() {
 
   return (
     <SettingsScreen title="Appearance" back={back}>
+      {failed && (
+        <p className="mb-3 rounded-xl px-4 py-3 text-sm" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-danger)' }}>
+          That change didn't save. Check your connection and try again.
+        </p>
+      )}
       <Panel>
         <Block first>
           <Legend title="Theme" hint="System follows whatever your phone or computer is set to." />

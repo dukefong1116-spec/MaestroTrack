@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
+import Femata from '@/components/femata/Femata'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { formatDistanceToNowStrict, parseISO } from 'date-fns'
-import { ChevronRight, ClipboardCheck, ClipboardList, Send } from 'lucide-react'
+import { ChevronRight, Send } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useStudio } from '@/hooks/useStudio'
@@ -158,13 +159,7 @@ export default function StudioPage() {
             // Nothing to do: said big, in the middle of the space, rather
             // than a line of small print at the top of an empty box.
             <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center">
-              <span
-                className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]"
-                style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}
-                aria-hidden="true"
-              >
-                {mine.length ? <ClipboardCheck size={38} strokeWidth={1.75} /> : <ClipboardList size={38} strokeWidth={1.75} />}
-              </span>
+              <Femata mood={mine.length ? 'proud' : 'thinking'} size={110} className="mb-3" />
               <p className="text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>
                 {mine.length ? 'All caught up' : 'No assignments yet'}
               </p>

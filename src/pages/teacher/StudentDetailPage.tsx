@@ -174,7 +174,7 @@ export default function StudentDetailPage() {
       {tab === 'practice' && <Practice m={m} sessions={sessions} summary={summary} />}
       {tab === 'recordings' && (
         recordings.length === 0
-          ? <Empty>{m.onApp ? `${first} hasn’t handed in any recordings yet.` : `${first} isn’t on the app, so there are no recordings.`}</Empty>
+          ? <Empty mood={m.onApp ? 'sleepy' : 'sad'} title={m.onApp ? 'No recordings yet' : 'Not on the app'}>{m.onApp ? `When ${first} hands in a take, you can listen here.` : `${first} isn’t on the app, so there are no recordings to hear.`}</Empty>
           : (
             <div>
               {[...recordings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((r, i) => (

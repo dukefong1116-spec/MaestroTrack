@@ -25,6 +25,14 @@ const STATUS_OF: Record<string, Filter | null> = { submitted: 'needs', returned:
  * Everything handed in, as one list: what still wants your answer first,
  * filterable and sortable, and answerable several at a time.
  */
+/** What Femata says when a tab has nothing in it — a different face for each. */
+const EMPTY = {
+  needs: { mood: 'cool', title: 'All caught up', line: 'Nothing waiting for your ears right now.' },
+  back: { mood: 'wink', title: 'Nothing sent back', line: 'Everyone nailed it the first time. Nice teaching!' },
+  approved: { mood: 'proud', title: 'No approvals yet', line: 'Work you approve lines up here, ready to look back on.' },
+  all: { mood: 'sleepy', title: 'Quiet in here', line: 'When a student hands something in, it lands right here.' },
+} as const
+
 /** The status tabs, in order: value and name. */
 const FILTERS = [['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const
 
@@ -184,7 +192,7 @@ export default function ReviewPage() {
             Nothing waiting for review. Work your students hand in will show up here.
           </p>
         </div>
-      ) : <Empty>Nothing here.</Empty>) : (
+      ) : <Empty mood={EMPTY[filter].mood} title={EMPTY[filter].title}>{EMPTY[filter].line}</Empty>) : (
         <div role="table" aria-label="Handed-in assignments">
           <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)', borderBottom: '1px solid var(--clay-line)' }}>
             <span role="columnheader" className="w-6"><Check label="Select every row shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown))} /></span>

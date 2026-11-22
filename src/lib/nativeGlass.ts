@@ -14,6 +14,7 @@ interface NativeGlass {
   segmented(o: Frame & { id: string; items: string[]; selected: number; tint?: string }): Promise<void>
   remove(o: { id: string }): Promise<void>
   launchDone(): Promise<void>
+  appearance(o: { style: 'dark' | 'light' | 'system' }): Promise<void>
   addListener(e: 'tap', fn: (d: { id: string }) => void): Promise<PluginListenerHandle>
   addListener(e: 'change', fn: (d: { id: string; index: number }) => void): Promise<PluginListenerHandle>
 }
@@ -92,4 +93,9 @@ export function useNativeSegmented(
 /** The launch screen is over: the native Femata shown behind it can go. */
 export function nativeLaunchDone() {
   if (isNativeApp) void Glass.launchDone().catch(() => {})
+}
+
+/** The app's Light/Dark choice, passed to Apple's controls. */
+export function nativeAppearance(style: 'dark' | 'light' | 'system') {
+  if (isNativeApp) void Glass.appearance({ style }).catch(() => {})
 }

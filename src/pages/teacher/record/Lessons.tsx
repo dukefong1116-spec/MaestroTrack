@@ -45,7 +45,7 @@ export default function Lessons({ m }: { m: Member }) {
       {upcoming.length > 0 && <p className="px-5 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wide sm:px-6" style={{ color: 'var(--clay-dim)' }}>Coming up</p>}
       {upcoming.map(row)}
       <p className="px-5 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wide sm:px-6" style={{ color: 'var(--clay-dim)' }}>Past lessons</p>
-      {past.length ? past.map(row) : <Empty>No lessons yet.</Empty>}
+      {past.length ? past.map(row) : <Empty mood="happy" title="No lessons yet">Past lessons and your notes from them collect here.</Empty>}
       <LessonSheet item={open} onClose={() => setOpen(null)} />
     </div>
   )

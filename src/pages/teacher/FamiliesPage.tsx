@@ -116,7 +116,7 @@ export default function FamiliesPage() {
           )}
           {notice && <p className="px-6 py-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)', borderBottom: '1px solid var(--clay-line)' }}>{notice}</p>}
 
-          {rows.length === 0 ? <Empty>No families yet. Make one with “New family”, then put students in it from here or their record.</Empty> : shown.length === 0 ? <Empty>No families match this filter.</Empty> : (
+          {rows.length === 0 ? <Empty mood="in-love" title="No families yet">Make one with “New family”, then put students in it from here or from their record.</Empty> : shown.length === 0 ? <Empty mood="thinking" title="No one fits that filter">Try a different one to see more families.</Empty> : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left text-[13.5px]">
                 <thead>
@@ -157,7 +157,7 @@ export default function FamiliesPage() {
         </section>
 
         <section className="min-w-0 flex-[2_1_340px]">
-          {picked ? <FamilyPane row={picked} onEdit={() => setEditing(picked.f)} /> : <Empty>Choose a family to see its invoices.</Empty>}
+          {picked ? <FamilyPane row={picked} onEdit={() => setEditing(picked.f)} /> : <Empty mood="focused" title="Pick a family">Their invoices and payments show up here.</Empty>}
         </section>
       </div>
       {editing && <FamilyEditor family={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}

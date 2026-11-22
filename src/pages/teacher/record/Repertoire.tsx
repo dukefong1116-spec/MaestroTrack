@@ -31,7 +31,7 @@ export default function Repertoire({ m }: { m: Member }) {
         <select aria-label="Kind" className={`${inputCls} w-28`} style={inputStyle} value={kind} onChange={(e) => setKind(e.target.value as 'piece' | 'skill')}><option value="piece">Piece</option><option value="skill">Skill</option></select>
         <Btn kind="primary" onClick={add} disabled={!title.trim()}>Add</Btn>
       </div>
-      {items.length === 0 ? <Empty>Nothing yet. Pieces and skills you add here show their progress in the report.</Empty> : (
+      {items.length === 0 ? <Empty mood="excited" title="A blank page of music">Pieces and skills you add here show their progress in the report.</Empty> : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-[13.5px]">
             <thead><tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)' }}>

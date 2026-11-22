@@ -175,12 +175,29 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "segmented", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "launchDone", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "appearance", returnType: CAPPluginReturnPromise),
     ]
+
+    /// The app's own Light/Dark choice, so Apple's controls (tab bar, glass,
+    /// keyboard) match the page rather than the phone's setting.
+    @objc func appearance(_ call: CAPPluginCall) {
+        let style = call.getString("style") ?? "system"
+        DispatchQueue.main.async {
+            let s: UIUserInterfaceStyle = style == "dark" ? .dark : style == "light" ? .light : .unspecified
+            self.bridge?.viewController?.view.window?.overrideUserInterfaceStyle = s
+            self.bridge?.viewController?.overrideUserInterfaceStyle = s
+            call.resolve()
+        }
+    }
 
     /// The page's launch screen has finished: the native Femata behind it can go.
     @objc func launchDone(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             self.bridge?.webView?.viewWithTag(MutifViewController.launchTag)?.removeFromSuperview()
+            // From here what shows behind the page (under the keyboard, past
+            // the edges) is the page's own ground, not the launch blue.
+            self.bridge?.webView?.backgroundColor = .systemBackground
+            self.bridge?.viewController?.view.backgroundColor = .systemBackground
             call.resolve()
         }
     }
@@ -283,7 +300,9 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
             if seg.selectedSegmentIndex != selected { seg.selectedSegmentIndex = selected }
             let font = UIFont.systemFont(ofSize: 13, weight: .semibold)
             seg.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.label], for: .normal)
-            seg.setTitleTextAttributes([.font: font, .foregroundColor: tint], for: .selected)
+            // A lighter blue in dark mode, where the selected piece is grey.
+            let selectedColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.48, green: 0.80, blue: 0.97, alpha: 1) : tint }
+            seg.setTitleTextAttributes([.font: font, .foregroundColor: selectedColor], for: .selected)
             self.place(bar, call)
             let f = bar.frame
             bar.frame = CGRect(x: f.minX, y: f.midY - 26, width: f.width, height: 52)
