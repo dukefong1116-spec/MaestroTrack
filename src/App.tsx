@@ -238,6 +238,28 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+/**
+ * The pages behind the tab bar, which AppLayout keeps mounted between
+ * visits so switching tabs is immediate. The same elements as their
+ * routes below, which still serve every other way of reaching them.
+ */
+const STUDENT_TAB_PAGES = {
+  '/student': <StudentDashboard />,
+  '/student/practice': <PracticeLogPage />,
+  '/student/practice/progress': <PracticeProgressPage />,
+  '/student/library': <LibraryPage />,
+  '/student/league': <LeaguePage />,
+  '/student/studio': <StudioPage />,
+  '/student/settings': <SettingsPage />,
+}
+const TEACHER_TAB_PAGES = {
+  '/teacher': <TeacherDashboard />,
+  '/teacher/calendar': <CalendarPage />,
+  '/teacher/students': <StudentsPage />,
+  '/teacher/review': <ReviewPage />,
+  '/teacher/more': <MorePage />,
+}
+
 function AppRoutes() {
   useAuthInit()
 
@@ -284,7 +306,7 @@ function AppRoutes() {
       <Route path="/student" element={
         <ProtectedRoute role="student">
           <DataProvider>
-            <AppLayout />
+            <AppLayout tabs={STUDENT_TAB_PAGES} />
           </DataProvider>
         </ProtectedRoute>
       }>
@@ -325,7 +347,7 @@ function AppRoutes() {
       <Route path="/teacher" element={
         <ProtectedRoute role="teacher">
           <DataProvider>
-            <AppLayout />
+            <AppLayout tabs={TEACHER_TAB_PAGES} />
           </DataProvider>
         </ProtectedRoute>
       }>

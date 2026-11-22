@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Activity, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomTabs from './BottomTabs'
@@ -24,7 +24,7 @@ const TeacherRail = lazy(loadRail)
 const TeacherTabs = lazy(loadTabs)
 const MessageDock = lazy(loadDock)
 
-export default function AppLayout() {
+export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> } = {}) {
   // Mounted once for the whole signed-in app: reading the preferences is
   // what puts them into effect, so the theme, accent, display size and
   // motion setting follow the profile rather than the device.
@@ -47,7 +47,41 @@ export default function AppLayout() {
     : ['/student', '/student/practice', '/student/practice/progress', '/student/library', '/student/league', '/student/studio', ...(inStudio ? [] : ['/student/settings'])]
   const here = pathname.replace(/\/+$/, '') || '/'
   const showTabs = roots.includes(here)
-  useAppNativeTabs(teacher, inStudio, here, showTabs)
+
+  // The tabs' pages stay mounted once drawn, as an iPhone app keeps each
+  // tab's screen: switching tabs only shows one that is already there
+  // (React's <Activity>), instead of building the page from scratch while
+  // the tab bar's selection has long since arrived. A hidden tab keeps its
+  // state but runs no effects, so it holds no listeners open. Once the
+  // first page is on screen the other tabs are drawn too, out of sight and
+  // at the lowest priority, so even the first visit to each is immediate.
+  const kept = tabs ? roots.filter((p) => p in tabs) : []
+  const onTab = kept.includes(here)
+  const [drawn, setDrawn] = useState(false)
+  const markDrawn = useRef(() => setDrawn(true)).current
+  const mounted = drawn ? kept : kept.filter((p) => p === here)
+
+  // Each tab keeps its own place on the page, as it would in an app.
+  const mainRef = useRef<HTMLElement>(null)
+  const scrollAt = useRef<Record<string, number>>({})
+  const lastHere = useRef(here)
+  useLayoutEffect(() => {
+    const prev = lastHere.current
+    lastHere.current = here
+    const main = mainRef.current
+    if (!main || prev === here || !kept.includes(here)) return
+    main.scrollTop = scrollAt.current[here] ?? 0
+  })
+  // Noted as you scroll: by the time the page has changed, the old one's
+  // place is already gone.
+  const noteScroll = () => {
+    if (mainRef.current && kept.includes(lastHere.current)) scrollAt.current[lastHere.current] = mainRef.current.scrollTop
+  }
+
+  // The iPhone app's own tab bar waits for the page: it used to appear the
+  // moment the layout mounted, over a page still waiting on its code or on
+  // the account it shows.
+  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile)
 
   return (
     <div
@@ -79,7 +113,7 @@ export default function AppLayout() {
           of the iOS Safari drift the comment above describes. Every page
           ends with room for it (the pb- below). */}
       <div className="relative flex min-w-0 flex-1 flex-col" style={{ paddingTop: underStatusBar ? 0 : 'env(safe-area-inset-top)' }}>
-        <main className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
+        <main ref={mainRef} onScroll={noteScroll} className="no-scrollbar flex-1 overflow-y-auto overscroll-contain">
           <div
             className={teacher
               ? 'clay-zoom mx-auto max-w-[1320px] px-3 pt-4 pb-[var(--tab-room)] sm:px-5 lg:px-4 lg:pb-24'
@@ -88,7 +122,15 @@ export default function AppLayout() {
             // the home indicator where there is no tab bar.
             style={{ '--tab-room': showTabs ? `calc(${teacher ? 96 : 104}px + env(safe-area-inset-bottom))` : 'calc(24px + env(safe-area-inset-bottom))' } as React.CSSProperties}
           >
-            <Outlet />
+            {mounted.map((p) => (
+              <Activity key={p} mode={p === here ? 'visible' : 'hidden'}>
+                <Suspense fallback={<PageLoading />}>
+                  {tabs![p]}
+                  <Drawn onDrawn={markDrawn} />
+                </Suspense>
+              </Activity>
+            ))}
+            {!onTab && <><Outlet /><Drawn onDrawn={markDrawn} /></>}
           </div>
         </main>
         {/* Inside the iPhone app Apple's own tab bar is shown instead
@@ -100,6 +142,25 @@ export default function AppLayout() {
         </div>
       </div>
       {teacher && <Suspense fallback={null}><MessageDock /></Suspense>}
+    </div>
+  )
+}
+
+/** Mounted beside a page, so it commits only once the page itself has:
+ *  two frames later the page is on the screen. */
+function Drawn({ onDrawn }: { onDrawn: () => void }) {
+  useEffect(() => {
+    let b = 0
+    const a = requestAnimationFrame(() => { b = requestAnimationFrame(onDrawn) })
+    return () => { cancelAnimationFrame(a); cancelAnimationFrame(b) }
+  }, [onDrawn])
+  return null
+}
+
+function PageLoading() {
+  return (
+    <div className="flex min-h-[50dvh] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full" style={{ border: '3px solid var(--clay-accent-soft)', borderTopColor: 'var(--clay-accent)' }} />
     </div>
   )
 }

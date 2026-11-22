@@ -45,6 +45,7 @@ public class NativeTabBarPlugin: CAPPlugin, CAPBridgedPlugin, UITabBarDelegate {
                     ["id": "review", "title": "Review", "symbol": "checklist", "badge": "2"],
                     ["id": "more", "title": "More", "symbol": "ellipsis"],
                 ], selected: "today")
+                self.tabBar?.isHidden = false
             }
         }
     }
@@ -53,6 +54,8 @@ public class NativeTabBarPlugin: CAPPlugin, CAPBridgedPlugin, UITabBarDelegate {
         if let bar = tabBar { return bar }
         guard let host = bridge?.viewController?.view else { return nil }
         let bar = UITabBar()
+        // Hidden until the web app says its page is on screen (setVisible).
+        bar.isHidden = true
         bar.translatesAutoresizingMaskIntoConstraints = false
         bar.delegate = self
         host.addSubview(bar)
@@ -88,7 +91,8 @@ public class NativeTabBarPlugin: CAPPlugin, CAPBridgedPlugin, UITabBarDelegate {
         if let selected = selected, let i = ids.firstIndex(of: selected) {
             bar.selectedItem = built[i]
         }
-        bar.isHidden = false
+        // Showing it is setVisible's call alone: refreshing the tabs (a new
+        // badge count) used to bring the bar back on pages that hide it.
     }
 
     @objc func configure(_ call: CAPPluginCall) {
