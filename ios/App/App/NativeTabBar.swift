@@ -7,6 +7,15 @@ import Capacitor
 class MutifViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(NativeTabBarPlugin())
+        bridge?.registerPluginInstance(NativeGlassPlugin())
+        // Femata blue behind the page until it paints, so the launch screen
+        // runs straight into the web one with no white flash. The page
+        // paints its own background over it from then on.
+        let blue = UIColor(red: 0.239, green: 0.710, blue: 0.961, alpha: 1)
+        view.backgroundColor = blue
+        webView?.isOpaque = false
+        webView?.backgroundColor = blue
+        webView?.scrollView.backgroundColor = blue
     }
 }
 
@@ -131,6 +140,134 @@ public class NativeTabBarPlugin: CAPPlugin, CAPBridgedPlugin, UITabBarDelegate {
     public func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
         guard item.tag >= 0, item.tag < ids.count else { return }
         notifyListeners("select", data: ["id": ids[item.tag]])
+    }
+}
+
+/// Apple's own Liquid Glass controls, placed over the page where the web app
+/// asks: a glass button (`button`) or a glass bar holding a segmented control
+/// (`segmented`). Like the tab bar, they get the real material — the lensing,
+/// the press that swells and magnifies, the selection that slides under a
+/// dragging finger — which a web page cannot draw. The web app keeps its own
+/// control in place (invisible) and tells us where it is; taps come back as
+/// a `tap` event, segment changes as `change`.
+@objc(NativeGlassPlugin)
+public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "NativeGlassPlugin"
+    public let jsName = "NativeGlass"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "button", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "segmented", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
+    ]
+
+    private var views: [String: UIView] = [:]
+
+    override public func load() {
+        // `-glassDemo` at launch shows a sample of each — for checking the
+        // native look in the simulator only.
+        guard ProcessInfo.processInfo.arguments.contains("-glassDemo") else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            let seg = CAPPluginCall(callbackId: "demo", options: ["id": "demo-seg", "items": ["To review 3", "Sent back 1", "Approved 8", "All 12"], "selected": 0, "tint": "#1F8FD1", "x": 12, "y": 640, "width": 378, "height": 52], success: { _, _ in }, error: { _ in })
+            let btn = CAPPluginCall(callbackId: "demo", options: ["id": "demo-btn", "symbol": "plus", "prominent": true, "tint": "#1F8FD1", "x": 318, "y": 560, "width": 56, "height": 56], success: { _, _ in }, error: { _ in })
+            if let seg = seg { self.segmented(seg) }
+            if let btn = btn { self.button(btn) }
+        }
+    }
+
+    /// The web view's CSS pixels are its points, measured from its own corner.
+    private func place(_ v: UIView, _ call: CAPPluginCall) {
+        guard let host = bridge?.viewController?.view, let web = bridge?.webView else { return }
+        func num(_ k: String, _ d: Double) -> Double { (call.options[k] as? NSNumber)?.doubleValue ?? d }
+        let r = CGRect(x: num("x", 0), y: num("y", 0), width: num("width", 44), height: num("height", 44))
+        v.frame = web.convert(r, to: host)
+        if v.superview == nil { host.addSubview(v) }
+        v.isHidden = false
+    }
+
+    @objc func button(_ call: CAPPluginCall) {
+        let id = call.getString("id") ?? "button"
+        let symbol = call.getString("symbol")
+        let title = call.getString("title")
+        let prominent = call.getBool("prominent") ?? false
+        let tint = call.getString("tint").flatMap { UIColor(hex: $0) }
+        let label = call.getString("label")
+        DispatchQueue.main.async {
+            let b = (self.views[id] as? UIButton) ?? {
+                let made = UIButton(type: .system)
+                made.addAction(UIAction { [weak self] _ in self?.notifyListeners("tap", data: ["id": id]) }, for: .primaryActionTriggered)
+                self.views[id] = made
+                return made
+            }()
+            var cfg: UIButton.Configuration
+            if #available(iOS 26.0, *) { cfg = prominent ? .prominentGlass() : .glass() }
+            else { cfg = prominent ? .filled() : .tinted() }
+            cfg.cornerStyle = .capsule
+            if let s = symbol {
+                cfg.image = UIImage(systemName: s, withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold))
+            }
+            cfg.title = title
+            cfg.imagePadding = 6
+            b.configuration = cfg
+            if let t = tint { b.tintColor = t }
+            b.accessibilityLabel = label ?? title
+            self.place(b, call)
+            call.resolve()
+        }
+    }
+
+    @objc func segmented(_ call: CAPPluginCall) {
+        let id = call.getString("id") ?? "segmented"
+        let items = call.getArray("items", String.self) ?? []
+        let selected = call.getInt("selected") ?? 0
+        let tint = call.getString("tint").flatMap { UIColor(hex: $0) }
+        DispatchQueue.main.async {
+            let bar: UIVisualEffectView
+            let seg: UISegmentedControl
+            if let existing = self.views[id] as? UIVisualEffectView, let s = existing.contentView.subviews.first as? UISegmentedControl {
+                bar = existing; seg = s
+            } else {
+                let effect: UIVisualEffect
+                if #available(iOS 26.0, *) { let g = UIGlassEffect(style: .regular); g.isInteractive = true; effect = g }
+                else { effect = UIBlurEffect(style: .systemThinMaterial) }
+                bar = UIVisualEffectView(effect: effect)
+                bar.layer.cornerRadius = 20
+                bar.layer.cornerCurve = .continuous
+                bar.clipsToBounds = true
+                seg = UISegmentedControl()
+                seg.translatesAutoresizingMaskIntoConstraints = false
+                bar.contentView.addSubview(seg)
+                NSLayoutConstraint.activate([
+                    seg.leadingAnchor.constraint(equalTo: bar.contentView.leadingAnchor, constant: 5),
+                    seg.trailingAnchor.constraint(equalTo: bar.contentView.trailingAnchor, constant: -5),
+                    seg.topAnchor.constraint(equalTo: bar.contentView.topAnchor, constant: 5),
+                    seg.bottomAnchor.constraint(equalTo: bar.contentView.bottomAnchor, constant: -5),
+                ])
+                seg.addAction(UIAction { [weak self, weak seg] _ in
+                    guard let seg = seg else { return }
+                    self?.notifyListeners("change", data: ["id": id, "index": seg.selectedSegmentIndex])
+                }, for: .valueChanged)
+                self.views[id] = bar
+            }
+            // Same titles: keep the control (and its sliding selection) as is.
+            let current = (0..<seg.numberOfSegments).map { seg.titleForSegment(at: $0) ?? "" }
+            if current != items {
+                seg.removeAllSegments()
+                for (i, t) in items.enumerated() { seg.insertSegment(withTitle: t, at: i, animated: false) }
+            }
+            if seg.selectedSegmentIndex != selected { seg.selectedSegmentIndex = selected }
+            if let t = tint { seg.selectedSegmentTintColor = t; seg.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected) }
+            self.place(bar, call)
+            call.resolve()
+        }
+    }
+
+    @objc func remove(_ call: CAPPluginCall) {
+        let id = call.getString("id") ?? ""
+        DispatchQueue.main.async {
+            self.views[id]?.removeFromSuperview()
+            self.views[id] = nil
+            call.resolve()
+        }
     }
 }
 

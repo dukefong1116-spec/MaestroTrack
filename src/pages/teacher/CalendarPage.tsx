@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -12,6 +12,7 @@ import TimeGrid, { type DragResult } from './calendar/TimeGrid'
 import MonthGrid from './calendar/MonthGrid'
 import TagsPanel from './calendar/TagsPanel'
 import NewLessonSheet from './calendar/NewLessonSheet'
+import { useNativeGlassButton } from '@/lib/nativeGlass'
 
 function useWide() {
   const q = '(min-width: 768px)'
@@ -52,6 +53,13 @@ export default function CalendarPage() {
   const [held, setHeld] = useState<{ date: string; startTime: string } | null>(null)
   const [toast, setToast] = useState<Toast | null>(null)
   const [now, setNow] = useState(() => new Date())
+  // In the iPhone app the + is Apple's own glass button (see nativeGlass);
+  // it steps aside while a sheet is open over the page.
+  const addRef = useRef<HTMLButtonElement>(null)
+  const nativeAdd = useNativeGlassButton(addRef, {
+    id: 'calendar-add', symbol: 'plus', prominent: true, tint: '#1F8FD1', label: 'Add a lesson or event',
+    visible: !adding && !open,
+  }, () => setAdding(true))
 
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 60_000); return () => clearInterval(t) }, [])
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(null), toast.action ? 7000 : 3000); return () => clearTimeout(t) }, [toast])
@@ -115,11 +123,14 @@ export default function CalendarPage() {
       {/* Adding is one round button, floating bottom right: above the tab
           bar on a phone, above the Messages button on a computer. */}
       <button
+        ref={addRef}
         type="button"
         onClick={() => setAdding(true)}
         aria-label="Add a lesson or event"
+        aria-hidden={nativeAdd || undefined}
+        tabIndex={nativeAdd ? -1 : undefined}
         className="glass glass-tint fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95 lg:right-6"
-        style={{ bottom: 'calc(92px + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'calc(92px + env(safe-area-inset-bottom))', visibility: nativeAdd ? 'hidden' : undefined }}
       >
         <Plus size={26} strokeWidth={2.4} aria-hidden="true" />
       </button>

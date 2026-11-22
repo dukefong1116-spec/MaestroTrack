@@ -44,6 +44,36 @@
     <meta name="apple-mobile-web-app-title" content="Femata" />
   </head>
   <body style="margin:0;">
+    <!--
+      The launch screen, painted with the page itself so Femata is there from
+      the first frame: blinking while the app loads, then LaunchScreen.tsx
+      hops it and zooms into the app. Only in the iPhone app and the
+      Home Screen app; a browser tab removes it at once.
+    -->
+    <div id="boot" style="position:fixed;inset:0;z-index:2147483000;background:#3DB5F5;display:grid;place-items:center">
+      <style>
+        #boot-wrap{position:relative;width:150px;height:147px}
+        #boot-eyes{transform-box:fill-box;transform-origin:center;animation:boot-blink 2.4s infinite}
+        @keyframes boot-blink{0%,40%,46%,100%{transform:scaleY(1)}43%{transform:scaleY(.1)}}
+        #boot-shadow{position:absolute;left:34px;bottom:-14px;width:82px;height:10px;border-radius:50%;background:rgba(4,40,70,.22)}
+        #boot.hop #boot-wrap{animation:boot-hop .9s cubic-bezier(.3,.7,.4,1)}
+        #boot.hop #boot-shadow{animation:boot-shad .9s}
+        @keyframes boot-hop{0%{transform:none}12%{transform:translateY(2px) scale(1.02,.97)}30%{transform:translateY(-14px)}50%{transform:translateY(0) scale(1.02,.98)}68%{transform:translateY(-8px)}86%,100%{transform:none}}
+        @keyframes boot-shad{30%{transform:scale(.8);opacity:.6}68%{transform:scale(.9);opacity:.8}}
+        #boot.zoom{animation:boot-zoom .5s cubic-bezier(.6,0,.9,.4) forwards}
+        @keyframes boot-zoom{to{transform:scale(9);opacity:0}}
+        @media (prefers-reduced-motion:reduce){#boot-eyes,#boot.hop #boot-wrap{animation:none}#boot.zoom{animation:boot-fade .3s forwards}@keyframes boot-fade{to{opacity:0}}}
+      </style>
+      <div id="boot-wrap"><div id="boot-shadow"></div><svg id="boot-f" viewBox="20 28 612 600" width="150" height="147" aria-hidden="true"><defs><linearGradient id="btg" gradientUnits="userSpaceOnUse" x1="0" y1="40" x2="120" y2="620"><stop offset="0" stop-color="#A6E4FF"/><stop offset="1" stop-color="#3DB5F5"/></linearGradient><clipPath id="btc"><ellipse cx="180" cy="497" rx="149" ry="113" transform="rotate(-8 180 497)"/><path d="M250 545L236 389L290 130C296 103 316 81 350 65C372 49 400 43 440 43C475 43 495 46 515 52C555 63 578 78 584 102C590 126 578 148 552 153C530 157 470 159 438 166C412 172 400 186 410 198C418 206 440 204 470 203C540 204 590 214 607 236C621 255 616 276 596 282C580 287 540 286 500 285C440 284 368 282 352 292C344 297 341 303 340 310L313 439Z"/></clipPath><mask id="btm"><rect x="-100" y="-100" width="900" height="900" fill="#fff"/><g fill="#000" transform="translate(12 12)"><ellipse cx="180" cy="497" rx="149" ry="113" transform="rotate(-8 180 497)"/><path d="M250 545L236 389L290 130C296 103 316 81 350 65C372 49 400 43 440 43C475 43 495 46 515 52C555 63 578 78 584 102C590 126 578 148 552 153C530 157 470 159 438 166C412 172 400 186 410 198C418 206 440 204 470 203C540 204 590 214 607 236C621 255 616 276 596 282C580 287 540 286 500 285C440 284 368 282 352 292C344 297 341 303 340 310L313 439Z"/></g></mask></defs><g clip-path="url(#btc)"><rect x="-100" y="-100" width="900" height="900" fill="#166FB8"/><g fill="url(#btg)" transform="translate(-20 -18)"><ellipse cx="180" cy="497" rx="149" ry="113" transform="rotate(-8 180 497)"/><path d="M250 545L236 389L290 130C296 103 316 81 350 65C372 49 400 43 440 43C475 43 495 46 515 52C555 63 578 78 584 102C590 126 578 148 552 153C530 157 470 159 438 166C412 172 400 186 410 198C418 206 440 204 470 203C540 204 590 214 607 236C621 255 616 276 596 282C580 287 540 286 500 285C440 284 368 282 352 292C344 297 341 303 340 310L313 439Z"/></g><rect x="-100" y="-100" width="900" height="900" fill="#FFFFFF" mask="url(#btm)"/></g><ellipse cx="86" cy="430" rx="34" ry="13" transform="rotate(-28 86 430)" fill="#fff" opacity="0.9"/><ellipse cx="420" cy="66" rx="40" ry="11" transform="rotate(-8 420 66)" fill="#fff" opacity="0.837"/><g id="boot-eyes"><circle cx="118" cy="468" r="23" fill="#111111"/><circle cx="224" cy="460" r="23" fill="#111111"/><circle cx="125" cy="460" r="6.9" fill="#FFFFFF"/><circle cx="231" cy="452" r="6.9" fill="#FFFFFF"/></g><path d="M131 512Q183 562 234 509C236 556 210 584 180 580C154 576 138 550 131 512Z" fill="#111111"/></svg></div>
+    </div>
+    <script>
+      (function () {
+        var app = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+          || navigator.standalone === true
+          || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+        if (!app) { var b = document.getElementById('boot'); if (b) b.remove(); }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

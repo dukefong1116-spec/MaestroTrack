@@ -1,5 +1,5 @@
 import { Check as Tick, MessageCircle, Undo2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO, formatDistanceToNowStrict } from 'date-fns'
 import { useTeacherStore } from '@/stores/teacherStore'
@@ -13,6 +13,7 @@ import Femata from '@/components/femata/Femata'
 import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, BulkSpacer, Avatar, Empty, Btn } from '@/components/teacher/studio/ui'
 import { colorFor, inputStyle } from '@/components/teacher/studio/tokens'
 import type { Assignment, Recording } from '@/types'
+import { useNativeSegmented } from '@/lib/nativeGlass'
 
 type Filter = 'needs' | 'back' | 'approved' | 'all'
 type Kind = 'all' | 'rec' | 'check'
@@ -24,6 +25,9 @@ const STATUS_OF: Record<string, Filter | null> = { submitted: 'needs', returned:
  * Everything handed in, as one list: what still wants your answer first,
  * filterable and sortable, and answerable several at a time.
  */
+/** The status tabs, in order: value and name. */
+const FILTERS = [['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const
+
 export default function ReviewPage() {
   const all = useTeacherStore((s) => s.assignments)
   const members = useMembers()
@@ -79,6 +83,17 @@ export default function ReviewPage() {
 
   const shown = rows.map((r) => r.a.id)
   const chosen = shown.filter((id) => sel.has(id))
+  // In the iPhone app the phone's status bar is Apple's own glass segmented
+  // control (see nativeGlass), so the selection slides and magnifies under
+  // a dragging finger like the tab bar does.
+  const statusRef = useRef<HTMLDivElement>(null)
+  const nativeStatus = useNativeSegmented(statusRef, {
+    id: 'review-status',
+    items: FILTERS.map(([f, name]) => `${name} ${count(f)}`),
+    selected: FILTERS.findIndex(([f]) => f === filter),
+    tint: '#1F8FD1',
+    visible: chosen.length === 0 && !reviewing,
+  }, (i) => { setFilter(FILTERS[i][0]); setSel(new Set()) })
   const toggle = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   async function bulk(verdict: 'approved' | 'returned') {
@@ -101,7 +116,7 @@ export default function ReviewPage() {
           thumb, as a glass bar above the tab bar; the selection pill takes
           their place while rows are ticked. On a computer they stay up top. */}
       {chosen.length === 0 && (
-        <div className="glass fixed inset-x-3 z-30 rounded-[18px] p-1 lg:hidden" style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))' }}>
+        <div ref={statusRef} aria-hidden={nativeStatus || undefined} className="glass fixed inset-x-3 z-30 rounded-[18px] p-1 lg:hidden" style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))', visibility: nativeStatus ? 'hidden' : undefined }}>
           <Segmented
             label="Status"
             className="grid w-full grid-cols-4"

@@ -13,7 +13,7 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
 
   if (loading) return <AppSkeleton />
 
-  if (!user && !provisional) return <Navigate to="/login" replace />
+  if (!user && !provisional) return <Navigate to="/start" replace />
 
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const effectiveRole = profile?.role ?? cachedRole

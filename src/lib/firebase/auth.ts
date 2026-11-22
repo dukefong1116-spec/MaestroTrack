@@ -23,7 +23,13 @@ export async function signUp(
     instrument?: InstrumentType
     experienceLevel?: ExperienceLevel
     weeklyGoalMinutes?: number
+    /** From the first-run setup's "how long": the day's goal itself, rather
+     *  than a seventh of the week's. */
+    dailyGoalMinutes?: number
     studioName?: string
+    /** More of the first-run setup's answers (instrumentName, instruments,
+     *  practiceDaysPerWeek). */
+    extra?: Pick<UserProfile, 'instrumentName' | 'instruments' | 'practiceDaysPerWeek'>
   } = {}
 ): Promise<User> {
   const credential = await createUserWithEmailAndPassword(auth, email, password)
@@ -36,7 +42,7 @@ export async function signUp(
     instrument: options.instrument,
     experienceLevel: options.experienceLevel,
     weeklyGoalMinutes: options.weeklyGoalMinutes ?? 300,
-    dailyGoalMinutes: Math.round((options.weeklyGoalMinutes ?? 300) / 7),
+    dailyGoalMinutes: options.dailyGoalMinutes ?? Math.round((options.weeklyGoalMinutes ?? 300) / 7),
     monthlyGoalMinutes: (options.weeklyGoalMinutes ?? 300) * 4,
     studioName: options.studioName,
     reminderEnabled: false,
@@ -46,6 +52,7 @@ export async function signUp(
     // The first-run tour starts here, and only here: an account made
     // before it existed never has this, so it is never marched through it.
     ...(role === 'student' ? { onboarding: { tour: 'welcome' as const } } : {}),
+    ...options.extra,
   }
 
   // Cache profile locally so the app works even if Firestore is offline

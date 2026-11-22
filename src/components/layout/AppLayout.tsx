@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils/cn'
 import { isNativeApp } from '@/lib/native'
 import { useAppNativeTabs } from './useAppNativeTabs'
+import { bootReady } from '@/lib/boot'
+import { useMomentStore } from '@/stores/momentStore'
 
 /**
  * The teacher's rail, tab bar and message dock, loaded only for teachers:
@@ -58,7 +60,7 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
   const kept = tabs ? roots.filter((p) => p in tabs) : []
   const onTab = kept.includes(here)
   const [drawn, setDrawn] = useState(false)
-  const markDrawn = useRef(() => setDrawn(true)).current
+  const markDrawn = useRef(() => { setDrawn(true); bootReady() }).current
   const mounted = drawn ? kept : kept.filter((p) => p === here)
 
   // Each tab keeps its own place on the page, as it would in an app.
@@ -81,7 +83,10 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
   // The iPhone app's own tab bar waits for the page: it used to appear the
   // moment the layout mounted, over a page still waiting on its code or on
   // the account it shows.
-  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile)
+  // …and steps aside while a full-screen moment (a badge, a streak goal)
+  // is up: Apple's bar sits above the page and would cover its buttons.
+  const momentOpen = useMomentStore((s) => s.open) > 0
+  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile && !momentOpen)
 
   return (
     <div

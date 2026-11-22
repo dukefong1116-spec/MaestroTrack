@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useMomentStore } from '@/stores/momentStore'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
@@ -85,7 +86,10 @@ export default function TourLayer() {
 
   // Only from the server's copy of the profile: the one saved on this
   // device could be a step behind, and a tap would then write it back.
-  const show: Show | null = profileLive && decision.kind === 'show' ? decision.show : null
+  // A full-screen moment (a streak goal, a badge) goes first; the tour
+  // carries on when it closes.
+  const momentOpen = useMomentStore((s) => s.open) > 0
+  const show: Show | null = profileLive && !momentOpen && decision.kind === 'show' ? decision.show : null
 
   // In the tour but somewhere else: back to Today, where it carries on.
   useEffect(() => {

@@ -1567,9 +1567,9 @@ export default function SessionPage() {
             instrument={profile?.instrument as InstrumentType | undefined}
           />
         ) : undefined}
+        // Straight on to the next page, with the celebration still up: clearing
+        // it first showed the finished session page for a moment underneath.
         onDismiss={() => {
-          setReward(null)
-          setLeague(null)
           navigate(useAuthStore.getState().profile?.onboarding?.tour === 'streak' ? '/student' : '/student/practice')
         }}
         onShare={justSaved ? () => { setReward(null); setSharing(justSaved) } : undefined}
@@ -1584,7 +1584,7 @@ export default function SessionPage() {
             pieceTitle={pieces.find((p) => p.id === sharing.pieceName)?.title}
             week={shareWeek}
             // Closing the card is the end of the session either way.
-            onClose={() => { setSharing(null); navigate('/student/practice') }}
+            onClose={() => navigate('/student/practice')}
           />
         )}
       </AnimatePresence>

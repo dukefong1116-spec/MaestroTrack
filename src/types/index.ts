@@ -132,10 +132,22 @@ export interface UserProfile {
   role: UserRole
   displayName: string
   instrument?: InstrumentType
+  /** The instrument's own name when it is not one of InstrumentType (then
+   *  `instrument` is 'other'), from the first-run setup's "Other:" box or
+   *  its longer list. */
+  instrumentName?: string
+  /** Everything picked in the first-run setup, main instrument first. */
+  instruments?: string[]
   experienceLevel?: ExperienceLevel
   weeklyGoalMinutes?: number
   dailyGoalMinutes?: number
   monthlyGoalMinutes?: number
+  /** First-run setup: days a week they practised when they joined. */
+  practiceDaysPerWeek?: number
+  /** The streak they committed to reaching (days), and the last goal
+   *  already celebrated — so each goal's celebration plays once. */
+  streakGoal?: number
+  streakGoalReached?: number
   studioName?: string
   studioCode?: string
   teacherId?: string

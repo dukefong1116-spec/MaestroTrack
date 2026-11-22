@@ -18,6 +18,7 @@ import StudioJoinedMoment from '@/components/celebration/StudioJoinedMoment'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
+import LaunchScreen from '@/components/launch/LaunchScreen'
 import PendingUploads from '@/components/common/PendingUploads'
 import TourLayer from '@/components/onboarding/TourLayer'
 
@@ -41,6 +42,9 @@ const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
  * screen now costs only the people who go there.
  */
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
+const StartPage = lazy(() => import('@/pages/onboarding/StartPage'))
+const StreakGoalHost = lazy(() => import('@/components/streak/StreakGoalHost'))
+const SetupPage = lazy(() => import('@/pages/onboarding/SetupPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
@@ -234,6 +238,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       <StudioJoinedMoment />
       {/* A badge, the moment it is won, from any page. */}
       {profile?.role === 'student' && <BadgeMomentHost />}
+      {/* The streak goal: the first commitment, and each one after. */}
+      {profile?.role === 'student' && <Suspense fallback={null}><StreakGoalHost /></Suspense>}
     </>
   )
 }
@@ -266,6 +272,10 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* The front door when signed out, and the first-run setup behind
+          Get started. /signup stays for teachers (and old links). */}
+      <Route path="/start" element={<StartPage />} />
+      <Route path="/start/setup" element={<SetupPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       {/* A teacher's invitation. Public on purpose: the person it was sent
@@ -377,7 +387,7 @@ function AppRoutes() {
         <Route path="settings/about" element={<AboutPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/start" replace />} />
     </Routes>
   )
 }
@@ -389,6 +399,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* Plays out the launch screen index.html paints. */}
+      <LaunchScreen />
       {/* Shown only while a screen's code is in flight, which on a warm
           cache is never. Matches the auth loader so a transition does not
           flash a different-looking spinner. */}

@@ -94,7 +94,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm mt-6" style={{ color: 'var(--clay-dim)' }}>
             New here?{' '}
-            <Link to="/signup" className="font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
+            <Link to="/start/setup" className="font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
               Create an account
             </Link>
           </p>
