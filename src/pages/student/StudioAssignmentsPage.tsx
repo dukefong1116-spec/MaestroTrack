@@ -130,7 +130,7 @@ export default function StudioAssignmentsPage() {
 
 function Empty({ text, mood = 'happy' }: { text: string; mood?: FemataMood }) {
   return (
-    <div className="flex flex-col items-center py-10 text-center">
+    <div className="flex min-h-[calc(100dvh-300px)] flex-col items-center justify-center py-10 text-center">
       <Femata mood={mood} size={100} />
       <p className="mt-3 max-w-[280px] text-[14px] font-semibold" style={{ color: 'var(--clay-dim)' }}>{text}</p>
     </div>

@@ -116,7 +116,7 @@ export default function FamiliesPage() {
           )}
           {notice && <p className="px-6 py-2 text-[13px] font-semibold" style={{ color: 'var(--clay-success-fg)', borderBottom: '1px solid var(--clay-line)' }}>{notice}</p>}
 
-          {rows.length === 0 ? <Empty mood="in-love" title="No families yet">Make one with “New family”, then put students in it from here or from their record.</Empty> : shown.length === 0 ? <Empty mood="thinking" title="No one fits that filter">Try a different one to see more families.</Empty> : (
+          {rows.length === 0 ? <Empty fill mood="in-love" title="No families yet">Make one with “New family”, then put students in it from here or from their record.</Empty> : shown.length === 0 ? <Empty fill mood="thinking" title="No one fits that filter">Try a different one to see more families.</Empty> : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left text-[13.5px]">
                 <thead>

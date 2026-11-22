@@ -192,7 +192,7 @@ export default function ReviewPage() {
             Nothing waiting for review. Work your students hand in will show up here.
           </p>
         </div>
-      ) : <Empty mood={EMPTY[filter].mood} title={EMPTY[filter].title}>{EMPTY[filter].line}</Empty>) : (
+      ) : <Empty fill mood={EMPTY[filter].mood} title={EMPTY[filter].title}>{EMPTY[filter].line}</Empty>) : (
         <div role="table" aria-label="Handed-in assignments">
           <div role="row" className="hidden items-center gap-3 px-6 py-2 text-[12px] font-semibold md:flex" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)', borderBottom: '1px solid var(--clay-line)' }}>
             <span role="columnheader" className="w-6"><Check label="Select every row shown" checked={chosen.length === shown.length} onChange={() => setSel(chosen.length === shown.length ? new Set() : new Set(shown))} /></span>

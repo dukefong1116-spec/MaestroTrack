@@ -69,8 +69,8 @@ export default function StudentsPage() {
 
       {rows.length === 0 ? (
         members.length
-          ? <Empty mood="surprised" title="Nobody by that name">Try another spelling, or clear the search.</Empty>
-          : <Empty mood="excited" title="Your studio is waiting">Add your first student with the button above: an invitation, or a record for someone not on the app.</Empty>
+          ? <Empty fill mood="surprised" title="Nobody by that name">Try another spelling, or clear the search.</Empty>
+          : <Empty fill mood="excited" title="Your studio is waiting">Add your first student with the button above: an invitation, or a record for someone not on the app.</Empty>
       ) : (
         <>
           {/* Phone: one row each. */}
