@@ -36,7 +36,7 @@ export const DEFAULT_PREFS: Prefs = {
   displayScale: 100,
   reduceMotion: false,
   haptics: true,
-  notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true, league: true },
+  notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true, league: true, streak: true, lateStreak: true, studio: true, digest: true },
   reminderEnabled: false,
   reminderTime: '18:00',
 }

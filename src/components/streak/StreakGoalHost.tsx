@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { nextGoals } from '@/lib/onboarding/catalog'
 import { playBadgeCharge } from '@/lib/utils/sound'
+import { enableNotifications, notifyPermission } from '@/lib/notify/push'
 
 /**
  * The streak commitment, on Today.
@@ -94,6 +95,9 @@ function GoalFlow({ mode, reached, streak, firstName, onCommit, onClose }: {
     onCommit(pick)
     setScreen('locked')
     try { playBadgeCharge('commit') } catch { /* no audio */ }
+    // The moment someone commits is the moment a reminder makes sense to
+    // them: ask now (once; iOS never asks twice).
+    void notifyPermission().then((p) => { if (p === 'prompt') void enableNotifications() })
     setTimeout(onClose, 3000)
   }
 

@@ -14,6 +14,7 @@ import { db } from './config'
 import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { Assignment, AssignmentAttachment, PracticeCategory, Submission, TeacherFeedback } from '@/types'
+import { notifyEvent } from '@/lib/notify/push'
 
 const COL = 'assignments'
 
@@ -44,6 +45,8 @@ export async function createAssignment(
     updatedAt: now,
     ...clean,
   })
+  // Tell the student (a student not on the app yet has no one to tell).
+  if (studentId) notifyEvent('assignment-new', ref.id)
   return ref.id
 }
 
@@ -108,6 +111,7 @@ export async function submitAssignment(
     submissions: arrayUnion(entry),
     updatedAt: new Date().toISOString(),
   })
+  notifyEvent('work-handed-in', id)
 }
 
 /**
@@ -128,6 +132,7 @@ export async function reviewAssignment(
     updatedAt: now,
     ...(verdict === 'approved' ? { completedAt: now } : {}),
   })
+  notifyEvent('assignment-reviewed', id)
 }
 
 /**

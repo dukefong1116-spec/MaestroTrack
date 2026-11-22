@@ -12,6 +12,7 @@ import { updateUserProfile } from '@/lib/firebase/teacher'
 import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { useAuth } from '@/hooks/useAuth'
 import type { ExperienceLevel } from '@/types'
+import { enableNotifications } from '@/lib/notify/push'
 
 /**
  * The first-run setup, one question a screen: what you play, your name,
@@ -195,7 +196,9 @@ export default function SetupPage() {
                 Reminders, streak saves and messages from your teacher. You can change this any time in Settings.
               </p>
               <div className="mt-auto flex flex-col gap-1 pt-4">
-                <BigButton onClick={() => { if (user) void updateUserProfile(user.uid, { reminderEnabled: true }).catch(() => {}); next() }}>TURN ON REMINDERS</BigButton>
+                {/* The system's own prompt, now, when the reason is on screen. Reminders
+                    then come around when they usually practise (a set time is in Settings). */}
+                <BigButton onClick={() => { void enableNotifications().finally(next) }}>TURN ON REMINDERS</BigButton>
                 <BigButton kind="ghost" onClick={next}>NOT NOW</BigButton>
               </div>
             </div>

@@ -22,6 +22,7 @@
  */
 import { FieldValue } from 'firebase-admin/firestore'
 import { db, HttpError } from './admin.js'
+import { sendToUser, firstName } from './push.js'
 import { creditedSessions } from './ticket.js'
 import {
   weekOf, localDay, addDays, bandFor, weekEndsAt, weekXp, streakOn, rankMembers,
@@ -129,7 +130,9 @@ export async function syncLeague(uid, { tzOffset = 0, nowMs = Date.now() } = {})
   const base = { optedOut: false, week: week.id, tier, xp, days, streak: streakOn(days, today) }
 
   if (room) {
-    const out = { ...base, roomId, ...(await updateXp(roomId, uid, xp, nowMs)) }
+    const { passed = [], by, ...moved } = await updateXp(roomId, uid, xp, nowMs)
+    await tellPassed(roomId, passed, by, nowMs)
+    const out = { ...base, roomId, ...moved }
     await writeCard(uid, user, out, nowMs)
     return out
   }
@@ -221,6 +224,18 @@ async function writeVerified(uid, credited, from, nowMs) {
 }
 
 /** Your new XP in your room; whoever you passed hears about it. */
+/**
+ * A push to each player just overtaken. At most one an hour each (the
+ * event id is the hour), so a busy evening in the room is one nudge, not
+ * a stream of them. Never holds up the sync if a push fails.
+ */
+async function tellPassed(roomId, passed, by, nowMs) {
+  if (!passed.length) return
+  const hour = Math.floor(nowMs / 3_600_000)
+  await Promise.allSettled(passed.map((p) =>
+    sendToUser(p.uid, 'league-passed', { rival: firstName(by) ?? 'Someone', rank: p.rank }, `league:${roomId}:${hour}`, nowMs)))
+}
+
 async function updateXp(roomId, uid, xp, nowMs) {
   const store = db()
   return retrying(() => store.runTransaction(async (tx) => {
@@ -237,12 +252,14 @@ async function updateXp(roomId, uid, xp, nowMs) {
     const xpAt = xp > me.xp ? at : me.xpAt
     const newRank = rankOf(list.map((m) => (m.uid === uid ? { ...m, xp, xpAt } : m)), uid)
     const updates = { [`members.${uid}.xp`]: xp, [`members.${uid}.xpAt`]: xpAt }
-    // Everyone between your new place and your old one was just passed.
-    for (const m of before.slice(newRank - 1, oldRank - 1)) {
+    // Everyone between your new place and your old one was just passed,
+    // and each moves down one place.
+    const passed = before.slice(newRank - 1, oldRank - 1).map((m, i) => ({ uid: m.uid, rank: newRank + i + 1 }))
+    for (const m of passed) {
       updates[`members.${m.uid}.passedBy`] = { name: me.name, at }
     }
     tx.update(ref, updates)
-    return { oldRank, newRank, oldXp: me.xp, size: list.length }
+    return { oldRank, newRank, oldXp: me.xp, size: list.length, passed, by: me.name }
   }))
 }
 

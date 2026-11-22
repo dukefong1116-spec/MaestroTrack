@@ -5,6 +5,7 @@ import {
 import { auth, db } from './config'
 import { requestId } from './invites'
 import type { StudioRequest } from '@/types'
+import { notifyEvent } from '@/lib/notify/push'
 
 const REQUESTS = 'studioRequests'
 const USERS = 'users'
@@ -88,6 +89,7 @@ export async function acceptStudioRequest(
     decidedAt: new Date().toISOString(),
   })
   await batch.commit()
+  notifyEvent('joined-studio', request.id)
 }
 
 /** Turn them away. Nothing is written to their profile. */

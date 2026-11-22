@@ -12,6 +12,7 @@ import {
 import { db } from './config'
 import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import type { Piece } from '@/types'
+import { notifyEvent } from '@/lib/notify/push'
 
 const COL = 'pieces'
 
@@ -67,10 +68,12 @@ export function subscribeSharedPieces(studentId: string, callback: (pieces: Piec
 /** A teacher puts a piece in their student's Library; the student is told. */
 export async function addPieceForStudent(studentId: string, teacherName: string, title: string, composer?: string): Promise<string> {
   const now = new Date().toISOString()
-  return addPiece(studentId, {
+  const id = await addPiece(studentId, {
     title, composer, difficulty: 3, status: 'active',
     totalMinutes: 0, sessionCount: 0, completionPercentage: 0, confidenceHistory: [],
     startedAt: now, updatedAt: now,
     sharedWithTeacher: true, addedBy: 'teacher', addedByName: teacherName,
   })
+  notifyEvent('piece-from-teacher', id)
+  return id
 }

@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from './config'
 import type { InviteCode, StudioInvite, StudioRequest, UserProfile } from '@/types'
+import { notifyEvent } from '@/lib/notify/push'
 
 const INVITES = 'studioInvites'
 const CODES = 'inviteCodes'
@@ -191,6 +192,7 @@ export async function requestToJoin(
     updatedAt: new Date().toISOString(),
   })
   await batch.commit()
+  notifyEvent('join-request', id)
 
   return request
 }

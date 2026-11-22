@@ -84,6 +84,7 @@ const loadSettings = loadSettingsPage.load
 const SettingsPage = loadSettingsPage.Page
 const JoinStudioPage = lazy(() => import('@/pages/student/JoinStudioPage'))
 import BackendBadge from '@/components/common/BackendBadge'
+import { useStudentReminders, useTeacherReminders } from '@/hooks/useReminders'
 
 const ProfilePage = lazy(() => import('@/pages/student/ProfilePage'))
 const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
@@ -231,6 +232,9 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   useStudentWidgets(profile?.role === 'student')
   useTeacherWidgets(profile?.role === 'teacher')
   useLiveActivity(profile?.role === 'student')
+  // Reminders scheduled on the phone, and this device's push registration.
+  useStudentReminders(profile?.role === 'student')
+  useTeacherReminders(profile?.role === 'teacher')
   // Remembered for the sign-in screen's "Last signed in as".
   useEffect(() => {
     if (profile?.email) rememberLogin({ email: profile.email, name: profile.displayName, avatar: profile.avatar, instrument: profile.instrument })

@@ -139,6 +139,12 @@ export function routeForLink(url: string): string | null {
       case 'teacher': return '/teacher'
       case 'review': return '/teacher/review'
       case 'calendar': return '/teacher/calendar'
+      // A notification: any page of the app, by path. Only the app's own
+      // pages, so a crafted link cannot send anyone elsewhere.
+      case 'go': {
+        const to = u.searchParams.get('to') ?? ''
+        return /^\/(student|teacher)(\/[\w\-/]*)?(\?[\w=&-]*)?$/.test(to) ? to : null
+      }
       default: return null
     }
   } catch { return null }

@@ -36,6 +36,14 @@ export type NotifyKind =
   | 'nudges'
   /** league-passed, league-last-day, league-results — students only */
   | 'league'
+  /** Practice reminders on the phone: the daily one, the evening one, freezes, pieces, performances. */
+  | 'streak'
+  /** The late-evening "your streak ends at midnight", even in quiet hours. */
+  | 'lateStreak'
+  /** Messages, pieces and joining — pushes about the studio. */
+  | 'studio'
+  /** Teachers: quiet students and the weekly summary. */
+  | 'digest'
 
 export type PracticeCategory =
   | 'Scales'

@@ -4,7 +4,7 @@ import {
   initializeTestEnvironment, assertSucceeds, assertFails,
   type RulesTestEnvironment, type RulesTestContext,
 } from '@firebase/rules-unit-testing'
-import { Timestamp, addDoc, collection, doc, setDoc, updateDoc, type Firestore, type Unsubscribe } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, doc, getDoc, setDoc, updateDoc, type Firestore, type Unsubscribe } from 'firebase/firestore'
 
 /**
  * The app's own queries, run against the rules.
@@ -595,6 +595,20 @@ describe("the teacher's writes", () => {
   it("refreshStudioName — keeping a student's copy of the studio name current", async () => {
     asTeacher()
     await assertSucceeds(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen'))
+  })
+})
+
+describe('the push tables are the server’s alone', () => {
+  it('no one can read or write where devices are, or what was sent', async () => {
+    await seed('pushDevices', 'dev-ana-0001', { uid: ANA, platform: 'ios', token: 'a'.repeat(64) })
+    await seed('pushState', ANA, { day: '2026-03-01', count: 1 })
+    for (const who of [ANA, TEACHER]) {
+      const db = env.authenticatedContext(who).firestore()
+      await assertFails(getDoc(doc(db, 'pushDevices', 'dev-ana-0001')))
+      await assertFails(setDoc(doc(db, 'pushDevices', `dev-${who}-9`), { uid: who, platform: 'ios', token: 'b'.repeat(64) }))
+      await assertFails(getDoc(doc(db, 'pushState', ANA)))
+      await assertFails(setDoc(doc(db, 'pushState', ANA), { count: 0 }))
+    }
   })
 })
 

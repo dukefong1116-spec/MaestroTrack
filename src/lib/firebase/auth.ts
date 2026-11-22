@@ -13,6 +13,7 @@ import { doc, setDoc, getDoc, onSnapshot, serverTimestamp } from 'firebase/fires
 import { auth, db } from './config'
 import { cleanForFirestore } from './clean'
 import type { UserProfile, UserRole, InstrumentType, ExperienceLevel } from '@/types'
+import { unregisterDevice } from '@/lib/notify/push'
 
 export async function signUp(
   email: string,
@@ -90,6 +91,8 @@ export async function signIn(email: string, password: string): Promise<User> {
 }
 
 export async function logOut(): Promise<void> {
+  // While still signed in: this device stops getting this account's pushes.
+  await unregisterDevice().catch(() => {})
   await signOut(auth)
   // The saved copy of your data goes with you (see lib/cache/snapshot),
   // and the next open starts at the login page.

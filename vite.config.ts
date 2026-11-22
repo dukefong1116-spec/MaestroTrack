@@ -24,6 +24,18 @@ function leagueApiUnderEmulator(): Plugin {
       process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8085'
       process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
       process.env.GCLOUD_PROJECT ??= 'demo-maestrotrack'
+      // The push endpoints too, against the emulators (nothing is really
+      // sent: no Apple or Web Push keys exist locally).
+      server.middlewares.use('/api/push', async (req, res, next) => {
+        const name = (req.url ?? '').split('?')[0].replace(/^\/+/, '')
+        if (name !== 'register' && name !== 'unregister' && name !== 'event') return next()
+        try {
+          const mod = await server.ssrLoadModule(`/api/push/${name}.js`)
+          await mod.default(req, res)
+        } catch (e) {
+          next(e)
+        }
+      })
       server.middlewares.use('/api/league', async (req, res, next) => {
         const name = (req.url ?? '').split('?')[0].replace(/^\/+/, '')
         if (name !== 'ticket' && name !== 'sync') return next()
@@ -78,6 +90,8 @@ export default defineConfig({
         // and the public pages behind shared links.
         navigateFallbackDenylist: [/^\/api\//, /^\/s\//],
         cleanupOutdatedCaches: true,
+        // Web Push: showing a push, and opening its page on a click.
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

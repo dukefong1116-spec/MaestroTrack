@@ -5,6 +5,7 @@ import { db } from './config'
 import { onSnapshotError, onServerSnapshot } from './snapshotError'
 import { cleanForFirestore } from './clean'
 import type { Message } from '@/types'
+import { notifyEvent } from '@/lib/notify/push'
 
 /**
  * Messages between a teacher and a student.
@@ -22,6 +23,7 @@ const byTime = (a: Message, b: Message) => a.createdAt.localeCompare(b.createdAt
 
 export async function sendMessage(m: Omit<Message, 'id' | 'createdAt'>): Promise<string> {
   const ref = await addDoc(collection(db, COL), cleanForFirestore({ ...m, createdAt: new Date().toISOString() }))
+  notifyEvent('message', ref.id)
   return ref.id
 }
 

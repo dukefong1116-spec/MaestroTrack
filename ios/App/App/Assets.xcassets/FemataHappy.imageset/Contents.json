@@ -1,0 +1,1 @@
+{ "images" : [ { "filename" : "FemataHappy.png", "idiom" : "universal", "scale" : "1x" }, { "filename" : "FemataHappy@2x.png", "idiom" : "universal", "scale" : "2x" }, { "filename" : "FemataHappy@3x.png", "idiom" : "universal", "scale" : "3x" } ], "info" : { "author" : "xcode", "version" : 1 } }

@@ -54,6 +54,11 @@ export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> 
   lessons: ['lesson-tomorrow', 'lesson-soon', 'lesson-note-due'],
   submissions: ['submission-received'],
   league: ['league-passed', 'league-last-day', 'league-results'],
+  // Phone reminders and pushes only; nothing on the bell.
+  streak: [],
+  lateStreak: [],
+  studio: [],
+  digest: [],
   // 'message-new' is absent too: a message is a person talking to you.
   // So is 'studio-joined': it happens once, and it is the answer to
   // something you asked for.
