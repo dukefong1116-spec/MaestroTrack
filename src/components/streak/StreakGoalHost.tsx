@@ -93,7 +93,7 @@ function GoalFlow({ mode, reached, streak, firstName, onCommit, onClose }: {
   function lockIn() {
     onCommit(pick)
     setScreen('locked')
-    try { playBadgeCharge() } catch { /* no audio */ }
+    try { playBadgeCharge('commit') } catch { /* no audio */ }
     setTimeout(onClose, 3000)
   }
 

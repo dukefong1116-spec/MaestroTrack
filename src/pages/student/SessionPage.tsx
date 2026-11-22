@@ -46,6 +46,8 @@ import { useCategoryTimer } from '@/stores/categoryTimerStore'
 import { apportion, categoryFields, type CategoryMinutes } from '@/lib/utils/categories'
 import { pieceFields } from '@/lib/utils/sessionPieces'
 import type { InstrumentType, PracticeCategory, PracticeSession } from '@/types'
+import { haptic } from '@/lib/haptics'
+import FemataBuddy from '@/components/femata/FemataBuddy'
 
 type Tool = 'metro' | 'tuner' | 'mic' | null
 
@@ -274,7 +276,7 @@ export default function SessionPage() {
 
   // Start automatically on arrival so the page is live the moment it opens.
   useEffect(() => {
-    if (!timerRunning && !timerStartedAt && timerAccumulatedSec === 0) startTimer()
+    if (!timerRunning && !timerStartedAt && timerAccumulatedSec === 0) { startTimer(); haptic('start') }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -673,6 +675,7 @@ export default function SessionPage() {
    */
   function beginFinish() {
     primeAudioContext() // synchronous, inside the gesture
+    haptic('tap')
     if (!(profile?.uid ?? user?.uid)) return
 
     // Already answered on a previous attempt that failed to save — asking
@@ -879,6 +882,9 @@ export default function SessionPage() {
       className="fixed inset-0 z-50 flex flex-col"
       style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)', paddingTop: 'env(safe-area-inset-top)' }}
     >
+      {/* Femata keeps you company: focused while the clock runs, dozing
+          while it is paused. Drag it out of the way of anything. */}
+      {!inTour && <FemataBuddy mood={timerRunning ? 'focused' : 'sleepy'} spot="session" size={64} bottom="calc(112px + env(safe-area-inset-bottom))" />}
       <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-md px-5 pb-4 pt-3">
 
@@ -1006,7 +1012,7 @@ export default function SessionPage() {
           </motion.div>
 
           <motion.button
-            onClick={() => (timerRunning ? pauseTimer() : startTimer())}
+            onClick={() => { if (timerRunning) { pauseTimer(); haptic('pause') } else { startTimer(); haptic('start') } }}
             className="relative z-10 mb-3 flex h-[150px] w-[150px] flex-col items-center justify-center rounded-full"
             style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-deep)' }}
             whileTap={{ scale: 0.94 }}

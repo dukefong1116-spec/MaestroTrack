@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationPanel from './NotificationPanel'
+import { haptic } from '@/lib/haptics'
 
 /**
  * The bell, and the count that makes someone look at it.
@@ -21,7 +22,7 @@ export default function NotificationBell({ label, floating, rail }: {
   rail?: { open: boolean }
 }) {
   const { profile } = useAuth()
-  const { items, unread, markAllRead } = useNotifications()
+  const { items, unread, markAllRead, loading } = useNotifications()
   const [open, setOpen] = useState(false)
   const [anchor, setAnchor] = useState({ top: 0, left: 0 })
   const boxRef = useRef<HTMLDivElement | null>(null)
@@ -49,10 +50,17 @@ export default function NotificationBell({ label, floating, rail }: {
     // inside the sidebar's padding: offsetting from the button put the
     // panel a couple of pixels back over the edge it was meant to clear.
     // On a phone there is no sidebar and the bell's own box is right.
-    const host = boxRef.current?.closest('aside')?.getBoundingClientRect() ?? r
-    const left = Math.min(host.right + GAP, window.innerWidth - PANEL_W - GAP)
-    const top = Math.min(r.top, window.innerHeight - 160)
-    setAnchor({ top: Math.max(GAP, top), left: Math.max(GAP, left) })
+    const side = boxRef.current?.closest('aside')?.getBoundingClientRect()
+    if (side) {
+      const left = Math.min(side.right + GAP, window.innerWidth - PANEL_W - GAP)
+      const top = Math.min(r.top, window.innerHeight - 160)
+      setAnchor({ top: Math.max(GAP, top), left: Math.max(GAP, left) })
+      return
+    }
+    // On a phone the bell floats over the page: drop the list below it,
+    // right edges lined up, so the bell stays visible above its list.
+    const left = Math.min(r.right - PANEL_W, window.innerWidth - PANEL_W - GAP)
+    setAnchor({ top: r.bottom + 8, left: Math.max(GAP, left) })
   }, [])
 
   useEffect(() => {
@@ -80,6 +88,7 @@ export default function NotificationBell({ label, floating, rail }: {
 
   function toggle() {
     const next = !open
+    haptic(next ? 'nudge' : 'select')
     setOpen(next)
     if (next && unread > 0) markAllRead()
   }
@@ -173,6 +182,7 @@ export default function NotificationBell({ label, floating, rail }: {
           {open && (
             <NotificationPanel
               items={items}
+              loading={loading}
               emptyText={
                 profile?.role === 'teacher'
                   ? 'Nothing new from your students.'

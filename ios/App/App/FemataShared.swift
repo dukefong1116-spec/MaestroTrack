@@ -50,6 +50,14 @@ struct FemataSnapshot: Codable {
     var nextLessonTitle: String?
     var nextLessonStart: Date?
     var toReview: Int
+    /// Coming lessons, soonest first: the teacher's studio, or a student's own.
+    var agenda: [AgendaItem]?
+
+    struct AgendaItem: Codable, Hashable {
+        var title: String
+        var start: Date
+        var minutes: Int
+    }
 
     static func load() -> FemataSnapshot? {
         guard let data = FemataShared.defaults?.data(forKey: FemataShared.snapshotKey) else { return nil }

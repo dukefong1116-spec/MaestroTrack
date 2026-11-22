@@ -43,7 +43,15 @@ function AppSkeleton() {
           <div className="flex-1 space-y-1.5">{bar('30%', 10)}{bar('45%', 14)}</div>
         </div>
         <div className="space-y-5 p-5" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
-          <div className="flex justify-center">{bar('178px', 178, { borderRadius: 999 })}</div>
+          <div className="relative flex justify-center">
+            {bar('178px', 178, { borderRadius: 999 })}
+            {/* Turning, so it reads as on its way rather than empty. */}
+            <span
+              className="absolute top-1/2 left-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-[3px]"
+              style={{ borderColor: 'var(--clay-line)', borderTopColor: 'var(--clay-accent)' }}
+              role="status"
+            />
+          </div>
           <div className="flex flex-col items-center gap-1.5">{bar('40%', 16)}{bar('30%', 11)}</div>
           {bar('100%', 30)}
           {bar('100%', 40)}

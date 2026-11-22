@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { isBootReady, bootFinished } from '@/lib/boot'
 import { auth } from '@/lib/firebase/config'
 import { nativeLaunchDone } from '@/lib/nativeGlass'
+import { haptic } from '@/lib/haptics'
 
 /** Never less than this on screen (from the app opening), so the blink reads. */
 const MIN_MS = 1100
@@ -35,7 +36,10 @@ export default function LaunchScreen() {
 
   useEffect(() => {
     const boot = document.getElementById('boot')
-    if (!boot || started.current) return
+    if (started.current) return
+    // No launch screen (a reload skips it): the native one behind the page
+    // still has to go.
+    if (!boot) { started.current = true; nativeLaunchDone(); return }
     // Pages inside AppLayout report their own first draw; anything else is
     // drawn as soon as the sign-in check is over.
     const inLayout = /^\/(student|teacher)(\/|$)/.test(pathname)
@@ -46,6 +50,7 @@ export default function LaunchScreen() {
       const wait = Math.max(0, MIN_MS - performance.now())
       setTimeout(() => {
         boot.classList.add('hop')
+        haptic('hop')
         setTimeout(() => {
           boot.classList.add('zoom')
           bootFinished()

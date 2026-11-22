@@ -3,6 +3,8 @@ import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile 
 import { useAuthStore } from '@/stores/authStore'
 import { markOpen } from '@/lib/utils/openTimes'
 import { clearSnapshots } from '@/lib/cache/snapshot'
+import { subscribePracticeSessions } from '@/lib/firebase/practice'
+import { clearWidgets } from '@/lib/nativeWidgets'
 
 /** Who was last signed in on this device. Removed on signing out. */
 export const LAST_UID = 'maestro_last_uid'
@@ -39,6 +41,16 @@ export function useAuthInit() {
       const saved = user ? savedProfile(user.uid) : null
       // Only when there is nothing to show: the app stays up otherwise.
       if (!saved) setLoading(true)
+      // A first sign-in on this phone: nothing saved, so Today waited for
+      // the profile and only then asked for the practice log. Asked for
+      // now, alongside the profile; Firestore shares one listen between
+      // identical queries, so the app's own listener (useStudentData)
+      // picks it up the moment it starts. Only your own sessions, which
+      // the rules already let you read; let go once that one is running.
+      if (user && !saved) {
+        const stop = subscribePracticeSessions(user.uid, () => {})
+        setTimeout(stop, 20_000)
+      }
       setUser(user)
       try {
         if (user) localStorage.setItem(LAST_UID, user.uid)
@@ -47,6 +59,8 @@ export function useAuthInit() {
       // Drawn from the last account, and Firebase says nobody is signed in
       // (the session ended): what was saved goes too.
       if (!user && earlyProfile) void clearSnapshots()
+      // Signed out: the Home Screen widgets stop showing this account.
+      if (!user) clearWidgets()
       if (user) {
         // The copy saved on this device last visit, shown at once so the
         // app opens without waiting on the network. The server's copy

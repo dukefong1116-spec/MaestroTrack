@@ -1,5 +1,6 @@
 import { ready } from '@/lib/audio/engine'
 import { isSoundMuted } from '@/lib/utils/sound'
+import { haptic } from '@/lib/haptics'
 
 /**
  * The streak's ice sounds, synthesised live like every other sound in the
@@ -70,6 +71,7 @@ function noise(
 
 /** Ice closing over the flame: a frosty hiss, a falling glassy chime, a settle. */
 export function playFreezeOver(): void {
+  haptic('freeze')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.8)
@@ -82,6 +84,7 @@ export function playFreezeOver(): void {
 
 /** Ice cracking twice, shattering, and the flame catching again. */
 export function playThaw(): void {
+  haptic('thaw')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.8)
@@ -100,6 +103,7 @@ export function playThaw(): void {
 
 /** A freeze earned: four bright ice chimes, rising. */
 export function playFreezeEarned(): void {
+  haptic('badge')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.7)

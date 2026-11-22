@@ -1,4 +1,5 @@
 import type { AccentName, NotifyKind, ThemeChoice, UserProfile } from '@/types'
+import { setHapticsEnabled } from '@/lib/haptics'
 
 export type { AccentName, NotifyKind, ThemeChoice }
 
@@ -18,6 +19,8 @@ export interface Prefs {
   /** Percent. 100 is the app's own sizing. */
   displayScale: number
   reduceMotion: boolean
+  /** The taps and rumbles on streaks, finishes, Femata… */
+  haptics: boolean
   notify: Record<NotifyKind, boolean>
   reminderEnabled: boolean
   /** "HH:mm", 24-hour. */
@@ -32,6 +35,7 @@ export const DEFAULT_PREFS: Prefs = {
   accent: 'theme',
   displayScale: 100,
   reduceMotion: false,
+  haptics: true,
   notify: { assignments: true, feedback: true, lessons: true, submissions: true, nudges: true, league: true },
   reminderEnabled: false,
   reminderTime: '18:00',
@@ -68,6 +72,7 @@ function clean(raw: RawPrefs | null | undefined): Prefs {
     accent: raw.accent && (raw.accent === 'instrument' || raw.accent === 'theme' || raw.accent in ACCENTS) ? raw.accent : DEFAULT_PREFS.accent,
     displayScale: SCALES.includes(raw.displayScale as typeof SCALES[number]) ? raw.displayScale! : DEFAULT_PREFS.displayScale,
     reduceMotion: typeof raw.reduceMotion === 'boolean' ? raw.reduceMotion : DEFAULT_PREFS.reduceMotion,
+    haptics: typeof raw.haptics === 'boolean' ? raw.haptics : DEFAULT_PREFS.haptics,
     notify: { ...DEFAULT_PREFS.notify, ...(raw.notify ?? {}) },
     reminderEnabled: typeof raw.reminderEnabled === 'boolean' ? raw.reminderEnabled : DEFAULT_PREFS.reminderEnabled,
     reminderTime: /^\d{2}:\d{2}$/.test(raw.reminderTime ?? '') ? raw.reminderTime! : DEFAULT_PREFS.reminderTime,
@@ -94,6 +99,7 @@ export function prefsFromProfile(profile: UserProfile | null | undefined): Prefs
     accent: profile.accent,
     displayScale: profile.displayScale,
     reduceMotion: profile.reduceMotion,
+    haptics: profile.haptics,
     notify: profile.notify,
     reminderEnabled: profile.reminderEnabled,
     reminderTime: profile.reminderTime,
@@ -158,6 +164,7 @@ export function applyPrefs(p: Prefs): void {
   if (p.theme === 'system') delete root.dataset.theme
 
   root.dataset.motion = p.reduceMotion ? 'reduce' : ''
+  setHapticsEnabled(p.haptics)
   if (!p.reduceMotion) delete root.dataset.motion
 
   root.style.setProperty('--clay-zoom', String(p.displayScale / 100))

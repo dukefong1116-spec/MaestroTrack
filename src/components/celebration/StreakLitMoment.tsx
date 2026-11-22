@@ -22,7 +22,7 @@ export default function StreakLitMoment({ open, before, after, onDone }: {
   const [lit, setLit] = useState(false)
   useEffect(() => {
     if (!open) { setLit(false); return }
-    const t = setTimeout(() => { setLit(true); playSubmitChime() }, reduced ? 0 : 650)
+    const t = setTimeout(() => { setLit(true); playSubmitChime('streakLit') }, reduced ? 0 : 650)
     return () => clearTimeout(t)
   }, [open, reduced])
 

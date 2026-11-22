@@ -1,4 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type CSSProperties } from 'react'
+import { haptic } from '@/lib/haptics'
 import { cn } from '@/lib/utils/cn'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -38,7 +39,7 @@ const VARIANTS: Record<NonNullable<ButtonProps['variant']>, CSSProperties> = {
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading, className, children, disabled, style, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', loading, className, children, disabled, style, onClick, ...props }, ref) => {
     const base =
       'inline-flex items-center justify-center font-semibold rounded-[var(--clay-r-sm)] ' +
       'transition-transform duration-150 active:scale-[.94] focus:outline-none ' +
@@ -63,6 +64,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ...style,
         }}
         {...props}
+        // Every press is felt, a light tick under the squish.
+        onClick={(e) => { haptic(variant === 'primary' ? 'tap' : 'select'); onClick?.(e) }}
       >
         {loading && (
           <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">

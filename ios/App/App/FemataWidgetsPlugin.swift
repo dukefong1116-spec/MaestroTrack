@@ -22,6 +22,7 @@ public class FemataWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "FemataWidgets"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "liveStart", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "liveUpdate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "liveEnd", returnType: CAPPluginReturnPromise),
@@ -68,6 +69,13 @@ public class FemataWidgetsPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         FemataShared.defaults?.set(data, forKey: FemataShared.snapshotKey)
+        WidgetCenter.shared.reloadAllTimelines()
+        call.resolve()
+    }
+
+    /// Signed out: nothing of that account stays on the Home Screen.
+    @objc func clear(_ call: CAPPluginCall) {
+        FemataShared.defaults?.removeObject(forKey: FemataShared.snapshotKey)
         WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
     }

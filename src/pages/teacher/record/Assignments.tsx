@@ -14,6 +14,7 @@ import Modal from '@/components/ui/Modal'
 import { Btn, Pill, Empty, Field } from '@/components/teacher/studio/ui'
 import { inputCls, inputStyle, type Tone } from '@/components/teacher/studio/tokens'
 import type { Assignment, PracticeCategory, PracticeSession } from '@/types'
+import AddFab from '@/components/teacher/studio/AddFab'
 
 const CATEGORY_OPTIONS: PracticeCategory[] = ['Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation']
 const STATUS: Record<string, [string, Tone]> = {
@@ -47,8 +48,9 @@ export default function Assignments({ m, sessions, onReview }: { m: Member; sess
         <p className="flex-1 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
           {m.onApp ? `${first} sees these in the app, and hands work in there.` : `${first} isn’t on the app yet: these are kept here and become theirs when they join. Check them off in the lesson.`}
         </p>
-        {canSet && <Btn kind={composing ? 'soft' : 'primary'} onClick={() => setComposing((v) => !v)}>{composing ? 'Cancel' : '+ New assignment'}</Btn>}
+        {canSet && composing && <Btn kind="soft" onClick={() => setComposing(false)}>Cancel</Btn>}
       </div>
+      {canSet && <AddFab id="assignment-add" label="New assignment" visible={!composing} onAdd={() => setComposing(true)} />}
       {composing && profile && <Composer teacherId={profile.uid} m={m} onDone={() => setComposing(false)} />}
       {mine.length === 0 && !composing && <Empty mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
       {mine.map((a) => {

@@ -1,6 +1,7 @@
 import { ready } from '@/lib/audio/engine'
 import { isSoundMuted, rootFor } from '@/lib/utils/sound'
 import type { InstrumentType } from '@/types'
+import { haptic } from '@/lib/haptics'
 
 /**
  * The league's sounds, synthesised live like the session chime — no
@@ -77,6 +78,7 @@ function sweep(audio: AudioContext, out: AudioNode, at: number, dur: number, fro
 let lastTick = 0
 /** One soft tick of XP counting up. Throttled, so a fast count is a patter, not a buzz. */
 export function playXpTick(instrument?: InstrumentType) {
+  haptic('select')
   const audio = ctx()
   if (!audio || audio.currentTime - lastTick < 0.06) return
   lastTick = audio.currentTime
@@ -85,6 +87,7 @@ export function playXpTick(instrument?: InstrumentType) {
 
 /** Your row lifting off the list. */
 export function playZoomIn() {
+  haptic('pick')
   const audio = ctx()
   if (!audio) return
   sweep(audio, bus(audio, 0.7), audio.currentTime, 0.4, 400, 2600, 0.22)
@@ -95,6 +98,7 @@ export function playZoomIn() {
  * pass three people, hear three notes going up.
  */
 export function playClimb(places: number, seconds: number, instrument?: InstrumentType) {
+  haptic('climb')
   const audio = ctx()
   if (!audio || places <= 0) return
   const out = bus(audio, 0.8)
@@ -110,6 +114,7 @@ export function playClimb(places: number, seconds: number, instrument?: Instrume
 
 /** Landing: a soft wooden tock, like a metronome's. */
 export function playLand() {
+  haptic('drop')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.8)
@@ -129,6 +134,7 @@ export function playLand() {
 
 /** Into the move-up zone: two bright notes. */
 export function playZoneChime(instrument?: InstrumentType) {
+  haptic('nudge')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.8)
@@ -139,6 +145,7 @@ export function playZoneChime(instrument?: InstrumentType) {
 
 /** "Week complete": a soft cymbal-like swell. */
 export function playWeekSwell() {
+  haptic('charge')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.7)
@@ -151,6 +158,7 @@ export function playWeekSwell() {
  * full chord with the octave and a shimmer on top.
  */
 export function playPromotion(toTier: number, instrument?: InstrumentType) {
+  haptic('celebrate')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.9)
@@ -172,6 +180,7 @@ export function playPromotion(toTier: number, instrument?: InstrumentType) {
 
 /** The notes bursting from a new trophy: light twinkles. */
 export function playSparkle(instrument?: InstrumentType) {
+  haptic('badge')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.6)
@@ -183,6 +192,7 @@ export function playSparkle(instrument?: InstrumentType) {
 
 /** Held your place: warm and settled. */
 export function playStay(instrument?: InstrumentType) {
+  haptic('success')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.8)
@@ -192,6 +202,7 @@ export function playStay(instrument?: InstrumentType) {
 
 /** Moving down: two gentle falling notes — soft, never sad. */
 export function playDemotion(instrument?: InstrumentType) {
+  haptic('sink')
   const audio = ctx()
   if (!audio) return
   const out = bus(audio, 0.7)

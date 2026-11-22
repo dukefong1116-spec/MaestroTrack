@@ -18,6 +18,7 @@ import { ATTENDANCE } from '@/lib/studio/labels'
 import { StudioPage, Btn, Avatar } from '@/components/teacher/studio/ui'
 import { colorFor, toneColors } from '@/components/teacher/studio/tokens'
 import type { AttendanceMark } from '@/types'
+import FemataBuddy from '@/components/femata/FemataBuddy'
 
 /** "Ms Harper" stays whole; "Laura Harper" is Laura. */
 function callName(name: string) {
@@ -202,6 +203,8 @@ export default function TeacherDashboard() {
         </div>
       </div>
       <LessonSheet item={open} onClose={() => setOpen(null)} />
+      {/* Femata, here for the teacher too: happy, and draggable anywhere. */}
+      <FemataBuddy mood="happy" spot="teacher" />
     </StudioPage>
   )
 }

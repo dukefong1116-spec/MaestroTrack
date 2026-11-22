@@ -23,6 +23,8 @@ export interface WidgetSnapshot {
   /** ms since 1970 */
   nextLessonStart?: number
   toReview: number
+  /** Coming lessons for the calendar widget, soonest first. start: ms since 1970. */
+  agenda?: { title: string; start: number; minutes: number }[]
 }
 
 export interface LiveState {
@@ -38,6 +40,7 @@ export interface LiveState {
 
 interface Plugin {
   update(o: { snapshot: WidgetSnapshot }): Promise<void>
+  clear(): Promise<void>
   liveStart(o: LiveState): Promise<void>
   liveUpdate(o: LiveState): Promise<void>
   liveEnd(o: { doneMinutes?: number }): Promise<void>
@@ -54,6 +57,13 @@ export function updateWidgets(s: WidgetSnapshot) {
   if (json === lastSnapshot) return
   lastSnapshot = json
   void Widgets.update({ snapshot: s }).catch(() => {})
+}
+
+/** Signed out: the widgets forget whoever was here and ask to open the app. */
+export function clearWidgets() {
+  if (!isNativeApp) return
+  lastSnapshot = ''
+  void Widgets.clear().catch(() => {})
 }
 
 /* ── the practice Live Activity ───────────────────────────── */

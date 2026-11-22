@@ -1,5 +1,5 @@
 import { addDays, getDay, parseISO, set, startOfDay, differenceInCalendarDays } from 'date-fns'
-import type { Assignment, LeagueResult, LeagueRoom, LessonSlot, Message, NotifyKind, StudioRequest, UserProfile } from '@/types'
+import type { Assignment, LeagueResult, LeagueRoom, LessonSlot, Message, NotifyKind, Piece, StudioRequest, UserProfile } from '@/types'
 import { moveCounts, rankMembers, zoneOf, TIERS } from '@/lib/league/rules'
 import type { StickerName } from '@/components/stickers/Sticker'
 
@@ -30,6 +30,7 @@ export type NotificationKind =
   | 'league-last-day'
   | 'league-results'
   | 'studio-joined'
+  | 'piece-from-teacher'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -47,7 +48,7 @@ export interface AppNotification {
 
 /** Which NotificationKinds each Settings category switches off. */
 export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> = {
-  assignments: ['assignment-new'],
+  assignments: ['assignment-new', 'piece-from-teacher'],
   feedback: ['assignment-returned', 'assignment-approved'],
   lessons: ['lesson-tomorrow', 'lesson-soon'],
   submissions: ['submission-received'],
@@ -192,6 +193,8 @@ export function buildStudentNotifications(input: {
   league?: { uid: string; room: LeagueRoom | null; result?: LeagueResult; seenWeek?: string }
   /** The teacher accepted your request to join: when, and into what. */
   joined?: { teacherId: string; at: string; studioName?: string }
+  /** Your Library: the pieces your teacher put there are news. */
+  pieces?: Piece[]
   options: BuildOptions
 }): AppNotification[] {
   const { assignments, lessons, messages = [], teacherName, joined } = input
@@ -209,6 +212,21 @@ export function buildStudentNotifications(input: {
       to: '/student/studio',
       priority: 90,
       sticker: 'users',
+    })
+  }
+
+  for (const p of input.pieces ?? []) {
+    if (p.addedBy !== 'teacher' || !withinHorizon(p.startedAt, now, sinceDays)) continue
+    const from = p.addedByName?.trim().split(/\s+/)[0] || teacherName || 'Your teacher'
+    out.push({
+      id: `piece:${p.id}:new`,
+      kind: 'piece-from-teacher',
+      title: `New piece from ${from}`,
+      body: p.composer ? `${p.title} · ${p.composer}` : p.title,
+      at: p.startedAt,
+      to: '/student/library',
+      priority: 58,
+      sticker: 'book',
     })
   }
 

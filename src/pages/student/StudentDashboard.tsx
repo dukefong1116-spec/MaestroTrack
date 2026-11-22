@@ -179,6 +179,17 @@ export default function StudentDashboard() {
             <span className="flex h-[132px] items-center justify-center">
               <StreakFlame streak={live.current} size={112} state={flameState} />
             </span>
+            {/* Nothing saved and nothing arrived yet (a first sign-in on
+                this phone): a spinner, not a streak of 0. */}
+            {!hasSomething ? (
+              <span className="mt-2 flex h-[66px] flex-col items-center justify-center gap-2" role="status" aria-label="Loading your streak">
+                <span
+                  className="h-7 w-7 animate-spin rounded-full border-[3px]"
+                  style={{ borderColor: 'var(--clay-line)', borderTopColor: 'var(--clay-accent)' }}
+                />
+                <span className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>Loading your practice…</span>
+              </span>
+            ) : <>
             <span className="mt-1 flex items-baseline gap-2">
               <span
                 className="text-[44px] font-extrabold leading-none tabular-nums"
@@ -198,6 +209,7 @@ export default function StudentDashboard() {
                 </span>
               )}
             </span>
+            </>}
           </button>
 
           {/* The week as flames: lit where you practised, ice where a

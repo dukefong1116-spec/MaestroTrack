@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import CoreHaptics
 
 /// The app's main screen: Capacitor's web view, plus the native pieces the
 /// web app asks for. Registered in SceneDelegate in place of the plain
@@ -8,6 +9,7 @@ class MutifViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(NativeTabBarPlugin())
         bridge?.registerPluginInstance(NativeGlassPlugin())
+        bridge?.registerPluginInstance(FemataHapticsPlugin())
         bridge?.registerPluginInstance(FemataWidgetsPlugin())
         // Femata blue behind the page until it paints, so the launch screen
         // runs straight into the web one with no white flash. The page
@@ -328,5 +330,77 @@ private extension UIColor {
         if h.hasPrefix("#") { h.removeFirst() }
         guard h.count == 6, let v = UInt32(h, radix: 16) else { return nil }
         self.init(red: CGFloat((v >> 16) & 0xFF) / 255, green: CGFloat((v >> 8) & 0xFF) / 255, blue: CGFloat(v & 0xFF) / 255, alpha: 1)
+    }
+}
+
+
+/// The app's haptics: each moment its own pattern of taps and rumbles,
+/// played with Core Haptics so strength, sharpness and length can all be
+/// shaped (a soft purr for a pat, a thud for a drop, a rising rumble into
+/// a pop for a commitment). The web app sends the pattern; nothing here
+/// knows what the moments are.
+///
+/// `play({ events: [{ t, i, s, d? }] })`: t = start in seconds, i =
+/// intensity 0–1, s = sharpness 0–1, d = length in seconds for a rumble
+/// (none: a single tap).
+@objc(FemataHapticsPlugin)
+public class FemataHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "FemataHapticsPlugin"
+    public let jsName = "FemataHaptics"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "play", returnType: CAPPluginReturnNone),
+    ]
+
+    private var engine: CHHapticEngine?
+    private lazy var fallback = UIImpactFeedbackGenerator(style: .medium)
+
+    private func readyEngine() -> CHHapticEngine? {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return nil }
+        if let e = engine { return e }
+        do {
+            let e = try CHHapticEngine()
+            e.isAutoShutdownEnabled = true
+            // The system stops the engine when the app goes to the
+            // background; it starts again on the next pattern.
+            e.resetHandler = { [weak e] in try? e?.start() }
+            try e.start()
+            engine = e
+            return e
+        } catch {
+            return nil
+        }
+    }
+
+    @objc func play(_ call: CAPPluginCall) {
+        let raw = call.getArray("events") as? [[String: Any]] ?? []
+        DispatchQueue.main.async {
+            let events: [CHHapticEvent] = raw.compactMap { ev in
+                let t = (ev["t"] as? NSNumber)?.doubleValue ?? 0
+                let i = Float((ev["i"] as? NSNumber)?.doubleValue ?? 0.5)
+                let s = Float((ev["s"] as? NSNumber)?.doubleValue ?? 0.5)
+                let params = [
+                    CHHapticEventParameter(parameterID: .hapticIntensity, value: max(0, min(1, i))),
+                    CHHapticEventParameter(parameterID: .hapticSharpness, value: max(0, min(1, s))),
+                ]
+                if let d = (ev["d"] as? NSNumber)?.doubleValue, d > 0 {
+                    return CHHapticEvent(eventType: .hapticContinuous, parameters: params, relativeTime: t, duration: d)
+                }
+                return CHHapticEvent(eventType: .hapticTransient, parameters: params, relativeTime: t)
+            }
+            guard !events.isEmpty else { return }
+            guard let engine = self.readyEngine() else {
+                // No Core Haptics: one plain tap, so a moment still lands.
+                self.fallback.impactOccurred(intensity: CGFloat((raw.first?["i"] as? NSNumber)?.doubleValue ?? 0.6))
+                return
+            }
+            do {
+                try engine.start()
+                let player = try engine.makePlayer(with: CHHapticPattern(events: events, parameters: []))
+                try player.start(atTime: CHHapticTimeImmediate)
+            } catch {
+                self.fallback.impactOccurred()
+            }
+        }
+        call.resolve()
     }
 }

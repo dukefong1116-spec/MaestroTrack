@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Archive, Star, Crosshair } from 'lucide-react'
+import { Plus, Archive, Star, Crosshair, GraduationCap } from 'lucide-react'
 import Sticker from '@/components/stickers/Sticker'
 import { format, parseISO, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/useAuth'
@@ -37,6 +37,9 @@ export default function PiecesPanel() {
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<'active' | 'archived' | 'mastered'>('active')
   const [selected, setSelected] = useState<Piece | null>(null)
+  // In a studio, a new piece is shared with the teacher unless switched off.
+  const teacher = profile?.teacherId ? (profile.teacherName?.trim().split(/\s+/)[0] || 'your teacher') : null
+  const [share, setShare] = useState(true)
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -59,10 +62,12 @@ export default function PiecesPanel() {
       updatedAt: new Date().toISOString(),
       targetDate: data.targetDate,
       notes: data.notes,
+      ...(teacher ? { sharedWithTeacher: share } : {}),
     }
     const id = await addPiece(uid, pieceData)
     addPieceToStore({ id, userId: uid, ...pieceData })
     reset()
+    setShare(true)
     setOpen(false)
   }
 
@@ -142,6 +147,11 @@ export default function PiecesPanel() {
                   <div className="min-w-0">
                     <p className="truncate font-semibold" style={{ color: 'var(--clay-ink)' }}>{piece.title}</p>
                     {piece.composer && <p className="text-xs" style={{ color: 'var(--clay-dim)' }}>{piece.composer}</p>}
+                    {piece.addedBy === 'teacher' && (
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }}>
+                        <GraduationCap size={12} /> From {piece.addedByName?.trim().split(/\s+/)[0] || 'your teacher'}
+                      </p>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <div className="flex">
@@ -214,6 +224,7 @@ export default function PiecesPanel() {
           />
           <Input label="Target Date (optional)" type="date" {...register('targetDate')} />
           <Textarea label="Notes (optional)" placeholder="Goals for this piece..." {...register('notes')} />
+          {teacher && <ShareSwitch teacher={teacher} on={share} onChange={setShare} />}
           <Button type="submit" className="w-full" loading={isSubmitting}>Add piece</Button>
         </form>
       </Modal>
@@ -253,6 +264,13 @@ export default function PiecesPanel() {
               </div>
             )}
             {selected.notes && <p className="text-sm text-[var(--clay-dim)] italic">"{selected.notes}"</p>}
+            {teacher && selected.addedBy !== 'teacher' && (
+              <ShareSwitch
+                teacher={teacher}
+                on={!!selected.sharedWithTeacher}
+                onChange={(on) => { setSelected({ ...selected, sharedWithTeacher: on }); void updatePiece(selected.id, { sharedWithTeacher: on }) }}
+              />
+            )}
             <div className="flex gap-2">
               {selected.status === 'active' && (
                 <Button size="sm" onClick={() => { handleMaster(selected); setSelected(null) }} className="flex-1">
@@ -270,5 +288,18 @@ export default function PiecesPanel() {
         </Modal>
       )}
     </div>
+  )
+}
+
+/** Whether the teacher sees this piece. */
+function ShareSwitch({ teacher, on, onChange }: { teacher: string; on: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3" style={{ background: 'var(--clay-bg)' }}>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold" style={{ color: 'var(--clay-ink)' }}>Let {teacher} see this piece</span>
+        <span className="block text-xs" style={{ color: 'var(--clay-dim)' }}>{teacher} sees the piece and how much you've practised it.</span>
+      </span>
+      <input type="checkbox" role="switch" className="h-5 w-5 shrink-0 accent-[var(--clay-accent)]" checked={on} onChange={(e) => onChange(e.target.checked)} />
+    </label>
   )
 }

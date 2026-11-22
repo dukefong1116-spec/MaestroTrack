@@ -8,6 +8,8 @@ import { usePracticeStore } from '@/stores/practiceStore'
 import { useTourStore } from '@/stores/tourStore'
 import { whatToShow, INTRO_SEEN, type Show, type ShowId } from '@/lib/utils/tour'
 import Femata, { type FemataMood } from '@/components/femata/Femata'
+import { isNativeApp } from '@/lib/native'
+import { haptic } from '@/lib/haptics'
 
 /** Femata's face on each step of the tour. */
 const TOUR_MOOD: Partial<Record<ShowId, FemataMood>> = {
@@ -96,6 +98,11 @@ export default function TourLayer() {
     if (decision.kind === 'redirect') navigate(decision.to, { replace: true })
   }, [decision, navigate])
 
+  // The last step done by the native tab bar: Practice is open.
+  useEffect(() => {
+    if (onboarding?.tour === 'history' && pathname.startsWith('/student/practice')) setTour('done')
+  }, [onboarding?.tour, pathname, setTour])
+
   // The session's own steps end with the session.
   useEffect(() => {
     if (pathname !== '/student/session' && sub !== null) setSub(null)
@@ -104,6 +111,7 @@ export default function TourLayer() {
   /** The step is done: move on. */
   const advance = useRef<(id: Show['id']) => void>(() => {})
   advance.current = (id) => {
+    haptic('nudge')
     switch (id) {
       case 'welcome': return setTour('today')
       case 'today': return setTour('start')
@@ -139,12 +147,19 @@ export default function TourLayer() {
     // last target to the next instead of closing and reopening.
     if (!target) setBox(null)
     let scrolled = false
+    // In the iPhone app the tabs are Apple's own bar, outside the page:
+    // nothing to point at, so the button is there from the start.
+    const grace = target?.startsWith('tab-') && isNativeApp ? 0 : MISSING_GRACE_MS
+    const since = Date.now()
     const tick = () => {
       setWaiting(!!document.querySelector('[data-tour-wait]'))
       if (!target) return
       const b = measure(target)
       setBox((prev) => (prev && b && prev.top === b.top && prev.left === b.left
         && prev.width === b.width && prev.height === b.height ? prev : b))
+      // Checked on every tick, not once: a target that goes away later
+      // (a page change, a sheet over it) still gets the way on.
+      setMissing(!b && Date.now() - since >= grace)
       if (b && !scrolled) {
         scrolled = true
         const off = b.top < 0 || b.top + b.height > window.innerHeight
@@ -153,10 +168,7 @@ export default function TourLayer() {
     }
     tick()
     const timer = window.setInterval(tick, 200)
-    const grace = target
-      ? window.setTimeout(() => { if (!measure(target)) setMissing(true) }, MISSING_GRACE_MS)
-      : undefined
-    return () => { window.clearInterval(timer); window.clearTimeout(grace) }
+    return () => window.clearInterval(timer)
   }, [showId, showTarget])
 
   // The bubble's height, to know whether it fits under the lit element.

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CalendarClock, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus } from 'lucide-react'
+import { Bell, CalendarClock, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useStudioSettings } from '@/hooks/useStudioData'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
@@ -82,6 +82,7 @@ export default function TeacherSettingsPage() {
         <NavRow icon={<Bell size={18} />} label="Notifications" to="/teacher/settings/notifications" />
         <NavRow icon={<Palette size={18} />} label="Appearance" to="/teacher/settings/appearance" />
         <NavRow icon={<ShieldCheck size={18} />} label="Privacy & Security" to="/teacher/settings/privacy" />
+        <NavRow icon={<BookOpen size={18} />} label="Guide" value="How everything works" to="/teacher/settings/guide" />
         <NavRow icon={<LifeBuoy size={18} />} label="Support & Legal" to="/teacher/settings/about" />
         <p className="pt-3 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>Signed in as {user?.email ?? '—'}</p>
       </Section>

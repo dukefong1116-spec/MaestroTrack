@@ -51,3 +51,26 @@ export function subscribePieces(userId: string, callback: (pieces: Piece[]) => v
     callback(sorted)
   }, onSnapshotError('pieces'))
 }
+
+/**
+ * A teacher's view of one student's Library: only the pieces the student
+ * chose to share, and the ones the teacher put there (always shared). The
+ * filter is part of the query because the rules allow nothing wider.
+ */
+export function subscribeSharedPieces(studentId: string, callback: (pieces: Piece[]) => void): Unsubscribe {
+  const q = query(collection(db, COL), where('userId', '==', studentId), where('sharedWithTeacher', '==', true))
+  return onServerSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Piece).sort((a, b) => b.startedAt.localeCompare(a.startedAt)))
+  }, onSnapshotError('shared pieces'))
+}
+
+/** A teacher puts a piece in their student's Library; the student is told. */
+export async function addPieceForStudent(studentId: string, teacherName: string, title: string, composer?: string): Promise<string> {
+  const now = new Date().toISOString()
+  return addPiece(studentId, {
+    title, composer, difficulty: 3, status: 'active',
+    totalMinutes: 0, sessionCount: 0, completionPercentage: 0, confidenceHistory: [],
+    startedAt: now, updatedAt: now,
+    sharedWithTeacher: true, addedBy: 'teacher', addedByName: teacherName,
+  })
+}

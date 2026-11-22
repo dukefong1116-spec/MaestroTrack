@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil, BookOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStepBack } from '@/hooks/useStepBack'
@@ -118,6 +118,7 @@ export default function SettingsPage() {
             />
           )}
 
+          <NavRow icon={<BookOpen size={19} />} label="Guide" value="How everything works" to="/student/settings/guide" />
           <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/student/settings/about" />
 
           <FactRow label="Email" value={user?.email ?? '—'} />

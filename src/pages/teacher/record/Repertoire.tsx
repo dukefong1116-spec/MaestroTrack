@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { addPieceForStudent, deletePiece, subscribeSharedPieces } from '@/lib/firebase/pieces'
+import type { Piece } from '@/types'
+import { haptic } from '@/lib/haptics'
 import { X } from 'lucide-react'
 import { updateRosterStudent } from '@/lib/firebase/studio'
 import type { Member } from '@/hooks/useStudioData'
 import { Btn, Empty } from '@/components/teacher/studio/ui'
+import AddFab from '@/components/teacher/studio/AddFab'
 import { inputCls, inputStyle, toneColors } from '@/components/teacher/studio/tokens'
 import type { RepertoireItem, RepertoireStatus } from '@/types'
 import { REP_STATUS } from '@/lib/studio/labels'
@@ -12,6 +17,18 @@ export default function Repertoire({ m }: { m: Member }) {
   const items = m.roster.repertoire ?? []
   const [title, setTitle] = useState('')
   const [kind, setKind] = useState<'piece' | 'skill'>('piece')
+  // The form opens from the + (as on the calendar), not always on show.
+  const [adding, setAdding] = useState(false)
+  const { profile } = useAuth()
+
+  // Their Library, live: the pieces they share with you and the ones you
+  // gave them. Only for a student on the app who is in your studio.
+  const linked = !!m.uid && m.profile?.teacherId === profile?.uid
+  const [library, setLibrary] = useState<Piece[] | null>(null)
+  useEffect(() => {
+    if (!linked || !m.uid) { setLibrary(null); return }
+    return subscribeSharedPieces(m.uid, setLibrary)
+  }, [linked, m.uid])
   const save = (next: RepertoireItem[]) => updateRosterStudent(m.id, { repertoire: next })
   const patch = (id: string, p: Partial<RepertoireItem>) => save(items.map((x) => {
     if (x.id !== id) return x
@@ -20,18 +37,48 @@ export default function Repertoire({ m }: { m: Member }) {
   }))
   function add() {
     if (!title.trim()) return
+    // A piece goes into their own Library, where they practise it and get
+    // told it arrived; a skill (or a student not on the app) stays here.
+    if (kind === 'piece' && linked && m.uid) {
+      void addPieceForStudent(m.uid, profile?.displayName ?? '', title.trim().slice(0, 120)).then(() => haptic('success'))
+      setTitle('')
+      setAdding(false)
+      return
+    }
     void save([...items, { id: Date.now().toString(36), title: title.trim().slice(0, 120), kind, status: 'learning', history: [{ at: new Date().toISOString(), status: 'learning' }] }])
     setTitle('')
+    setAdding(false)
   }
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        <input aria-label="New piece or skill" className={`${inputCls} min-w-[200px] flex-1`} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="Add a piece or skill — e.g. Minuet in G, or D major scale" />
+      <AddFab id="repertoire-add" label="Add a piece or skill" visible={!adding} onAdd={() => setAdding(true)} />
+      {adding && <div className="flex flex-wrap items-center gap-2 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        <input autoFocus aria-label="New piece or skill" className={`${inputCls} min-w-[200px] flex-1`} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="Add a piece or skill — e.g. Minuet in G, or D major scale" />
         <select aria-label="Kind" className={`${inputCls} w-28`} style={inputStyle} value={kind} onChange={(e) => setKind(e.target.value as 'piece' | 'skill')}><option value="piece">Piece</option><option value="skill">Skill</option></select>
         <Btn kind="primary" onClick={add} disabled={!title.trim()}>Add</Btn>
-      </div>
-      {items.length === 0 ? <Empty mood="excited" title="A blank page of music">Pieces and skills you add here show their progress in the report.</Empty> : (
+        <Btn kind="soft" onClick={() => { setAdding(false); setTitle('') }}>Cancel</Btn>
+      </div>}
+      {linked && library && library.length > 0 && (
+        <div style={{ borderBottom: '1px solid var(--clay-line)' }}>
+          <p className="px-5 pt-3 text-[12px] font-bold uppercase tracking-wider sm:px-6" style={{ color: 'var(--clay-dim)' }}>In {m.name.split(' ')[0]}’s Library</p>
+          {library.map((p) => (
+            <div key={p.id} className="flex items-center gap-3 px-5 py-2.5 sm:px-6">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-bold" style={{ color: 'var(--clay-ink)' }}>{p.title}</div>
+                <div className="text-[12px]" style={{ color: 'var(--clay-dim)' }}>
+                  {p.composer ? `${p.composer} · ` : ''}{p.status === 'mastered' ? 'Mastered' : p.status === 'archived' ? 'Put away' : 'Learning'}
+                  {p.addedBy === 'teacher' ? ' · added by you' : ''}
+                </div>
+              </div>
+              {p.addedBy === 'teacher' && (
+                <button type="button" aria-label={`Take back ${p.title}`} onClick={() => void deletePiece(p.id)} className="p-1.5" style={{ color: 'var(--clay-dim)' }}><X size={15} /></button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {items.length === 0 ? (linked && library && library.length > 0 ? null : <Empty mood="excited" title="A blank page of music">Pieces and skills you add here show their progress in the report.</Empty>) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-[13.5px]">
             <thead><tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)' }}>

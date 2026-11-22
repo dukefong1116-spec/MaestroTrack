@@ -1,5 +1,6 @@
 import { unlock, ready, installAudioUnlock } from '@/lib/audio/engine'
 import type { InstrumentType } from '@/types'
+import { haptic, type HapticName } from '@/lib/haptics'
 
 /**
  * Reward chime, synthesised live with the Web Audio API.
@@ -114,6 +115,7 @@ export function armAudioContext(): void {
  * gesture window may already be gone.
  */
 export function playSessionChime(instrument: InstrumentType | undefined, minutes: number): void {
+  haptic('finish')
   if (isSoundMuted()) return
 
   const audio = getContext()
@@ -179,6 +181,7 @@ function envelope(gain: GainNode, at: number, peak: number, attack: number, dur:
  * chord, with a shimmer an octave and a fifth above.
  */
 export function playBadgeFanfare(): void {
+  haptic('badge')
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -244,6 +247,7 @@ export function playBadgeFanfare(): void {
  * "ice/glass" rather than just a quiet bell.
  */
 export function playFreezeChime(): void {
+  haptic('freeze')
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -302,6 +306,7 @@ export function playFreezeChime(): void {
  * unmistakable even heard from another room.
  */
 export function playMasteryCadence(): void {
+  haptic('climb')
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -365,7 +370,9 @@ export function playMasteryCadence(): void {
  * Short, too. This happens often, and a long flourish every time an
  * exercise is handed in becomes something to sit through.
  */
-export function playSubmitChime(): void {
+/** `feel`: the haptic to go with it — the same sound serves more than one moment. */
+export function playSubmitChime(feel: HapticName = 'success'): void {
+  haptic(feel)
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -477,6 +484,7 @@ function chime(audio: AudioContext, bus: AudioNode, root: number, at: number, le
  * spins, then the soft slap of it landing face up.
  */
 export function playBadgeFlip(): void {
+  haptic('pick')
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -501,6 +509,7 @@ export function playBadgeFlip(): void {
  * groan, then the break — a crack, and a spray of tinkling ice shards.
  */
 export function playBadgeShatter(): void {
+  haptic('shatter')
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return
@@ -534,7 +543,9 @@ export function playBadgeShatter(): void {
  * Charging ring: a pulsing tone climbing as the ring fills, its pulse
  * speeding up as it nears full, then a bell rings out at 100%.
  */
-export function playBadgeCharge(): void {
+/** `feel`: the haptic to go with it — the same sound serves more than one moment. */
+export function playBadgeCharge(feel: HapticName = 'charge'): void {
+  haptic(feel)
   if (isSoundMuted()) return
   const audio = getContext()
   if (!audio) return

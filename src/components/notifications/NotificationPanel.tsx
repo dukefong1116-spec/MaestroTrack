@@ -13,9 +13,11 @@ import { isUnread, type AppNotification } from '@/lib/utils/notifications'
  * and drawn over the navigation.
  */
 export default function NotificationPanel({
-  items, readAt, anchor, innerRef, emptyText, onClose,
+  items, loading, readAt, anchor, innerRef, emptyText, onClose,
 }: {
   items: AppNotification[]
+  /** Still arriving: a spinner, not the empty message. */
+  loading?: boolean
   readAt?: string
   /** A teacher is not waiting to be told to go and practise. */
   emptyText: string
@@ -28,8 +30,10 @@ export default function NotificationPanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      // Solid from the first frame. Fading in, the panel sat half see-through
+      // over the page whenever the app was busy, and read as not opened.
+      initial={{ y: -6, scale: 0.98 }}
+      animate={{ y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -6, scale: 0.98 }}
       transition={{ duration: 0.16, ease: 'easeOut' }}
       ref={innerRef}
@@ -42,7 +46,14 @@ export default function NotificationPanel({
         boxShadow: 'var(--clay-deep)',
       }}
     >
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-7" role="status" aria-label="Loading notifications">
+          <span
+            className="h-6 w-6 animate-spin rounded-full border-[2.5px]"
+            style={{ borderColor: 'var(--clay-line)', borderTopColor: 'var(--clay-accent)' }}
+          />
+        </div>
+      ) : items.length === 0 ? (
         <p className="px-3 py-6 text-center text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>
           {emptyText}
         </p>

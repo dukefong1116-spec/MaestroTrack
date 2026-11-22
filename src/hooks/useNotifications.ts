@@ -23,6 +23,8 @@ export function useNotifications(): {
   items: AppNotification[]
   unread: number
   markAllRead: () => void
+  /** Nothing to show yet because the lists it is built from have not arrived. */
+  loading: boolean
 } {
   const { profile, user } = useAuth()
   const uid = profile?.uid ?? user?.uid
@@ -30,6 +32,7 @@ export function useNotifications(): {
   const now = useMinuteTick()
 
   const lessons = usePracticeStore((s) => s.lessons)
+  const pieces = usePracticeStore((s) => s.pieces)
   const students = useTeacherStore((s) => s.students)
   const requests = useTeacherStore((s) => s.requests)
   const teacherMessages = useTeacherStore((s) => s.messages)
@@ -38,6 +41,8 @@ export function useNotifications(): {
   const teacherAssignments = useTeacherStore((s) => s.assignments)
   const studentAssignments = usePracticeStore((s) => s.assignments)
   const assignments = isTeacher ? teacherAssignments : studentAssignments
+  const studentLive = usePracticeStore((s) => s.live.assignments && s.live.lessons)
+  const teacherLive = useTeacherStore((s) => s.live.assignments && s.live.students)
 
   /**
    * Read state is optimistic.
@@ -79,13 +84,13 @@ export function useNotifications(): {
           messages: teacherMessages.filter((m) => m.from === 'student' && m.createdAt > (threadsReadAt?.[m.studentId] ?? '')),
         })
       : buildStudentNotifications({
-          assignments, lessons, options: { now }, teacherName,
+          assignments, lessons, pieces, options: { now }, teacherName,
           league: uid && !leagueOff ? { uid, room: leagueRoom, result: leagueResult, seenWeek: leagueSeen } : undefined,
           joined: teacherId && joinedAt ? { teacherId, at: joinedAt, studioName } : undefined,
           messages: studentMessages.filter((m) => m.from === 'teacher' && m.teacherId === teacherId && m.createdAt > (messagesReadAt ?? '')),
         })
     return applyNotifyPrefs(all, notify ?? {})
-  }, [uid, isTeacher, assignments, students, requests, lessons, now, notify,
+  }, [uid, isTeacher, assignments, students, requests, lessons, pieces, now, notify,
       teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName,
       leagueRoom, leagueResult, leagueSeen, leagueOff, joinedAt, studioName])
 
@@ -98,7 +103,9 @@ export function useNotifications(): {
     void updateUserProfile(uid, { notificationsReadAt: at }).catch(() => {})
   }, [uid])
 
-  return { items, unread: unreadCount(items, readAt), markAllRead }
+  // Saved copies already on screen count as something to show.
+  const loading = !!uid && items.length === 0 && !(isTeacher ? teacherLive : studentLive)
+  return { items, unread: unreadCount(items, readAt), markAllRead, loading }
 }
 
 // One read per student and teacher, however many places show the bell.

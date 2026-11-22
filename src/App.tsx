@@ -91,6 +91,7 @@ const ProfilePhotoPage = lazy(() => import('@/pages/student/ProfilePhotoPage'))
 /* Shared by both roles — each reads the signed-in role to know where its
    back arrow goes and which controls apply. */
 const NotificationsPage = lazy(() => import('@/pages/settings/NotificationsPage'))
+const GuidePage = lazy(() => import('@/pages/settings/GuidePage'))
 const AppearancePage = lazy(() => import('@/pages/settings/AppearancePage'))
 const PrivacyPage = lazy(() => import('@/pages/settings/PrivacyPage'))
 const SharedLinksPage = lazy(() => import('@/pages/settings/SharedLinksPage'))
@@ -358,6 +359,7 @@ function AppRoutes() {
         <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
         <Route path="settings/notifications" element={<NotificationsPage />} />
         <Route path="settings/appearance" element={<AppearancePage />} />
+        <Route path="settings/guide" element={<GuidePage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
         <Route path="settings/privacy/links" element={<SharedLinksPage />} />
         <Route path="settings/about" element={<AboutPage />} />
@@ -400,6 +402,7 @@ function AppRoutes() {
         <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />
         <Route path="settings/notifications" element={<NotificationsPage />} />
         <Route path="settings/appearance" element={<AppearancePage />} />
+        <Route path="settings/guide" element={<GuidePage />} />
         <Route path="settings/privacy" element={<PrivacyPage />} />
         <Route path="settings/privacy/links" element={<SharedLinksPage />} />
         <Route path="settings/about" element={<AboutPage />} />

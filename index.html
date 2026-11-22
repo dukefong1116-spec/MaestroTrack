@@ -71,7 +71,12 @@
         var app = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
           || navigator.standalone === true
           || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-        if (!app) { var b = document.getElementById('boot'); if (b) b.remove(); }
+        // A reload is not a launch. iOS reloads the app's page by itself
+        // when it reclaims its memory, and replaying the launch screen then
+        // looked like the app starting over in the middle of using it.
+        var reload = false;
+        try { var nav = performance.getEntriesByType('navigation')[0]; reload = !!nav && nav.type === 'reload'; } catch (e) {}
+        if (!app || reload) { var b = document.getElementById('boot'); if (b) b.remove(); }
       })();
     </script>
     <div id="root"></div>

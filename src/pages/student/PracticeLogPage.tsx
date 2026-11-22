@@ -36,6 +36,7 @@ import { pieceFields, pieceLabel } from '@/lib/utils/sessionPieces'
 import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
 import PracticeTabs from '@/components/practice/PracticeTabs'
+import { haptic } from '@/lib/haptics'
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
@@ -364,9 +365,15 @@ export default function PracticeLogPage() {
               {format(new Date(), 'EEEE')} · let's get after it
             </p>
           </div>
-          <Button variant="outline" size="sm" className="shrink-0" onClick={() => setOpen(true)}>
+          {/* Liquid Glass, like the bell on Today. */}
+          <button
+            type="button"
+            className="glass flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-transform active:scale-95"
+            style={{ color: 'var(--clay-ink)' }}
+            onClick={() => { haptic('tap'); setOpen(true) }}
+          >
             <Sticker name="pencil" size={14} tone="accent" /> Log past
-          </Button>
+          </button>
         </div>
 
         <PracticeTabs />

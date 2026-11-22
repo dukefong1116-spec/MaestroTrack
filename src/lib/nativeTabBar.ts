@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core'
 import { isNativeApp } from '@/lib/native'
+import { haptic } from '@/lib/haptics'
 
 /**
  * The iPhone app's tab bar is Apple's own (ios/App/App/NativeTabBar.swift):
@@ -75,7 +76,7 @@ export function useNativeTabBar(tabs: { to: string; title: string; badge?: strin
     if (!isNativeApp) return
     let handle: PluginListenerHandle | undefined
     let live = true
-    void NativeTabBar.addListener('select', (e) => navigate(e.id)).then((h) => {
+    void NativeTabBar.addListener('select', (e) => { haptic('select'); navigate(e.id) }).then((h) => {
       if (live) handle = h
       else void h.remove()
     })

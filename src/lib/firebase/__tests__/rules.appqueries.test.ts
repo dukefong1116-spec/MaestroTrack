@@ -596,6 +596,54 @@ describe("the teacher's writes", () => {
   })
 })
 
+describe('pieces shared between a student and their teacher', () => {
+  const PIECE = { title: 'Minuet', difficulty: 3, status: 'active', totalMinutes: 0, sessionCount: 0, completionPercentage: 0, confidenceHistory: [], startedAt: '2026-03-01T10:00:00.000Z', updatedAt: '2026-03-01T10:00:00.000Z' }
+
+  it('the teacher sees the shared pieces, and only those', async () => {
+    await seed('pieces', 'shared', { ...PIECE, userId: ANA, sharedWithTeacher: true })
+    await seed('pieces', 'private', { ...PIECE, userId: ANA, sharedWithTeacher: false })
+    await seed('pieces', 'old', { ...PIECE, userId: ANA })
+    asTeacher()
+    const got = await expectDelivered<{ id: string }[]>((cb) => pieces.subscribeSharedPieces(ANA, cb))
+    expect(got.map((x) => x.id)).toEqual(['shared'])
+  })
+
+  it("another studio's teacher sees none of them", async () => {
+    await seed('pieces', 'shared', { ...PIECE, userId: ANA, sharedWithTeacher: true })
+    asOtherTeacher()
+    await expectNothing((cb) => pieces.subscribeSharedPieces(ANA, cb))
+  })
+
+  it('the teacher can put a piece in their student\'s Library, and take it back', async () => {
+    asTeacher()
+    const id = await assertSucceeds(pieces.addPieceForStudent(ANA, 'Dr Chen', 'Gavotte'))
+    await assertSucceeds(pieces.deletePiece(id))
+  })
+
+  it('but not in a stranger\'s, and not a piece that pretends to be practised', async () => {
+    asOtherTeacher()
+    await assertFails(pieces.addPieceForStudent(ANA, 'Mr Diaz', 'Gavotte'))
+    asTeacher()
+    await assertFails(pieces.addPiece(ANA, { ...PIECE, sharedWithTeacher: true, addedBy: 'teacher', totalMinutes: 300 } as never))
+    await assertFails(pieces.addPiece(ANA, { ...PIECE, sharedWithTeacher: false, addedBy: 'teacher' } as never))
+  })
+
+  it('the teacher cannot change or delete the student\'s own pieces', async () => {
+    await seed('pieces', 'shared', { ...PIECE, userId: ANA, sharedWithTeacher: true })
+    asTeacher()
+    await assertFails(pieces.updatePiece('shared', { title: 'Mine now' }))
+    await assertFails(pieces.deletePiece('shared'))
+  })
+
+  it('the student still owns everything, teacher-added pieces included', async () => {
+    asTeacher()
+    const id = await pieces.addPieceForStudent(ANA, 'Dr Chen', 'Gavotte')
+    asAna()
+    await assertSucceeds(pieces.updatePiece(id, { status: 'mastered' }))
+    await assertSucceeds(pieces.deletePiece(id))
+  })
+})
+
 /* ══════════════════════════════════════════════════════════════════════
  * The same real functions, called by the wrong person
  * ════════════════════════════════════════════════════════════════════ */

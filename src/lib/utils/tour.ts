@@ -146,6 +146,10 @@ export function whatToShow(i: TourInput): Decision {
       return NONE // 'saving': the finish sheet and celebration run as normal
     }
 
+    // The last step's tap landed: Practice opened (in the iPhone app the
+    // tab bar is native, so the tap itself is never seen). Not pulled back.
+    if (i.tour === 'history' && (path === '/student/practice' || path.startsWith('/student/practice/'))) return NONE
+
     if (path !== HOME) return { kind: 'redirect', to: HOME }
 
     switch (i.tour) {

@@ -484,13 +484,26 @@ service cloud.firestore {
     }
 
     match /pieces/{id} {
-      allow read: if isMe(resource.data.userId);
-      allow create: if isMe(request.resource.data.userId);
+      // The student's teacher sees the pieces the student chose to share
+      // (and the ones the teacher put there, which are always shared).
+      allow read: if isMe(resource.data.userId)
+                  || (teaches(resource.data.userId) && resource.data.sharedWithTeacher == true);
+      // A teacher may put a new, untouched piece in their own student's
+      // Library, marked as theirs and shared; nothing else of the student's.
+      allow create: if isMe(request.resource.data.userId)
+                    || (teaches(request.resource.data.userId)
+                        && request.resource.data.addedBy == 'teacher'
+                        && request.resource.data.sharedWithTeacher == true
+                        && request.resource.data.totalMinutes == 0
+                        && request.resource.data.sessionCount == 0);
       // userId is immutable: handing a record to someone else plants it in
       // their log, where it counts toward their streaks and their totals.
+      // Only the student edits a piece.
       allow update: if isMe(resource.data.userId)
                     && request.resource.data.userId == resource.data.userId;
-      allow delete: if isMe(resource.data.userId);
+      // A teacher can take back only a piece they added.
+      allow delete: if isMe(resource.data.userId)
+                    || (teaches(resource.data.userId) && resource.data.addedBy == 'teacher');
     }
 
     match /performances/{id} {

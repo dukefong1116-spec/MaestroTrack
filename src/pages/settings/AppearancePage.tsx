@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Sun, Moon, Monitor, Zap } from 'lucide-react'
+import { Sun, Moon, Monitor, Zap, Vibrate } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
 import { getInstrumentTheme } from '@/lib/utils/instruments'
 import { ACCENTS, SCALES, type AccentName, type ThemeChoice } from '@/lib/utils/prefs'
 import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/ui/Panel'
+import { haptic, setHapticsEnabled } from '@/lib/haptics'
 import { cn } from '@/lib/utils/cn'
 import type { InstrumentType } from '@/types'
 
@@ -129,6 +130,17 @@ export default function AppearancePage() {
           hint="Turns off the celebrations and the sliding. Already on if your device asks for it."
           checked={prefs.reduceMotion}
           onChange={(next) => void set({ reduceMotion: next })}
+        />
+        <ToggleRow
+          icon={<Vibrate size={19} />}
+          label="Haptics"
+          hint="Little taps and rumbles when your streak lights, a session finishes, or you pat Femata."
+          checked={prefs.haptics}
+          onChange={(next) => {
+            void set({ haptics: next })
+            // Felt as it switches on, so you know what you turned on.
+            if (next) { setHapticsEnabled(true); haptic('success') }
+          }}
         />
       </Panel>
     </SettingsScreen>

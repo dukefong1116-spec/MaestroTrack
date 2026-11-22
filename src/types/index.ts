@@ -169,6 +169,8 @@ export interface UserProfile {
   /** Percent; 100 is the app's own sizing. */
   displayScale?: number
   reduceMotion?: boolean
+  /** Haptics on (the default) or off. */
+  haptics?: boolean
   /** Which kinds of notification reach the bell. */
   notify?: Partial<Record<NotifyKind, boolean>>
   avatar?: string
@@ -301,6 +303,11 @@ export interface Piece {
   updatedAt: string
   targetDate?: string
   notes?: string
+  /** The student's teacher can see it (chosen when adding; older pieces: no). */
+  sharedWithTeacher?: boolean
+  /** Put in the student's Library by their teacher. */
+  addedBy?: 'teacher'
+  addedByName?: string
 }
 
 export interface Recording {

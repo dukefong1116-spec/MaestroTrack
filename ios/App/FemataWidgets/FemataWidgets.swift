@@ -17,7 +17,7 @@ struct FemataWidgetBundle: WidgetBundle {
     var body: some Widget {
         StreakWidget()
         TodayWidget()
-        TeacherWidget()
+        CalendarWidget()
         PracticeLiveActivity()
     }
 }
@@ -127,15 +127,27 @@ struct OpenFemata: View {
     }
 }
 
-// MARK: - Streak (small + Lock Screen)
+// MARK: - Who is signed in decides what shows
+//
+// iOS lists an app's widgets the same for everyone, so each widget draws
+// for whoever is signed in: a student's streak and day, a teacher's next
+// lesson and studio. Signing in as someone else switches them over (the
+// app rewrites the snapshot and reloads every timeline); signing out
+// clears them.
+
+private func homeURL(_ s: FemataSnapshot?) -> URL? {
+    URL(string: s?.role == "teacher" ? "femata://teacher" : "femata://student")
+}
+
+// MARK: - Small + Lock Screen
 
 struct StreakWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "FemataStreak", provider: FemataProvider()) { entry in
-            StreakView(entry: entry).containerBackground(.fill.tertiary, for: .widget).widgetURL(URL(string: "femata://student"))
+            StreakView(entry: entry).containerBackground(.fill.tertiary, for: .widget).widgetURL(homeURL(entry.snapshot))
         }
-        .configurationDisplayName("Streak")
-        .description("Your streak, and what keeps it going today.")
+        .configurationDisplayName("Femata")
+        .description("Your streak — or, if you teach, your next lesson.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -145,7 +157,9 @@ struct StreakView: View {
     let entry: FemataEntry
 
     var body: some View {
-        if let s = entry.snapshot, s.role == "student" {
+        if let s = entry.snapshot, s.role == "teacher" {
+            TeacherView(entry: entry)
+        } else if let s = entry.snapshot, s.role == "student" {
             switch family {
             case .accessoryCircular:
                 ZStack {
@@ -183,20 +197,33 @@ struct StreakView: View {
                 }
             }
         } else {
-            OpenFemata(text: "Open Femata to see your streak")
+            SignedOut(family: family)
         }
     }
 }
 
-// MARK: - Today (medium)
+/// Nobody signed in (or the app not opened yet).
+struct SignedOut: View {
+    let family: WidgetFamily
+    var body: some View {
+        switch family {
+        case .accessoryCircular: ZStack { AccessoryWidgetBackground(); Image(systemName: "music.note") }
+        case .accessoryRectangular: Text("Open Femata").font(.system(size: 13, weight: .heavy, design: .rounded))
+        case .accessoryInline: Text("Open Femata")
+        default: OpenFemata(text: "Open Femata to get started")
+        }
+    }
+}
+
+// MARK: - Medium
 
 struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "FemataToday", provider: FemataProvider()) { entry in
-            TodayView(entry: entry).containerBackground(.fill.tertiary, for: .widget).widgetURL(URL(string: "femata://student"))
+            TodayView(entry: entry).containerBackground(.fill.tertiary, for: .widget).widgetURL(homeURL(entry.snapshot))
         }
         .configurationDisplayName("Today")
-        .description("Your week, today's goal and a button to start.")
+        .description("Your week and today's goal — or, if you teach, your next lesson and what's waiting.")
         .supportedFamilies([.systemMedium])
     }
 }
@@ -204,7 +231,9 @@ struct TodayWidget: Widget {
 struct TodayView: View {
     let entry: FemataEntry
     var body: some View {
-        if let s = entry.snapshot, s.role == "student" {
+        if let s = entry.snapshot, s.role == "teacher" {
+            TeacherView(entry: entry)
+        } else if let s = entry.snapshot, s.role == "student" {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("TODAY").font(.system(size: 11, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
@@ -236,32 +265,26 @@ struct TodayView: View {
     }
 }
 
-// MARK: - Teacher
-
-struct TeacherWidget: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "FemataTeacher", provider: FemataProvider()) { entry in
-            TeacherView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
-        }
-        .configurationDisplayName("Studio")
-        .description("Your next lesson and what's waiting to review.")
-        .supportedFamilies([.systemSmall, .systemMedium])
-    }
-}
+// MARK: - Teacher's views (inside the widgets above)
 
 struct TeacherView: View {
     @Environment(\.widgetFamily) var family
     let entry: FemataEntry
+
+    private var next: (start: Date, title: String)? {
+        guard let s = entry.snapshot, let start = s.nextLessonStart, start > entry.date else { return nil }
+        return (start, s.nextLessonTitle ?? "")
+    }
 
     var lesson: some View {
         Link(destination: URL(string: "femata://calendar")!) {
             ZStack(alignment: .bottomTrailing) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("NEXT LESSON").font(.system(size: 11, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
-                    if let s = entry.snapshot, let start = s.nextLessonStart, start > entry.date {
-                        Text(start, style: .time).font(.system(size: 24, weight: .black, design: .rounded))
-                        Text(s.nextLessonTitle ?? "").font(.system(size: 13, weight: .black, design: .rounded)).lineLimit(1)
-                        Text(start, style: .relative).font(.system(size: 11, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
+                    if let n = next {
+                        Text(n.start, style: .time).font(.system(size: 24, weight: .black, design: .rounded))
+                        Text(n.title).font(.system(size: 13, weight: .black, design: .rounded)).lineLimit(1)
+                        Text(n.start, style: .relative).font(.system(size: 11, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
                     } else {
                         Text("Nothing booked").font(.system(size: 15, weight: .black, design: .rounded)).padding(.top, 4)
                     }
@@ -289,14 +312,97 @@ struct TeacherView: View {
     }
 
     var body: some View {
-        if let s = entry.snapshot, s.role == "teacher" {
-            if family == .systemMedium {
-                HStack(spacing: 14) { lesson; Divider(); review }
-            } else {
-                lesson
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Image(systemName: "checklist").font(.system(size: 13, weight: .bold))
+                    Text("\(entry.snapshot?.toReview ?? 0)").font(.system(size: 15, weight: .black, design: .rounded))
+                }
             }
+        case .accessoryRectangular:
+            VStack(alignment: .leading, spacing: 1) {
+                Text("NEXT LESSON").font(.system(size: 10, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
+                if let n = next {
+                    Text(n.start, style: .time).font(.system(size: 15, weight: .black, design: .rounded))
+                    Text(n.title).font(.system(size: 12, weight: .semibold, design: .rounded)).lineLimit(1)
+                } else {
+                    Text("Nothing booked").font(.system(size: 13, weight: .heavy, design: .rounded))
+                }
+            }
+        case .accessoryInline:
+            if let n = next { Text("🎵 \(n.title) · \(n.start, style: .time)") } else { Text("🎵 Nothing booked") }
+        case .systemMedium:
+            HStack(spacing: 14) { lesson; Divider(); review }
+        default:
+            lesson
+        }
+    }
+}
+
+// MARK: - Calendar (medium + large): the lessons coming up
+
+struct CalendarWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "FemataCalendar", provider: FemataProvider()) { entry in
+            AgendaView(entry: entry).containerBackground(.fill.tertiary, for: .widget).widgetURL(URL(string: entry.snapshot?.role == "teacher" ? "femata://calendar" : "femata://student"))
+        }
+        .configurationDisplayName("Lessons")
+        .description("The lessons coming up — your studio's, or your own.")
+        .supportedFamilies([.systemMedium, .systemLarge])
+    }
+}
+
+struct AgendaView: View {
+    @Environment(\.widgetFamily) var family
+    let entry: FemataEntry
+
+    private var items: [FemataSnapshot.AgendaItem] {
+        // Lessons still on (or not yet over) when this entry shows.
+        (entry.snapshot?.agenda ?? []).filter { $0.start.addingTimeInterval(Double($0.minutes) * 60) > entry.date }
+    }
+
+    private func dayLabel(_ d: Date) -> String {
+        let cal = Calendar.current
+        if cal.isDate(d, inSameDayAs: entry.date) { return "Today" }
+        if let t = cal.date(byAdding: .day, value: 1, to: entry.date), cal.isDate(d, inSameDayAs: t) { return "Tomorrow" }
+        let f = DateFormatter(); f.dateFormat = "EEE d MMM"
+        return f.string(from: d)
+    }
+
+    var body: some View {
+        if entry.snapshot == nil {
+            OpenFemata(text: "Open Femata to see your lessons")
         } else {
-            OpenFemata(text: "For teachers: open Femata")
+            let shown = Array(items.prefix(family == .systemLarge ? 6 : 2))
+            VStack(alignment: .leading, spacing: family == .systemLarge ? 8 : 6) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(entry.date, format: .dateTime.weekday(.wide)).font(.system(size: 11, weight: .heavy, design: .rounded)).foregroundStyle(skyDeep).textCase(.uppercase)
+                        Text(entry.date, format: .dateTime.day()).font(.system(size: 28, weight: .black, design: .rounded))
+                    }
+                    Spacer(minLength: 0)
+                    Image(shown.isEmpty ? "FemataCool" : "FemataHappy").resizable().scaledToFit().frame(width: 40)
+                }
+                if shown.isEmpty {
+                    Text("No lessons in the next two weeks").font(.system(size: 13, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                } else {
+                    ForEach(shown, id: \.self) { item in
+                        HStack(spacing: 8) {
+                            RoundedRectangle(cornerRadius: 2).fill(sky).frame(width: 4, height: 30)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(item.title).font(.system(size: 13, weight: .black, design: .rounded)).lineLimit(1)
+                                Text("\(dayLabel(item.start)) · \(item.minutes) min").font(.system(size: 11, weight: .semibold, design: .rounded)).foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                            Text(item.start, style: .time).font(.system(size: 13, weight: .heavy, design: .rounded)).monospacedDigit()
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
         }
     }
 }
