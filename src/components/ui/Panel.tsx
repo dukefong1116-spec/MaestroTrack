@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -153,11 +153,22 @@ export function SettingsScreen({
   back: string
   children: ReactNode
 }) {
+  const navigate = useNavigate()
+  const location = useLocation()
   return (
     <div className="max-w-2xl">
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to={back}
+          // Step back rather than open the parent again: pushing a fresh
+          // Settings page left this screen behind it, so Settings' own back
+          // arrow came straight back here. Only an app opened on this
+          // screen (no earlier page) goes to `back`, replacing this entry.
+          onClick={(e) => {
+            e.preventDefault()
+            if (location.key !== 'default') navigate(-1)
+            else navigate(back, { replace: true })
+          }}
           aria-label="Back"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
           style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
