@@ -334,10 +334,12 @@ function MinutePicker({ value, onChange }: { value: number; onChange: (m: number
 function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [again, setAgain] = useState('')
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8
+  const mismatch = again.length > 0 && again !== password
+  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -384,7 +386,11 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
             {show ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
+        <input type={show ? 'text' : 'password'} autoComplete="new-password" placeholder="Re-enter password" value={again} onChange={(e) => setAgain(e.target.value)}
+          aria-invalid={mismatch || undefined}
+          className="w-full rounded-[16px] px-4 py-3.5 text-[16px] font-bold outline-none" style={{ ...field(!!again), ...(mismatch ? { borderColor: '#FF8FA3' } : {}) }} />
       </div>
+      {mismatch && <p className="mt-2 text-[13px] font-bold" style={{ color: '#FF8FA3' }}>The passwords don't match yet.</p>}
       {error && <p className="mt-3 text-[13.5px] font-bold" style={{ color: '#FF8FA3' }}>{error}</p>}
       <p className="mt-3 text-[13px] font-semibold" style={{ color: STAGE.muted }}>
         Already have an account? <Link to="/login" className="font-extrabold" style={{ color: STAGE.sky }}>Log in</Link>

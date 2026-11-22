@@ -48,13 +48,23 @@ export default function FemataBuddy({ mood, tone = 'sky', size = 78 }: Props) {
       }}
     >
       {/* A slow idle bob, so it looks alive before anyone touches it. */}
+      {/* Each layer is its own composited layer (will-change), so the phone
+          paints Femata once and only moves it; and both faces are drawn up
+          front, so a pat swaps which one shows instead of building a new
+          drawing mid-animation. Both had made the first pats stutter. */}
       <motion.span
         className="block"
         animate={reduced ? undefined : { y: [0, -4, 0] }}
         transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ willChange: 'transform' }}
       >
-        <motion.span className="block" animate={controls} style={{ transformOrigin: '30% 90%' }}>
-          <Femata mood={patted ? 'in-love' : mood} tone={patted ? 'sunrise' : tone} size={size} />
+        <motion.span className="relative block" animate={controls} style={{ transformOrigin: '30% 90%', willChange: 'transform' }}>
+          <span className="block" style={{ opacity: patted ? 0 : 1 }}>
+            <Femata mood={mood} tone={tone} size={size} />
+          </span>
+          <span className="absolute inset-0 block" style={{ opacity: patted ? 1 : 0 }} aria-hidden="true">
+            <Femata mood="in-love" tone="sunrise" size={size} />
+          </span>
         </motion.span>
       </motion.span>
     </button>

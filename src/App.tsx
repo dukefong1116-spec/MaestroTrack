@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
 import AppLayout from '@/components/layout/AppLayout'
 import LaunchScreen from '@/components/launch/LaunchScreen'
+import { rememberLogin } from '@/lib/lastLogin'
 import PendingUploads from '@/components/common/PendingUploads'
 import TourLayer from '@/components/onboarding/TourLayer'
 
@@ -222,6 +223,10 @@ function DataProvider({ children }: { children: React.ReactNode }) {
   // Spends a freeze on a missed day and records a finished comeback.
   useStreakUpkeep(profile?.role === 'student' ? profile?.uid : undefined)
   usePrefetchTabs(profile?.role === 'student' || profile?.role === 'teacher' ? profile.role : undefined)
+  // Remembered for the sign-in screen's "Last signed in as".
+  useEffect(() => {
+    if (profile?.email) rememberLogin({ email: profile.email, name: profile.displayName, avatar: profile.avatar, instrument: profile.instrument })
+  }, [profile?.email, profile?.displayName, profile?.avatar, profile?.instrument])
   return (
     <>
       {children}

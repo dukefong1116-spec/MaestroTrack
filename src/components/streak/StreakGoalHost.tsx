@@ -48,28 +48,34 @@ export default function StreakGoalHost() {
   // Waits for Today, and for any other moment to finish first.
   useEffect(() => {
     if (!open && due && onToday && busy === 0) {
-      const t = setTimeout(() => setOpen({ mode: due, reached: due === 'reached' ? goal : 0 }), 450)
+      // A breath after Today appears, and only if nothing else took the
+      // screen in the meantime.
+      const t = setTimeout(() => {
+        if (useMomentStore.getState().open === 0) setOpen({ mode: due, reached: due === 'reached' ? goal : 0 })
+      }, 900)
       return () => clearTimeout(t)
     }
   }, [open, due, onToday, busy, goal])
 
   useHoldMoment(!!open)
-  if (!open || !profile) return null
   return (
-    <GoalFlow
+    <AnimatePresence>
+    {open && profile && <GoalFlow
       key={open.mode + open.reached}
       mode={open.mode}
       reached={open.reached}
       streak={live.current}
       firstName={(profile.displayName ?? '').trim().split(/\s+/)[0]}
       onCommit={(days) => {
+        if (!open) return
         const patch = open.mode === 'reached' ? { streakGoal: days, streakGoalReached: open.reached } : { streakGoal: days }
         const p = useAuthStore.getState().profile
         if (p) useAuthStore.getState().setProfile({ ...p, ...patch })
-        void updateUserProfile(profile.uid, patch).catch(() => {})
+        void updateUserProfile(p?.uid ?? profile!.uid, patch).catch(() => {})
       }}
       onClose={() => setOpen(null)}
-    />
+    />}
+    </AnimatePresence>
   )
 }
 
@@ -98,6 +104,7 @@ function GoalFlow({ mode, reached, streak, firstName, onCommit, onClose }: {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
       role="dialog"
       aria-modal="true"
       aria-label="Streak goal"
@@ -105,21 +112,21 @@ function GoalFlow({ mode, reached, streak, firstName, onCommit, onClose }: {
       <div className="relative mx-auto flex w-full max-w-[460px] flex-1 flex-col items-center px-5 pb-5 pt-6 text-center min-h-0">
         <AnimatePresence mode="wait">
           {screen === 'intro' && (
-            <motion.div key="intro" className="flex w-full flex-1 flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+            <motion.div key="intro" className="flex w-full flex-1 flex-col items-center" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
               {mode === 'first' ? (
                 <>
-                  <motion.div className="mt-8" initial={{ scale: 0.3, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 240, damping: 12 }}>
+                  <motion.div className="mt-8" initial={{ scale: 0.3, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 13 }}>
                     <StreakFlame streak={Math.max(1, streak)} size={150} />
                   </motion.div>
-                  <div className="mt-2 text-[64px] font-black leading-none" style={{ color: '#F2852A' }}>{Math.max(1, streak)}</div>
-                  <div className="text-[26px] font-black" style={{ color: '#F2852A' }}>day streak!</div>
-                  <p className="mt-4 max-w-[300px] text-[15px] font-bold" style={{ color: 'var(--clay-dim)' }}>
+                  <Rise delay={0.65}><div className="mt-2 text-[64px] font-black leading-none" style={{ color: '#F2852A' }}>{Math.max(1, streak)}</div></Rise>
+                  <Rise delay={0.8}><div className="text-[26px] font-black" style={{ color: '#F2852A' }}>day streak!</div></Rise>
+                  <Rise delay={1}><p className="mt-4 max-w-[300px] text-[15px] font-bold" style={{ color: 'var(--clay-dim)' }}>
                     A streak counts the days you've practised in a row.
-                  </p>
-                  <div className="mt-auto flex flex-col items-center">
+                  </p></Rise>
+                  <Rise delay={1.25} className="mt-auto flex flex-col items-center">
                     <Bubble>{streak <= 1 ? "Day one, done! Let's pick a goal." : "You're on a roll! Let's pick a goal."}</Bubble>
                     <Femata mood="proud" size={96} />
-                  </div>
+                  </Rise>
                 </>
               ) : (
                 <>
@@ -140,12 +147,14 @@ function GoalFlow({ mode, reached, streak, firstName, onCommit, onClose }: {
                   </div>
                 </>
               )}
-              <PrimaryButton onClick={() => (goals.length ? setScreen('pick') : onClose())}>{goals.length ? 'CONTINUE' : 'DONE'}</PrimaryButton>
+              <Rise delay={mode === 'first' ? 1.5 : 1.1} className="w-full">
+                <PrimaryButton onClick={() => (goals.length ? setScreen('pick') : onClose())}>{goals.length ? 'CONTINUE' : 'DONE'}</PrimaryButton>
+              </Rise>
             </motion.div>
           )}
 
           {screen === 'pick' && (
-            <motion.div key="pick" className="flex w-full flex-1 flex-col items-center" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+            <motion.div key="pick" className="flex w-full flex-1 flex-col items-center" initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -28 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
               <h2 className="mt-4 text-[26px] font-black">{mode === 'first' ? 'How far will we go?' : 'Your next goal'}</h2>
               <p className="mb-5 mt-1 text-[14.5px] font-bold" style={{ color: 'var(--clay-dim)' }}>Choose a streak to aim for.</p>
               <div className="grid w-full grid-cols-2 gap-3">
@@ -278,5 +287,14 @@ function Confetti({ delay = 0.2 }: { delay?: number }) {
         />
       ))}
     </div>
+  )
+}
+
+/** Fades and lifts in, after `delay` seconds. */
+function Rise({ delay, className, children }: { delay: number; className?: string; children: React.ReactNode }) {
+  return (
+    <motion.div className={className} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.45, ease: 'easeOut' }}>
+      {children}
+    </motion.div>
   )
 }

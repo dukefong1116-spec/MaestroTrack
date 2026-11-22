@@ -27,30 +27,27 @@ export function StudioPage({
   flush?: boolean
 }) {
   const navigate = useNavigate()
-  const header = !title && !actions && !back ? null : (
-    <header className={cn('flex flex-wrap items-center gap-3 px-5 pb-4 sm:px-6', back || corner ? 'pt-2' : 'pt-4')} style={{ borderBottom: '1px solid var(--clay-line)' }}>
-      {/* The back arrow and the page's "…" share one line across the top,
-          the arrow at the left edge and the menu at the right. */}
-      {(back || corner) && (
-        <div className="-mb-2 flex w-full basis-full items-center">
-          {back && (
-            <button
-              type="button"
-              onClick={() => navigate(back.to)}
-              className={cn('-ml-1 flex items-center gap-0.5 text-[13px] font-semibold', back.phoneOnly && 'lg:hidden')}
-              style={{ color: 'var(--clay-accent-ink)' }}
-            >
-              <ChevronLeft size={16} /> {back.label}
-            </button>
-          )}
-          <span className="flex-1" />
-          {corner}
-        </div>
+  // One row, as on the student's pages: a round back button, the title
+  // beside it, the page's "…" or actions at the end. (The small "‹ More"
+  // link above the title sat too close to it and too far from the edge.)
+  const header = !title && !actions && !back && !corner ? null : (
+    <header className="flex flex-wrap items-center gap-3 px-5 pb-4 pt-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      {back && (
+        <button
+          type="button"
+          onClick={() => navigate(back.to)}
+          aria-label={`Back to ${back.label}`}
+          className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90', back.phoneOnly && 'lg:hidden')}
+          style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
+        >
+          <ChevronLeft size={20} />
+        </button>
       )}
-      <div className="min-w-0 flex-1 basis-60">
-        {title && <h1 className="truncate text-[21px] font-bold leading-tight lg:text-[22px]" style={{ color: 'var(--clay-ink)' }}>{title}</h1>}
+      <div className="min-w-0 flex-1 basis-40">
+        {title && <h1 className="truncate text-[22px] font-bold leading-tight lg:text-[24px]" style={{ color: 'var(--clay-ink)' }}>{title}</h1>}
         {subtitle && <p className="mt-0.5 text-[13.5px]" style={{ color: 'var(--clay-dim)' }}>{subtitle}</p>}
       </div>
+      {corner}
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   )

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { isBootReady } from '@/lib/boot'
+import { isBootReady, bootFinished } from '@/lib/boot'
 import { auth } from '@/lib/firebase/config'
+import { nativeLaunchDone } from '@/lib/nativeGlass'
 
 /** Never less than this on screen (from the app opening), so the blink reads. */
 const MIN_MS = 1100
@@ -47,8 +48,13 @@ export default function LaunchScreen() {
         boot.classList.add('hop')
         setTimeout(() => {
           boot.classList.add('zoom')
+          bootFinished()
           boot.style.pointerEvents = 'none'
-          setTimeout(() => boot.remove(), 520)
+          setTimeout(() => {
+            boot.remove()
+            bootFinished()
+            nativeLaunchDone()
+          }, 520)
         }, 880)
       }, wait)
     }

@@ -1,12 +1,18 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BarChart3, ChevronRight, MessagesSquare, ReceiptText, SlidersHorizontal, UserRoundPlus } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { BarChart3, ChevronRight, MessagesSquare, Pencil, ReceiptText, SlidersHorizontal, UserRoundPlus } from 'lucide-react'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useUnreadThreads } from '@/hooks/useTeacherMessages'
 import { balanceCents } from '@/lib/studio/billing'
 import { money } from '@/lib/studio/dates'
 import AddStudentSheet from '@/components/teacher/AddStudentSheet'
 import { StudioPage } from '@/components/teacher/studio/ui'
+import { useAuth } from '@/hooks/useAuth'
+import Avatar from '@/components/profile/Avatar'
+import Banner from '@/components/profile/Banner'
+import BannerSheet from '@/components/profile/BannerSheet'
+import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
+import type { InstrumentType } from '@/types'
 
 /** The phone's fifth tab: everything that is not one of the other four. */
 export default function MorePage() {
@@ -14,6 +20,10 @@ export default function MorePage() {
   const invoices = useTeacherStore((s) => s.invoices)
   const unread = useUnreadThreads()
   const [adding, setAdding] = useState(false)
+  const [banner, setBanner] = useState(false)
+  const { profile } = useAuth()
+  const instrument = profile?.instrument as InstrumentType | undefined
+  const sub = [profile?.studioName, instrument ? INSTRUMENT_THEMES[instrument]?.label : null].filter(Boolean).join(' · ')
   const due = invoices.reduce((a, i) => a + balanceCents(i), 0)
   // Each row a solid icon tile, its name and a line of what is inside —
   // roomier than a plain list, and the same tile style as Today's figures.
@@ -26,6 +36,35 @@ export default function MorePage() {
   ]
   return (
     <StudioPage>
+      {/* You, at the top, as on the student's Settings: your banner with
+          your photo on its edge, and your name and studio under it. */}
+      <div className="px-4 pt-3 sm:px-5">
+        <div className="overflow-hidden rounded-[22px]" style={{ border: '1px solid var(--clay-line)', background: 'var(--clay-surface)' }}>
+          <div className="relative">
+            <Banner image={profile?.bannerImage} color={profile?.bannerColor} height={150}>
+              <button
+                type="button"
+                onClick={() => setBanner(true)}
+                aria-label="Change profile background"
+                className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full"
+                style={{ background: 'rgba(0,0,0,.3)', color: '#fff' }}
+              >
+                <Pencil size={15} aria-hidden="true" />
+              </button>
+            </Banner>
+            <Link to="/teacher/settings/profile" aria-hidden="true" tabIndex={-1} className="absolute -bottom-8 left-4 rounded-full" style={{ border: '4px solid var(--clay-surface)' }}>
+              <Avatar src={profile?.avatar} name={profile?.displayName} instrument={instrument} size={64} />
+            </Link>
+          </div>
+          <Link to="/teacher/settings/profile" className="flex items-center gap-4 px-4 pb-4 pt-10 transition-transform active:scale-[.99]">
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>{profile?.displayName || 'Your profile'}</span>
+              {sub && <span className="mt-0.5 block truncate text-[13px]" style={{ color: 'var(--clay-dim)' }}>{sub}</span>}
+            </span>
+            <ChevronRight size={18} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
+          </Link>
+        </div>
+      </div>
       <div className="py-2">
         {rows.map((r, i) => (
           <button
@@ -51,6 +90,7 @@ export default function MorePage() {
           </button>
         ))}
       </div>
+      <BannerSheet open={banner} onClose={() => setBanner(false)} />
       <AddStudentSheet open={adding} onClose={() => setAdding(false)} onAdded={(id) => navigate(`/teacher/students/${encodeURIComponent(id)}`)} />
     </StudioPage>
   )

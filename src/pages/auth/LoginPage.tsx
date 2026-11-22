@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -9,6 +9,9 @@ import { signIn, getUserProfile } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
 import Femata from '@/components/femata/Femata'
 import Button from '@/components/ui/Button'
+import Avatar from '@/components/profile/Avatar'
+import { lastLogin, forgetLogin } from '@/lib/lastLogin'
+import type { InstrumentType } from '@/types'
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -19,7 +22,21 @@ type FormData = z.infer<typeof schema>
 export default function LoginPage() {
   const navigate = useNavigate()
   const [error, setError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, setValue, setFocus, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  // Whoever last signed in here: their email filled in, only the password to type.
+  const [last, setLast] = useState(lastLogin)
+  useEffect(() => {
+    if (!last) return
+    setValue('email', last.email)
+    const t = setTimeout(() => setFocus('password'), 350)
+    return () => clearTimeout(t)
+  }, [last, setValue, setFocus])
+  function notMe() {
+    forgetLogin()
+    setLast(null)
+    setValue('email', '')
+    setTimeout(() => setFocus('email'), 0)
+  }
 
   async function onSubmit(data: FormData) {
     setError('')
@@ -79,8 +96,21 @@ export default function LoginPage() {
             </div>
           )}
 
+          {last && (
+            <div className="mb-5 flex items-center gap-3 rounded-2xl p-3" style={{ background: 'var(--clay-bg)' }}>
+              <Avatar src={last.avatar} name={last.name || last.email} instrument={last.instrument as InstrumentType | undefined} size={44} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11.5px] font-semibold uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>Last signed in as</p>
+                <p className="truncate text-[15px] font-bold" style={{ color: 'var(--clay-ink)' }}>{last.name || last.email}</p>
+                {last.name && <p className="truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>{last.email}</p>}
+              </div>
+              <button type="button" onClick={notMe} className="shrink-0 text-[13px] font-semibold" style={{ color: 'var(--clay-accent)' }}>Not you?</button>
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register('email')} />
+            <div className={last ? 'hidden' : undefined}>
+              <Input label="Email" type="email" placeholder="you@example.com" autoComplete="username" error={errors.email?.message} {...register('email')} />
+            </div>
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
             <div className="flex justify-end">
               <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>

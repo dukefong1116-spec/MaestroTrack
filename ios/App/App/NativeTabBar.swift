@@ -15,8 +15,24 @@ class MutifViewController: CAPBridgeViewController {
         view.backgroundColor = blue
         webView?.isOpaque = false
         webView?.backgroundColor = blue
-        webView?.scrollView.backgroundColor = blue
+        // Femata, centred where the page's own launch screen draws it, behind
+        // the page: there from the first frame instead of after the page has
+        // loaded. The page covers it once it paints; launchDone removes it.
+        if let web = webView {
+            web.scrollView.backgroundColor = .clear
+            let femata = UIImageView(image: UIImage(named: "LaunchFemata"))
+            femata.tag = MutifViewController.launchTag
+            femata.translatesAutoresizingMaskIntoConstraints = false
+            web.insertSubview(femata, at: 0)
+            NSLayoutConstraint.activate([
+                femata.centerXAnchor.constraint(equalTo: web.centerXAnchor),
+                femata.centerYAnchor.constraint(equalTo: web.centerYAnchor),
+            ])
+            DispatchQueue.main.asyncAfter(deadline: .now() + 12) { femata.removeFromSuperview() }
+        }
     }
+
+    static let launchTag = 4242
 }
 
 /// Apple's own tab bar (UITabBar), floating over the web view.
@@ -158,7 +174,16 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "button", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "segmented", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "remove", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "launchDone", returnType: CAPPluginReturnPromise),
     ]
+
+    /// The page's launch screen has finished: the native Femata behind it can go.
+    @objc func launchDone(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.bridge?.webView?.viewWithTag(MutifViewController.launchTag)?.removeFromSuperview()
+            call.resolve()
+        }
+    }
 
     private var views: [String: UIView] = [:]
 
@@ -219,28 +244,30 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         let id = call.getString("id") ?? "segmented"
         let items = call.getArray("items", String.self) ?? []
         let selected = call.getInt("selected") ?? 0
-        let tint = call.getString("tint").flatMap { UIColor(hex: $0) }
+        let tint = call.getString("tint").flatMap { UIColor(hex: $0) } ?? .systemBlue
         DispatchQueue.main.async {
+            // Apple's segmented control on a glass bar, as in its own toolbars:
+            // the bar keeps the page behind from showing through the labels.
             let bar: UIVisualEffectView
             let seg: UISegmentedControl
             if let existing = self.views[id] as? UIVisualEffectView, let s = existing.contentView.subviews.first as? UISegmentedControl {
                 bar = existing; seg = s
             } else {
                 let effect: UIVisualEffect
-                if #available(iOS 26.0, *) { let g = UIGlassEffect(style: .regular); g.isInteractive = true; effect = g }
-                else { effect = UIBlurEffect(style: .systemThinMaterial) }
+                if #available(iOS 26.0, *) { effect = UIGlassEffect(style: .regular) }
+                else { effect = UIBlurEffect(style: .systemThickMaterial) }
                 bar = UIVisualEffectView(effect: effect)
-                bar.layer.cornerRadius = 20
+                bar.layer.cornerRadius = 26
                 bar.layer.cornerCurve = .continuous
                 bar.clipsToBounds = true
                 seg = UISegmentedControl()
                 seg.translatesAutoresizingMaskIntoConstraints = false
                 bar.contentView.addSubview(seg)
                 NSLayoutConstraint.activate([
-                    seg.leadingAnchor.constraint(equalTo: bar.contentView.leadingAnchor, constant: 5),
-                    seg.trailingAnchor.constraint(equalTo: bar.contentView.trailingAnchor, constant: -5),
-                    seg.topAnchor.constraint(equalTo: bar.contentView.topAnchor, constant: 5),
-                    seg.bottomAnchor.constraint(equalTo: bar.contentView.bottomAnchor, constant: -5),
+                    seg.leadingAnchor.constraint(equalTo: bar.contentView.leadingAnchor, constant: 6),
+                    seg.trailingAnchor.constraint(equalTo: bar.contentView.trailingAnchor, constant: -6),
+                    seg.centerYAnchor.constraint(equalTo: bar.contentView.centerYAnchor),
+                    seg.heightAnchor.constraint(equalToConstant: 40),
                 ])
                 seg.addAction(UIAction { [weak self, weak seg] _ in
                     guard let seg = seg else { return }
@@ -248,15 +275,18 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
                 }, for: .valueChanged)
                 self.views[id] = bar
             }
-            // Same titles: keep the control (and its sliding selection) as is.
             let current = (0..<seg.numberOfSegments).map { seg.titleForSegment(at: $0) ?? "" }
             if current != items {
                 seg.removeAllSegments()
                 for (i, t) in items.enumerated() { seg.insertSegment(withTitle: t, at: i, animated: false) }
             }
             if seg.selectedSegmentIndex != selected { seg.selectedSegmentIndex = selected }
-            if let t = tint { seg.selectedSegmentTintColor = t; seg.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected) }
+            let font = UIFont.systemFont(ofSize: 13, weight: .semibold)
+            seg.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.label], for: .normal)
+            seg.setTitleTextAttributes([.font: font, .foregroundColor: tint], for: .selected)
             self.place(bar, call)
+            let f = bar.frame
+            bar.frame = CGRect(x: f.minX, y: f.midY - 26, width: f.width, height: 52)
             call.resolve()
         }
     }

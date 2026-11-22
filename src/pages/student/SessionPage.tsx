@@ -27,6 +27,7 @@ import { requestTicket, type SyncResult } from '@/lib/firebase/league'
 import { useLeagueStore, type Climb } from '@/stores/leagueStore'
 import { useTour } from '@/hooks/useTour'
 import { useTourStore } from '@/stores/tourStore'
+import { useHoldMoment } from '@/stores/momentStore'
 import { useAuthStore } from '@/stores/authStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import ConfirmSheet from '@/components/ui/ConfirmSheet'
@@ -166,6 +167,8 @@ export default function SessionPage() {
   /** The league's word on the session just saved, for the celebration. */
   const [league, setLeague] = useState<{ result: SyncResult; climb: Climb | null } | null>(null)
   const [sharing, setSharing] = useState<PracticeSession | null>(null)
+  // The share card is a full-screen moment too: a badge waits for it.
+  useHoldMoment(!!sharing)
 
   /**
    * The two figures the card needs beyond the session itself, derived from

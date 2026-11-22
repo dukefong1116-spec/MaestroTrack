@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils/cn'
 import { isNativeApp } from '@/lib/native'
 import { useAppNativeTabs } from './useAppNativeTabs'
-import { bootReady } from '@/lib/boot'
+import { bootReady, isBootFinished, onBootFinished } from '@/lib/boot'
 import { useMomentStore } from '@/stores/momentStore'
 
 /**
@@ -61,7 +61,31 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
   const onTab = kept.includes(here)
   const [drawn, setDrawn] = useState(false)
   const markDrawn = useRef(() => { setDrawn(true); bootReady() }).current
-  const mounted = drawn ? kept : kept.filter((p) => p === here)
+  // Every tab visited stays; the rest are warmed one at a time while the
+  // phone is idle, starting a little after the first page is up. Drawing
+  // them all at once kept the phone busy just as the first taps came in,
+  // which made the tab bar and Today's animations stutter at the start.
+  const [warm, setWarm] = useState<string[]>([])
+  if (onTab && !warm.includes(here)) setWarm([...warm, here])
+  useEffect(() => {
+    if (!drawn) return
+    const next = kept.find((p) => !warm.includes(p))
+    if (!next) return
+    type Idle = (cb: () => void, o?: { timeout: number }) => number
+    const ric = (window as unknown as { requestIdleCallback?: Idle }).requestIdleCallback
+    let idle = 0
+    const t = setTimeout(() => {
+      const add = () => setWarm((w) => (w.includes(next) ? w : [...w, next]))
+      if (ric) idle = ric(add, { timeout: 1500 })
+      else add()
+    }, warm.length <= 1 ? 2500 : 700)
+    return () => {
+      clearTimeout(t)
+      const cic = (window as unknown as { cancelIdleCallback?: (n: number) => void }).cancelIdleCallback
+      if (idle && cic) cic(idle)
+    }
+  }, [drawn, kept.join('|'), warm]) // eslint-disable-line react-hooks/exhaustive-deps
+  const mounted = kept.filter((p) => warm.includes(p))
 
   // Each tab keeps its own place on the page, as it would in an app.
   const mainRef = useRef<HTMLElement>(null)
@@ -86,7 +110,10 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
   // …and steps aside while a full-screen moment (a badge, a streak goal)
   // is up: Apple's bar sits above the page and would cover its buttons.
   const momentOpen = useMomentStore((s) => s.open) > 0
-  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile && !momentOpen)
+  // …and waits for the launch screen to zoom away before it comes in.
+  const [launched, setLaunched] = useState(isBootFinished)
+  useEffect(() => (launched ? undefined : onBootFinished(() => setLaunched(true))), [launched])
+  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile && !momentOpen && launched)
 
   return (
     <div

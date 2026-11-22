@@ -60,7 +60,7 @@ export default function BadgeMoment({
     if (reduced) playBadgeFanfare()
     else SOUND[style]()
     const timers = [setTimeout(() => setPhase('shown'), at)]
-    if (style === 'shatter' && !reduced) timers.push(setTimeout(() => setPhase('crack'), 600))
+    if (style === 'shatter' && !reduced) timers.push(setTimeout(() => setPhase('crack'), 550))
     return () => timers.forEach(clearTimeout)
   }, [open, badge, style, reduced])
 
@@ -148,47 +148,82 @@ function Flip({ id }: { id: BadgeArtName }) {
 /** The colour badge under a grey shell that cracks, shakes, then flies apart. */
 function Shatter({ id, phase }: { id: BadgeArtName; phase: 'in' | 'crack' | 'shown' }) {
   const broken = phase === 'shown'
+  // Timed to playBadgeShatter: the cracks spread with its ticks (0.55s on),
+  // and the shell breaks on its crack (1.05s). The flying pieces are plain
+  // ice, not copies of the badge's drawing: six full drawings in flight
+  // were what made the fall stutter and land late.
+  const bits = useMemo(() => Array.from({ length: 14 }, (_, k) => {
+    const a = (k / 14) * Math.PI * 2 + Math.random() * 0.4
+    return { k, x: Math.cos(a) * (90 + Math.random() * 80), y: Math.sin(a) * 60 - 30, s: 5 + Math.random() * 7, r: Math.random() * 360 }
+  }), [])
   return (
     <motion.div className="absolute inset-0" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.35 }}>
       <motion.div
         className="absolute inset-0"
-        initial={{ scale: 0.85 }}
-        animate={broken ? { scale: [0.85, 1.12, 1] } : { scale: 0.85 }}
-        transition={{ duration: 0.6 }}
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={broken ? { scale: [0.85, 1.12, 1], opacity: 1 } : { scale: 0.85, opacity: 0 }}
+        transition={broken ? { duration: 0.55 } : { duration: 0 }}
       >
         <BadgeArt name={id} size={SIZE} />
       </motion.div>
-      <motion.div
-        className="absolute inset-0"
-        animate={phase === 'crack' ? { x: [0, -5, 5, -3, 3, 0] } : { x: 0 }}
-        transition={{ duration: 0.35 }}
-      >
-        {SHARDS.map((poly, k) => {
-          const a = (k / SHARDS.length) * Math.PI * 2 + 0.4
-          const d = 170 + (k % 3) * 25
-          return (
-            <motion.div
-              key={k}
-              className="absolute inset-0"
-              style={{ clipPath: `polygon(${poly})` }}
-              animate={broken
-                ? { x: Math.cos(a) * d, y: Math.sin(a) * d + 80, rotate: (k % 2 ? 1 : -1) * (50 + k * 15), opacity: 0 }
-                : { x: 0, y: 0, rotate: 0, opacity: 1 }}
-              transition={{ duration: 0.8, ease: [0.2, 0.6, 0.4, 1] }}
-            >
-              <BadgeArt name={id} size={SIZE} locked />
-            </motion.div>
-          )
-        })}
-        {phase === 'crack' && (
+      {/* The grey shell, whole until the break, shivering harder as it cracks. */}
+      {!broken && (
+        <motion.div
+          className="absolute inset-0"
+          style={{ willChange: 'transform' }}
+          animate={phase === 'crack' ? { x: [0, -2, 2, -3, 3, -4, 4, -2, 0], rotate: [0, -0.6, 0.6, -1, 1, 0] } : { x: 0 }}
+          transition={{ duration: 0.5, ease: 'linear' }}
+        >
+          <BadgeArt name={id} size={SIZE} locked />
           <svg viewBox="0 0 100 100" className="absolute inset-0" aria-hidden="true">
-            <path d="M50 0 40 45 0 55M40 45 60 35 100 40M40 45 45 100M60 35 70 70 100 100M70 70 45 100" stroke="#fff" strokeWidth="1.6" fill="none" />
+            {phase === 'crack' && CRACKS.map((d, k) => (
+              <motion.path
+                key={k}
+                d={d}
+                stroke="#fff"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ delay: k * 0.08, duration: 0.18, ease: 'easeOut' }}
+              />
+            ))}
           </svg>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
+      {broken && SHARDS.map((poly, k) => {
+        const a = (k / SHARDS.length) * Math.PI * 2 + 0.4
+        const d = 120 + (k % 3) * 30
+        return (
+          <motion.div
+            key={k}
+            className="absolute inset-0"
+            style={{ clipPath: `polygon(${poly})`, background: 'linear-gradient(145deg,#EEF3F8 0%,#B9C4D2 45%,#8C98A8 100%)', willChange: 'transform, opacity' }}
+            initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+            animate={{ x: Math.cos(a) * d, y: [0, Math.sin(a) * d * 0.5 - 30, 300], rotate: (k % 2 ? 1 : -1) * (60 + k * 20), opacity: [1, 1, 0] }}
+            transition={{ duration: 0.75, ease: [0.25, 0.5, 0.5, 1], times: [0, 0.35, 1] }}
+          />
+        )
+      })}
+      {broken && bits.map((b) => (
+        <motion.i
+          key={b.k}
+          className="absolute left-1/2 top-1/2 block rounded-[2px]"
+          style={{ width: b.s, height: b.s, background: '#E4ECF5', willChange: 'transform, opacity' }}
+          initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+          animate={{ x: b.x, y: [0, b.y, 260], rotate: b.r, opacity: [1, 1, 0] }}
+          transition={{ duration: 0.7, ease: 'easeOut', times: [0, 0.3, 1] }}
+        />
+      ))}
     </motion.div>
   )
 }
+
+/** The cracks, drawn one after another as the ice gives. */
+const CRACKS = [
+  'M40 45 50 0', 'M40 45 0 55', 'M40 45 60 35 100 40', 'M40 45 45 100', 'M60 35 70 70 100 100', 'M70 70 45 100',
+]
 
 /** A ring fills round the grey badge; at full it flashes and the colour is there. */
 function Charge({ id, ring, shown }: { id: BadgeArtName; ring: string; shown: boolean }) {

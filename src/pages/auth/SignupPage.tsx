@@ -25,7 +25,8 @@ const studentSchema = z.object({
   instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]]),
   experienceLevel: z.enum(['beginner','intermediate','advanced','professional']),
   weeklyGoalMinutes: z.coerce.number().min(30).max(3000),
-})
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, { message: "The passwords don't match", path: ['confirmPassword'] })
 
 const teacherSchema = z.object({
   displayName: z.string().min(2),
@@ -33,7 +34,8 @@ const teacherSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   studioName: z.string().min(2, 'Studio name required'),
   instrument: z.enum(INSTRUMENT_LIST as [InstrumentType, ...InstrumentType[]], { message: 'Choose the instrument you teach' }),
-})
+  confirmPassword: z.string(),
+}).refine((d) => d.password === d.confirmPassword, { message: "The passwords don't match", path: ['confirmPassword'] })
 
 type Step = 'role' | 'info' | 'photo'
 
@@ -172,6 +174,7 @@ export default function SignupPage() {
                   <Input label="Full Name" placeholder="Jane Smith" error={studentForm.formState.errors.displayName?.message} {...studentForm.register('displayName')} />
                   <Input label="Email" type="email" placeholder="jane@example.com" error={studentForm.formState.errors.email?.message} {...studentForm.register('email')} />
                   <Input label="Password" type="password" placeholder="••••••••" error={studentForm.formState.errors.password?.message} {...studentForm.register('password')} />
+                  <Input label="Re-enter password" type="password" placeholder="••••••••" autoComplete="new-password" error={studentForm.formState.errors.confirmPassword?.message} {...studentForm.register('confirmPassword')} />
                   <Select
                     label="Instrument"
                     options={INSTRUMENT_LIST.map((i) => ({ value: i, label: INSTRUMENT_THEMES[i].label }))}
@@ -215,6 +218,7 @@ export default function SignupPage() {
                   />
                   <Input label="Email" type="email" placeholder="sarah@example.com" error={teacherForm.formState.errors.email?.message} {...teacherForm.register('email')} />
                   <Input label="Password" type="password" placeholder="••••••••" error={teacherForm.formState.errors.password?.message} {...teacherForm.register('password')} />
+                  <Input label="Re-enter password" type="password" placeholder="••••••••" autoComplete="new-password" error={teacherForm.formState.errors.confirmPassword?.message} {...teacherForm.register('confirmPassword')} />
                   <Button type="submit" className="w-full" size="lg" loading={teacherForm.formState.isSubmitting}>Create Teacher Account</Button>
                 </form>
               </motion.div>

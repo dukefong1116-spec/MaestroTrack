@@ -13,6 +13,7 @@ interface NativeGlass {
   button(o: Frame & { id: string; symbol?: string; title?: string; prominent?: boolean; tint?: string; label?: string }): Promise<void>
   segmented(o: Frame & { id: string; items: string[]; selected: number; tint?: string }): Promise<void>
   remove(o: { id: string }): Promise<void>
+  launchDone(): Promise<void>
   addListener(e: 'tap', fn: (d: { id: string }) => void): Promise<PluginListenerHandle>
   addListener(e: 'change', fn: (d: { id: string; index: number }) => void): Promise<PluginListenerHandle>
 }
@@ -86,4 +87,9 @@ export function useNativeSegmented(
   useFollow(id, ref, on, (f) => { void Glass.segmented({ ...f, id, items, selected, tint }).catch(() => {}) }, `${items.join('|')}#${selected}#${tint}`)
   useListener('change', on, (d) => { if (d.id === id && typeof d.index === 'number') { onChange(d.index); force((n) => n + 1) } })
   return on
+}
+
+/** The launch screen is over: the native Femata shown behind it can go. */
+export function nativeLaunchDone() {
+  if (isNativeApp) void Glass.launchDone().catch(() => {})
 }
