@@ -101,7 +101,7 @@ export default function ShareSheet({
       const payload = `${text}\n${url}`
       if (typeof navigator.share === 'function') {
         try {
-          await navigator.share({ title: 'MutifTrack', text, url })
+          await navigator.share({ title: 'Femata', text, url })
           flash('Shared')
           return
         } catch (err) {

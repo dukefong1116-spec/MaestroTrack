@@ -24,7 +24,7 @@ export function useShareBadge() {
       ...(profile?.displayName ? { name: profile.displayName } : {}),
       badgeId: badge.id,
       badgeLabel: badge.label,
-    }, `I earned ${badge.label} on MutifTrack`)
+    }, `I earned ${badge.label} on Femata`)
     if (outcome === 'cancelled') return
     setShareNote(outcome === 'failed' ? 'Could not publish the link.' : outcome === 'shared' ? 'Shared' : 'Link copied')
     setTimeout(() => setShareNote(null), 2200)

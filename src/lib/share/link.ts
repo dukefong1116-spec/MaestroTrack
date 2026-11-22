@@ -168,7 +168,7 @@ export async function publishAndShare(
 
   if (typeof navigator.share === 'function') {
     try {
-      await navigator.share({ title: 'MutifTrack', text, url })
+      await navigator.share({ title: 'Femata', text, url })
       return 'shared'
     } catch (err) {
       if ((err as { name?: string })?.name === 'AbortError') return 'cancelled'

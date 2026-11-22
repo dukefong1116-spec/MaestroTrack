@@ -9,7 +9,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  */
 const config: CapacitorConfig = {
   appId: 'com.mutiftrack.app',
-  appName: 'Mutif',
+  appName: 'Femata',
   webDir: 'dist',
   ios: {
     // The app draws under the status bar and home indicator itself

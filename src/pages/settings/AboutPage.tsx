@@ -88,7 +88,7 @@ export default function AboutPage() {
         <Block first>
           <Legend title="Help" />
           <a
-            href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`MutifTrack ${__APP_VERSION__} — support`)}`}
+            href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Femata ${__APP_VERSION__} — support`)}`}
             className="inline-flex items-center gap-2 text-sm font-semibold"
             style={{ color: 'var(--clay-accent)' }}
           >

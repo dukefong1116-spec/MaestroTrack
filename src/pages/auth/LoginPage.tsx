@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { signIn, getUserProfile } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
-import { PianoGlyph } from '@/components/icons/InstrumentIcon'
+import Femata from '@/components/femata/Femata'
 import Button from '@/components/ui/Button'
 
 const schema = z.object({
@@ -65,8 +65,8 @@ export default function LoginPage() {
         className="relative w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><PianoGlyph size={52} /></div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>MutifTrack</h1>
+          <div className="mb-3 flex justify-center"><Femata mood="happy" tone="pop" size={132} /></div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>Femata</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>The practice intelligence platform for musicians</p>
         </div>
 

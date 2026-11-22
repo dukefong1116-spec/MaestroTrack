@@ -2,8 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Volume2, VolumeX, Check, Share2 } from 'lucide-react'
 import StreakFlame from '@/components/icons/StreakFlame'
-import Sparkle from '@/components/icons/Sparkle'
-import InstrumentIcon from '@/components/icons/InstrumentIcon'
+import Femata from '@/components/femata/Femata'
 import Confetti from './Confetti'
 import CountUp from './CountUp'
 import { rewardCopy, type SessionReward } from '@/lib/utils/gamification'
@@ -146,25 +145,28 @@ export default function SessionCelebration({
             {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
 
-          {/* crest */}
-          <motion.div
-            className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
-            style={{
-              background: muted_ ? 'var(--clay-bg-deep)' : 'linear-gradient(135deg,var(--clay-accent),var(--clay-accent-hover))',
-              color: muted_ ? 'var(--clay-dim)' : '#FFFFFF',
-            }}
-            initial={reduced ? false : { scale: 0, rotate: -25 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.22 }}
-          >
-            {muted_ ? (
+          {/* crest: Femata celebrating; a quiet tick for a backdated session */}
+          {muted_ ? (
+            <motion.div
+              className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl"
+              style={{ background: 'var(--clay-bg-deep)', color: 'var(--clay-dim)' }}
+              initial={reduced ? false : { scale: 0, rotate: -25 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.22 }}
+            >
               <Check size={28} />
-            ) : reward.isFirstEver ? (
-              <InstrumentIcon instrument={instrument} size={30} />
-            ) : (
-              <Sparkle size={28} />
-            )}
-          </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              className="mx-auto -mt-2 mb-3 flex justify-center"
+              initial={reduced ? false : { scale: 0, rotate: -12, y: 20 }}
+              animate={{ scale: 1, rotate: 0, y: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 14, delay: 0.18 }}
+              aria-hidden
+            >
+              <Femata mood={reward.isFirstEver ? 'excited' : 'celebrate'} tone="sunrise" size={150} />
+            </motion.div>
+          )}
 
           <motion.h2
             className="text-2xl font-bold"

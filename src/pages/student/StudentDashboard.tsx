@@ -23,6 +23,8 @@ import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import { useStreak } from '@/hooks/useStreak'
 import { markOpen } from '@/lib/utils/openTimes'
 import { dowOf, freezesToSpend } from '@/lib/streak/engine'
+import type { FemataMood } from '@/components/femata/Femata'
+import FemataBuddy from '@/components/femata/FemataBuddy'
 import type { InstrumentType, Assignment, LessonSlot } from '@/types'
 
 function Snowflake({ size = 11 }: { size?: number }) {
@@ -85,6 +87,7 @@ export default function StudentDashboard() {
   const comeback = live.comeback && !live.comeback.complete && freezesToSpend(live).length === 0
     ? live.comeback
     : null
+  const femataMood: FemataMood = live.todayLit ? 'proud' : comeback ? 'sad' : 'sleepy'
 
   const summary = useMemo(() =>
     getAnalyticsSummary(sessions, profile?.weeklyGoalMinutes ?? 300),
@@ -129,6 +132,10 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-5">
+      {/* Femata floats in the corner, showing how the day is going: sleepy
+          until you practise, proud once today is lit, sad when a streak has
+          just been lost. Tap it to pat it. */}
+      <FemataBuddy mood={femataMood} tone={live.todayLit ? 'sunrise' : 'sky'} />
       {/* Hello, with your face big enough to be yours. The photo opens
           Settings — for a student in a studio, the Studio tab has
           Settings' place in the bar. */}

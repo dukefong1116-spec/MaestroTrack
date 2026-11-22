@@ -18,6 +18,7 @@ import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
 import StarRating from '@/components/ui/StarRating'
 import EmptyState from '@/components/common/EmptyState'
+import Femata from '@/components/femata/Femata'
 import type { InstrumentType, Piece } from '@/types'
 
 const schema = z.object({
@@ -118,8 +119,9 @@ export default function PiecesPanel() {
         <Block>
           <EmptyState
             icon={<Sticker name="book" size={36} tone="accent" />}
-            title={`No ${filter} pieces`}
-            description={filter === 'active' ? 'Add a piece to start tracking your practice.' : `No pieces with ${filter} status yet.`}
+            art={filter === 'active' ? <Femata mood="thinking" size={128} /> : undefined}
+            title={filter === 'active' ? 'What are you learning?' : `No ${filter} pieces`}
+            description={filter === 'active' ? "Add a piece and I'll help you track it." : `No pieces with ${filter} status yet.`}
             action={filter === 'active' ? { label: 'Add Your First Piece', onClick: () => setOpen(true) } : undefined}
           />
         </Block>

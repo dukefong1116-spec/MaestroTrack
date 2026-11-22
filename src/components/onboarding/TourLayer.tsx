@@ -5,8 +5,15 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useTourStore } from '@/stores/tourStore'
-import { whatToShow, INTRO_SEEN, type Show } from '@/lib/utils/tour'
-import { NoteGlyph } from '@/components/icons/InstrumentIcon'
+import { whatToShow, INTRO_SEEN, type Show, type ShowId } from '@/lib/utils/tour'
+import Femata, { type FemataMood } from '@/components/femata/Femata'
+
+/** Femata's face on each step of the tour. */
+const TOUR_MOOD: Partial<Record<ShowId, FemataMood>> = {
+  today: 'happy', start: 'excited', category: 'thinking', tools: 'wink', finish: 'focused',
+  streak: 'celebrate', history: 'wink', 'intro-library': 'thinking', 'intro-progress': 'proud',
+  'piece-prompt': 'excited', 'studio-welcome': 'happy', 'studio-settings': 'focused', 'studio-tab': 'wink', 'studio-page': 'happy',
+}
 
 /**
  * Draws the tour: a speech bubble, a ring round the thing it is about,
@@ -278,13 +285,19 @@ export default function TourLayer() {
               }}
             />
           )}
-          <div className={`relative flex items-start ${show.big ? 'gap-3.5' : 'gap-3'}`}>
-            <span
-              className={`mt-0.5 flex shrink-0 items-center justify-center rounded-full ${show.big ? 'h-11 w-11' : 'h-8 w-8'}`}
-              style={{ background: 'var(--clay-accent-soft)', color: 'var(--clay-accent)' }}
-            >
-              <NoteGlyph size={show.big ? 24 : 18} />
+          {/* Femata leads the tour: big on the welcome, standing on the bubble;
+              small beside the words on every other step, with a face to match. */}
+          {show.big && (
+            <span aria-hidden className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ top: -92 }}>
+              <Femata mood="happy" tone="glow" size={118} />
             </span>
+          )}
+          <div className={`relative flex items-start ${show.big ? 'gap-3.5' : 'gap-3'}`}>
+            {!show.big && (
+              <span className="-ml-1 -mt-1 shrink-0" aria-hidden>
+                <Femata mood={TOUR_MOOD[show.id] ?? 'happy'} size={46} />
+              </span>
+            )}
             <div className="flex-1">
               {show.title && <p className="mb-1 text-[19px] font-bold leading-tight">{show.title}</p>}
               <p className={`${show.big ? 'text-[15.5px]' : 'text-[14.5px]'} leading-snug`}>{show.text}</p>

@@ -1,4 +1,4 @@
-import { ClipboardCheck, Check as Tick, MessageCircle, Undo2 } from 'lucide-react'
+import { Check as Tick, MessageCircle, Undo2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { format, parseISO, formatDistanceToNowStrict } from 'date-fns'
@@ -9,6 +9,7 @@ import { normaliseStatus, latestSubmission, dueness } from '@/lib/utils/assignme
 import { reviewAssignment } from '@/lib/firebase/assignments'
 import { subscribeSharedRecordings } from '@/lib/firebase/recordings'
 import ReviewSheet from '@/components/assignments/ReviewSheet'
+import Femata from '@/components/femata/Femata'
 import { StudioPage, Segmented, Pill, Check, BulkBar, BulkButton, BulkSpacer, Avatar, Empty, Btn } from '@/components/teacher/studio/ui'
 import { colorFor, inputStyle } from '@/components/teacher/studio/tokens'
 import type { Assignment, Recording } from '@/types'
@@ -162,9 +163,7 @@ export default function ReviewPage() {
         // Nothing to review: said big, like the student's own caught-up state.
         // In the middle of the screen, not just under the filters.
         <div className="flex min-h-[calc(100dvh-300px)] flex-col items-center justify-center px-6 py-14 text-center">
-          <span className="mb-4 flex h-20 w-20 items-center justify-center rounded-[24px]" style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }} aria-hidden="true">
-            <ClipboardCheck size={38} strokeWidth={1.75} />
-          </span>
+          <span className="mb-3" aria-hidden="true"><Femata mood="cool" size={140} /></span>
           <p className="text-[17px] font-bold" style={{ color: 'var(--clay-ink)' }}>All caught up</p>
           <p className="mt-1 max-w-[260px] text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>
             Nothing waiting for review. Work your students hand in will show up here.

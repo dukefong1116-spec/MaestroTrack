@@ -56,8 +56,8 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'MutifTrack',
-        short_name: 'Mutif',
+        name: 'Femata',
+        short_name: 'Femata',
         description: 'Practice tracking for musicians.',
         start_url: '/student',
         scope: '/',

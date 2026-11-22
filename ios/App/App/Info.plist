@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mutif</string>
+	<string>Femata</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Mutif uses the camera to scan your teacher's studio invite code and to take a profile photo.</string>
+	<string>Femata uses the camera to scan your teacher's studio invite code and to take a profile photo.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Mutif listens while you practise: the tuner, the metronome check and recording your takes.</string>
+	<string>Femata listens while you practise: the tuner, the metronome check and recording your takes.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save share cards to your photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

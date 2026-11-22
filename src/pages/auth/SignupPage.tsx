@@ -11,7 +11,7 @@ import { signUp } from '@/lib/firebase/auth'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Sticker from '@/components/stickers/Sticker'
-import { NoteGlyph } from '@/components/icons/InstrumentIcon'
+import Femata from '@/components/femata/Femata'
 import Button from '@/components/ui/Button'
 import { INSTRUMENT_LIST, INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import type { UserRole, InstrumentType } from '@/types'
@@ -125,8 +125,8 @@ export default function SignupPage() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 40% 0%, rgba(232,80,58,.06) 0%, transparent 60%)' }} />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="mb-4 flex justify-center" style={{ color: 'var(--clay-accent)' }}><NoteGlyph size={52} /></div>
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>Join MutifTrack</h1>
+          <div className="mb-3 flex justify-center"><Femata mood="wink" tone="sunrise" size={124} /></div>
+          <h1 className="text-3xl font-bold" style={{ color: 'var(--clay-ink)' }}>Join Femata</h1>
           <p className="mt-2" style={{ color: 'var(--clay-dim)' }}>Your musical journey starts here</p>
         </div>
 

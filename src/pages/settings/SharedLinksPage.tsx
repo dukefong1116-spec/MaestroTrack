@@ -69,7 +69,7 @@ export default function SharedLinksPage() {
         <Block first>
           <Legend
             title="Links you have published"
-            hint="Anyone who has one of these can open it, whether or not they use MutifTrack. Removing a link makes its page disappear straight away — but a preview a chat app has already drawn may keep showing for a few days, because that copy is theirs, not ours."
+            hint="Anyone who has one of these can open it, whether or not they use Femata. Removing a link makes its page disappear straight away — but a preview a chat app has already drawn may keep showing for a few days, because that copy is theirs, not ours."
           />
         </Block>
 

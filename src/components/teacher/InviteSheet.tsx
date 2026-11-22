@@ -77,8 +77,8 @@ export default function InviteSheet({
     if (!invite) return
     try {
       await navigator.share({
-        title: `Join ${profile.studioName || 'my studio'} on MutifTrack`,
-        text: `${profile.displayName} has invited you to join ${profile.studioName || 'their studio'} on MutifTrack.`,
+        title: `Join ${profile.studioName || 'my studio'} on Femata`,
+        text: `${profile.displayName} has invited you to join ${profile.studioName || 'their studio'} on Femata.`,
         url: invite.url,
       })
     } catch {

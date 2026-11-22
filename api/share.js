@@ -1,7 +1,7 @@
 /**
  * The page behind a share link.
  *
- * This exists because crawlers do not run JavaScript. MutifTrack is a
+ * This exists because crawlers do not run JavaScript. Femata is a
  * Vite SPA behind a catch-all rewrite to index.html, so every URL returns
  * the same empty shell — paste one into WhatsApp and you get a grey box
  * with the generic site title. The Open Graph tags have to be in the HTML
@@ -70,7 +70,7 @@ function page({ title, description, image, body, status }) {
 <!-- Not search results. A share link is for the person it was sent to. -->
 <meta name="robots" content="noindex,nofollow">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="MutifTrack">
+<meta property="og:site_name" content="Femata">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 ${image ? `<meta property="og:image" content="${esc(image)}">
@@ -102,7 +102,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}">
 <body>
 <main>
 ${body}
-<p class="mark">Tracked with <b>MutifTrack</b></p>
+<p class="mark">Tracked with <b>Femata</b></p>
 </main>
 </body>
 </html>` }
@@ -111,7 +111,7 @@ ${body}
 function notFound() {
   return page({
     status: 404,
-    title: 'This link has expired — MutifTrack',
+    title: 'This link has expired — Femata',
     description: 'The person who shared this has since taken it down.',
     body: `<h1>This link is no longer available</h1>
 <p>The person who shared it has taken it down.</p>`,
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
 
   const out = page({
     status: 200,
-    title: `${title} — MutifTrack`,
+    title: `${title} — Femata`,
     description,
     image,
     body: `${image ? `<div class="card"><img src="${esc(image)}" alt="${esc(title)}"></div>` : ''}
