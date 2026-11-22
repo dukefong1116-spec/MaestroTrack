@@ -109,7 +109,7 @@ export default function StudentDetailPage() {
           <AppStatus on={m.onApp} />
         </span>
       }
-      subtitle={`${m.instrument ? `${m.instrument} · ` : ''}${family?.name ?? 'Not in a family'}${m.profile?.experienceLevel ? ` · ${m.profile.experienceLevel}` : ''}`}
+      subtitle={`${m.instrument ? `${m.instrument} · ` : ''}${family?.name ?? 'Not in a family'}`}
       actions={
         <>
           {!m.onApp && <Btn kind="primary" onClick={() => setInviting(true)}>Invite to the app</Btn>}
@@ -174,7 +174,7 @@ export default function StudentDetailPage() {
       {tab === 'practice' && <Practice m={m} sessions={sessions} summary={summary} />}
       {tab === 'recordings' && (
         recordings.length === 0
-          ? <Empty mood={m.onApp ? 'sleepy' : 'sad'} title={m.onApp ? 'No recordings yet' : 'Not on the app'}>{m.onApp ? `When ${first} hands in a take, you can listen here.` : `${first} isn’t on the app, so there are no recordings to hear.`}</Empty>
+          ? <Empty fill={335} mood={m.onApp ? 'sleepy' : 'sad'} title={m.onApp ? 'No recordings yet' : 'Not on the app'}>{m.onApp ? `When ${first} hands in a take, you can listen here.` : `${first} isn’t on the app, so there are no recordings to hear.`}</Empty>
           : (
             <div>
               {[...recordings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((r, i) => (

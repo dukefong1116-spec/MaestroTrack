@@ -19,6 +19,7 @@ import { StudioPage, Btn, Avatar } from '@/components/teacher/studio/ui'
 import { colorFor, toneColors } from '@/components/teacher/studio/tokens'
 import type { AttendanceMark } from '@/types'
 import FemataBuddy from '@/components/femata/FemataBuddy'
+import { lessonsNeedingNotes } from '@/lib/studio/notesDue'
 
 /** "Ms Harper" stays whole; "Laura Harper" is Laura. */
 function callName(name: string) {
@@ -61,7 +62,11 @@ export default function TeacherDashboard() {
     const s = sessions[m.uid] ?? []
     return s.length > 0 && !s.some((x) => x.date.slice(0, 10) >= addDays(today, -5))
   })
+  // A lesson just finished and nothing written: the moment to note what
+  // was covered and what is next, while it is fresh.
+  const notesDue = lessonsNeedingNotes(items, notes, now)
   const attention: { head: string; text: string; color: string; go: () => void }[] = [
+    ...notesDue.slice(0, 3).map(({ item, endedAt }) => ({ head: 'Leave a lesson note', text: `${item.title} · finished ${endedAt.toDateString() === now.toDateString() ? `at ${clock(endTime(item))}` : 'yesterday'}`, color: '#2E9E6A', go: () => setOpen(item) })),
     ...(requests.length ? [{ head: `${requests.length} waiting to join`, text: requests.map((r) => r.studentName).join(', '), color: 'var(--clay-accent-ink)', go: () => navigate('/teacher/students') }] : []),
     ...(toReview.length ? [{ head: `${toReview.length} assignment${toReview.length === 1 ? '' : 's'} to review`, text: [...new Set(toReview.map((a) => nameOf(a.studentId || a.rosterId || '')))].join(', '), color: '#7A5AC4', go: () => navigate('/teacher/review') }] : []),
     ...overdue.slice(0, 3).map((a) => ({ head: 'Assignment overdue', text: `${nameOf(a.studentId || a.rosterId || '')} · ${a.title}`, color: '#D64257', go: () => navigate(`/teacher/students/${encodeURIComponent(a.rosterId ?? a.studentId)}?tab=assignments`) })),

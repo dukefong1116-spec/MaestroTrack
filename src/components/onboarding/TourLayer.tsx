@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useMomentStore } from '@/stores/momentStore'
+import { useMomentStore, useHoldCover } from '@/stores/momentStore'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
@@ -197,6 +197,9 @@ export default function TourLayer() {
     document.addEventListener('click', onClick, true)
     return () => document.removeEventListener('click', onClick, true)
   }, [show?.id, show?.mustTap, show?.target])
+
+  // Apple's glass controls step aside while the guide is up.
+  useHoldCover(!!show && !waiting)
 
   if (!show || waiting) return null
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import Femata from '@/components/femata/Femata'
 import { useNavigate } from 'react-router-dom'
 import { useForm, type Resolver } from 'react-hook-form'
@@ -37,6 +37,7 @@ import { takeLabel, takeNamesByDay } from '@/lib/utils/takeNames'
 import type { PracticeCategory, InstrumentType, PracticeSession, Piece, Recording } from '@/types'
 import PracticeTabs from '@/components/practice/PracticeTabs'
 import { haptic } from '@/lib/haptics'
+import { useNativeGlassButton } from '@/lib/nativeGlass'
 
 const CATEGORIES: PracticeCategory[] = [
   'Scales', 'Technique', 'Sight Reading', 'Repertoire', 'Memorization', 'Ear Training', 'Improvisation',
@@ -350,6 +351,11 @@ export default function PracticeLogPage() {
     try { await deletePracticeSession(id) } finally { setDeleting(null) }
   }
 
+  const logPastRef = useRef<HTMLButtonElement>(null)
+  const nativeLogPast = useNativeGlassButton(logPastRef, {
+    id: 'log-past', symbol: 'pencil', title: 'Log past', tint: '#1F8FD1', label: 'Log a past session', visible: true,
+  }, () => { haptic('tap'); setOpen(true) })
+
   return (
     <div
       className="-mx-6 -my-8 min-h-full px-5 pb-12 pt-7"
@@ -358,18 +364,17 @@ export default function PracticeLogPage() {
       <div className="mx-auto w-full max-w-md">
 
         {/* heading, with the exception tucked beside it */}
-        <div className="mb-5 flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
-            <p className="text-[13px]" style={{ color: 'var(--clay-dim)' }}>
-              {format(new Date(), 'EEEE')} · let's get after it
-            </p>
-          </div>
-          {/* Liquid Glass, like the bell on Today. */}
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h1 className="min-w-0 text-[27px] font-semibold leading-tight">Practice</h1>
+          {/* Liquid Glass: Apple's own glass button in the iPhone app (see
+              nativeGlass), this glass capsule elsewhere. */}
           <button
+            ref={logPastRef}
             type="button"
             className="glass flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-transform active:scale-95"
-            style={{ color: 'var(--clay-ink)' }}
+            style={{ color: 'var(--clay-ink)', visibility: nativeLogPast ? 'hidden' : undefined }}
+            aria-hidden={nativeLogPast || undefined}
+            tabIndex={nativeLogPast ? -1 : undefined}
             onClick={() => { haptic('tap'); setOpen(true) }}
           >
             <Sticker name="pencil" size={14} tone="accent" /> Log past

@@ -245,12 +245,20 @@ export function Field({ label, children, className }: { label: string; children:
  * An empty list. With a mood, Femata says it (a different face on each
  * page); without one, just the line, for small spots like a loading note.
  */
-export function Empty({ children, mood, title, fill }: { children?: ReactNode; mood?: FemataMood; title?: string; fill?: boolean }) {
+export function Empty({ children, mood, title, fill }: {
+  children?: ReactNode; mood?: FemataMood; title?: string
+  /** The whole page is empty: centre it on the screen. A number is how
+   *  much of the screen is taken above and below it (default 300px). */
+  fill?: boolean | number
+}) {
   if (!mood) return <p className="px-5 py-6 text-[14px] sm:px-6" style={{ color: 'var(--clay-dim)' }}>{children}</p>
   return (
     // fill: the whole page is empty, so it sits in the middle of the screen
     // rather than just under the filters.
-    <div className={cn('flex flex-col items-center px-6 text-center', fill ? 'min-h-[calc(100dvh-300px)] justify-center py-10' : 'pb-10 pt-8')}>
+    <div
+      className={cn('flex flex-col items-center px-6 text-center', fill ? 'justify-center py-10' : 'pb-10 pt-8')}
+      style={fill ? { minHeight: `calc(100dvh - ${typeof fill === 'number' ? fill : 300}px)` } : undefined}
+    >
       <Femata mood={mood} size={104} />
       {title && <p className="mt-3 text-[16.5px] font-bold" style={{ color: 'var(--clay-ink)' }}>{title}</p>}
       {children && <p className="mt-1 max-w-[300px] text-[13.5px] leading-snug" style={{ color: 'var(--clay-dim)' }}>{children}</p>}

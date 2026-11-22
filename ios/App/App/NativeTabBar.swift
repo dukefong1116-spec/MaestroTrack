@@ -212,20 +212,40 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         // native look in the simulator only.
         guard ProcessInfo.processInfo.arguments.contains("-glassDemo") else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
-            let seg = CAPPluginCall(callbackId: "demo", options: ["id": "demo-seg", "items": ["To review 3", "Sent back 1", "Approved 8", "All 12"], "selected": 0, "tint": "#1F8FD1", "x": 12, "y": 640, "width": 378, "height": 52], success: { _, _ in }, error: { _ in })
-            let btn = CAPPluginCall(callbackId: "demo", options: ["id": "demo-btn", "symbol": "plus", "prominent": true, "tint": "#1F8FD1", "x": 318, "y": 560, "width": 56, "height": 56], success: { _, _ in }, error: { _ in })
+            let seg = CAPPluginCall(callbackId: "demo", methodName: "segmented", options: ["id": "demo-seg", "items": ["To review 3", "Sent back 1", "Approved 8", "All 12"], "selected": 0, "tint": "#1F8FD1", "x": 12, "y": 640, "width": 378, "height": 52], success: { _, _ in }, error: { _ in })
+            let btn = CAPPluginCall(callbackId: "demo", methodName: "button", options: ["id": "demo-btn", "symbol": "plus", "prominent": true, "tint": "#1F8FD1", "x": 318, "y": 560, "width": 56, "height": 56], success: { _, _ in }, error: { _ in })
             if let seg = seg { self.segmented(seg) }
             if let btn = btn { self.button(btn) }
         }
     }
 
+    /// Per control, the box it is cut off at: the page's scroll area, so a
+    /// control that scrolls with the page slides under its edges.
+    private var clips: [String: UIView] = [:]
+
     /// The web view's CSS pixels are its points, measured from its own corner.
     private func place(_ v: UIView, _ call: CAPPluginCall) {
         guard let host = bridge?.viewController?.view, let web = bridge?.webView else { return }
         func num(_ k: String, _ d: Double) -> Double { (call.options[k] as? NSNumber)?.doubleValue ?? d }
-        let r = CGRect(x: num("x", 0), y: num("y", 0), width: num("width", 44), height: num("height", 44))
-        v.frame = web.convert(r, to: host)
-        if v.superview == nil { host.addSubview(v) }
+        let r = web.convert(CGRect(x: num("x", 0), y: num("y", 0), width: num("width", 44), height: num("height", 44)), to: host)
+        let id = call.getString("id") ?? ""
+        if let c = call.getObject("clip") {
+            func cn(_ k: String) -> Double { (c[k] as? NSNumber)?.doubleValue ?? 0 }
+            let box = clips[id] ?? {
+                let made = PassThroughView()
+                made.clipsToBounds = true
+                made.backgroundColor = .clear
+                clips[id] = made
+                return made
+            }()
+            box.frame = web.convert(CGRect(x: cn("x"), y: cn("y"), width: cn("width"), height: cn("height")), to: host)
+            if box.superview == nil { host.addSubview(box) }
+            if v.superview !== box { v.removeFromSuperview(); box.addSubview(v) }
+            v.frame = r.offsetBy(dx: -box.frame.minX, dy: -box.frame.minY)
+        } else {
+            if v.superview !== host { v.removeFromSuperview(); host.addSubview(v) }
+            v.frame = r
+        }
         v.isHidden = false
     }
 
@@ -236,7 +256,8 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         let prominent = call.getBool("prominent") ?? false
         let tint = call.getString("tint").flatMap { UIColor(hex: $0) }
         let label = call.getString("label")
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { call.resolve(); return }
             let b = (self.views[id] as? UIButton) ?? {
                 let made = UIButton(type: .system)
                 made.addAction(UIAction { [weak self] _ in self?.notifyListeners("tap", data: ["id": id]) }, for: .primaryActionTriggered)
@@ -247,11 +268,19 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
             if #available(iOS 26.0, *) { cfg = prominent ? .prominentGlass() : .glass() }
             else { cfg = prominent ? .filled() : .tinted() }
             cfg.cornerStyle = .capsule
+            // With words, the page's own button size (14pt), so it fits the
+            // space the web button leaves; an icon alone is drawn larger.
             if let s = symbol {
-                cfg.image = UIImage(systemName: s, withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold))
+                cfg.image = UIImage(systemName: s, withConfiguration: UIImage.SymbolConfiguration(pointSize: title == nil ? 20 : 13, weight: .semibold))
             }
-            cfg.title = title
+            if let t = title {
+                var a = AttributedString(t)
+                a.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+                cfg.attributedTitle = a
+                cfg.titleLineBreakMode = .byClipping
+            }
             cfg.imagePadding = 6
+            cfg.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
             b.configuration = cfg
             if let t = tint { b.tintColor = t }
             b.accessibilityLabel = label ?? title
@@ -265,7 +294,8 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         let items = call.getArray("items", String.self) ?? []
         let selected = call.getInt("selected") ?? 0
         let tint = call.getString("tint").flatMap { UIColor(hex: $0) } ?? .systemBlue
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { call.resolve(); return }
             // Apple's segmented control on a glass bar, as in its own toolbars:
             // the bar keeps the page behind from showing through the labels.
             let bar: UIVisualEffectView
@@ -318,8 +348,19 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async {
             self.views[id]?.removeFromSuperview()
             self.views[id] = nil
+            self.clips[id]?.removeFromSuperview()
+            self.clips[id] = nil
             call.resolve()
         }
+    }
+}
+
+/// A box that only clips what is inside it: touches anywhere but on its
+/// control go straight through to the page (and the tab bar) beneath.
+private final class PassThroughView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit === self ? nil : hit
     }
 }
 

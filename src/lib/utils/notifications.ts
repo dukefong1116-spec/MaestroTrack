@@ -31,6 +31,7 @@ export type NotificationKind =
   | 'league-results'
   | 'studio-joined'
   | 'piece-from-teacher'
+  | 'lesson-note-due'
 
 export interface AppNotification {
   /** Deterministic, so "seen" survives a reload without storing anything. */
@@ -50,7 +51,7 @@ export interface AppNotification {
 export const KINDS_BY_CATEGORY: Record<NotifyKind, readonly NotificationKind[]> = {
   assignments: ['assignment-new', 'piece-from-teacher'],
   feedback: ['assignment-returned', 'assignment-approved'],
-  lessons: ['lesson-tomorrow', 'lesson-soon'],
+  lessons: ['lesson-tomorrow', 'lesson-soon', 'lesson-note-due'],
   submissions: ['submission-received'],
   league: ['league-passed', 'league-last-day', 'league-results'],
   // 'message-new' is absent too: a message is a person talking to you.
@@ -316,18 +317,44 @@ export function buildStudentNotifications(input: {
 
 /* ── the teacher's side ───────────────────────────────────────────── */
 
+/** After a lesson: write it up while it is fresh. */
+const NOTE_LINES: ((name: string) => { title: string; body: string })[] = [
+  (n) => ({ title: `How did ${n}'s lesson go?`, body: 'Leave a quick note while it’s fresh.' }),
+  (n) => ({ title: `Lesson with ${n} done`, body: 'What did you cover, and what’s next?' }),
+  (n) => ({ title: `A note for ${n}?`, body: 'Two lines now saves remembering it next week.' }),
+  (n) => ({ title: `Wrap up ${n}'s lesson`, body: 'Jot down the homework and what to work on.' }),
+]
+
 export function buildTeacherNotifications(input: {
   assignments: Assignment[]
   students: UserProfile[]
   requests?: StudioRequest[]
   /** From students, not yet read in each conversation. */
   messages?: Message[]
+  /** Lessons just finished with nothing written about them yet. */
+  notesDue?: { key: string; title: string; endedAt: Date; to: string }[]
   options: BuildOptions
 }): AppNotification[] {
-  const { assignments, students, requests = [], messages = [] } = input
+  const { assignments, students, requests = [], messages = [], notesDue = [] } = input
   const { now, sinceDays = DEFAULTS.sinceDays, cap = DEFAULTS.cap } = input.options
   const nameOf = new Map(students.map((s) => [s.uid, s.displayName]))
   const out: AppNotification[] = []
+
+  for (const n of notesDue) {
+    // A few ways of saying it, picked by the lesson so each one keeps its words.
+    const first = n.title.trim().split(/\s+/)[0] || 'your student'
+    const say = NOTE_LINES[[...n.key].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % NOTE_LINES.length](first)
+    out.push({
+      id: `note-due:${n.key}`,
+      kind: 'lesson-note-due',
+      title: say.title,
+      body: say.body,
+      at: n.endedAt.toISOString(),
+      to: n.to,
+      priority: 70,
+      sticker: 'pencil',
+    })
+  }
 
   for (const a of assignments) {
     for (const s of a.submissions ?? []) {

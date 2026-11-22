@@ -315,7 +315,9 @@ describe("the teacher's reads", () => {
     } as never)
     expect(minted.token).toHaveLength(22)
     expect(minted.code).toMatch(/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/)
-    expect(invites.inviteUrl(minted.token)).toBe(`/join/${minted.token}`)
+    // A full address: an invite is shared outside the app (a text, an email),
+    // and from the iPhone app there is no page origin to borrow.
+    expect(invites.inviteUrl(minted.token)).toBe(`https://maestro-track.vercel.app/join/${minted.token}`)
     expect(invites.generateInviteToken()).not.toBe(invites.generateInviteCode())
 
     asClare()
@@ -626,6 +628,29 @@ describe('pieces shared between a student and their teacher', () => {
     asTeacher()
     await assertFails(pieces.addPiece(ANA, { ...PIECE, sharedWithTeacher: true, addedBy: 'teacher', totalMinutes: 300 } as never))
     await assertFails(pieces.addPiece(ANA, { ...PIECE, sharedWithTeacher: false, addedBy: 'teacher' } as never))
+  })
+
+  it('and only a fresh, plain piece: not mastered, no history, no extra fields, no essay of a title', async () => {
+    asTeacher()
+    const base = { ...PIECE, sharedWithTeacher: true, addedBy: 'teacher', addedByName: 'Dr Chen' }
+    await assertSucceeds(pieces.addPiece(ANA, base as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, status: 'mastered' } as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, completionPercentage: 100 } as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, confidenceHistory: [{ date: '2026-03-01', value: 10 }] } as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, teacherNote: 'sneaky' } as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, title: 'x'.repeat(121) } as never))
+    await assertFails(pieces.addPiece(ANA, { ...base, addedByName: 'y'.repeat(121) } as never))
+  })
+
+  it('a student cannot read a classmate\'s shared pieces', async () => {
+    await seed('pieces', 'shared', { ...PIECE, userId: ANA, sharedWithTeacher: true })
+    asBen()
+    await expectNothing((cb) => pieces.subscribeSharedPieces(ANA, cb))
+  })
+
+  it('a student cannot put a piece in a classmate\'s Library by claiming to be the teacher', async () => {
+    asBen()
+    await assertFails(pieces.addPiece(ANA, { ...PIECE, sharedWithTeacher: true, addedBy: 'teacher' } as never))
   })
 
   it('the teacher cannot change or delete the student\'s own pieces', async () => {

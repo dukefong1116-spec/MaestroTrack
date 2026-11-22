@@ -492,10 +492,23 @@ service cloud.firestore {
       // Library, marked as theirs and shared; nothing else of the student's.
       allow create: if isMe(request.resource.data.userId)
                     || (teaches(request.resource.data.userId)
+                        && request.resource.data.keys().hasOnly([
+                             'userId', 'title', 'composer', 'difficulty', 'status',
+                             'totalMinutes', 'sessionCount', 'completionPercentage', 'confidenceHistory',
+                             'startedAt', 'updatedAt', 'sharedWithTeacher', 'addedBy', 'addedByName'])
                         && request.resource.data.addedBy == 'teacher'
                         && request.resource.data.sharedWithTeacher == true
+                        // A fresh piece: nothing practised, nothing mastered.
+                        && request.resource.data.status == 'active'
                         && request.resource.data.totalMinutes == 0
-                        && request.resource.data.sessionCount == 0);
+                        && request.resource.data.sessionCount == 0
+                        && request.resource.data.completionPercentage == 0
+                        && request.resource.data.confidenceHistory.size() == 0
+                        && request.resource.data.title is string
+                        && request.resource.data.title.size() > 0
+                        && request.resource.data.title.size() <= 120
+                        && request.resource.data.get('composer', '').size() <= 120
+                        && request.resource.data.get('addedByName', '').size() <= 120);
       // userId is immutable: handing a record to someone else plants it in
       // their log, where it counts toward their streaks and their totals.
       // Only the student edits a piece.

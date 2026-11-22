@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { registerPlugin, type PluginListenerHandle } from '@capacitor/core'
 import { isNativeApp } from '@/lib/native'
+import { useCoverStore, useMomentStore } from '@/stores/momentStore'
 
 /**
  * Apple's own Liquid Glass controls in the iPhone app (NativeGlassPlugin in
@@ -8,7 +9,11 @@ import { isNativeApp } from '@/lib/native'
  * web control stays where it is, invisible, and the real one is laid over
  * it. Outside the app these hooks do nothing and the web control shows.
  */
-interface Frame { x: number; y: number; width: number; height: number }
+interface Frame {
+  x: number; y: number; width: number; height: number
+  /** The scrolling area it lives in: the native control is cut off at its edges, as the page is. */
+  clip?: { x: number; y: number; width: number; height: number }
+}
 interface NativeGlass {
   button(o: Frame & { id: string; symbol?: string; title?: string; prominent?: boolean; tint?: string; label?: string }): Promise<void>
   segmented(o: Frame & { id: string; items: string[]; selected: number; tint?: string }): Promise<void>
@@ -22,7 +27,20 @@ const Glass = registerPlugin<NativeGlass>('NativeGlass')
 
 function frameOf(el: HTMLElement): Frame {
   const r = el.getBoundingClientRect()
-  return { x: r.left, y: r.top, width: r.width, height: r.height }
+  const f: Frame = { x: r.left, y: r.top, width: r.width, height: r.height }
+  // Something that scrolls with the page is clipped to the page's scroll
+  // area, so it slides under the edges rather than over the status bar.
+  // A floating (fixed) control is not.
+  const box = getComputedStyle(el).position === 'fixed' ? null : el.closest('main')?.getBoundingClientRect()
+  if (box) f.clip = { x: box.left, y: box.top, width: box.width, height: box.height }
+  return f
+}
+
+/** Nothing is over the page: no sheet, guide or celebration. */
+function usePageClear(): boolean {
+  const covers = useCoverStore((s) => s.open)
+  const moments = useMomentStore((s) => s.open)
+  return covers === 0 && moments === 0
 }
 
 /** Keeps `send` called with the element's frame while `on`, and removes the control after. */
@@ -38,10 +56,14 @@ function useFollow(id: string, ref: RefObject<HTMLElement | null>, on: boolean, 
     const ro = new ResizeObserver(push)
     ro.observe(el)
     window.addEventListener('resize', push)
+    // Capture: the page scrolls inside <main>, not the window, and a
+    // listener on window alone never hears it.
+    window.addEventListener('scroll', push, { capture: true, passive: true })
     return () => {
       cancelAnimationFrame(frame)
       ro.disconnect()
       window.removeEventListener('resize', push)
+      window.removeEventListener('scroll', push, { capture: true })
       void Glass.remove({ id }).catch(() => {})
     }
   }, [id, ref, on, key])
@@ -69,7 +91,8 @@ export function useNativeGlassButton(
   opts: { id: string; symbol?: string; title?: string; prominent?: boolean; tint?: string; label?: string; visible: boolean },
   onTap: () => void,
 ): boolean {
-  const on = isNativeApp && opts.visible
+  const clear = usePageClear()
+  const on = isNativeApp && opts.visible && clear
   const { id, symbol, title, prominent, tint, label } = opts
   useFollow(id, ref, on, (f) => { void Glass.button({ ...f, id, symbol, title, prominent, tint, label }).catch(() => {}) }, `${symbol}|${title}|${prominent}|${tint}`)
   useListener('tap', on, (d) => { if (d.id === id) onTap() })
@@ -82,7 +105,8 @@ export function useNativeSegmented(
   opts: { id: string; items: string[]; selected: number; tint?: string; visible: boolean },
   onChange: (index: number) => void,
 ): boolean {
-  const on = isNativeApp && opts.visible
+  const clear = usePageClear()
+  const on = isNativeApp && opts.visible && clear
   const { id, items, selected, tint } = opts
   const [, force] = useState(0)
   useFollow(id, ref, on, (f) => { void Glass.segmented({ ...f, id, items, selected, tint }).catch(() => {}) }, `${items.join('|')}#${selected}#${tint}`)

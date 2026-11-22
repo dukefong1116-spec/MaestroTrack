@@ -52,7 +52,7 @@ export default function Assignments({ m, sessions, onReview }: { m: Member; sess
       </div>
       {canSet && <AddFab id="assignment-add" label="New assignment" visible={!composing} onAdd={() => setComposing(true)} />}
       {composing && profile && <Composer teacherId={profile.uid} m={m} onDone={() => setComposing(false)} />}
-      {mine.length === 0 && !composing && <Empty mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
+      {mine.length === 0 && !composing && <Empty fill={395} mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
       {mine.map((a) => {
         const st = normaliseStatus(a.status)
         const [label, tone] = STATUS[st]

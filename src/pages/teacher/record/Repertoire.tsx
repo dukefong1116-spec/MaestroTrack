@@ -78,7 +78,7 @@ export default function Repertoire({ m }: { m: Member }) {
           ))}
         </div>
       )}
-      {items.length === 0 ? (linked && library && library.length > 0 ? null : <Empty mood="excited" title="A blank page of music">Pieces and skills you add here show their progress in the report.</Empty>) : (
+      {items.length === 0 ? (linked && library && library.length > 0 ? null : <Empty fill={335} mood="excited" title="A blank page of music">Pieces and skills you add here show their progress in the report.</Empty>) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-left text-[13.5px]">
             <thead><tr className="text-[12px]" style={{ color: 'var(--clay-dim)', background: 'var(--clay-head)' }}>

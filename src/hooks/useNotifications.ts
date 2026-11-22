@@ -10,6 +10,9 @@ import {
   applyNotifyPrefs, buildStudentNotifications, buildTeacherNotifications, unreadCount,
   type AppNotification,
 } from '@/lib/utils/notifications'
+import { useCalendar } from '@/hooks/useStudioData'
+import { addDays, dayKey } from '@/lib/studio/dates'
+import { lessonsNeedingNotes } from '@/lib/studio/notesDue'
 
 /**
  * The notification list for whoever is signed in.
@@ -73,6 +76,16 @@ export function useNotifications(): {
   const leagueSeen = profile?.leagueSeen
   const leagueOff = profile?.leagueOptOut
   const joinedAt = useJoinedAt(isTeacher ? undefined : uid, teacherId)
+  // A teacher's lessons of the last two days, for the note reminders.
+  const today = dayKey(new Date(now))
+  const recentLessons = useCalendar(addDays(today, -2), today)
+  const lessonNotes = useTeacherStore((s) => s.notes)
+  const notesDue = useMemo(() => isTeacher
+    ? lessonsNeedingNotes(recentLessons, lessonNotes, new Date(now)).map(({ item, endedAt }) => ({
+        key: item.key, title: item.title, endedAt,
+        to: item.rosterIds.length === 1 ? `/teacher/students/${encodeURIComponent(item.rosterIds[0])}?tab=lessons` : '/teacher/calendar',
+      }))
+    : [], [isTeacher, recentLessons, lessonNotes, now])
   const studioName = profile?.studioName
   const items = useMemo(() => {
     if (!uid) return []
@@ -80,7 +93,7 @@ export function useNotifications(): {
     // there is reading them.
     const all = isTeacher
       ? buildTeacherNotifications({
-          assignments, students, requests, options: { now },
+          assignments, students, requests, notesDue, options: { now },
           messages: teacherMessages.filter((m) => m.from === 'student' && m.createdAt > (threadsReadAt?.[m.studentId] ?? '')),
         })
       : buildStudentNotifications({
@@ -92,7 +105,7 @@ export function useNotifications(): {
     return applyNotifyPrefs(all, notify ?? {})
   }, [uid, isTeacher, assignments, students, requests, lessons, pieces, now, notify,
       teacherMessages, studentMessages, threadsReadAt, messagesReadAt, teacherId, teacherName,
-      leagueRoom, leagueResult, leagueSeen, leagueOff, joinedAt, studioName])
+      leagueRoom, leagueResult, leagueSeen, leagueOff, joinedAt, studioName, notesDue])
 
   const markAllRead = useCallback(() => {
     if (!uid) return
