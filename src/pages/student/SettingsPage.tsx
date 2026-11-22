@@ -1,6 +1,7 @@
 import { Check, ChevronLeft, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import { useStepBack } from '@/hooks/useStepBack'
 import { useAuth } from '@/hooks/useAuth'
 import { subscribeMyStudioRequest } from '@/lib/firebase/requests'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
@@ -13,7 +14,7 @@ import type { InstrumentType } from '@/types'
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
-  const navigate = useNavigate()
+  const stepBack = useStepBack('/student')
   // Only enough to label the row — the joining itself lives on its own
   // screen now.
   const [waiting, setWaiting] = useState(false)
@@ -43,7 +44,7 @@ export default function SettingsPage() {
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <button
           type="button"
-          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/student'))}
+          onClick={stepBack}
           aria-label="Back"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
           style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}

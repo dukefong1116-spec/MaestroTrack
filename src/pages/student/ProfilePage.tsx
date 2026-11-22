@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import type { InstrumentType, UserProfile } from '@/types'
+import { useStepBack } from '@/hooks/useStepBack'
 
 const schema = z.object({
   displayName: z.string().min(2, 'Use at least two characters.'),
@@ -82,6 +83,7 @@ function Note({ tone, children }: { tone: 'ok' | 'bad'; children: React.ReactNod
 
 export default function ProfilePage() {
   const { profile, user } = useAuth()
+  const stepBack = useStepBack('/student/settings')
   const { setProfile } = useAuthStore()
 
   const [saving, setSaving] = useState(false)
@@ -216,6 +218,7 @@ export default function ProfilePage() {
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to="/student/settings"
+          onClick={stepBack}
           aria-label="Back to Settings"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
           style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
