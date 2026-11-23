@@ -6,7 +6,7 @@ export const TEACHER_PAGES: { to: string; label: string; icon: LucideIcon; end?:
   { to: '/teacher/students', label: 'Students', icon: Users },
   { to: '/teacher/calendar', label: 'Calendar & Attendance', icon: CalendarDays },
   { to: '/teacher/review', label: 'To review', icon: ClipboardCheck },
-  { to: '/teacher/families', label: 'Families & Invoices', icon: Wallet },
+  { to: '/teacher/families', label: 'Billing', icon: Wallet },
   { to: '/teacher/reports', label: 'Reports', icon: LineChart },
 ]
 

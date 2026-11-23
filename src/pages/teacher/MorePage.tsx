@@ -28,7 +28,7 @@ export default function MorePage() {
   // Each row a solid icon tile, its name and a line of what is inside —
   // roomier than a plain list, and the same tile style as Today's figures.
   const rows = [
-    { label: 'Families & Invoices', sub: 'Billing, payments and family contacts', meta: due ? `${money(due)} due` : '', icon: ReceiptText, color: '#E0A12B', go: () => navigate('/teacher/families') },
+    { label: 'Billing', sub: 'Monthly invoices, payments and payment groups', meta: due ? `${money(due)} due` : '', icon: ReceiptText, color: '#E0A12B', go: () => navigate('/teacher/families') },
     { label: 'Messages', sub: 'Conversations with your students', meta: unread.size ? `${unread.size} new` : '', icon: MessagesSquare, color: '#3B9BD9', go: () => navigate('/teacher/messages') },
     { label: 'Reports', sub: 'Progress reports for any period', meta: '', icon: BarChart3, color: '#3DAE7C', go: () => navigate('/teacher/reports') },
     { label: 'Add a student', sub: 'Invite someone, or keep a record', meta: '', icon: UserRoundPlus, color: '#8B6BD6', go: () => setAdding(true) },

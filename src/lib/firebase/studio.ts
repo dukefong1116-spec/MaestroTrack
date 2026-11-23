@@ -190,6 +190,24 @@ export async function recordPayment(id: string, p: Payment): Promise<void> {
   await updateDoc(doc(db, 'invoices', id), { payments: arrayUnion(cleanForFirestore(p)), updatedAt: now() })
 }
 
+/** Several invoices at once (a month's worth): all saved, or none. */
+export async function createInvoices(list: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<void> {
+  const at = now()
+  const batch = writeBatch(db)
+  for (const data of list) {
+    batch.set(doc(collection(db, 'invoices')), { ...cleanForFirestore({ ...data, createdAt: at, updatedAt: at }), payments: data.payments, lines: data.lines.map((l) => cleanForFirestore(l)) })
+  }
+  await batch.commit()
+}
+
+/** One payment split over several invoices (see splitPayment): all saved, or none. */
+export async function recordPayments(parts: { id: string; payment: Payment }[]): Promise<void> {
+  const at = now()
+  const batch = writeBatch(db)
+  parts.forEach(({ id, payment }) => batch.update(doc(db, 'invoices', id), { payments: arrayUnion(cleanForFirestore(payment)), updatedAt: at }))
+  await batch.commit()
+}
+
 export async function markInvoicesReminded(ids: string[]): Promise<void> {
   const at = now()
   const batch = writeBatch(db)

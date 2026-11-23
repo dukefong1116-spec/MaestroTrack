@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useNotifications } from '@/hooks/useNotifications'
 import NotificationPanel from './NotificationPanel'
@@ -62,6 +63,12 @@ export default function NotificationBell({ label, floating, rail }: {
     const left = Math.min(r.right - PANEL_W, window.innerWidth - PANEL_W - GAP)
     setAnchor({ top: r.bottom + 8, left: Math.max(GAP, left) })
   }, [])
+
+  // Going to another page closes it, however you got there (the iPhone
+  // app's own tab bar is not a tap on this page, so the outside-tap below
+  // never hears it).
+  const { pathname } = useLocation()
+  useEffect(() => { setOpen(false) }, [pathname])
 
   useEffect(() => {
     if (!open) return

@@ -61,10 +61,12 @@ export async function removeStudentFromStudio(studentId: string): Promise<void> 
  * old name (or "Your studio"). The rules let a teacher change exactly
  * these two fields on their own students' profiles, and nothing else.
  */
-export async function refreshStudioName(studentId: string, studioName: string, teacherName: string): Promise<void> {
+export async function refreshStudioName(studentId: string, studioName: string, teacherName: string, teacherAvatar?: string): Promise<void> {
   await updateDoc(doc(db, USERS, studentId), {
     studioName: studioName.slice(0, 120),
     teacherName: teacherName.slice(0, 120),
+    // The teacher's photo too, so the student sees whose studio it is.
+    ...(teacherAvatar !== undefined ? { teacherAvatar } : {}),
     updatedAt: new Date().toISOString(),
   })
 }

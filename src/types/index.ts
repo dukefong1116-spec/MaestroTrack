@@ -163,6 +163,8 @@ export interface UserProfile {
    *  studio they are in without reading the teacher's profile — which
    *  the rules do not permit. */
   teacherName?: string
+  /** The teacher's profile photo, copied here for the same reason. */
+  teacherAvatar?: string
   createdAt: string
   updatedAt: string
   reminderTime?: string
@@ -782,13 +784,26 @@ export interface LessonNote {
   updatedAt: string
 }
 
-export interface InvoiceLine { rosterId: string; text: string; amountCents: number }
-export interface Payment { at: string; amountCents: number; method: 'cash' | 'card' | 'transfer' | 'other'; note?: string }
+export interface InvoiceLine {
+  rosterId: string
+  text: string
+  /** Negative for a credit. */
+  amountCents: number
+  /** What the line is: lessons charged, a credit, extras from last month, or added by hand. */
+  kind?: 'lessons' | 'group' | 'credit' | 'extra' | 'manual'
+  /** The lessons (calendar keys) this line charges or credits, so next month can settle up. */
+  keys?: string[]
+}
+export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'venmo' | 'zelle' | 'check' | 'other'
+export interface Payment { at: string; amountCents: number; method: PaymentMethod; note?: string }
 
 export interface Invoice {
   id: string
   teacherId: string
-  familyId: string
+  /** The student this invoice is for. Absent on the older family invoices. */
+  rosterId?: string
+  /** The payment group (or, on older invoices, the family) it belongs to. */
+  familyId?: string
   /** 'yyyy-MM' */
   period: string
   lines: InvoiceLine[]

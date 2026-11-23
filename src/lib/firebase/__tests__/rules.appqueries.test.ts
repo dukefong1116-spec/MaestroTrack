@@ -596,6 +596,13 @@ describe("the teacher's writes", () => {
     asTeacher()
     await assertSucceeds(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen'))
   })
+
+  it("refreshStudioName — the teacher's photo, only as a link to this app's storage", async () => {
+    asTeacher()
+    await assertSucceeds(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen', 'https://firebasestorage.googleapis.com/v0/b/x/o/avatars%2Ft%2Fprofile?alt=media'))
+    await assertSucceeds(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen', ''))
+    await assertFails(teacher.refreshStudioName(ANA, 'Chen Music', 'Dr Chen', 'https://evil.example/pixel.gif'))
+  })
 })
 
 describe('the push tables are the server’s alone', () => {

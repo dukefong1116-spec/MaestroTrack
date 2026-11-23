@@ -75,12 +75,17 @@ export default function StudioPage() {
       <div className="flex flex-1 flex-col overflow-hidden" style={{ background: 'var(--clay-surface)', borderRadius: 'var(--clay-r-md)', border: '1px solid var(--clay-line)' }}>
         {/* Who */}
         <div className="flex items-center gap-3 px-5 py-4">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[17px] font-bold"
-            style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }}
-          >
-            {initial}
-          </span>
+          {/* The teacher's photo, or the studio's initial when they have none. */}
+          {profile.teacherAvatar ? (
+            <img src={profile.teacherAvatar} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" style={{ background: 'var(--clay-purple-bg)' }} />
+          ) : (
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[17px] font-bold"
+              style={{ background: 'var(--clay-purple-bg)', color: 'var(--clay-purple-fg)' }}
+            >
+              {initial}
+            </span>
+          )}
           <div className="min-w-0">
             <p className="truncate text-[16px] font-bold" style={{ color: 'var(--clay-ink)' }}>{studioName}</p>
             <p className="truncate text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>

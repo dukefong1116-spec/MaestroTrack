@@ -94,6 +94,13 @@ describe('families, settings, invoices', () => {
     await assertFails(updateDoc(doc(as(T2), 'invoices', 'i1'), { totalCents: 0 }))
     await assertFails(updateDoc(doc(as(T), 'invoices', 'i1'), { teacherId: T2 }))
   })
+  it('a student never sees an invoice, not even their own', async () => {
+    await assertSucceeds(setDoc(doc(as(T), 'invoices', 'i2'), { teacherId: T, rosterId: 'r-ana', period: '2026-12', totalCents: 14000, payments: [] }))
+    await assertFails(getDoc(doc(as(ANA), 'invoices', 'i2')))
+    await assertFails(getDocs(query(collection(as(ANA), 'invoices'), where('rosterId', '==', 'r-ana'))))
+    await assertFails(getDocs(query(collection(as(ANA), 'invoices'), where('teacherId', '==', T))))
+    await assertSucceeds(getDocs(query(collection(as(T), 'invoices'), where('teacherId', '==', T))))
+  })
 })
 
 describe('calendar', () => {
