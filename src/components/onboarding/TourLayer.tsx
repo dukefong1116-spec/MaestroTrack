@@ -39,8 +39,12 @@ const TOUR_MOOD: Partial<Record<ShowId, FemataMood>> = {
 interface Box { top: number; left: number; width: number; height: number }
 
 const PAD = 6
-/** Everything but the lit element fades back into the page's own colour. */
-const FADE = 'color-mix(in srgb, var(--clay-page) 80%, transparent)'
+/** Tab-bar and side-menu items sit side by side: a tight hole and a small
+ *  ripple, so the light stays on the one item and off its neighbours. */
+const isNav = (target?: string) => !!target && (target.startsWith('tab-') || target.startsWith('rail-'))
+/** Everything but the lit element fades back into the page's own colour —
+ *  enough to set it apart, not so much the page goes dark. */
+const FADE = 'color-mix(in srgb, var(--clay-page) 62%, transparent)'
 const MISSING_GRACE_MS = 4000
 /** Room between the lit element and the bubble's arrow. */
 const GAP = 14
@@ -53,10 +57,11 @@ const DRIFT = { duration: 0.55, ease: EASE_OUT, delay: 0.26 } as const
 /** The first matching element that is actually on screen — the sidebar
  *  and the bottom tabs carry the same names, and only one is visible. */
 function measure(target: string): Box | null {
+  const pad = isNav(target) ? 1 : PAD
   for (const el of document.querySelectorAll<HTMLElement>(`[data-coach="${target}"]`)) {
     const r = el.getBoundingClientRect()
     if (r.width === 0 && r.height === 0) continue
-    return { top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 }
+    return { top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2 }
   }
   return null
 }
@@ -300,7 +305,7 @@ export default function TourLayer() {
         <>
           {/* And a ripple, so the eye finds it. */}
           <div
-            className="tour-ripple fixed"
+            className={`${isNav(show.target) ? 'tour-ripple-sm' : 'tour-ripple'} fixed`}
             style={{ top: box.top, left: box.left, width: box.width, height: box.height, borderRadius: 'var(--clay-r-md)' }}
           />
         </>
@@ -364,13 +369,13 @@ export default function TourLayer() {
             <div className={`relative flex items-center justify-end gap-2 ${show.big ? 'mt-4' : 'mt-3'}`}>
               {/* Where they are in it: a short journey, not a string of pop-ups. */}
               {show.progress && (
-                <span className="mr-auto flex items-center gap-1.5" aria-label={`Step ${show.progress[0]} of ${show.progress[1]}`}>
+                <span className="mr-auto flex min-w-0 items-center gap-1" aria-label={`Step ${show.progress[0]} of ${show.progress[1]}`}>
                   {Array.from({ length: show.progress[1] }, (_, n) => (
                     <span
                       key={n}
-                      className="h-1.5 rounded-full transition-all"
+                      className="h-[5px] rounded-full transition-all"
                       style={{
-                        width: n + 1 === show.progress![0] ? 14 : 6,
+                        width: n + 1 === show.progress![0] ? 12 : 5,
                         background: n < show.progress![0] ? 'var(--clay-accent)' : 'var(--clay-line)',
                       }}
                     />
@@ -381,7 +386,7 @@ export default function TourLayer() {
                 <button
                   type="button"
                   onClick={() => { if (teacher) return setTeacherTour('done'); setSub(null); setTour('done') }}
-                  className={`${show.progress ? '' : 'mr-auto '}px-2 py-1.5 text-[13px] font-medium`}
+                  className={`${show.progress ? '' : 'mr-auto '}shrink-0 whitespace-nowrap px-2 py-1.5 text-[13px] font-medium`}
                   style={{ color: 'var(--clay-dim)' }}
                 >
                   Skip tour
@@ -400,7 +405,7 @@ export default function TourLayer() {
                     if (fallback && TEACHER_FALLBACK_TO[show.id]) return navigate(TEACHER_FALLBACK_TO[show.id]!)
                     advance.current(show.id)
                   }}
-                  className={`${show.big ? 'px-5 py-2.5 text-[15px]' : 'px-4 py-2 text-[14px]'} font-semibold`}
+                  className={`shrink-0 whitespace-nowrap ${show.big ? 'px-4 py-2.5 text-[15px]' : 'px-4 py-2 text-[14px]'} font-semibold`}
                   style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)', borderRadius: 'var(--clay-r-sm)' }}
                 >
                   {show.button ?? 'Continue'}

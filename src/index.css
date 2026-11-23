@@ -353,8 +353,14 @@ input[type="range"] {
   to   { box-shadow: 0 0 0 16px color-mix(in srgb, var(--clay-accent) 0%, transparent); }
 }
 .tour-ripple { animation: tour-ripple 1.4s ease-out infinite; }
+/* A tab or side-menu item: the pulse stays close, off its neighbours. */
+@keyframes tour-ripple-sm {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--clay-accent) 55%, transparent); }
+  to   { box-shadow: 0 0 0 5px color-mix(in srgb, var(--clay-accent) 0%, transparent); }
+}
+.tour-ripple-sm { animation: tour-ripple-sm 1.4s ease-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .tour-ripple { animation: none; box-shadow: 0 0 0 3px var(--clay-accent); }
+  .tour-ripple, .tour-ripple-sm { animation: none; box-shadow: 0 0 0 3px var(--clay-accent); }
 }
 
 /* Weekly league trophies: the metronome swings, the tuning fork hums,

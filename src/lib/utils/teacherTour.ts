@@ -94,51 +94,51 @@ export function whatToShowTeacher(i: TeacherTourInput): Decision {
       case 'welcome': return step({
         id: 't-welcome', button: "Let's go", big: true,
         title: `Hi ${i.firstName}! 👋`,
-        text: "I'm Femata, your studio buddy 🎵 Let me show you around your studio — every page, one tap at a time.",
+        text: "I'm Femata 🎵 Let me show you around your studio.",
       })
       case 'today': return step({
         id: 't-today', target: 'teacher-today', button: 'Next',
-        text: 'This is Today ☀️ your lessons, work to review and what you are owed, at a glance.',
+        text: 'This is Today ☀️ lessons, reviews and payments at a glance.',
       })
       case 'students': return step({
         id: 't-students', target: tab('students'), mustTap: true,
-        text: 'Your students live here 👥 Tap Students.',
+        text: 'Your students 👥 Tap Students.',
       })
       case 'add-student': return step({
         id: 't-add-student', target: 'add-student', mustTap: true,
-        text: 'Add a student here ➕ Invite them to the app, or keep them here without it. Tap Add student — you can close it again.',
+        text: 'Add students here ➕ Tap Add student.',
       })
       case 'calendar': return step({
         id: 't-calendar', target: tab('calendar'), mustTap: true,
-        text: 'Now your week 📅 Tap Calendar.',
+        text: 'Your week 📅 Tap Calendar.',
       })
       case 'new-lesson': return step({
         id: 't-new-lesson', target: 'calendar-add', mustTap: true,
-        text: 'Add lessons here, weekly or just once 🗓️ Tap + — you can close it again.',
+        text: 'Add lessons here 🗓️ Tap +.',
       })
       case 'lessons': return step({
         id: 't-lessons', button: 'Next',
-        text: 'Tap any lesson to take attendance and write lesson notes 📝 Drag it to move it, or its bottom edge to change its length.',
+        text: 'Tap a lesson for attendance and notes 📝 Drag it to move it.',
       })
       case 'review': return step({
         id: 't-review', target: tab('review'), mustTap: true,
-        text: 'Work your students hand in comes here ✅ Tap Review.',
+        text: 'Handed-in work ✅ Tap Review.',
       })
       case 'review-tip': return step({
         id: 't-review-tip', target: 'review-status', button: 'Next',
-        text: 'Switch between work to review, sent back and approved. Tap a row to listen, comment and approve 🎧',
+        text: 'Filter by status. Tap a row to listen and approve 🎧',
       })
       case 'billing': return i.compact
-        ? step({ id: 't-more', target: 'tab-more', mustTap: true, text: 'Billing, reports and settings are under More ⋯ Tap More.' })
-        : step({ id: 't-billing', target: 'rail-billing', mustTap: true, text: 'Billing is here 💳 Tap Billing.' })
+        ? step({ id: 't-more', target: 'tab-more', mustTap: true, text: 'Billing and settings ⋯ Tap More.' })
+        : step({ id: 't-billing', target: 'rail-billing', mustTap: true, text: 'Billing 💳 Tap Billing.' })
       case 'billing-tip': return step({
         id: 't-billing-tip', button: 'Next',
-        text: 'Each month, invoice every student for their lessons in one tap 💳 Set your prices first, in Settings › Lessons and prices.',
+        text: 'Invoice everyone in one tap 💳 Set prices first in Settings › Lessons and prices.',
       })
       case 'finish': return step({
         id: 't-finish', button: "Let's teach", big: true,
         title: "You're all set! 🎉",
-        text: "That's your studio. I'll be around if you need me — happy teaching! 🎶",
+        text: 'Happy teaching! 🎶',
       })
     }
   }
@@ -149,7 +149,7 @@ export function whatToShowTeacher(i: TeacherTourInput): Decision {
     kind: 'show',
     show: {
       id: 't-record', button: 'Got it', block: true,
-      text: "Everything about one student lives here 🎻 lessons and notes, assignments and repertoire. Tap a lesson to write its notes.",
+      text: 'One student, everything in one place 🎻 Tap a lesson to write notes.',
     },
   }
   return NONE
