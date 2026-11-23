@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import Button from './Button'
+import { useHoldSheet } from '@/stores/momentStore'
 
 /**
  * "Are you sure?" for something that cannot be undone.
@@ -24,6 +25,7 @@ export default function ConfirmSheet({
   onCancel: () => void
   onConfirm: () => void
 }) {
+  useHoldSheet(open)
   return (
     <AnimatePresence>
       {open && (

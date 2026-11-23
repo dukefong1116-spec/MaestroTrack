@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn'
 import { isNativeApp } from '@/lib/native'
 import { useAppNativeTabs } from './useAppNativeTabs'
 import { bootReady, isBootFinished, onBootFinished } from '@/lib/boot'
-import { useMomentStore } from '@/stores/momentStore'
+import { useMomentStore, useSheetStore } from '@/stores/momentStore'
 
 /**
  * The teacher's rail, tab bar and message dock, loaded only for teachers:
@@ -110,10 +110,12 @@ export default function AppLayout({ tabs }: { tabs?: Record<string, ReactNode> }
   // …and steps aside while a full-screen moment (a badge, a streak goal)
   // is up: Apple's bar sits above the page and would cover its buttons.
   const momentOpen = useMomentStore((s) => s.open) > 0
+  // A sheet covers the tab bar, as Apple's own do.
+  const sheetOpen = useSheetStore((s) => s.open) > 0
   // …and waits for the launch screen to zoom away before it comes in.
   const [launched, setLaunched] = useState(isBootFinished)
   useEffect(() => (launched ? undefined : onBootFinished(() => setLaunched(true))), [launched])
-  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile && !momentOpen && launched)
+  useAppNativeTabs(teacher, inStudio, here, showTabs && drawn && !!profile && !momentOpen && !sheetOpen && launched)
 
   return (
     <div

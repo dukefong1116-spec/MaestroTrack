@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Download, Link2, Share2, X } from 'lucide-react'
+import { useHoldSheet } from '@/stores/momentStore'
 import {
   buildShareFields, buildShareText, DEFAULT_SHARE_OPTIONS,
   type ShareOptions,
@@ -35,6 +36,8 @@ export default function ShareSheet({
   const [error, setError] = useState<string | null>(null)
   const [publishing, setPublishing] = useState(false)
   const { user } = useAuth()
+  // Open whenever it is shown: the iPhone tab bar steps aside meanwhile.
+  useHoldSheet(true)
 
   // Held as a ref as well as state: the Share button needs it synchronously.
   const blobRef = useRef<Blob | null>(null)

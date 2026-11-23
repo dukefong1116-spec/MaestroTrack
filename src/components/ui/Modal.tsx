@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import { useHoldCover } from '@/stores/momentStore'
+import { useHoldCover, useHoldSheet } from '@/stores/momentStore'
 
 interface ModalProps {
   open: boolean
@@ -13,6 +13,7 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   useHoldCover(open)
+  useHoldSheet(open)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)

@@ -13,6 +13,7 @@ import {
 import { TierBackdrop, TierTrophy } from './TierArt'
 import { themeFor } from '@/lib/league/themes'
 import Confetti from '@/components/celebration/Confetti'
+import { useHoldMoment } from '@/stores/momentStore'
 import type { InstrumentType, LeagueResult } from '@/types'
 
 /**
@@ -43,6 +44,8 @@ const NOTES = Array.from({ length: 14 }, (_, i) => ({
 }))
 
 export default function Reveal({ result }: { result: LeagueResult }) {
+  // Full screen: the iPhone tab bar steps aside, and other moments wait.
+  useHoldMoment(true)
   const { profile } = useAuth()
   const navigate = useNavigate()
   const reduced = usePrefersReducedMotion()

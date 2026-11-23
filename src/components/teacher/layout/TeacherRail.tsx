@@ -40,7 +40,9 @@ export default function TeacherRail() {
       style={{ background: 'var(--clay-surface)', borderRight: '1px solid var(--clay-line)' }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onFocus={() => setFocus(true)}
+      // Kept open by keyboard focus only: a click also focuses the link it
+      // lands on, which held the rail open after the mouse had left.
+      onFocus={(e) => setFocus(e.target.matches(':focus-visible'))}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocus(false) }}
     >
       <div
