@@ -31,8 +31,8 @@ export default function StartPage() {
       <div className="flex flex-col gap-2">
         <BigButton onClick={() => navigate('/start/setup')}>GET STARTED</BigButton>
         <BigButton kind="ghost" onClick={() => navigate('/login')}>I HAVE AN ACCOUNT</BigButton>
-        <Link to="/signup" className="mt-1 text-center text-[13px] font-semibold" style={{ color: STAGE.muted }}>
-          Teaching? Create a studio account
+        <Link to="/start/studio" className="mt-1 text-center text-[13px] font-semibold" style={{ color: STAGE.sky }}>
+          I teach — open a studio ›
         </Link>
       </div>
     </Stage>

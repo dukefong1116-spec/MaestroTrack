@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { isNativeApp } from '@/lib/native'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -211,12 +211,20 @@ export default function SetupPage() {
 }
 
 /* ── What do you play? ────────────────────────────────────── */
-function InstrumentStep({ a, set, onNext, canGo }: { a: Answers; set: (p: Partial<Answers>) => void; onNext: () => void; canGo: boolean }) {
+/** Also the teacher's "What do you teach?" (TeacherSetupPage), with its own words. */
+export function InstrumentStep({ a, set, onNext, canGo, title = 'What do you play?', hint = 'Pick everything you play. The first one is your main instrument.' }: {
+  a: Pick<Answers, 'picked' | 'other'>
+  set: (p: Partial<Pick<Answers, 'picked' | 'other'>>) => void
+  onNext: () => void
+  canGo: boolean
+  title?: string
+  hint?: string
+}) {
   const toggle = (id: string) => set({ picked: a.picked.includes(id) ? a.picked.filter((x) => x !== id) : [...a.picked, id] })
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <h2 className="text-[26px] font-black">What do you play?</h2>
-      <p className="mb-2 mt-1 text-[14px] font-semibold" style={{ color: STAGE.muted }}>Pick everything you play. The first one is your main instrument.</p>
+      <h2 className="text-[26px] font-black">{title}</h2>
+      <p className="mb-2 mt-1 text-[14px] font-semibold" style={{ color: STAGE.muted }}>{hint}</p>
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-3">
         {INSTRUMENT_GROUPS.map((g) => (
           <div key={g.title}>
@@ -405,7 +413,8 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
 }
 
 /* ── Welcome to Femata! ───────────────────────────────────── */
-function WelcomeBurst({ onDone }: { onDone: () => void }) {
+/** Also the teacher's "your studio is open" (TeacherSetupPage), with its own words. */
+export function WelcomeBurst({ onDone, title }: { onDone: () => void; title?: ReactNode }) {
   const done = useRef(onDone)
   done.current = onDone
   useEffect(() => { const t = setTimeout(() => done.current(), 2600); return () => clearTimeout(t) }, [])
@@ -427,7 +436,7 @@ function WelcomeBurst({ onDone }: { onDone: () => void }) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.45, type: 'spring', stiffness: 300, damping: 20 }}
       >
-        WELCOME TO<br />FEMATA!
+        {title ?? <>WELCOME TO<br />FEMATA!</>}
       </motion.h2>
       <motion.div
         className="grid h-[190px] w-[190px] place-items-center rounded-full"
@@ -445,7 +454,8 @@ function WelcomeBurst({ onDone }: { onDone: () => void }) {
 }
 
 /* ── The widget ───────────────────────────────────────────── */
-function WidgetStep({ onDone }: { onDone: () => void }) {
+/** Also the teacher's, with their own words and widget (TeacherSetupPage). */
+export function WidgetStep({ onDone, ask = "I'll cheer you on from your Home Screen!", preview }: { onDone: () => void; ask?: string; preview?: ReactNode }) {
   const [how, setHow] = useState(false)
   const steps = [
     'Touch and hold an empty spot on your Home Screen.',
@@ -454,12 +464,16 @@ function WidgetStep({ onDone }: { onDone: () => void }) {
   ]
   return (
     <div className="flex flex-1 flex-col">
-      <Ask mood="excited">I'll cheer you on from your Home Screen!</Ask>
+      <Ask mood="excited">{ask}</Ask>
       {!how ? (
         <div className="mx-auto mt-4 grid w-[230px] grid-cols-4 gap-3 rounded-[34px] p-5" style={{ background: STAGE.ink3 }}>
           <div className="relative col-span-2 row-span-2 flex aspect-square flex-col overflow-hidden rounded-[18px] bg-white p-2.5 text-[12px] font-black" style={{ color: '#14202E' }}>
-            <span className="text-[20px]" style={{ color: '#F2852A' }}>🔥 1</span>
-            <span className="leading-tight">Ready to practise?</span>
+            {preview ?? (
+              <>
+                <span className="text-[20px]" style={{ color: '#F2852A' }}>🔥 1</span>
+                <span className="leading-tight">Ready to practise?</span>
+              </>
+            )}
             <span className="absolute -bottom-1 -right-1"><Femata mood="sleepy" size={54} /></span>
           </div>
           {Array.from({ length: 8 }, (_, k) => <div key={k} className="aspect-square rounded-[12px]" style={{ background: '#3A4866' }} />)}

@@ -87,7 +87,11 @@ export default function TourLayer() {
     tour: teacherTour,
     seen: teacherOnboarding?.seen,
     path: pathname,
-    firstName: (profile?.displayName ?? '').trim().split(/\s+/)[0] || 'there',
+    // "Ms Harper" is greeted whole; "Duke Fong" by "Duke".
+    firstName: (() => {
+      const words = (profile?.displayName ?? '').trim().split(/\s+/).filter(Boolean)
+      return (/^(ms|mrs|mr|miss|dr|prof)\.?$/i.test(words[0] ?? '') ? words.join(' ') : words[0]) || 'there'
+    })(),
     compact,
   }) : null), [teacher, teacherTour, teacherOnboarding?.seen, pathname, profile?.displayName, compact])
 

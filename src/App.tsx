@@ -49,6 +49,7 @@ const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
 const StartPage = lazy(() => import('@/pages/onboarding/StartPage'))
 const StreakGoalHost = lazy(() => import('@/components/streak/StreakGoalHost'))
 const SetupPage = lazy(() => import('@/pages/onboarding/SetupPage'))
+const TeacherSetupPage = lazy(() => import('@/pages/onboarding/TeacherSetupPage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
@@ -299,6 +300,7 @@ function AppRoutes() {
           Get started. /signup stays for teachers (and old links). */}
       <Route path="/start" element={<StartPage />} />
       <Route path="/start/setup" element={<SetupPage />} />
+      <Route path="/start/studio" element={<TeacherSetupPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       {/* A teacher's invitation. Public on purpose: the person it was sent

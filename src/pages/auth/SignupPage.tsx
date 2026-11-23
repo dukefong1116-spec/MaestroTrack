@@ -145,7 +145,8 @@ export default function SignupPage() {
                   {ROLES.map(({ role: r, title, line }) => (
                     <button
                       key={r}
-                      onClick={() => { setRole(r); setStep('info') }}
+                      // Teachers open their studio on Femata's stage now (TeacherSetupPage).
+                      onClick={() => { if (r === 'teacher') { navigate('/start/studio'); return } setRole(r); setStep('info') }}
                       className="group flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200"
                       style={{ borderColor: 'var(--clay-line)', color: 'var(--clay-ink)' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--clay-accent)'; (e.currentTarget as HTMLElement).style.background = 'var(--clay-accent-soft)' }}
