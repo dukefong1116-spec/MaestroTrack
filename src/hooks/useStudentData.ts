@@ -18,11 +18,21 @@ import {
 import { studentSlots } from '@/lib/studio/studentLessons'
 import type { LessonOccurrence, LessonSlot, StudioLesson } from '@/types'
 
+/** Whose data the store holds, across mounts of this hook. */
+let lastUser: string | undefined
+
 export function useStudentData(userId: string | undefined) {
   const { setSessions, setPieces, setPerformances, setRecordings, setMessages, setLessons, setAssignments, resetUserData } = usePracticeStore()
 
   useEffect(() => {
-    resetUserData()
+    // Cleared only when the account changes (signing out, or someone else
+    // signing in) — never because a page mounted. It used to run on every
+    // mount, and a session opened straight from a widget or link started
+    // its clock a moment before this wiped it back to zero.
+    if (lastUser !== userId) {
+      if (lastUser !== undefined) resetUserData()
+      lastUser = userId
+    }
     if (!userId) return
     let active = true
     const guarded = <T,>(set: (value: T) => void) => (value: T) => { if (active) set(value) }

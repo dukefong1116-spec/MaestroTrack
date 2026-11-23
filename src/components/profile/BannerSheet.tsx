@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAuthStore } from '@/stores/authStore'
 import { useLeagueStore } from '@/stores/leagueStore'
 import { AVATAR_ACCEPT_ATTR, removeBanner, setBannerColor, uploadBanner } from '@/lib/firebase/avatar'
+import ImageCropper from './ImageCropper'
 
 /**
  * Choosing the strip behind your profile photo: a picture of your own, or
@@ -35,6 +36,8 @@ export default function BannerSheet({ open, onClose }: { open: boolean; onClose:
     }, 600)
   }
 
+  // Cropped first, to the banner's fixed wide shape; the crop is uploaded.
+  const [cropping, setCropping] = useState<File | null>(null)
   const upload = async (file: File | undefined) => {
     if (!file) return
     setBusy(true)
@@ -74,7 +77,17 @@ export default function BannerSheet({ open, onClose }: { open: boolean; onClose:
           <ImageUp size={18} aria-hidden="true" />
         </span>
         <span className="flex-1">{busy ? 'Uploading…' : 'Upload a picture'}</span>
-        <input type="file" accept={AVATAR_ACCEPT_ATTR} className="sr-only" disabled={busy} onChange={(e) => { void upload(e.target.files?.[0]); e.target.value = '' }} />
+        <input type="file" accept={AVATAR_ACCEPT_ATTR} className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) setCropping(f) }} />
+        {cropping && (
+          <ImageCropper
+            file={cropping}
+            aspect={2}
+            outputWidth={1600}
+            title="Move and zoom your banner"
+            onCancel={() => setCropping(null)}
+            onDone={(f) => { setCropping(null); void upload(f) }}
+          />
+        )}
       </label>
       <label className={row} style={{ color: 'var(--clay-ink)', borderTop: '1px solid var(--clay-line)' }}>
         <span className="h-9 w-9 rounded-[10px]" style={{ background: colour, border: '1px solid var(--clay-line)' }} aria-hidden="true" />

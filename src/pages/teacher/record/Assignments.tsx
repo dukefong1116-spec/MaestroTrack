@@ -48,11 +48,13 @@ export default function Assignments({ m, sessions, onReview }: { m: Member; sess
         <p className="flex-1 text-[13px]" style={{ color: 'var(--clay-dim)' }}>
           {m.onApp ? `${first} sees these in the app, and hands work in there.` : `${first} isn’t on the app yet: these are kept here and become theirs when they join. Check them off in the lesson.`}
         </p>
-        {canSet && composing && <Btn kind="soft" onClick={() => setComposing(false)}>Cancel</Btn>}
       </div>
       {canSet && <AddFab id="assignment-add" label="New assignment" visible={!composing} onAdd={() => setComposing(true)} />}
-      {composing && profile && <Composer teacherId={profile.uid} m={m} onDone={() => setComposing(false)} />}
-      {mine.length === 0 && !composing && <Empty fill={395} mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
+      {/* A window over the page, like adding a piece on the student side. */}
+      <Modal open={composing && !!profile} onClose={() => setComposing(false)} title={`New assignment for ${first}`}>
+        {profile && <Composer teacherId={profile.uid} m={m} onDone={() => setComposing(false)} />}
+      </Modal>
+      {mine.length === 0 && <Empty fill={395} mood="focused" title="No assignments yet">Give one and practice gets a plan to follow.</Empty>}
       {mine.map((a) => {
         const st = normaliseStatus(a.status)
         const [label, tone] = STATUS[st]
@@ -132,7 +134,7 @@ function Composer({ teacherId, m, onDone }: { teacherId: string; m: Member; onDo
   }
 
   return (
-    <div className="space-y-3 px-5 py-4 sm:px-6" style={{ background: 'var(--clay-bg)', borderBottom: '1px solid var(--clay-line)' }}>
+    <div className="space-y-3">
       <div className="flex gap-2">
         {([['task', 'Task', 'handed in once'], ['daily', 'Daily practice', 'minutes every day']] as const).map(([id, label, hint]) => (
           <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)} className="flex-1 rounded-xl px-3 py-2 text-left"

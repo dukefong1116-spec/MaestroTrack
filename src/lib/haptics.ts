@@ -129,12 +129,28 @@ function toVibration(evs: Ev[]): number[] {
   return out
 }
 
+/**
+ * Every pattern played firmer than written: a floor lifts the light ticks
+ * so they are clearly felt, and the rest scale up to full strength, so
+ * each pattern keeps its shape (a purr still softer than a crack), just
+ * stronger. Rumbles a touch longer too.
+ */
+const FLOOR = 0.4
+function stronger(evs: Ev[]): Ev[] {
+  return evs.map((e) => ({
+    ...e,
+    i: Math.min(1, FLOOR + e.i * (1 - FLOOR) * 1.25),
+    s: Math.min(1, e.s + 0.1),
+    ...(e.d ? { d: e.d * 1.2 } : {}),
+  }))
+}
+
 /** Play a moment's feel. Never throws, never waits. */
 export function haptic(name: HapticName) {
   if (!enabled) return
   const takes = PATTERNS[name] as Take[]
   const take = takes[Math.floor(Math.random() * takes.length)]
-  const events = typeof take === 'function' ? take() : take
+  const events = stronger(typeof take === 'function' ? take() : take)
   try {
     if (isNativeApp) void Native.play({ events }).catch(() => {})
     else if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') navigator.vibrate(toVibration(events))

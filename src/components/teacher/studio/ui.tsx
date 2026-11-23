@@ -139,7 +139,9 @@ export function Btn({
   kind = 'soft', children, className, ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { kind?: BtnKind }) {
   const style: React.CSSProperties =
-    kind === 'primary' ? { background: 'var(--clay-accent-ink)', color: '#fff' }
+    // Text in the page's own colour: white on the deep blue in light mode,
+    // black on the pale blue in dark mode (white on it was unreadable).
+    kind === 'primary' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-page)' }
       : kind === 'soft' ? { background: 'var(--clay-bg)', color: 'var(--clay-ink)' }
         : kind === 'quiet' ? { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }
           : { background: 'transparent', color: 'var(--clay-accent-ink)', paddingLeft: 2, paddingRight: 2 }

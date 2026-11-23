@@ -35,6 +35,8 @@ const EMPTY = {
 
 /** The status tabs, in order: value and name. */
 const FILTERS = [['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const
+/** On a phone: the three statuses in a switch, with "All" beside it. */
+const PHONE_FILTERS = FILTERS.slice(0, 3)
 
 export default function ReviewPage() {
   const all = useTeacherStore((s) => s.assignments)
@@ -91,17 +93,18 @@ export default function ReviewPage() {
 
   const shown = rows.map((r) => r.a.id)
   const chosen = shown.filter((id) => sel.has(id))
-  // In the iPhone app the phone's status bar is Apple's own glass segmented
-  // control (see nativeGlass), so the selection slides and magnifies under
-  // a dragging finger like the tab bar does.
+  // In the iPhone app the phone's status switch is Apple's own glass
+  // segmented control (see nativeGlass), so the selection slides and
+  // magnifies under a dragging finger like the tab bar does. With "All"
+  // on, none of its three is chosen (-1).
   const statusRef = useRef<HTMLDivElement>(null)
   const nativeStatus = useNativeSegmented(statusRef, {
     id: 'review-status',
-    items: FILTERS.map(([f, name]) => `${name} ${count(f)}`),
-    selected: FILTERS.findIndex(([f]) => f === filter),
+    items: PHONE_FILTERS.map(([f, name]) => `${name} ${count(f)}`),
+    selected: PHONE_FILTERS.findIndex(([f]) => f === filter),
     tint: '#1F8FD1',
-    visible: chosen.length === 0 && !reviewing,
-  }, (i) => { setFilter(FILTERS[i][0]); setSel(new Set()) })
+    visible: !reviewing,
+  }, (i) => { setFilter(PHONE_FILTERS[i][0]); setSel(new Set()) })
   const toggle = (id: string) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
 
   async function bulk(verdict: 'approved' | 'returned') {
@@ -120,29 +123,42 @@ export default function ReviewPage() {
 
   return (
     <StudioPage>
-      {/* On a phone the status tabs live at the bottom, in reach of a
-          thumb, as a glass bar above the tab bar; the selection pill takes
-          their place while rows are ticked. On a computer they stay up top. */}
-      {chosen.length === 0 && (
-        <div ref={statusRef} aria-hidden={nativeStatus || undefined} className="glass fixed inset-x-3 z-30 rounded-[18px] p-1 lg:hidden" style={{ bottom: 'calc(88px + env(safe-area-inset-bottom))', visibility: nativeStatus ? 'hidden' : undefined }}>
-          <Segmented
-            label="Status"
-            className="grid w-full grid-cols-4"
-            value={filter}
-            onChange={(v) => { setFilter(v); setSel(new Set()) }}
-            options={([['needs', 'To review'], ['back', 'Sent back'], ['approved', 'Approved'], ['all', 'All']] as const).map(([value, name]) => ({
-              value,
-              label: (
-                <span className="flex flex-col items-center py-1 leading-tight">
-                  <span className="whitespace-nowrap text-[12.5px]">{name}</span>
-                  <span className="text-[15px] font-bold tabular-nums">{count(value)}</span>
-                </span>
-              ),
-            }))}
-          />
-        </div>
-      )}
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3 px-5 pb-3 pt-1 sm:px-6 lg:py-5" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+        {/* Phone: a three-way switch at the top, "All" beside it. */}
+        <div className="flex w-full items-center gap-2 lg:hidden">
+          <div ref={statusRef} role="group" aria-label="Status" aria-hidden={nativeStatus || undefined} className="glass grid min-w-0 flex-1 grid-cols-3 p-1" style={{ borderRadius: 999, visibility: nativeStatus ? 'hidden' : undefined }}>
+            {PHONE_FILTERS.map(([value, name]) => {
+              const on = filter === value
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={on}
+                  tabIndex={nativeStatus ? -1 : undefined}
+                  onClick={() => { setFilter(value); setSel(new Set()) }}
+                  className="min-w-0 truncate py-2 text-center text-[13px] font-semibold transition-colors"
+                  style={{
+                    borderRadius: 999,
+                    background: on ? 'var(--clay-surface)' : 'transparent',
+                    boxShadow: on ? '0 1px 2px rgba(20,30,60,.08), 0 4px 12px rgba(20,30,60,.08)' : undefined,
+                    color: on ? 'var(--clay-ink)' : 'var(--clay-dim)',
+                  }}
+                >
+                  {name} <span className="tabular-nums">{count(value)}</span>
+                </button>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            aria-pressed={filter === 'all'}
+            onClick={() => { setFilter('all'); setSel(new Set()) }}
+            className="glass shrink-0 whitespace-nowrap px-3.5 py-3 text-[13px] font-semibold"
+            style={{ borderRadius: 999, ...(filter === 'all' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-page)' } : { color: 'var(--clay-ink)' }) }}
+          >
+            All <span className="tabular-nums">{count('all')}</span>
+          </button>
+        </div>
         <div className="hidden lg:block">
           <Segmented
             label="Status"

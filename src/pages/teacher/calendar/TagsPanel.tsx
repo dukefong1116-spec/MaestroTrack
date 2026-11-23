@@ -95,7 +95,7 @@ export default function TagsPanel({ counts }: { counts: Record<string, number> }
                     </button>
                   )}
                   <span className="flex-1" />
-                  <button type="button" onClick={() => { commitName(t.id); setEditing(null) }} className="rounded-[9px] bg-white px-3 py-1.5 text-[12.5px] font-bold" style={{ color: 'var(--clay-ink)' }}>Done</button>
+                  <button type="button" onClick={() => { commitName(t.id); setEditing(null) }} className="rounded-[9px] bg-white px-3 py-1.5 text-[12.5px] font-bold" style={{ color: '#000' }}>Done</button>
                 </div>
               </div>
             )}

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { uploadAvatar, removeAvatar, AVATAR_ACCEPT_ATTR, checkAvatarFile } from '@/lib/firebase/avatar'
 import { authErrorMessage } from '@/lib/firebase/account'
 import Avatar from '@/components/profile/Avatar'
+import ImageCropper from '@/components/profile/ImageCropper'
 import type { InstrumentType } from '@/types'
 import { useStepBack } from '@/hooks/useStepBack'
 
@@ -37,6 +38,7 @@ export default function ProfilePhotoPage() {
   const [saved, setSaved] = useState(false)
 
   const uid = profile?.uid
+  const [cropping, setCropping] = useState<File | null>(null)
   const shown = pending?.url ?? profile?.avatar
 
   // The local picture is released when it is replaced, saved, or left.
@@ -65,7 +67,8 @@ export default function ProfilePhotoPage() {
     setSaved(false)
     const problem = checkAvatarFile(file)
     if (problem) { setError(problem); return }
-    setPending({ file, url: URL.createObjectURL(file) })
+    // Cropped first (square, shown in a circle); the crop is what is saved.
+    setCropping(file)
   }
 
   async function onSave() {
@@ -129,6 +132,17 @@ export default function ProfilePhotoPage() {
 
   return (
     <div className="max-w-2xl">
+      {cropping && (
+        <ImageCropper
+          file={cropping}
+          aspect={1}
+          round
+          outputWidth={800}
+          title="Move and zoom your photo"
+          onCancel={() => setCropping(null)}
+          onDone={(f) => { setCropping(null); setPending({ file: f, url: URL.createObjectURL(f) }) }}
+        />
+      )}
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to={profileUrl}

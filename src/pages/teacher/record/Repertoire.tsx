@@ -8,6 +8,7 @@ import { updateRosterStudent } from '@/lib/firebase/studio'
 import type { Member } from '@/hooks/useStudioData'
 import { Btn, Empty } from '@/components/teacher/studio/ui'
 import AddFab from '@/components/teacher/studio/AddFab'
+import Modal from '@/components/ui/Modal'
 import { inputCls, inputStyle, toneColors } from '@/components/teacher/studio/tokens'
 import type { RepertoireItem, RepertoireStatus } from '@/types'
 import { REP_STATUS } from '@/lib/studio/labels'
@@ -53,12 +54,18 @@ export default function Repertoire({ m }: { m: Member }) {
   return (
     <div>
       <AddFab id="repertoire-add" label="Add a piece or skill" visible={!adding} onAdd={() => setAdding(true)} />
-      {adding && <div className="flex flex-wrap items-center gap-2 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
-        <input autoFocus aria-label="New piece or skill" className={`${inputCls} min-w-[200px] flex-1`} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="Add a piece or skill — e.g. Minuet in G, or D major scale" />
-        <select aria-label="Kind" className={`${inputCls} w-28`} style={inputStyle} value={kind} onChange={(e) => setKind(e.target.value as 'piece' | 'skill')}><option value="piece">Piece</option><option value="skill">Skill</option></select>
-        <Btn kind="primary" onClick={add} disabled={!title.trim()}>Add</Btn>
-        <Btn kind="soft" onClick={() => { setAdding(false); setTitle('') }}>Cancel</Btn>
-      </div>}
+      {/* A window over the page, like adding a piece on the student side. */}
+      <Modal open={adding} onClose={() => { setAdding(false); setTitle('') }} title={`Add to ${m.name.split(' ')[0]}’s repertoire`}>
+        <div className="space-y-3">
+          <input autoFocus aria-label="New piece or skill" className={`${inputCls} w-full`} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} placeholder="e.g. Minuet in G, or D major scale" />
+          <select aria-label="Kind" className={`${inputCls} w-full`} style={inputStyle} value={kind} onChange={(e) => setKind(e.target.value as 'piece' | 'skill')}><option value="piece">Piece</option><option value="skill">Skill</option></select>
+          {kind === 'piece' && linked && <p className="text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>It goes straight into {m.name.split(' ')[0]}’s Library, and they’re told.</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Btn kind="soft" onClick={() => { setAdding(false); setTitle('') }}>Cancel</Btn>
+            <Btn kind="primary" onClick={add} disabled={!title.trim()}>Add</Btn>
+          </div>
+        </div>
+      </Modal>
       {linked && library && library.length > 0 && (
         <div style={{ borderBottom: '1px solid var(--clay-line)' }}>
           <p className="px-5 pt-3 text-[12px] font-bold uppercase tracking-wider sm:px-6" style={{ color: 'var(--clay-dim)' }}>In {m.name.split(' ')[0]}’s Library</p>

@@ -294,7 +294,6 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         let id = call.getString("id") ?? "segmented"
         let items = call.getArray("items", String.self) ?? []
         let selected = call.getInt("selected") ?? 0
-        let tint = call.getString("tint").flatMap { UIColor(hex: $0) } ?? .systemBlue
         DispatchQueue.main.async { [weak self] in
             guard let self else { call.resolve(); return }
             // Apple's segmented control on a glass bar, as in its own toolbars:
@@ -333,10 +332,10 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
             }
             if seg.selectedSegmentIndex != selected { seg.selectedSegmentIndex = selected }
             let font = UIFont.systemFont(ofSize: 13, weight: .semibold)
-            seg.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.label], for: .normal)
-            // A lighter blue in dark mode, where the selected piece is grey.
-            let selectedColor = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.48, green: 0.80, blue: 0.97, alpha: 1) : tint }
-            seg.setTitleTextAttributes([.font: font, .foregroundColor: selectedColor], for: .selected)
+            // The chosen piece in full ink, the others quieter, so the choice
+            // reads at a glance (as on the website).
+            seg.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.secondaryLabel], for: .normal)
+            seg.setTitleTextAttributes([.font: font, .foregroundColor: UIColor.label], for: .selected)
             self.place(bar, call)
             let f = bar.frame
             bar.frame = CGRect(x: f.minX, y: f.midY - 26, width: f.width, height: 52)

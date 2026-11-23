@@ -4,7 +4,7 @@ import { useLiveActivity } from '@/hooks/useLiveActivity'
 import { useStudentWidgets, useTeacherWidgets } from '@/hooks/useWidgetSync'
 import { lazyPage } from '@/lib/lazyPage'
 import { setOpeningPage } from '@/lib/openingPage'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom'
 import { armAudioContext } from '@/lib/utils/sound'
 import { useAuthInit } from '@/hooks/useAuth'
 import { useStudentData } from '@/hooks/useStudentData'
@@ -307,42 +307,28 @@ function AppRoutes() {
       <Route path="/join/:token" element={<JoinPage />} />
 
       {/*
-        Full-screen practice session. Deliberately a sibling of /student
-        rather than a child, so it renders outside AppLayout and takes over
-        the whole screen with no sidebar.
+        Every student page under one data layer. The full-screen ones
+        (session, studio chat, assignments) render outside AppLayout, but
+        they used to bring their own DataProvider: going from Today to a
+        session tore the data down and built it again — re-downloading
+        everything, and wiping the session's clock just after it started.
       */}
-      <Route path="/student/session" element={
+      <Route element={
         <ProtectedRoute role="student">
           <DataProvider>
-            <SessionPage />
-          </DataProvider>
-        </ProtectedRoute>
-      } />
-
-      {/* The studio's chat and full assignment list: full-screen too, like
-          any messaging app's conversation, so outside AppLayout. */}
-      <Route path="/student/studio/messages" element={
-        <ProtectedRoute role="student">
-          <DataProvider>
-            <StudioMessagesPage />
-          </DataProvider>
-        </ProtectedRoute>
-      } />
-      <Route path="/student/studio/assignments" element={
-        <ProtectedRoute role="student">
-          <DataProvider>
-            <StudioAssignmentsPage />
-          </DataProvider>
-        </ProtectedRoute>
-      } />
-
-      <Route path="/student" element={
-        <ProtectedRoute role="student">
-          <DataProvider>
-            <AppLayout tabs={STUDENT_TAB_PAGES} />
+            <Outlet />
           </DataProvider>
         </ProtectedRoute>
       }>
+      {/* Full-screen practice session: outside AppLayout, no sidebar. */}
+      <Route path="/student/session" element={<SessionPage />} />
+
+      {/* The studio's chat and full assignment list: full-screen too, like
+          any messaging app's conversation, so outside AppLayout. */}
+      <Route path="/student/studio/messages" element={<StudioMessagesPage />} />
+      <Route path="/student/studio/assignments" element={<StudioAssignmentsPage />} />
+
+      <Route path="/student" element={<AppLayout tabs={STUDENT_TAB_PAGES} />}>
         <Route index element={<StudentDashboard />} />
         <Route path="practice" element={<PracticeLogPage />} />
         <Route path="library" element={<LibraryPage />} />
@@ -376,6 +362,7 @@ function AppRoutes() {
         <Route path="insights" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="analytics" element={<Navigate to="/student/practice/progress" replace />} />
         <Route path="reminders" element={<Navigate to="/student" replace />} />
+      </Route>
       </Route>
 
       <Route path="/teacher" element={

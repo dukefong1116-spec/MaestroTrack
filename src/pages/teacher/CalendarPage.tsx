@@ -152,7 +152,8 @@ export default function CalendarPage() {
           {view === 'week' && (
             <>
               {!wide && (
-                <div className="grid grid-cols-7 gap-1 px-3 pt-3">
+                // Room under the days too, so they do not sit on the timeline's top line.
+                <div className="grid grid-cols-7 gap-1 px-3 pb-3 pt-3">
                   {weekDays.map((d) => {
                     const on = d === anchor
                     const n = items.filter((i) => i.date === d).length
