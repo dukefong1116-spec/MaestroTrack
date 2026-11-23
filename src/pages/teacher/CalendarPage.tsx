@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTeacherStore } from '@/stores/teacherStore'
 import { useStudioSettings, useCalendar, saveItem, updateSeries } from '@/hooks/useStudioData'
 import { monthGrid, endTime, type CalendarItem } from '@/lib/studio/calendar'
-import { addDays, clock, dayKey, mondayOf, parseDay, toMinutes, weekday } from '@/lib/studio/dates'
+import { addDays, clock, dayKey, mondayOf, parseDay, weekday } from '@/lib/studio/dates'
 import { tagFor } from '@/lib/studio/settings'
 import LessonSheet from '@/components/teacher/LessonSheet'
 import { StudioPage, Segmented } from '@/components/teacher/studio/ui'
@@ -71,10 +71,9 @@ export default function CalendarPage() {
   const items = useCalendar(from, to)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
 
-  // Hours shown: the settings, widened to fit anything outside them.
-  const visible = view === 'week' ? items : []
-  const startHour = Math.min(settings.dayStart, ...visible.map((i) => Math.floor(toMinutes(i.startTime) / 60)))
-  const endHour = Math.max(settings.dayEnd, ...visible.map((i) => Math.ceil(toMinutes(endTime(i)) / 60)))
+  // Hours shown: the whole day, midnight to midnight.
+  const startHour = 0
+  const endHour = 24
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {}
@@ -223,10 +222,13 @@ export default function CalendarPage() {
       <NewLessonSheet open={adding} onClose={() => { setAdding(false); setHeld(null) }} date={held?.date ?? anchor} time={held?.startTime} />
 
       {toast && (
-        <div role="status" className="fixed bottom-24 left-1/2 z-50 flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] text-white lg:bottom-8" style={{ background: 'var(--clay-ink)', boxShadow: '0 14px 30px -10px rgba(30,40,70,.45)' }}>
-          <span>{toast.text}</span>
+        // Ink on the page colour, swapped: dark with light text in light
+        // mode, light with dark text in dark mode (white on white before).
+        // A set width, so the text is not squeezed into a narrow column.
+        <div role="status" className="fixed bottom-28 left-1/2 z-50 flex w-[min(92vw,440px)] -translate-x-1/2 items-center gap-3 rounded-xl py-2.5 pl-4 pr-2.5 text-[14px] lg:bottom-8" style={{ background: 'var(--clay-ink)', color: 'var(--clay-page)', boxShadow: '0 14px 30px -10px rgba(30,40,70,.45)' }}>
+          <span className="min-w-0 flex-1">{toast.text}</span>
           {toast.action && (
-            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold" style={{ background: 'var(--clay-accent)' }}>
+            <button type="button" onClick={() => { const r = toast.action?.run; setToast(null); r?.() }} className="shrink-0 whitespace-nowrap rounded-[9px] px-3 py-1.5 font-bold text-white" style={{ background: 'var(--clay-accent)' }}>
               {toast.action.label}
             </button>
           )}

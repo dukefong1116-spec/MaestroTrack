@@ -387,7 +387,6 @@ function AppRoutes() {
         <Route path="settings" element={<TeacherSettingsPage />} />
         <Route path="settings/profile" element={<TeacherProfilePage />} />
         <Route path="settings/lessons" element={<StudioSettingsPage part="lessons" />} />
-        <Route path="settings/calendar" element={<StudioSettingsPage part="calendar" />} />
         {/* The same photo screen the student uses; it knows which Settings
             to send you back to from the signed-in role. */}
         <Route path="settings/profile/photo" element={<ProfilePhotoPage />} />

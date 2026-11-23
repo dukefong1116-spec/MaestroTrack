@@ -15,14 +15,10 @@ import type { LessonType, StudioSettings } from '@/types'
  * Settings page itself, which made it a long form; now Settings is a list
  * of rows and each row opens one of these.
  */
-export type StudioSettingsPart = 'lessons' | 'calendar'
-
-/** A drop-down that sits in a line of text, so sized to its contents rather than the row. */
-const inlineSelect = 'min-h-[40px] min-w-[120px] rounded-[10px] border-0 px-3 text-[14px] font-semibold outline-none focus:ring-2'
+export type StudioSettingsPart = 'lessons'
 
 const TITLES: Record<StudioSettingsPart, { title: string; subtitle: string }> = {
   lessons: { title: 'Lessons and prices', subtitle: 'Default length, lesson types and what each costs' },
-  calendar: { title: 'Calendar hours', subtitle: 'The hours the week view shows' },
 }
 
 function Section({ title, hint, children, first }: { title: string; hint?: string; children: ReactNode; first?: boolean }) {
@@ -117,20 +113,6 @@ export default function StudioSettingsPage({ part }: { part: StudioSettingsPart 
         </>
       )}
 
-      {part === 'calendar' && (
-        <Section title="Week view" hint="Lessons outside these hours still appear." first>
-          <div className="flex flex-wrap items-center gap-2 text-[13.5px]" style={{ color: 'var(--clay-ink)' }}>
-            From
-            <select aria-label="Day starts" className={inlineSelect} style={inputStyle} value={settings.dayStart} onChange={(e) => save({ dayStart: Number(e.target.value) })}>
-              {Array.from({ length: 13 }, (_, i) => i + 5).map((h) => <option key={h} value={h}>{h % 12 || 12} {h < 12 ? 'AM' : 'PM'}</option>)}
-            </select>
-            to
-            <select aria-label="Day ends" className={inlineSelect} style={inputStyle} value={settings.dayEnd} onChange={(e) => save({ dayEnd: Number(e.target.value) })}>
-              {Array.from({ length: 10 }, (_, i) => i + 15).map((h) => <option key={h} value={h}>{h % 12 || 12} {h < 12 || h === 24 ? 'AM' : 'PM'}</option>)}
-            </select>
-          </div>
-        </Section>
-      )}
     </StudioPage>
   )
 }

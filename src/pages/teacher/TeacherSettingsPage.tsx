@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Bell, CalendarClock, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen } from 'lucide-react'
+import { Bell, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useStudioSettings } from '@/hooks/useStudioData'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
@@ -41,8 +41,6 @@ function NavRow({ icon, label, to, value }: { icon: ReactNode; label: string; to
   return <Link to={to} className={rowCls} style={rowStyle}><RowBody icon={icon} label={label} value={value} /></Link>
 }
 
-const hour = (h: number) => `${h % 12 || 12} ${h < 12 || h === 24 ? 'AM' : 'PM'}`
-
 export default function TeacherSettingsPage() {
   const { profile, user } = useAuth()
   const settings = useStudioSettings()
@@ -71,8 +69,6 @@ export default function TeacherSettingsPage() {
       <Section title="Studio" hint="How lessons are booked, priced and shown." className="max-lg:border-t-0">
         <NavRow icon={<Tags size={18} />} label="Lessons and prices" to="/teacher/settings/lessons"
           value={`${settings.defaultLessonMinutes} min default · ${types} ${types === 1 ? 'type' : 'types'}`} />
-        <NavRow icon={<CalendarClock size={18} />} label="Calendar hours" to="/teacher/settings/calendar"
-          value={`${hour(settings.dayStart)} – ${hour(settings.dayEnd)}`} />
         <button type="button" onClick={() => setInviting(true)} className={rowCls} style={rowStyle}>
           <RowBody icon={<UserPlus size={18} />} label="Invite a student" value="Good for a week" />
         </button>

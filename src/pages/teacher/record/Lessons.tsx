@@ -15,7 +15,9 @@ export default function Lessons({ m }: { m: Member }) {
   const today = dayKey(new Date())
   const items = useCalendar(addDays(today, -180), addDays(today, 21)).filter((i) => i.rosterIds.includes(m.id))
   const [open, setOpen] = useState<CalendarItem | null>(null)
-  const upcoming = items.filter((i) => i.date >= today).slice(0, 3)
+  // Today's lessons on their own: the ones you write notes for right after.
+  const todays = items.filter((i) => i.date === today)
+  const upcoming = items.filter((i) => i.date > today).slice(0, 3)
   const past = items.filter((i) => i.date < today).reverse()
   const first = m.name.split(' ')[0]
 
@@ -36,16 +38,22 @@ export default function Lessons({ m }: { m: Member }) {
         {shared && <p className="mt-1.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--clay-ink-soft)' }}><span style={{ color: 'var(--clay-dim)' }}>Shared with {first}:</span> {shared.text}</p>}
         {priv && <p className="mt-0.5 text-[13.5px] leading-relaxed" style={{ color: 'var(--clay-ink-soft)' }}><span style={{ color: 'var(--clay-dim)' }}>Private:</span> {priv.text}</p>}
         {carried.length > 0 && <p className="mt-1 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>Carried to the next lesson: {carried.map((c) => c.text).join('; ')}</p>}
+        {/* Notes are written in the lesson's window: said so, on every lesson that has happened (or is today) without them. */}
+        {!shared && !priv && !it.cancelled && it.date <= today && (
+          <p className="mt-1.5 text-[13px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>+ Add lesson notes</p>
+        )}
       </button>
     )
   }
 
   return (
     <div>
+      {todays.length > 0 && <p className="px-5 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wide sm:px-6" style={{ color: 'var(--clay-dim)' }}>Today</p>}
+      {todays.map(row)}
       {upcoming.length > 0 && <p className="px-5 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wide sm:px-6" style={{ color: 'var(--clay-dim)' }}>Coming up</p>}
       {upcoming.map(row)}
       <p className="px-5 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wide sm:px-6" style={{ color: 'var(--clay-dim)' }}>Past lessons</p>
-      {past.length ? past.map(row) : <Empty fill={upcoming.length ? false : 370} mood="happy" title="No lessons yet">Past lessons and your notes from them collect here.</Empty>}
+      {past.length ? past.map(row) : <Empty fill={upcoming.length || todays.length ? false : 370} mood="happy" title="No lessons yet">Past lessons and your notes from them collect here.</Empty>}
       <LessonSheet item={open} onClose={() => setOpen(null)} />
     </div>
   )
