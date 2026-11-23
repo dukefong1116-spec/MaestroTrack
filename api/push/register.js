@@ -4,6 +4,7 @@
  */
 import { handler, callerUid, jsonBody, HttpError } from '../_lib/admin.js'
 import { registerDevice } from '../_lib/push.js'
+import { validPushEndpoint } from '../_lib/webpush.js'
 
 export default handler(async (req) => {
   const uid = await callerUid(req)
@@ -15,7 +16,7 @@ export default handler(async (req) => {
   if (platform === 'web') {
     let sub
     try { sub = JSON.parse(token) } catch { throw new HttpError(400, 'Bad token.') }
-    if (!/^https:\/\//.test(sub?.endpoint ?? '') || !sub?.keys?.p256dh || !sub?.keys?.auth) throw new HttpError(400, 'Bad token.')
+    if (!validPushEndpoint(sub?.endpoint) || !sub?.keys?.p256dh || !sub?.keys?.auth) throw new HttpError(400, 'Bad token.')
   }
   await registerDevice(uid, { deviceId, platform, token, env, tzOffset: Number(tzOffset) })
   return { ok: true }

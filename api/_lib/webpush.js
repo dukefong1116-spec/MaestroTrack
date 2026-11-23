@@ -19,6 +19,27 @@ export function webPushConfigured() {
   return Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT)
 }
 
+/** Keep caller-controlled URLs away from the server's network and VAPID key. */
+export function validPushEndpoint(value) {
+  if (typeof value !== 'string' || value.length > 4096) return false
+  try {
+    const url = new URL(value)
+    const host = url.hostname.toLowerCase()
+    const supported = host === 'fcm.googleapis.com'
+      || host === 'push.services.mozilla.com'
+      || host.endsWith('.push.services.mozilla.com')
+      || host === 'push.apple.com'
+      || host.endsWith('.push.apple.com')
+      || host.endsWith('.notify.windows.com')
+    return url.protocol === 'https:'
+      && (url.port === '' || url.port === '443')
+      && !url.username && !url.password
+      && supported
+  } catch {
+    return false
+  }
+}
+
 const hmac = (key, data) => createHmac('sha256', key).update(data).digest()
 
 /** The message, encrypted for this one subscription (RFC 8291). */
@@ -66,9 +87,12 @@ export async function sendWebPush(devices, note) {
   await Promise.all(devices.map(async (d) => {
     let sub
     try { sub = JSON.parse(d.token) } catch { dead.push(d.token); return }
+    // Recheck at send time for rows that predate registration validation.
+    if (!validPushEndpoint(sub?.endpoint)) { dead.push(d.token); return }
     try {
       const res = await fetch(sub.endpoint, {
         method: 'POST',
+        redirect: 'error',
         headers: {
           'content-encoding': 'aes128gcm',
           'content-type': 'application/octet-stream',

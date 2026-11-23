@@ -84,6 +84,8 @@ describe('the device registry', () => {
     expect((await call(register, 'ana', { deviceId: 'dev-ana-0002', platform: 'android', token: TOKEN })).status).toBe(400)
     expect((await call(register, 'ana', { deviceId: 'dev-ana-0002', platform: 'ios', token: 'not hex' })).status).toBe(400)
     expect((await call(register, 'ana', { deviceId: 'dev-ana-0002', platform: 'web', token: '{"endpoint":"http://evil"}' })).status).toBe(400)
+    expect((await call(register, 'ana', { deviceId: 'dev-ana-0002', platform: 'web', token: JSON.stringify({ endpoint: 'https://attacker.example/collect', keys: { p256dh: 'x', auth: 'y' } }) })).status).toBe(400)
+    expect((await call(register, 'ana', { deviceId: 'dev-ana-0002', platform: 'web', token: JSON.stringify({ endpoint: 'https://fcm.googleapis.com/fcm/send/test', keys: { p256dh: 'x', auth: 'y' } }) })).status).toBe(200)
   })
 
   it('a phone that changes hands stops getting the last person’s pushes', async () => {
@@ -92,6 +94,14 @@ describe('the device registry', () => {
     await device('ben', 'dev-ben-0001') // same token: the same phone, now Ben's
     expect((await store.doc('pushDevices/dev-ana-0001').get()).exists).toBe(false)
     expect((await store.doc('pushDevices/dev-ben-0001').get()).data().uid).toBe('ben')
+  })
+
+  it('a different account cannot claim a device ID with a different push token', async () => {
+    await people()
+    await device('ana', 'device-known-to-attacker', TOKEN)
+    const hijack = await device('ben', 'device-known-to-attacker', 'b'.repeat(64))
+    expect(hijack.status).toBe(409)
+    expect((await store.doc('pushDevices/device-known-to-attacker').get()).data()).toMatchObject({ uid: 'ana', token: TOKEN })
   })
 
   it('only the owner can unregister a device', async () => {

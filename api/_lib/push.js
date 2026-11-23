@@ -14,7 +14,7 @@
  *  - quiet hours: it still arrives, but silently, in the list,
  *  - and devices that have gone are forgotten.
  */
-import { db } from './admin.js'
+import { db, HttpError } from './admin.js'
 import { sendApns } from './apns.js'
 import { sendWebPush } from './webpush.js'
 import { compose, DAILY_CAP, RECENT, isQuiet } from '../../src/lib/notify/copy.js'
@@ -33,17 +33,23 @@ function localNow(tzOffset = 0, nowMs = Date.now()) {
 /** This device, for this person — and for no one else any more. */
 export async function registerDevice(uid, { deviceId, platform, token, env, tzOffset }) {
   const store = db()
+  const target = store.doc(`${DEVICES}/${deviceId}`)
   // A device that changes hands (someone else signs in on it) must stop
   // getting the last person's pushes: the same address elsewhere goes.
-  const same = await store.collection(DEVICES).where('token', '==', token).get()
-  const batch = store.batch()
-  for (const d of same.docs) if (d.id !== deviceId) batch.delete(d.ref)
-  batch.set(store.doc(`${DEVICES}/${deviceId}`), {
-    uid, platform, token, env: env === 'sandbox' ? 'sandbox' : 'production',
-    tzOffset: Number.isFinite(tzOffset) ? Math.max(-840, Math.min(840, Math.round(tzOffset))) : 0,
-    updatedAt: new Date().toISOString(),
+  // A different account must present the existing token to claim its ID.
+  await store.runTransaction(async (tx) => {
+    const existing = await tx.get(target)
+    if (existing.exists && existing.data().uid !== uid && existing.data().token !== token) {
+      throw new HttpError(409, 'This device is registered to another account.')
+    }
+    const same = await tx.get(store.collection(DEVICES).where('token', '==', token))
+    for (const d of same.docs) if (d.id !== deviceId) tx.delete(d.ref)
+    tx.set(target, {
+      uid, platform, token, env: env === 'sandbox' ? 'sandbox' : 'production',
+      tzOffset: Number.isFinite(tzOffset) ? Math.max(-840, Math.min(840, Math.round(tzOffset))) : 0,
+      updatedAt: new Date().toISOString(),
+    })
   })
-  await batch.commit()
 }
 
 /** Signing out: this device is no longer this person's. */
