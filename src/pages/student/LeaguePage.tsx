@@ -166,7 +166,10 @@ export default function LeaguePage() {
             action={<Link to="/student/settings/privacy" className="text-[13px] font-semibold" style={{ color: 'var(--clay-accent-ink)' }}>Privacy settings ›</Link>}
           />
         ) : loading ? (
-          <div className="space-y-2 p-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-9 animate-pulse rounded-xl" style={{ background: 'var(--clay-bg-deep)' }} />)}</div>
+          // The app's one loading look: a turning circle.
+          <div className="flex justify-center py-10" role="status" aria-label="Loading the league">
+            <div className="h-8 w-8 animate-spin rounded-full" style={{ border: '3px solid var(--clay-accent-soft)', borderTopColor: 'var(--clay-accent)' }} />
+          </div>
         ) : !room ? (
           <Empty
             mood="excited"

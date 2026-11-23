@@ -32,6 +32,8 @@ export const COMEBACK_DAYS = 2
 
 const DAY_MS = 86_400_000
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
+/** Empty stretches longer than this, and older than this, are jumped (see walkStreak). */
+const SKIP_AFTER = 60
 const noon = (day) => Date.parse(`${day}T12:00:00Z`)
 
 export function addDays(day, n) {
@@ -80,7 +82,25 @@ export function ruleOn(rules, day) {
  * for today while it is not yet done (today never breaks a streak — it is
  * not over).
  */
-export function walkStreak({ sessions = [], rules = [], frozen = [], repaired = [], today }) {
+export function walkStreak(args) {
+  // The same history asked about again (Today, the widgets, badges,
+  // reminders… each ask) gets the same answer, worked out once. Keyed by
+  // the session list itself, so new sessions are a new list and a fresh walk.
+  const sessions = args?.sessions ?? []
+  const key = JSON.stringify([args?.rules ?? [], args?.frozen ?? [], args?.repaired ?? [], args?.today])
+  let byArgs = walks.get(sessions)
+  if (!byArgs) { byArgs = new Map(); walks.set(sessions, byArgs) }
+  const hit = byArgs.get(key)
+  if (hit) return hit
+  const out = walk(args ?? {})
+  if (byArgs.size >= 8) byArgs.delete(byArgs.keys().next().value)
+  byArgs.set(key, out)
+  return out
+}
+/** Walks already worked out, per session list (forgotten with the list). */
+const walks = new WeakMap()
+
+function walk({ sessions = [], rules = [], frozen = [], repaired = [], today }) {
   const totals = new Map()
   for (const s of sessions) {
     const day = String(s?.date ?? '').slice(0, 10)
@@ -109,8 +129,8 @@ export function walkStreak({ sessions = [], rules = [], frozen = [], repaired = 
     days: [],
   }
 
-  let first = null
-  for (const day of totals.keys()) if (first === null || day < first) first = day
+  const practised = [...totals.keys()].sort()
+  const first = practised[0] ?? null
   if (first === null) return out
 
   let streak = 0
@@ -118,8 +138,28 @@ export function walkStreak({ sessions = [], rules = [], frozen = [], repaired = 
   let held = 0
   let lastMissed = null
   let lastBreak = null
+  let next = 0 // index into `practised` of the next practised day from `d`
+  // Recent days are always walked one by one (the calendar, freezes and
+  // comebacks read them). Before that, a long empty stretch is jumped.
+  const recent = addDays(today, -SKIP_AFTER)
 
   for (let d = first; d <= today; d = addDays(d, 1)) {
+    while (next < practised.length && practised[next] < d) next++
+    // Nothing practised for a long while, and no streak running: every day
+    // up to the next practised one (or the recent window) is a plain miss
+    // that changes nothing but "last missed". Jumped in one step: a single
+    // mistyped date years back used to make this walk hundreds of
+    // thousands of days, many times over, and froze the app.
+    if (streak === 0 && d < recent) {
+      const to = practised[next] !== undefined && practised[next] < recent ? practised[next] : recent
+      if (to > addDays(d, SKIP_AFTER)) {
+        let last = addDays(to, -1)
+        for (let k = 0; k < 7 && ruleOn(plan, last).lessonDay === dowOf(last); k++) last = addDays(last, -1)
+        lastMissed = last
+        d = addDays(to, -1)
+        continue
+      }
+    }
     const t = totals.get(d)
     const rule = ruleOn(plan, d)
     let status

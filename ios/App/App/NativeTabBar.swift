@@ -390,7 +390,7 @@ public class FemataHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "FemataHapticsPlugin"
     public let jsName = "FemataHaptics"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "play", returnType: CAPPluginReturnNone),
+        CAPPluginMethod(name: "play", returnType: CAPPluginReturnPromise),
     ]
 
     private var engine: CHHapticEngine?
