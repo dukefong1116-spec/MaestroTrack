@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ZoomIn, ZoomOut } from 'lucide-react'
-import { useHoldCover } from '@/stores/momentStore'
+import { useHoldCover, useHoldMoment } from '@/stores/momentStore'
 import { haptic } from '@/lib/haptics'
 
 /**
@@ -27,6 +27,9 @@ export default function ImageCropper({ file, aspect, round, outputWidth, title, 
   onDone: (cropped: File) => void
 }) {
   useHoldCover(true)
+  // Full screen: the iPhone app's own tab bar steps aside too, as for a
+  // celebration, so it never sits over Cancel and Done.
+  useHoldMoment(true)
   const [img, setImg] = useState<HTMLImageElement | null>(null)
   const [url, setUrl] = useState('')
   // Made and released together, so the picture's address is never let go

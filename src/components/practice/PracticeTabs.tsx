@@ -28,11 +28,11 @@ export default function PracticeTabs() {
   }, (i) => { haptic('select'); navigate(TABS[i].to, { replace: true }) })
 
   return (
-    // Liquid Glass: a glass capsule, the chosen tab a raised pill in it.
+    // A grey track, the chosen tab a raised white pill in it (as Apple's own).
     <div
       ref={ref}
-      className="glass mb-5 flex p-1"
-      style={{ borderRadius: 999, visibility: native ? 'hidden' : undefined }}
+      className="mb-5 flex p-1"
+      style={{ borderRadius: 999, background: 'rgba(118,118,128,.14)', visibility: native ? 'hidden' : undefined }}
       role="tablist"
       aria-hidden={native || undefined}
     >

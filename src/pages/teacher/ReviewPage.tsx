@@ -126,7 +126,7 @@ export default function ReviewPage() {
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3 px-5 pb-3 pt-1 sm:px-6 lg:py-5" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {/* Phone: a three-way switch at the top, "All" beside it. */}
         <div className="flex w-full items-center gap-2 lg:hidden">
-          <div ref={statusRef} role="group" aria-label="Status" aria-hidden={nativeStatus || undefined} className="glass grid min-w-0 flex-1 grid-cols-3 p-1" style={{ borderRadius: 999, visibility: nativeStatus ? 'hidden' : undefined }}>
+          <div ref={statusRef} role="group" aria-label="Status" aria-hidden={nativeStatus || undefined} className="grid min-w-0 flex-1 grid-cols-3 p-1" style={{ borderRadius: 999, background: 'rgba(118,118,128,.14)', visibility: nativeStatus ? 'hidden' : undefined }}>
             {PHONE_FILTERS.map(([value, name]) => {
               const on = filter === value
               return (
@@ -153,8 +153,8 @@ export default function ReviewPage() {
             type="button"
             aria-pressed={filter === 'all'}
             onClick={() => { setFilter('all'); setSel(new Set()) }}
-            className="glass shrink-0 whitespace-nowrap px-3.5 py-3 text-[13px] font-semibold"
-            style={{ borderRadius: 999, ...(filter === 'all' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-page)' } : { color: 'var(--clay-ink)' }) }}
+            className="shrink-0 whitespace-nowrap px-3.5 py-3 text-[13px] font-semibold"
+            style={{ borderRadius: 999, ...(filter === 'all' ? { background: 'var(--clay-accent-ink)', color: 'var(--clay-page)' } : { background: 'rgba(118,118,128,.14)', color: 'var(--clay-ink)' }) }}
           >
             All <span className="tabular-nums">{count('all')}</span>
           </button>

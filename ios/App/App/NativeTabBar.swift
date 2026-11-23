@@ -296,17 +296,14 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
         let selected = call.getInt("selected") ?? 0
         DispatchQueue.main.async { [weak self] in
             guard let self else { call.resolve(); return }
-            // Apple's segmented control on a glass bar, as in its own toolbars:
-            // the bar keeps the page behind from showing through the labels.
+            // Apple's segmented control on its own: no glass bar around it,
+            // just its grey track and white thumb.
             let bar: UIVisualEffectView
             let seg: UISegmentedControl
             if let existing = self.views[id] as? UIVisualEffectView, let s = existing.contentView.subviews.first as? UISegmentedControl {
                 bar = existing; seg = s
             } else {
-                let effect: UIVisualEffect
-                if #available(iOS 26.0, *) { effect = UIGlassEffect(style: .regular) }
-                else { effect = UIBlurEffect(style: .systemThickMaterial) }
-                bar = UIVisualEffectView(effect: effect)
+                bar = UIVisualEffectView(effect: nil)
                 bar.layer.cornerRadius = 26
                 bar.layer.cornerCurve = .continuous
                 bar.clipsToBounds = true
@@ -314,8 +311,8 @@ public class NativeGlassPlugin: CAPPlugin, CAPBridgedPlugin {
                 seg.translatesAutoresizingMaskIntoConstraints = false
                 bar.contentView.addSubview(seg)
                 NSLayoutConstraint.activate([
-                    seg.leadingAnchor.constraint(equalTo: bar.contentView.leadingAnchor, constant: 6),
-                    seg.trailingAnchor.constraint(equalTo: bar.contentView.trailingAnchor, constant: -6),
+                    seg.leadingAnchor.constraint(equalTo: bar.contentView.leadingAnchor),
+                    seg.trailingAnchor.constraint(equalTo: bar.contentView.trailingAnchor),
                     seg.centerYAnchor.constraint(equalTo: bar.contentView.centerYAnchor),
                     seg.heightAnchor.constraint(equalToConstant: 40),
                 ])

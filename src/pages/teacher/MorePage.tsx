@@ -74,7 +74,7 @@ export default function MorePage() {
           >
             <span
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[15px]"
-              style={{ background: r.color, color: '#fff', boxShadow: `0 6px 14px -6px ${r.color}` }}
+              style={{ background: r.color, color: '#fff' }}
               aria-hidden="true"
             >
               <r.icon size={23} strokeWidth={2.1} />
