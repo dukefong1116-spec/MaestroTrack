@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { updateUserProfile } from '@/lib/firebase/teacher'
-import type { TourCheckpoint, UserProfile } from '@/types'
+import type { TeacherTourCheckpoint, TourCheckpoint, UserProfile } from '@/types'
 
 type Onboarding = NonNullable<UserProfile['onboarding']>
 
@@ -38,5 +38,15 @@ export function useTour() {
   /** From Settings: the whole thing again, but skippable this time. */
   const replay = useCallback(() => write({ tour: 'welcome', replay: true }), [write])
 
-  return { setTour, markSeen, replay }
+  /** The teacher's tutorial, moved on. */
+  const setTeacherTour = useCallback((teacherTour: TeacherTourCheckpoint) => write(
+    teacherTour === 'done'
+      ? { teacherTour, teacherReplay: false, teacherCompletedAt: new Date().toISOString() }
+      : { teacherTour }
+  ), [write])
+
+  /** From the teacher's Settings: the tutorial again, skippable. */
+  const replayTeacher = useCallback(() => write({ teacherTour: 'welcome', teacherReplay: true }), [write])
+
+  return { setTour, markSeen, replay, setTeacherTour, replayTeacher }
 }

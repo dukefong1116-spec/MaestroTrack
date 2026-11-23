@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { Bell, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Bell, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { useTour } from '@/hooks/useTour'
 import { useStudioSettings } from '@/hooks/useStudioData'
 import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import MobileLogOut from '@/components/layout/MobileLogOut'
@@ -45,6 +46,8 @@ export default function TeacherSettingsPage() {
   const { profile, user } = useAuth()
   const settings = useStudioSettings()
   const [inviting, setInviting] = useState(false)
+  const navigate = useNavigate()
+  const { replayTeacher } = useTour()
 
   const instrument = INSTRUMENT_THEMES[profile?.instrument as InstrumentType]?.label
   const types = settings.lessonTypes.length
@@ -79,6 +82,10 @@ export default function TeacherSettingsPage() {
         <NavRow icon={<Palette size={18} />} label="Appearance" to="/teacher/settings/appearance" />
         <NavRow icon={<ShieldCheck size={18} />} label="Privacy & Security" to="/teacher/settings/privacy" />
         <NavRow icon={<BookOpen size={18} />} label="Guide" value="How everything works" to="/teacher/settings/guide" />
+        {/* Femata's walk through the studio again, from Today; skippable this time. */}
+        <button type="button" onClick={() => { replayTeacher(); navigate('/teacher') }} className={rowCls} style={rowStyle}>
+          <RowBody icon={<Sparkles size={18} />} label="Replay the tutorial" value="Femata shows you around" />
+        </button>
         <NavRow icon={<LifeBuoy size={18} />} label="Support & Legal" to="/teacher/settings/about" />
         <p className="pt-3 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>Signed in as {user?.email ?? '—'}</p>
       </Section>

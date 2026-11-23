@@ -1,12 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useMomentStore, useHoldCover } from '@/stores/momentStore'
+import { useMomentStore, useHoldCover, useSheetStore } from '@/stores/momentStore'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useTourStore } from '@/stores/tourStore'
-import { whatToShow, INTRO_SEEN, type Show, type ShowId } from '@/lib/utils/tour'
+import { whatToShow, INTRO_SEEN, type Decision, type Show, type ShowId } from '@/lib/utils/tour'
+import { whatToShowTeacher, TEACHER_TAB_STEPS, TEACHER_FALLBACK_TO, TEACHER_INTRO_SEEN } from '@/lib/utils/teacherTour'
 import Femata, { type FemataMood } from '@/components/femata/Femata'
 import { isNativeApp } from '@/lib/native'
 import { haptic } from '@/lib/haptics'
@@ -16,6 +17,10 @@ const TOUR_MOOD: Partial<Record<ShowId, FemataMood>> = {
   today: 'happy', start: 'excited', category: 'thinking', tools: 'wink', finish: 'focused',
   streak: 'celebrate', history: 'wink', 'intro-library': 'thinking', 'intro-progress': 'proud',
   'piece-prompt': 'excited', 'studio-welcome': 'happy', 'studio-settings': 'focused', 'studio-tab': 'wink', 'studio-page': 'happy',
+  // The teacher's tutorial.
+  't-welcome': 'happy', 't-today': 'happy', 't-students': 'wink', 't-add-student': 'excited', 't-calendar': 'focused',
+  't-new-lesson': 'excited', 't-lessons': 'thinking', 't-review': 'focused', 't-review-tip': 'proud', 't-more': 'wink',
+  't-more-billing': 'excited', 't-billing': 'wink', 't-billing-tip': 'thinking', 't-finish': 'celebrate', 't-record': 'happy',
 }
 
 /**
@@ -68,10 +73,21 @@ export default function TourLayer() {
   // The bottom bar shows below the lg breakpoint — only there has Settings
   // actually moved behind the photo.
   const compact = typeof window !== 'undefined' && window.innerWidth < 1024
-  const { setTour, markSeen } = useTour()
+  const { setTour, markSeen, setTeacherTour } = useTour()
+
+  const teacher = profile?.role === 'teacher'
+  const teacherOnboarding = teacher ? profile.onboarding : undefined
+  const teacherTour = teacherOnboarding?.teacherTour
+  const teacherDecision: Decision | null = useMemo(() => (teacher ? whatToShowTeacher({
+    tour: teacherTour,
+    seen: teacherOnboarding?.seen,
+    path: pathname,
+    firstName: (profile?.displayName ?? '').trim().split(/\s+/)[0] || 'there',
+    compact,
+  }) : null), [teacher, teacherTour, teacherOnboarding?.seen, pathname, profile?.displayName, compact])
 
   const onboarding = profile?.role === 'student' ? profile.onboarding : undefined
-  const decision = useMemo(() => whatToShow({
+  const studentDecision = useMemo(() => whatToShow({
     tour: onboarding?.tour,
     seen: onboarding?.seen,
     path: pathname,
@@ -85,13 +101,17 @@ export default function TourLayer() {
     compact,
   }), [onboarding?.tour, onboarding?.seen, pathname, sub, pieces, profile?.displayName,
       profile?.role, profile?.teacherId, profile?.studioName, profile?.teacherName, studioStep, compact])
+  const decision = teacherDecision ?? studentDecision
 
   // Only from the server's copy of the profile: the one saved on this
   // device could be a step behind, and a tap would then write it back.
   // A full-screen moment (a streak goal, a badge) goes first; the tour
   // carries on when it closes.
   const momentOpen = useMomentStore((s) => s.open) > 0
-  const show: Show | null = profileLive && !momentOpen && decision.kind === 'show' ? decision.show : null
+  // A teacher's step that opens a window (Add student, a new lesson) waits
+  // while it is open, and carries on once it is closed.
+  const sheetOpen = useSheetStore((s) => s.open) > 0 && teacher
+  const show: Show | null = profileLive && !momentOpen && !sheetOpen && decision.kind === 'show' ? decision.show : null
 
   // In the tour but somewhere else: back to Today, where it carries on.
   useEffect(() => {
@@ -102,6 +122,14 @@ export default function TourLayer() {
   useEffect(() => {
     if (onboarding?.tour === 'history' && pathname.startsWith('/student/practice')) setTour('done')
   }, [onboarding?.tour, pathname, setTour])
+
+  // A teacher's "tap the tab" step is done when that page opens — tapped
+  // here, or on the iPhone app's own tab bar, which the page never sees.
+  useEffect(() => {
+    if (!teacher || !profileLive) return
+    const tab = TEACHER_TAB_STEPS[teacherTour ?? 'welcome']
+    if (tab && (pathname.replace(/\/+$/, '') || '/') === tab.to) setTeacherTour(tab.next)
+  }, [teacher, profileLive, teacherTour, pathname, setTeacherTour])
 
   // The session's own steps end with the session.
   useEffect(() => {
@@ -124,8 +152,18 @@ export default function TourLayer() {
       case 'studio-welcome': return setStudioStep(compact ? 'settings' : 'tab')
       case 'studio-settings': return setStudioStep('tab')
       case 'studio-tab': return // the tab itself opens the Studio page, where it carries on
+      // The teacher's tutorial. Tab steps move on when their page opens.
+      case 't-welcome': return setTeacherTour('today')
+      case 't-today': return setTeacherTour('students')
+      case 't-add-student': return setTeacherTour('calendar')
+      case 't-new-lesson': return setTeacherTour('lessons')
+      case 't-lessons': return setTeacherTour('review')
+      case 't-review-tip': return setTeacherTour('billing')
+      case 't-billing-tip': return setTeacherTour('finish')
+      case 't-finish': haptic('celebrate'); return setTeacherTour('done')
+      case 't-students': case 't-calendar': case 't-review': case 't-more': case 't-more-billing': case 't-billing': return
       default: {
-        const seenId = INTRO_SEEN[id]
+        const seenId = INTRO_SEEN[id] ?? TEACHER_INTRO_SEEN[id]
         if (seenId) markSeen(seenId)
       }
     }
@@ -203,8 +241,8 @@ export default function TourLayer() {
 
   if (!show || waiting) return null
 
-  const mandatoryPhase = onboarding?.tour !== 'done'
-  const canSkip = mandatoryPhase && onboarding?.replay
+  const mandatoryPhase = teacher ? teacherTour !== 'done' : onboarding?.tour !== 'done'
+  const canSkip = mandatoryPhase && (teacher ? teacherOnboarding?.teacherReplay : onboarding?.replay)
   const fallback = show.mustTap && missing && !box
 
   // The bubble points at what it is talking about: under it where there
@@ -308,7 +346,7 @@ export default function TourLayer() {
               small beside the words on every other step, with a face to match. */}
           {show.big && (
             <span aria-hidden className="pointer-events-none absolute left-1/2 -translate-x-1/2" style={{ top: -92 }}>
-              <Femata mood="happy" tone="glow" size={118} />
+              <Femata mood={TOUR_MOOD[show.id] ?? 'happy'} tone="glow" size={118} />
             </span>
           )}
           <div className={`relative flex items-start ${show.big ? 'gap-3.5' : 'gap-3'}`}>
@@ -342,7 +380,7 @@ export default function TourLayer() {
               {canSkip && (
                 <button
                   type="button"
-                  onClick={() => { setSub(null); setTour('done') }}
+                  onClick={() => { if (teacher) return setTeacherTour('done'); setSub(null); setTour('done') }}
                   className={`${show.progress ? '' : 'mr-auto '}px-2 py-1.5 text-[13px] font-medium`}
                   style={{ color: 'var(--clay-dim)' }}
                 >
@@ -358,6 +396,8 @@ export default function TourLayer() {
                     if (fallback && show.id === 'start') return navigate('/student/session')
                     if (fallback && show.id === 'history') navigate('/student/practice')
                     if (fallback && show.id === 'studio-tab') return navigate('/student/studio')
+                    // A teacher's tab step: the page opening is what moves it on.
+                    if (fallback && TEACHER_FALLBACK_TO[show.id]) return navigate(TEACHER_FALLBACK_TO[show.id]!)
                     advance.current(show.id)
                   }}
                   className={`${show.big ? 'px-5 py-2.5 text-[15px]' : 'px-4 py-2 text-[14px]'} font-semibold`}

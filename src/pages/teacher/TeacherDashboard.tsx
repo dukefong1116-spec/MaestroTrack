@@ -128,7 +128,7 @@ export default function TeacherDashboard() {
         </div>
       }
     >
-      <div className="grid grid-cols-2 xl:grid-cols-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
+      <div data-coach="teacher-today" className="grid grid-cols-2 xl:grid-cols-4" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {stat(<CalendarCheck size={21} strokeWidth={2.2} />, '#3B9BD9', `${todays.length} lesson${todays.length === 1 ? '' : 's'}`, `today · ${recorded} of ${todays.length} recorded`, () => navigate('/teacher/calendar'))}
         {stat(<ClipboardCheck size={21} strokeWidth={2.2} />, '#8B6BD6', `${toReview.length}`, 'to review', () => navigate('/teacher/review'))}
         {stat(<TrendingUp size={21} strokeWidth={2.2} />, '#3DAE7C', `${weekMinutes} min`, 'studio practice this week')}

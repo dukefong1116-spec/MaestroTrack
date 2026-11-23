@@ -62,6 +62,10 @@ export type PerformanceType =
   | 'Masterclass'
 
 export type TourCheckpoint = 'welcome' | 'today' | 'start' | 'streak' | 'history' | 'done'
+/** Where a teacher is in their tutorial (lib/utils/teacherTour). */
+export type TeacherTourCheckpoint =
+  | 'welcome' | 'today' | 'students' | 'add-student' | 'calendar' | 'new-lesson' | 'lessons'
+  | 'review' | 'review-tip' | 'billing' | 'billing-tip' | 'finish' | 'done'
 
 export interface LeagueResult {
   week: string
@@ -248,6 +252,11 @@ export interface UserProfile {
     tour?: TourCheckpoint
     /** Started again from Settings, so it can be skipped. */
     replay?: boolean
+    /** A teacher's tutorial: absent until begun (every teacher sees it once). */
+    teacherTour?: TeacherTourCheckpoint
+    /** The teacher's tutorial, started again from Settings: skippable. */
+    teacherReplay?: boolean
+    teacherCompletedAt?: string
   }
   /**
    * Everything that became true before this has been seen.

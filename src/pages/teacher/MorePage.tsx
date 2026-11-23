@@ -69,6 +69,7 @@ export default function MorePage() {
             key={r.label}
             type="button"
             onClick={r.go}
+            data-coach={r.label === 'Billing' ? 'more-billing' : undefined}
             className="flex w-full items-center gap-4 px-4 py-4 text-left transition-colors active:bg-[var(--clay-bg)]"
             style={{ borderTop: '1px solid var(--clay-line)' }}
           >

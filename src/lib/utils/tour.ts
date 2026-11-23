@@ -24,6 +24,9 @@ export type ShowId =
   | 'welcome' | 'today' | 'start' | 'category' | 'tools' | 'finish' | 'streak' | 'history'
   | 'intro-library' | 'intro-progress' | 'piece-prompt'
   | 'studio-welcome' | 'studio-settings' | 'studio-tab' | 'studio-page'
+  // The teacher's tutorial (lib/utils/teacherTour).
+  | 't-welcome' | 't-today' | 't-students' | 't-add-student' | 't-calendar' | 't-new-lesson' | 't-lessons'
+  | 't-review' | 't-review-tip' | 't-more' | 't-more-billing' | 't-billing' | 't-billing-tip' | 't-finish' | 't-record'
 
 export interface Show {
   id: ShowId

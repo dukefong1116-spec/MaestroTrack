@@ -18,6 +18,12 @@ import { TEACHER_PAGES } from './pages'
  * Labels are faded out while closed rather than clipped, so nothing peeks
  * out from behind the icons.
  */
+/** The side-menu items the tutorial points at. */
+const RAIL_COACH: Record<string, string> = {
+  '/teacher/students': 'rail-students', '/teacher/calendar': 'rail-calendar',
+  '/teacher/review': 'rail-review', '/teacher/families': 'rail-billing',
+}
+
 export default function TeacherRail() {
   const { profile } = useAuth()
   const [hover, setHover] = useState(false)
@@ -80,6 +86,8 @@ export default function TeacherRail() {
               to={p.to}
               end={p.end}
               aria-label={p.label}
+              // For the teacher's tutorial (lib/utils/teacherTour).
+              data-coach={RAIL_COACH[p.to]}
               className={({ isActive }) => `${itemCls} ${isActive ? '' : 'hover:bg-[var(--clay-bg)]'}`}
               style={({ isActive }) => isActive
                 ? { background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }

@@ -125,7 +125,7 @@ export default function ReviewPage() {
     <StudioPage>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-3 px-5 pb-3 pt-1 sm:px-6 lg:py-5" style={{ borderBottom: '1px solid var(--clay-line)' }}>
         {/* Phone: a three-way switch at the top, "All" beside it. */}
-        <div className="flex w-full items-center gap-2 lg:hidden">
+        <div data-coach="review-status" className="flex w-full items-center gap-2 lg:hidden">
           <div ref={statusRef} role="group" aria-label="Status" aria-hidden={nativeStatus || undefined} className="grid min-w-0 flex-1 grid-cols-3 p-1" style={{ borderRadius: 999, background: 'rgba(118,118,128,.14)', visibility: nativeStatus ? 'hidden' : undefined }}>
             {PHONE_FILTERS.map(([value, name]) => {
               const on = filter === value
@@ -159,7 +159,7 @@ export default function ReviewPage() {
             All <span className="tabular-nums">{count('all')}</span>
           </button>
         </div>
-        <div className="hidden lg:block">
+        <div className="hidden lg:block" data-coach="review-status">
           <Segmented
             label="Status"
             className="grid min-w-[420px] grid-cols-4"

@@ -56,7 +56,7 @@ export default function StudentsPage() {
     <StudioPage
       title="Students"
       subtitle={`${members.length} student${members.length === 1 ? '' : 's'}${requests.length ? ` · ${requests.length} waiting to join` : ''}`}
-      actions={<Btn kind="primary" onClick={() => setAdding(true)}>+ Add student</Btn>}
+      actions={<Btn kind="primary" data-coach="add-student" onClick={() => setAdding(true)}>+ Add student</Btn>}
     >
       <WaitingToJoin />
       <div className="flex flex-wrap items-center gap-2.5 px-5 py-3 sm:px-6" style={{ borderBottom: '1px solid var(--clay-line)' }}>
