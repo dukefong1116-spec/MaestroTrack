@@ -11,6 +11,7 @@ import Femata from '@/components/femata/Femata'
 import Button from '@/components/ui/Button'
 import Avatar from '@/components/profile/Avatar'
 import { lastLogin, forgetLogin } from '@/lib/lastLogin'
+import { isNativeApp } from '@/lib/native'
 import type { InstrumentType } from '@/types'
 
 const schema = z.object({
@@ -25,6 +26,9 @@ export default function LoginPage() {
   const { register, handleSubmit, setValue, setFocus, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
   // Whoever last signed in here: their email filled in, only the password to type.
   const [last, setLast] = useState(lastLogin)
+  // Stay signed in on this device. Off: signed out when the browser closes.
+  // (The iPhone app always remembers you, as apps do.)
+  const [remember, setRemember] = useState(true)
   useEffect(() => {
     if (!last) return
     setValue('email', last.email)
@@ -41,7 +45,7 @@ export default function LoginPage() {
   async function onSubmit(data: FormData) {
     setError('')
     try {
-      const user = await signIn(data.email, data.password)
+      const user = await signIn(data.email, data.password, isNativeApp || remember)
       let role: string | null = null
       try {
         const profile = await getUserProfile(user.uid)
@@ -112,7 +116,13 @@ export default function LoginPage() {
               <Input label="Email" type="email" placeholder="you@example.com" autoComplete="username" error={errors.email?.message} {...register('email')} />
             </div>
             <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between">
+              {!isNativeApp ? (
+                <label className="flex cursor-pointer select-none items-center gap-2 text-sm" style={{ color: 'var(--clay-ink)' }}>
+                  <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4" style={{ accentColor: 'var(--clay-accent)' }} />
+                  Remember me
+                </label>
+              ) : <span />}
               <Link to="/forgot-password" className="text-xs font-medium transition-colors" style={{ color: 'var(--clay-accent)' }}>
                 Forgot password?
               </Link>

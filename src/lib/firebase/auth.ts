@@ -2,6 +2,9 @@ import { clearSnapshots } from '@/lib/cache/snapshot'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   signOut,
   sendPasswordResetEmail,
   sendEmailVerification,
@@ -85,7 +88,13 @@ export async function saveRebuiltProfile(profile: UserProfile): Promise<void> {
   await setDoc(doc(db, 'users', profile.uid), cleanForFirestore(profile))
 }
 
-export async function signIn(email: string, password: string): Promise<User> {
+/**
+ * Sign in. `remember` (the login page's Remember me) keeps you signed in
+ * on this device until you log out; without it the sign-in lasts until
+ * the browser is closed, and next time the start page asks "Is this you?".
+ */
+export async function signIn(email: string, password: string, remember = true): Promise<User> {
+  await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence).catch(() => {})
   const credential = await signInWithEmailAndPassword(auth, email, password)
   return credential.user
 }
