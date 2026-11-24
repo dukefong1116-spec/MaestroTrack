@@ -888,8 +888,12 @@ export default function SessionPage() {
           while it is paused. Drag it out of the way of anything. */}
       {!inTour && <FemataBuddy mood={timerRunning ? 'focused' : 'sleepy'} spot="session" size={64} bottom="calc(112px + env(safe-area-inset-bottom))" />}
       <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto w-full max-w-md px-5 pb-4 pt-3">
-
+      {/* One column on a phone. On an iPad or computer, two: pieces, the
+          clock and the category on the left; the tools and thoughts on the
+          right. The wrappers vanish on a phone (display: contents), and the
+          order numbers keep its single column exactly as it was. */}
+      <div className="mx-auto flex w-full max-w-md flex-col px-5 pb-4 pt-3 lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-x-8">
+        <div className="order-0 lg:col-span-2">
         {/* header */}
         <div className="mb-3 flex items-center justify-between gap-3">
           {inTour ? <span className="h-10 w-10 shrink-0" aria-hidden /> : (
@@ -924,6 +928,9 @@ export default function SessionPage() {
           )}
         </div>
 
+        </div>
+      <div className="contents lg:flex lg:flex-col">
+        <div className="order-1">
         {/* Pieces: tap any you are working on. More than one shares the
             session's minutes evenly. A row of chips rather than a dropdown,
             because a dropdown picks one. */}
@@ -962,28 +969,8 @@ export default function SessionPage() {
           </button>
         </div>
 
-        {/* thoughts */}
-        <div className="mb-3 px-4 py-3" style={{ ...surface, boxShadow: 'none' }}>
-          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
-            Thoughts
-          </p>
-          <textarea
-            value={thoughts}
-            onChange={(e) => setThoughts(e.target.value)}
-            rows={2}
-            placeholder="what's working? what isn't?"
-            className="w-full resize-none bg-transparent outline-none"
-            style={{
-              fontFamily: 'var(--clay-hand)',
-              fontSize: 19,
-              lineHeight: '26px',
-              color: 'var(--clay-ink)',
-              backgroundImage:
-                'repeating-linear-gradient(transparent, transparent 25px, var(--clay-line) 25px, var(--clay-line) 26px)',
-            }}
-          />
         </div>
-
+        <div className="order-3">
         {/*
           Pendulum + dial. The arm is anchored below the dial and runs taller
           than it, so the top third — and the weight — stays visible above the
@@ -1027,7 +1014,48 @@ export default function SessionPage() {
             </span>
           </motion.button>
         </div>
+        </div>
+        <div className="order-6">
+        {/* Today's assignment target, counting the session in progress —
+            without the live figure it would sit frozen for exactly as long
+            as someone is practising and looking at it. */}
+        <div className="mb-5">
+          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} livePieceIds={pieceIds} compact />
+        </div>
+        </div>
+        <div className="order-7">
+        {/* category */}
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }} data-coach="session-categories">
+          {CATEGORIES.map((c) => {
+            const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
+            return (
+              <button
+                key={c}
+                onClick={() => pickCategory(c)}
+                aria-pressed={category === c}
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
+                style={{
+                  borderRadius: 999,
+                  background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
+                  color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                  boxShadow: category === c ? 'none' : 'var(--clay-raised)',
+                }}
+              >
+                {c}
+                {/* The split as it forms: every category with a minute in it
+                    says how many, so moving on is visibly not losing time. */}
+                {spent > 0 && (
+                  <span className="tabular-nums" style={{ opacity: 0.75 }}>{spent}m</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
 
+        </div>
+      </div>
+      <div className="contents lg:flex lg:flex-col lg:pt-1">
+        <div className="order-4">
         {/* tool dock */}
         <div className="mb-3 grid grid-cols-3 gap-3" data-coach="session-tools">
           {([
@@ -1057,7 +1085,8 @@ export default function SessionPage() {
             )
           })}
         </div>
-
+        </div>
+        <div className="order-5">
         {/* drawers */}
         <AnimatePresence mode="wait">
           {tool === 'metro' && (
@@ -1300,47 +1329,36 @@ export default function SessionPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Today's assignment target, counting the session in progress —
-            without the live figure it would sit frozen for exactly as long
-            as someone is practising and looking at it. */}
-        <div className="mb-5">
-          <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} livePieceIds={pieceIds} compact />
         </div>
-
-        {/* category */}
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }} data-coach="session-categories">
-          {CATEGORIES.map((c) => {
-            const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
-            return (
-              <button
-                key={c}
-                onClick={() => pickCategory(c)}
-                aria-pressed={category === c}
-                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
-                style={{
-                  borderRadius: 999,
-                  background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
-                  color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
-                  boxShadow: category === c ? 'none' : 'var(--clay-raised)',
-                }}
-              >
-                {c}
-                {/* The split as it forms: every category with a minute in it
-                    says how many, so moving on is visibly not losing time. */}
-                {spent > 0 && (
-                  <span className="tabular-nums" style={{ opacity: 0.75 }}>{spent}m</span>
-                )}
-              </button>
-            )
-          })}
+        <div className="order-2 lg:order-9">
+        {/* thoughts */}
+        <div className="mb-3 px-4 py-3" style={{ ...surface, boxShadow: 'none' }}>
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
+            Thoughts
+          </p>
+          <textarea
+            value={thoughts}
+            onChange={(e) => setThoughts(e.target.value)}
+            rows={2}
+            placeholder="what's working? what isn't?"
+            className="w-full resize-none bg-transparent outline-none"
+            style={{
+              fontFamily: 'var(--clay-hand)',
+              fontSize: 19,
+              lineHeight: '26px',
+              color: 'var(--clay-ink)',
+              backgroundImage:
+                'repeating-linear-gradient(transparent, transparent 25px, var(--clay-line) 25px, var(--clay-line) 26px)',
+            }}
+          />
         </div>
-
+        </div>
+      </div>
       </div>
       </div>
 
       {/* Finish, always on screen. */}
-      <div className="mx-auto w-full max-w-md shrink-0 px-5 pt-2" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+      <div className="mx-auto w-full max-w-md shrink-0 px-5 pt-2 lg:max-w-5xl" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
         {saveError && (
           <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {saveError}

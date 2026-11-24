@@ -363,7 +363,10 @@ export default function PracticeLogPage() {
       className="-mx-6 -my-8 min-h-full px-5 pb-12 pt-7"
       style={{ background: 'var(--clay-page)', fontFamily: 'var(--clay-font)', color: 'var(--clay-ink)' }}
     >
-      <div className="mx-auto w-full max-w-md">
+      {/* One column on a phone; on an iPad or computer, two: the doing on
+          the left, the history beside it. */}
+      <div className="mx-auto w-full max-w-md lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-8">
+      <div className="min-w-0">
 
         {/* heading, with the exception tucked beside it */}
         <div className="mb-5 flex items-center justify-between gap-3">
@@ -513,6 +516,9 @@ export default function PracticeLogPage() {
           </Block>
         </Panel>
 
+      </div>
+
+      <div className="min-w-0 lg:pt-[60px]">
         {/* history */}
         {grouped.length === 0 ? (
           <div className="px-6 py-12 text-center">
@@ -613,6 +619,7 @@ export default function PracticeLogPage() {
             )}
           </Panel>
         )}
+      </div>
       </div>
 
       <SessionDetailSheet

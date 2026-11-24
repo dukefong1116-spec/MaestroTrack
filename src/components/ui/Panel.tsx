@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useStepBack } from '@/hooks/useStepBack'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
@@ -155,8 +155,34 @@ export function SettingsScreen({
   children: ReactNode
 }) {
   const stepBack = useStepBack(back)
+  // On an iPad or computer, every setting is listed beside the page, as in
+  // the iPad's own Settings; on a phone, the page alone.
+  const teacher = back.startsWith('/teacher')
+  const root = teacher ? '/teacher/settings' : '/student/settings'
+  const pages = [
+    ['profile', 'Profile'],
+    ...(teacher ? [['lessons', 'Lessons and prices']] : []),
+    ['notifications', 'Notifications'],
+    ['appearance', 'Appearance'],
+    ['privacy', 'Privacy & Security'],
+    ['guide', 'Guide'],
+    ['about', 'Support & Legal'],
+  ]
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl lg:grid lg:max-w-5xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-8">
+    <nav aria-label="Settings" className="hidden lg:sticky lg:top-6 lg:block">
+      <p className="mb-3 px-3 text-[22px] font-bold" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>Settings</p>
+      {pages.map(([to, label]) => (
+        <NavLink key={to} to={`${root}/${to}`}
+          className="block rounded-[10px] px-3 py-2 text-[14px] font-semibold"
+          style={({ isActive }) => (isActive
+            ? { background: 'var(--clay-accent-soft)', color: 'var(--clay-accent-ink)' }
+            : { color: 'var(--clay-ink-soft)' })}>
+          {label}
+        </NavLink>
+      ))}
+    </nav>
+    <div className="min-w-0">
       <div className="mb-6 flex items-center gap-3 lg:mb-8">
         <Link
           to={back}
@@ -175,6 +201,7 @@ export function SettingsScreen({
         </h1>
       </div>
       <div className="space-y-6">{children}</div>
+    </div>
     </div>
   )
 }
