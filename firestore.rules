@@ -777,7 +777,7 @@ service cloud.firestore {
     function validShare(d) {
       return d.keys().hasOnly(['ownerId', 'kind', 'fields', 'createdAt', 'image'])
         && d.keys().hasAll(['ownerId', 'kind', 'fields', 'createdAt'])
-        && d.kind in ['session', 'badge', 'streak', 'week']
+        && d.kind in ['session', 'badge', 'streak', 'week', 'league', 'recap', 'piece']
         && d.createdAt is string
         // The preview picture, which the share page renders. Pinned to
         // this project's own bucket, and to the owner's own folder in it:
@@ -809,7 +809,8 @@ service cloud.firestore {
       // Every field bounded: this is a public page, and an unbounded
       // string is a megabyte of whatever someone likes on this domain.
       return f.keys().hasOnly(['minutes', 'dateLabel', 'name', 'streakDays',
-                               'pieceTitle', 'category', 'week', 'badgeId', 'badgeLabel'])
+                               'pieceTitle', 'category', 'week', 'badgeId', 'badgeLabel',
+                               'headline', 'subline'])
         && f.get('minutes', 0) is int
         // A week's share carries the week's total, so up to 7 × 24 h.
         && f.get('minutes', 0) >= 0 && f.get('minutes', 0) <= 10080
@@ -828,7 +829,13 @@ service cloud.firestore {
         && f.get('badgeId', '') is string
         && f.get('badgeId', '').size() <= 60
         && f.get('badgeLabel', '') is string
-        && f.get('badgeLabel', '').size() <= 80;
+        && f.get('badgeLabel', '').size() <= 80
+        // A league result, a month's practice style, a piece learned: the
+        // card's own words, bounded like the rest.
+        && f.get('headline', '') is string
+        && f.get('headline', '').size() <= 80
+        && f.get('subline', '') is string
+        && f.get('subline', '').size() <= 120;
     }
 
     /* ══ Teacher studio ═══════════════════════════════════════════════

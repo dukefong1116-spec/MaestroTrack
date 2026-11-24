@@ -158,6 +158,8 @@ const DARK_GROUND = '#000000'
 /** Puts a set of preferences into effect. Safe to call repeatedly. */
 export function applyPrefs(p: Prefs): void {
   if (typeof document === 'undefined') return
+  // Colour themes are gone: always the app's own colour.
+  p = { ...p, accent: 'theme' }
   const root = document.documentElement
 
   root.dataset.theme = p.theme === 'system' ? '' : p.theme

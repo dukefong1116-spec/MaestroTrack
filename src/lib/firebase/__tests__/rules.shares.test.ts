@@ -137,6 +137,28 @@ describe('publishing a share', () => {
       ...SHARE, fields: { ...FIELDS, name: 'x'.repeat(81) },
     }))
   })
+  it('the newer moments — a league result, a month, a piece — with their own words', async () => {
+    for (const [slug, kind, extra] of [
+      ['kkkkkkkkkkkkkkkkkkkkkk', 'league', { headline: 'Moved up to Allegro', subline: 'Finished 2nd of 20 · 340 XP' }],
+      ['llllllllllllllllllllll', 'recap', { headline: '🦉 Night Owl', subline: 'Most practice after 8 pm' }],
+      ['mmmmmmmmmmmmmmmmmmmmmm', 'piece', { headline: 'Piece learned', pieceTitle: 'Clair de Lune' }],
+      ['nnnnnnnnnnnnnnnnnnnnnn', 'streak', {}],
+    ] as const) {
+      await assertSucceeds(setDoc(doc(as(ANA), 'shares', slug), { ...SHARE, kind, fields: { ...FIELDS, ...extra } }))
+    }
+  })
+
+  it('…but their words stay bounded', async () => {
+    await assertFails(setDoc(doc(as(ANA), 'shares', 'oooooooooooooooooooooo'), {
+      ...SHARE, kind: 'league', fields: { ...FIELDS, headline: 'x'.repeat(81) },
+    }))
+    await assertFails(setDoc(doc(as(ANA), 'shares', 'pppppppppppppppppppppp'), {
+      ...SHARE, kind: 'recap', fields: { ...FIELDS, subline: 'x'.repeat(121) },
+    }))
+    await assertFails(setDoc(doc(as(ANA), 'shares', 'qqqqqqqqqqqqqqqqqqqqqq'), {
+      ...SHARE, kind: 'recap', fields: { ...FIELDS, headline: 42 },
+    }))
+  })
 })
 
 /* ── 4. a published share never changes underneath its preview ────── */

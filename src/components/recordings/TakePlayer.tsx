@@ -199,13 +199,15 @@ export default function TakePlayer({
     }
   }
 
-  function scrub(e: React.MouseEvent<HTMLDivElement>) {
+  // Tap anywhere on the bar, or drag the knob along it.
+  const dragging = useRef(false)
+  function scrub(e: React.PointerEvent<HTMLDivElement>) {
     const el = ref.current
     if (!el || total <= 0) return
     const box = e.currentTarget.getBoundingClientRect()
-    const to = ((e.clientX - box.left) / box.width) * total
-    el.currentTime = Math.max(0, Math.min(total, to))
-    setElapsed(el.currentTime)
+    const to = Math.max(0, Math.min(1, (e.clientX - box.left) / box.width)) * total
+    el.currentTime = to
+    setElapsed(to)
   }
 
   return (
@@ -274,11 +276,11 @@ export default function TakePlayer({
                 {label}
               </span>
             )}
-            <span className="ml-auto shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
-              {error
-                ? undecodable ? "can't play here" : 'unavailable'
-                : playing || elapsed > 0 ? `${clock(elapsed)} / ${clock(total)}` : clock(total)}
-            </span>
+            {error && (
+              <span className="ml-auto shrink-0 text-[11px]" style={{ color: 'var(--clay-dim)' }}>
+                {undecodable ? "can't play here" : 'unavailable'}
+              </span>
+            )}
             {onDelete && (
               <button
                 type="button"
@@ -311,14 +313,25 @@ export default function TakePlayer({
             </p>
           )}
 
-          {/* Generous hit area around a slim bar — easy to scrub, quiet at rest. */}
-          <div className="mt-2 -my-1.5 cursor-pointer py-1.5" onClick={scrub}>
-            <div className="h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${pct}%`, background: 'var(--clay-accent)', transition: 'width .1s linear' }}
-              />
+          {/* A music-app bar: the played part, a knob to drag, and the time
+              gone and the time left underneath. A generous hit area. */}
+          <div
+            className="relative mt-2.5 cursor-pointer touch-none py-2"
+            onPointerDown={(e) => { dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); scrub(e) }}
+            onPointerMove={(e) => { if (dragging.current) scrub(e) }}
+            onPointerUp={() => { dragging.current = false }}
+            onPointerCancel={() => { dragging.current = false }}
+            role="slider" aria-label={`Position in ${label}`} aria-valuemin={0} aria-valuemax={Math.round(total)} aria-valuenow={Math.round(elapsed)}
+          >
+            <div className="h-[5px] rounded-full" style={{ background: 'var(--clay-bg-deep)' }}>
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'var(--clay-ink)' }} />
             </div>
+            <span className="pointer-events-none absolute top-1/2 h-[15px] w-[15px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: `${pct}%`, background: 'var(--clay-ink)', boxShadow: '0 1px 4px rgba(0,0,0,.25)' }} />
+          </div>
+          <div className="flex justify-between text-[11px] tabular-nums" style={{ color: 'var(--clay-dim)' }}>
+            <span>{clock(elapsed)}</span>
+            <span>-{clock(Math.max(0, total - elapsed))}</span>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import StreakFlame from '@/components/icons/StreakFlame'
 import Moment from './Moment'
 import { lookFor } from '@/lib/streak/looks'
+import { isStreakMilestone } from '@/lib/share/moments'
 import { playSubmitChime } from '@/lib/utils/sound'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 
@@ -12,12 +13,15 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
  */
 const SPARKS = 14
 
-export default function StreakLitMoment({ open, before, after, onDone }: {
+export default function StreakLitMoment({ open, before, after, onDone, onShare }: {
   open: boolean
   before: number
   after: number
   onDone: () => void
+  /** At a milestone (7, 30, 100 days…): offered as a Share button. */
+  onShare?: () => void
 }) {
+  const shareable = !!onShare && isStreakMilestone(after)
   const reduced = usePrefersReducedMotion()
   const [lit, setLit] = useState(false)
   useEffect(() => {
@@ -28,7 +32,7 @@ export default function StreakLitMoment({ open, before, after, onDone }: {
 
   const glow = lookFor(Math.max(1, after))
   return (
-    <Moment open={open} onDismiss={onDone} scrim="rgba(10,8,18,.94)" autoDismissMs={3600}>
+    <Moment open={open} onDismiss={onDone} scrim="rgba(10,8,18,.94)" autoDismissMs={shareable ? 7000 : 3600}>
       <div className="flex flex-col items-center text-center text-white">
         <div className="relative flex h-[260px] w-[260px] items-center justify-center">
           {/* The bloom behind the flame, and a ring that rushes out as it catches. */}
@@ -100,6 +104,19 @@ export default function StreakLitMoment({ open, before, after, onDone }: {
         >
           Today is lit. Come back tomorrow to keep it going.
         </motion.p>
+        {shareable && (
+          <motion.button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onShare?.() }}
+            className="mt-6 rounded-full px-7 py-3 text-[15px] font-bold"
+            style={{ background: '#fff', color: '#0E1626' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: lit ? 1 : 0, y: lit ? 0 : 8 }}
+            transition={{ delay: reduced ? 0 : 0.8 }}
+          >
+            Share my streak
+          </motion.button>
+        )}
       </div>
     </Moment>
   )

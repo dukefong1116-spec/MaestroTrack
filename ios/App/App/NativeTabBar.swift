@@ -1,6 +1,8 @@
 import UIKit
 import Capacitor
 import CoreHaptics
+import Photos
+import MessageUI
 
 /// The app's main screen: Capacitor's web view, plus the native pieces the
 /// web app asks for. Registered in SceneDelegate in place of the plain
@@ -12,6 +14,7 @@ class MutifViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(FemataHapticsPlugin())
         bridge?.registerPluginInstance(FemataNotifyPlugin())
         bridge?.registerPluginInstance(FemataWidgetsPlugin())
+        bridge?.registerPluginInstance(FemataSharePlugin())
         // Femata blue behind the page until it paints, so the launch screen
         // runs straight into the web one with no white flash. The page
         // paints its own background over it from then on.
@@ -440,5 +443,85 @@ public class FemataHapticsPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
         call.resolve()
+    }
+}
+
+
+/// Share cards, out of the app: saved straight to Photos, or attached to a
+/// new message, without the system share sheet in between. The card is
+/// drawn by the web app and arrives as base64 PNG.
+@objc(FemataSharePlugin)
+public class FemataSharePlugin: CAPPlugin, CAPBridgedPlugin, MFMessageComposeViewControllerDelegate {
+    public let identifier = "FemataSharePlugin"
+    public let jsName = "FemataShare"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "saveImage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "canMessage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "message", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "shareLink", returnType: CAPPluginReturnPromise),
+    ]
+
+    private var pending: CAPPluginCall?
+
+    private func image(_ call: CAPPluginCall) -> (Data, UIImage)? {
+        guard let b64 = call.getString("data"),
+              let data = Data(base64Encoded: b64),
+              let img = UIImage(data: data) else { return nil }
+        return (data, img)
+    }
+
+    /// Into the photo library (add-only permission, asked the first time).
+    @objc func saveImage(_ call: CAPPluginCall) {
+        guard let (_, img) = image(call) else { call.reject("No image"); return }
+        PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+            guard status == .authorized || status == .limited else {
+                call.resolve(["saved": false, "denied": true]); return
+            }
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.creationRequestForAsset(from: img)
+            }) { ok, _ in call.resolve(["saved": ok]) }
+        }
+    }
+
+    @objc func canMessage(_ call: CAPPluginCall) {
+        call.resolve(["ok": MFMessageComposeViewController.canSendText() && MFMessageComposeViewController.canSendAttachments()])
+    }
+
+    /// A new message with the card attached and the words written; the
+    /// person picks who it goes to and taps send themselves.
+    @objc func message(_ call: CAPPluginCall) {
+        let attachment = image(call)?.0
+        DispatchQueue.main.async {
+            guard MFMessageComposeViewController.canSendText() else { call.resolve(["sent": false]); return }
+            let vc = MFMessageComposeViewController()
+            vc.messageComposeDelegate = self
+            vc.body = call.getString("text") ?? ""
+            if let data = attachment { vc.addAttachmentData(data, typeIdentifier: "public.png", filename: "femata.png") }
+            self.pending = call
+            self.bridge?.viewController?.present(vc, animated: true)
+        }
+    }
+
+    /// The system share sheet with a link (which every app unfurls into
+    /// the card), opened natively so it works even after the link was
+    /// made — a web share has to come straight from the tap.
+    @objc func shareLink(_ call: CAPPluginCall) {
+        guard let s = call.getString("url"), let url = URL(string: s) else { call.reject("No link"); return }
+        let text = call.getString("text") ?? ""
+        DispatchQueue.main.async {
+            let vc = UIActivityViewController(activityItems: [text, url], applicationActivities: nil)
+            vc.completionWithItemsHandler = { _, done, _, _ in call.resolve(["shared": done]) }
+            if let pop = vc.popoverPresentationController, let v = self.bridge?.viewController?.view {
+                pop.sourceView = v
+                pop.sourceRect = CGRect(x: v.bounds.midX, y: v.bounds.maxY - 80, width: 1, height: 1)
+            }
+            self.bridge?.viewController?.present(vc, animated: true)
+        }
+    }
+
+    public func messageComposeViewController(_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult) {
+        controller.dismiss(animated: true)
+        pending?.resolve(["sent": result == .sent])
+        pending = nil
     }
 }

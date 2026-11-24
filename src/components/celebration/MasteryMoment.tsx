@@ -17,12 +17,14 @@ import type { MasteryCandidate } from '@/lib/utils/mastery'
  * not auto-dismiss and it has two explicit answers.
  */
 export default function MasteryMoment({
-  candidate, open, onConfirm, onDismiss,
+  candidate, open, onConfirm, onDismiss, onConfirmShare,
 }: {
   candidate: MasteryCandidate | null
   open: boolean
   onConfirm: () => void
   onDismiss: () => void
+  /** Mastered, and straight on to sharing it. */
+  onConfirmShare?: () => void
 }) {
   const reduced = usePrefersReducedMotion()
 
@@ -156,6 +158,19 @@ export default function MasteryMoment({
             Not yet
           </button>
         </motion.div>
+        {onConfirmShare && (
+          <motion.button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onConfirmShare() }}
+            className="mt-3 text-[14px] font-semibold"
+            style={{ color: 'var(--clay-accent-ink)' }}
+            initial={reduced ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+          >
+            Mastered — share it 🎉
+          </motion.button>
+        )}
       </div>
     </Moment>
   )

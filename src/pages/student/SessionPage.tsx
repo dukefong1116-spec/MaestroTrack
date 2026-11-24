@@ -22,6 +22,8 @@ import { Metronome, TapTempo } from '@/lib/audio/metronome'
 import { detectPitch, toNote, type PitchReading } from '@/lib/audio/pitch'
 import SessionCelebration from '@/components/celebration/SessionCelebration'
 import StreakLitMoment from '@/components/celebration/StreakLitMoment'
+import { openShare } from '@/stores/shareStore'
+import { streakShare } from '@/lib/share/moments'
 import GoalMoment from '@/components/celebration/GoalMoment'
 import LeagueSessionPanel from '@/components/league/LeagueSessionPanel'
 import { requestTicket, type SyncResult } from '@/lib/firebase/league'
@@ -1112,7 +1114,7 @@ export default function SessionPage() {
                     style={{
                       ...surface,
                       background: metroOn ? 'var(--clay-accent)' : 'var(--clay-ink)',
-                      color: '#fff',
+                      color: metroOn ? 'var(--clay-on-accent)' : 'var(--clay-page)',
                       boxShadow: 'none',
                     }}
                   >
@@ -1571,6 +1573,11 @@ export default function SessionPage() {
         before={reward?.streakBefore ?? 0}
         after={reward?.streakAfter ?? 0}
         onDone={() => setIntro((q) => q.slice(1))}
+        onShare={() => {
+          if (!reward) return
+          setIntro((q) => q.slice(1))
+          openShare(streakShare(reward.streakAfter, reward.minutesToday, profile?.displayName))
+        }}
       />
       <GoalMoment
         open={!!reward && intro[0] === 'goal'}

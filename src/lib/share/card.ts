@@ -1,7 +1,8 @@
-import { plural, type ShareFields } from './fields'
+import type { ShareFields } from './fields'
 
 /**
- * The share card, drawn rather than screenshotted.
+ * A share link's preview picture (the shareable cards themselves are in
+ * story.ts), drawn rather than screenshotted.
  *
  * Takes ShareFields and nothing else — no session, no profile — so the
  * renderer has no way to draw something private even by mistake.
@@ -14,17 +15,6 @@ import { plural, type ShareFields } from './fields'
  * the canvas and make toBlob throw a security error, which would present
  * as "sharing is broken" with nothing to explain it.
  */
-
-export type CardLayout = 'number' | 'streak' | 'ticket'
-
-export const CARD_LAYOUTS: { id: CardLayout; label: string; hint: string }[] = [
-  { id: 'number', label: 'The number', hint: 'Minutes front and centre' },
-  { id: 'streak', label: 'The streak', hint: 'Bold — best at a milestone' },
-  { id: 'ticket', label: 'The ticket', hint: 'Names the piece' },
-]
-
-const W = 1080
-const H = 1350
 
 const C = {
   bg: '#FFFFFF',
@@ -43,31 +33,6 @@ const C = {
 }
 
 const SANS = '-apple-system, BlinkMacSystemFont, system-ui, sans-serif'
-
-export async function renderShareCard(
-  fields: ShareFields,
-  layout: CardLayout = 'number'
-): Promise<Blob> {
-  // Any font still loading is waited for before the first fillText.
-  try { await document.fonts.ready } catch { /* older browsers: draw anyway */ }
-
-  const canvas = document.createElement('canvas')
-  canvas.width = W
-  canvas.height = H
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Canvas is unavailable in this browser')
-
-  if (layout === 'streak') drawStreak(ctx, fields)
-  else if (layout === 'ticket') drawTicket(ctx, fields)
-  else drawNumber(ctx, fields)
-
-  return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('Could not build the image'))),
-      'image/png'
-    )
-  })
-}
 
 /**
  * The same card again, landscape, for a share link's preview.
@@ -110,10 +75,18 @@ export async function renderOgCard(fields: ShareFields): Promise<Blob> {
     y += 52
   }
 
-  if (fields.badgeLabel) {
-    // A badge share leads with what was won, not with a duration.
-    text(ctx, fields.badgeLabel, left, y + 54, 86, '700', C.ink)
-    text(ctx, 'Badge earned', left, y + 108, 30, '500', C.dim)
+  const lead = fields.badgeLabel ?? fields.headline ?? (fields.minutes ? undefined : fields.pieceTitle)
+  if (lead) {
+    // A badge, a league result, a month, a piece: leads with what it is,
+    // not with a duration.
+    ctx.font = `700 86px ${SANS}`
+    let size = 86
+    while (size > 44 && ctx.measureText(lead).width > w - 520) { size -= 6; ctx.font = `700 ${size}px ${SANS}` }
+    text(ctx, lead, left, y + 54, size, '700', C.ink)
+    text(ctx, fields.badgeLabel ? 'Badge earned' : fields.subline ?? '', left, y + 108, 30, '500', C.dim)
+  } else if (!fields.minutes && fields.streakDays) {
+    text(ctx, String(fields.streakDays), left, y + 78, 150, '700', C.accent)
+    text(ctx, 'day practice streak', left, y + 132, 42, '600', C.ink)
   } else {
     text(ctx, String(fields.minutes), left, y + 78, 150, '700', C.accent)
     const nw = ctx.measureText(String(fields.minutes)).width
@@ -181,13 +154,6 @@ function roundRect(
   ctx.closePath()
 }
 
-function circle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, fill: string) {
-  ctx.fillStyle = fill
-  ctx.beginPath()
-  ctx.arc(x, y, r, 0, Math.PI * 2)
-  ctx.fill()
-}
-
 function text(
   ctx: CanvasRenderingContext2D, s: string, x: number, y: number,
   size: number, weight: string, colour: string,
@@ -223,24 +189,6 @@ function wordmark(ctx: CanvasRenderingContext2D, x: number, y: number, onDark = 
   text(ctx, 'Femata', x + 72, y + 36, 30, '600', onDark ? '#FFFFFF' : C.ink)
 }
 
-/** Monday-first week strip. Today is the last bar, and mint. */
-function weekStrip(ctx: CanvasRenderingContext2D, cx: number, baseline: number, week?: number[]) {
-  const days = week && week.length === 7 ? week : [0, 0, 0, 0, 0, 0, 0]
-  const peak = Math.max(...days, 1)
-  const barW = 42
-  const gap = 26
-  const total = days.length * barW + (days.length - 1) * gap
-  let x = cx - total / 2
-  days.forEach((mins, i) => {
-    const h = Math.max(22, Math.round((mins / peak) * 150))
-    const isToday = i === days.length - 1
-    ctx.fillStyle = mins === 0 ? C.bgDeep : isToday ? C.mint : C.accent
-    roundRect(ctx, x, baseline - h, barW, h, 16)
-    ctx.fill()
-    x += barW + gap
-  })
-}
-
 function flame(ctx: CanvasRenderingContext2D, cx: number, top: number, size: number, fill: string) {
   const s = size / 100
   ctx.fillStyle = fill
@@ -252,107 +200,4 @@ function flame(ctx: CanvasRenderingContext2D, cx: number, top: number, size: num
   ctx.bezierCurveTo(cx - 4 * s, top + 26 * s, cx - 2 * s, top + 12 * s, cx, top)
   ctx.closePath()
   ctx.fill()
-}
-
-/* ── A: the number ───────────────────────────────────────────────── */
-
-function drawNumber(ctx: CanvasRenderingContext2D, f: ShareFields) {
-  ctx.fillStyle = C.bg
-  ctx.fillRect(0, 0, W, H)
-  circle(ctx, 1010, 120, 300, C.accentSoft)
-  circle(ctx, 70, 1260, 240, C.bgDeep)
-  circle(ctx, 960, 1200, 120, C.butterSoft)
-
-  wordmark(ctx, 96, 92)
-  if (f.name) text(ctx, f.name, 96, 206, 28, '500', C.dim)
-  text(ctx, f.dateLabel, 96, f.name ? 248 : 206, 26, '400', C.faint)
-
-  ctx.fillStyle = C.surface
-  roundRect(ctx, 96, 320, 888, 440, 56)
-  ctx.fill()
-
-  text(ctx, 'TODAY I PRACTISED', 540, 420, 28, '500', C.faint, 'center', 5)
-  text(ctx, String(f.minutes), 540, 620, 220, '700', C.ink, 'center')
-  text(ctx, f.minutes === 1 ? 'minute' : 'minutes', 540, 694, 40, '400', C.dim, 'center')
-
-  if (f.streakDays) {
-    ctx.fillStyle = C.accentSoft
-    roundRect(ctx, 330, 812, 420, 96, 48)
-    ctx.fill()
-    flame(ctx, 408, 832, 62, C.accent)
-    text(ctx, `${f.streakDays}-day streak`, 450, 874, 38, '600', C.accentInk)
-  }
-
-  weekStrip(ctx, 540, 1130, f.week)
-  text(ctx, 'maestro-track.vercel.app', 540, 1248, 26, '400', C.faint, 'center')
-}
-
-/* ── B: the streak ───────────────────────────────────────────────── */
-
-function drawStreak(ctx: CanvasRenderingContext2D, f: ShareFields) {
-  ctx.fillStyle = C.accent
-  ctx.fillRect(0, 0, W, H)
-  circle(ctx, 1010, 110, 330, C.accentHover)
-  circle(ctx, 60, 1280, 260, C.accentHover)
-
-  wordmark(ctx, 96, 92, true)
-
-  flame(ctx, 540, 300, 300, '#FFFFFF')
-  text(ctx, String(f.streakDays ?? 1), 540, 860, 300, '700', '#FFFFFF', 'center')
-  text(ctx, f.streakDays === 1 ? 'DAY STREAK' : 'DAYS IN A ROW', 540, 936, 44, '500', C.accentSoft, 'center', 8)
-
-  ctx.fillStyle = '#FFFFFF'
-  roundRect(ctx, 300, 1020, 480, 110, 55)
-  ctx.fill()
-  text(ctx, `${f.minutes} min today`, 540, 1092, 40, '600', C.accentInk, 'center')
-
-  if (f.name) text(ctx, f.name, 540, 1208, 30, '400', C.accentSoft, 'center')
-  text(ctx, 'maestro-track.vercel.app', 540, 1262, 26, '400', C.accentSoft, 'center')
-}
-
-/* ── C: the ticket ───────────────────────────────────────────────── */
-
-function drawTicket(ctx: CanvasRenderingContext2D, f: ShareFields) {
-  ctx.fillStyle = C.surface
-  ctx.fillRect(0, 0, W, H)
-  ctx.fillStyle = '#FFC85C'
-  ctx.fillRect(0, 0, W, 28)
-  circle(ctx, 1040, 1240, 180, C.butterSoft)
-
-  wordmark(ctx, 96, 112)
-
-  text(ctx, (f.category ?? 'PRACTICE').toUpperCase(), 96, 316, 28, '500', C.faint, 'left', 5)
-  text(ctx, f.pieceTitle ?? 'Practice session', 96, 390, 56, '600', C.ink)
-
-  // A waveform, not a real one: this is a picture of having played, and
-  // drawing a fake spectrum from real audio would be the only part of
-  // this card that was not true.
-  const bars = 26
-  const mid = 560
-  let x = 96
-  for (let i = 0; i < bars; i++) {
-    const t = i / (bars - 1)
-    const h = 40 + Math.round(Math.abs(Math.sin(t * 7.5)) * 150 + Math.abs(Math.cos(t * 3.1)) * 40)
-    ctx.fillStyle = i % 2 === 0 ? C.accent : '#FFC0AC'
-    roundRect(ctx, x, mid - h / 2, 14, h, 7)
-    ctx.fill()
-    x += 34
-  }
-
-  ctx.strokeStyle = C.line
-  ctx.lineWidth = 3
-  ctx.setLineDash([10, 14])
-  ctx.beginPath()
-  ctx.moveTo(96, 740)
-  ctx.lineTo(984, 740)
-  ctx.stroke()
-  ctx.setLineDash([])
-
-  text(ctx, `${f.minutes} min`, 96, 880, 120, '700', C.ink)
-  const meta = [f.streakDays ? `${plural(f.streakDays, 'day')} in a row` : null, f.dateLabel]
-    .filter(Boolean).join('  ·  ')
-  text(ctx, meta, 96, 946, 30, '400', C.dim)
-
-  if (f.name) text(ctx, f.name, 96, 1180, 30, '500', C.dim)
-  text(ctx, 'maestro-track.vercel.app', 96, 1240, 26, '400', C.faint)
 }

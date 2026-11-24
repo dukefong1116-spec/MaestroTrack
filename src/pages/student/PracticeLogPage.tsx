@@ -7,6 +7,8 @@ import { z } from 'zod'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Share2, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { format, parseISO, subDays } from 'date-fns'
+import { openShare } from '@/stores/shareStore'
+import { weekShare } from '@/lib/share/moments'
 import { useAuth } from '@/hooks/useAuth'
 import { usePracticeStore } from '@/stores/practiceStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -443,9 +445,18 @@ export default function PracticeLogPage() {
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--clay-dim)' }}>
                 Last seven days
               </p>
-              <p className="text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>
-                {Math.round(weekTotal / 7)} min/day
-              </p>
+              <span className="flex items-center gap-2">
+                <p className="text-[12.5px]" style={{ color: 'var(--clay-faint)' }}>
+                  {Math.round(weekTotal / 7)} min/day
+                </p>
+                {weekTotal > 0 && (
+                  <button type="button" aria-label="Share your week"
+                    onClick={() => openShare(weekShare(week.map((d) => d.minutes), `${format(new Date(week[0].key + 'T12:00:00'), 'MMM d')} – ${format(new Date(week[6].key + 'T12:00:00'), 'MMM d')}`, profile?.displayName, streak))}
+                    className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: 'var(--clay-bg)', color: 'var(--clay-accent-ink)' }}>
+                    <Share2 size={14} />
+                  </button>
+                )}
+              </span>
             </div>
 
             <div className="grid h-[96px] items-end gap-[7px]" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>

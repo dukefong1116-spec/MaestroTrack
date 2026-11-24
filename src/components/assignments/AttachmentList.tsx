@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileText, Image, Music, Video } from 'lucide-react'
 import { attachmentUrl } from '@/lib/firebase/studio'
 import type { AssignmentAttachment } from '@/types'
@@ -31,10 +31,14 @@ export default function AttachmentList({ files, className }: { files?: Assignmen
       setBusy(null)
     }
   }
+  const images = files.filter((f) => f.kind === 'image')
+  const others = files.filter((f) => f.kind !== 'image')
   return (
     <div className={className}>
+      {/* Photos shown as photos: the score page, a fingering, a picture to copy. */}
+      {images.map((f) => <ImageAttachment key={f.storagePath} f={f} onOpen={() => void open(f)} />)}
       <div className="flex flex-wrap gap-1.5">
-        {files.map((f) => {
+        {others.map((f) => {
           const Icon = ICON[f.kind] ?? FileText
           return (
             <button key={f.storagePath} type="button" disabled={busy === f.storagePath} onClick={() => open(f)}
@@ -48,5 +52,24 @@ export default function AttachmentList({ files, className }: { files?: Assignmen
       </div>
       {error && <p className="mt-1 text-[12px]" style={{ color: 'var(--clay-danger)' }}>{error}</p>}
     </div>
+  )
+}
+
+/** A photo the teacher attached, drawn in place; tap for the full size. */
+function ImageAttachment({ f, onOpen }: { f: AssignmentAttachment; onOpen: () => void }) {
+  const [url, setUrl] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    let live = true
+    attachmentUrl(f).then((u) => { if (live) setUrl(u) }).catch(() => { if (live) setFailed(true) })
+    return () => { live = false }
+  }, [f])
+  if (failed) return null
+  return (
+    <button type="button" onClick={onOpen} aria-label={`Open ${f.name}`} className="mb-2 block w-full overflow-hidden rounded-[14px]" style={{ background: 'var(--clay-bg)' }}>
+      {url
+        ? <img src={url} alt={f.name} className="block max-h-[420px] w-full object-contain" loading="lazy" />
+        : <div className="h-40 w-full animate-pulse" />}
+    </button>
   )
 }

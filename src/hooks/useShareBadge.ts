@@ -1,33 +1,19 @@
-import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { publishAndShare } from '@/lib/share/link'
 import { BADGES } from '@/lib/utils/progression'
+import { openShare } from '@/stores/shareStore'
+import { badgeShare } from '@/lib/share/moments'
 
 /**
- * Publishing a badge as a link.
- *
- * Only the badge's own name and the date it was won leave the device —
- * no session, no notes, no piece. The name rides along on the same
- * opt-in the session card uses, which is on by default.
+ * Sharing a badge already won: the share window, with the badge's own
+ * card. Only the badge, the date it was won and (if "My name" is on) the
+ * name leave the device.
  */
 export function useShareBadge() {
   const { profile } = useAuth()
-  const [shareNote, setShareNote] = useState<string | null>(null)
-  async function shareBadge(id: string) {
-    const uid = profile?.uid
+  function shareBadge(id: string) {
     const badge = BADGES.find((b) => b.id === id)
-    if (!uid || !badge) return
-    const wonAt = profile?.badgeEarnedAt?.[id]
-    const outcome = await publishAndShare(uid, 'badge', {
-      minutes: 0,
-      dateLabel: wonAt ? new Date(wonAt).toLocaleDateString(undefined, { dateStyle: 'long' }) : '',
-      ...(profile?.displayName ? { name: profile.displayName } : {}),
-      badgeId: badge.id,
-      badgeLabel: badge.label,
-    }, `I earned ${badge.label} on Femata`)
-    if (outcome === 'cancelled') return
-    setShareNote(outcome === 'failed' ? 'Could not publish the link.' : outcome === 'shared' ? 'Shared' : 'Link copied')
-    setTimeout(() => setShareNote(null), 2200)
+    if (!badge) return
+    openShare(badgeShare(badge, profile?.badgeEarnedAt?.[id], profile?.displayName))
   }
-  return { shareBadge, shareNote }
+  return { shareBadge, shareNote: null as string | null }
 }

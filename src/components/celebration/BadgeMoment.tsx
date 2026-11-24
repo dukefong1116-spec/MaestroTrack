@@ -41,11 +41,12 @@ const SHARDS = [
 ]
 
 export default function BadgeMoment({
-  badge, open, onDismiss,
+  badge, open, onDismiss, onShare,
 }: {
   badge: BadgeAward | null
   open: boolean
   onDismiss: () => void
+  onShare?: () => void
 }) {
   const reduced = usePrefersReducedMotion()
   // A new pick for every badge shown.
@@ -70,7 +71,7 @@ export default function BadgeMoment({
   const t = reduced ? 0 : REVEAL[style] / 1000
 
   return (
-    <Moment open={open} onDismiss={onDismiss} scrim="rgba(10,8,18,.94)" autoDismissMs={4300}>
+    <Moment open={open} onDismiss={onDismiss} scrim="rgba(10,8,18,.94)" autoDismissMs={onShare ? 7000 : 4300}>
       <div className="flex flex-col items-center text-center text-white">
         <div className="relative" style={{ width: SIZE, height: SIZE, perspective: 700 }}>
           {/* Glow, once it is in colour. */}
@@ -123,6 +124,19 @@ export default function BadgeMoment({
         >
           {badge.description}
         </motion.p>
+        {onShare && (
+          <motion.button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onShare() }}
+            className="mt-6 rounded-full px-7 py-3 text-[15px] font-bold"
+            style={{ background: '#fff', color: '#0E1626' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: t + 0.6, duration: 0.4 }}
+          >
+            Share my badge
+          </motion.button>
+        )}
       </div>
     </Moment>
   )

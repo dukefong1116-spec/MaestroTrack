@@ -20,7 +20,7 @@ import type { ShareFields } from './fields'
  * This end only writes the document that page reads.
  */
 
-export type ShareKind = 'session' | 'badge' | 'streak' | 'week'
+export type ShareKind = 'session' | 'badge' | 'streak' | 'week' | 'league' | 'recap' | 'piece'
 
 export interface ShareRecord {
   slug: string

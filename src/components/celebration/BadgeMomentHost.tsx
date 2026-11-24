@@ -1,6 +1,9 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { useGamification } from '@/hooks/useGamification'
 import { useMomentStore } from '@/stores/momentStore'
+import { useAuth } from '@/hooks/useAuth'
+import { openShare } from '@/stores/shareStore'
+import { badgeShare } from '@/lib/share/moments'
 
 /**
  * The badge unlock, from any page, the moment a badge is won — marking a
@@ -16,6 +19,7 @@ const BadgeMoment = lazy(() => import('./BadgeMoment'))
 
 export default function BadgeMomentHost() {
   const game = useGamification()
+  const { profile } = useAuth()
   const busy = useMomentStore((s) => s.open)
   const [showing, setShowing] = useState(false)
   const badge = game.pendingBadge
@@ -35,6 +39,12 @@ export default function BadgeMomentHost() {
       badge={badge ? { id: badge.id, label: badge.label, description: badge.description } : null}
       open={showing && !!badge}
       onDismiss={() => { setShowing(false); game.dismissBadge() }}
+      onShare={badge ? () => {
+        const b = { id: badge.id, label: badge.label, description: badge.description }
+        setShowing(false)
+        game.dismissBadge()
+        openShare(badgeShare(b, new Date().toISOString(), profile?.displayName))
+      } : undefined}
     />
     </Suspense>
   )

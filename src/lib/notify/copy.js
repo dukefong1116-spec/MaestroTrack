@@ -23,6 +23,14 @@ export const COPY = {
     ['Five minutes still counts', 'Scales, a passage, anything. Keep the flame going 🔥'],
     ['Practice o’clock, {name}', 'Your flame is ready when you are.'],
   ] },
+  // A friendly nudge at another time of day, as well as the set one.
+  'practice-nudge': { cat: 'streak', mood: 'Excited', to: '/student/session', lines: [
+    ['Got 10 minutes, {name}?', 'A quick practice now makes tonight easier 🎶'],
+    ['{piece} is calling', 'Just one run-through?'],
+    ['Femata is warming up 🎵', 'Join in for a few minutes?'],
+    ['Little and often', 'Five minutes now still counts toward today.'],
+    ['Your {instrument} looks lonely', 'Say hi with a scale or two 👋'],
+  ] },
   'streak-start': { cat: 'streak', mood: 'Happy', to: '/student/session', lines: [
     ['Hey {name}!', 'Ten minutes today starts a streak 🔥'],
     ['Today could be day 1', 'Start small. Start now.'],

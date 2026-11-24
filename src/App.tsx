@@ -17,6 +17,7 @@ import { useLeagueSync } from '@/hooks/useLeagueSync'
 import { useStreakUpkeep } from '@/hooks/useStreak'
 import LeagueResultGate from '@/components/league/LeagueResultGate'
 import BadgeMomentHost from '@/components/celebration/BadgeMomentHost'
+import ShareHost from '@/components/share/ShareHost'
 import StudioJoinedMoment from '@/components/celebration/StudioJoinedMoment'
 import { useAuth } from '@/hooks/useAuth'
 import ProtectedRoute from '@/features/auth/ProtectedRoute'
@@ -256,6 +257,8 @@ function DataProvider({ children }: { children: React.ReactNode }) {
       <StudioJoinedMoment />
       {/* A badge, the moment it is won, from any page. */}
       {profile?.role === 'student' && <BadgeMomentHost />}
+      {/* The share window, opened from any celebration or page. */}
+      <ShareHost />
       {/* The streak goal: the first commitment, and each one after. */}
       {profile?.role === 'student' && <Suspense fallback={null}><StreakGoalHost /></Suspense>}
     </>

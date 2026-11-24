@@ -3,8 +3,6 @@ import { motion } from 'framer-motion'
 import { Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { getTheme } from '@/lib/utils/instruments'
-import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import NotificationBell from '@/components/notifications/NotificationBell'
 import { useNotifications } from '@/hooks/useNotifications'
 import Sticker from '@/components/stickers/Sticker'
@@ -14,7 +12,6 @@ import LogOutSheet from './LogOutSheet'
 import { cn } from '@/lib/utils/cn'
 import { homeFor, navFor, settingsFor, studioNav, type NavItem } from './nav'
 import { useStudio } from '@/hooks/useStudio'
-import type { InstrumentType } from '@/types'
 
 function NavIcon({ icon, active }: { icon: NavItem['icon']; active: boolean }) {
   if (typeof icon === 'string') {
@@ -34,7 +31,6 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   // Follows the accent choice: the app colour by default, the instrument's
   // own colour for someone who picked "Match my instrument".
-  const theme = getTheme(profile?.instrument as InstrumentType | undefined)
   const game = useGamification()
   const cachedRole = user ? localStorage.getItem(`maestro_role_${user.uid}`) : null
   const role = profile?.role ?? cachedRole
@@ -53,12 +49,8 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5">
-        <div
-          className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-          style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, boxShadow: 'var(--clay-raised)' }}
-        >
-          <InstrumentIcon instrument={profile?.instrument as InstrumentType | undefined} size={19} className="text-white" />
-        </div>
+        {/* The app's own icon. */}
+        <img src="/apple-touch-icon.png" alt="" className="h-10 w-10 shrink-0 rounded-2xl" style={{ boxShadow: 'var(--clay-raised)' }} draggable={false} />
         {!collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-w-0">
             <p className="font-bold text-sm leading-tight" style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}>

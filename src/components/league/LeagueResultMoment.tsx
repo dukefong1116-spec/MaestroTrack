@@ -14,6 +14,8 @@ import { TierBackdrop, TierTrophy } from './TierArt'
 import { themeFor } from '@/lib/league/themes'
 import Confetti from '@/components/celebration/Confetti'
 import { useHoldMoment } from '@/stores/momentStore'
+import { openShare } from '@/stores/shareStore'
+import { leagueShare } from '@/lib/share/moments'
 import type { InstrumentType, LeagueResult } from '@/types'
 
 /**
@@ -216,6 +218,29 @@ export default function Reveal({ result }: { result: LeagueResult }) {
         )}
 
         <div className="flex-1" />
+        {/* A good week is worth showing off; a week down is not pushed. */}
+        {outcome !== 'down' && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: stage === 'done' ? 1 : 0, y: stage === 'done' ? 0 : 10 }}
+            transition={{ delay: 0.75 }}
+            disabled={stage !== 'done'}
+            onClick={(e) => {
+              e.stopPropagation()
+              finish()
+              openShare(leagueShare(
+                outcome === 'up' ? `Moved up to ${to.name}` : outcome === 'maestro' ? 'Maestro finish' : `Held my place in ${to.name}`,
+                `Finished ${ordinal(result.rank)} of ${result.of} · ${result.xp} XP`,
+                profile?.displayName,
+              ))
+            }}
+            className="mb-3 w-full rounded-full py-3.5 text-[15px] font-bold"
+            style={{ background: 'rgba(255,255,255,.16)', color: ground.ink, border: '1.5px solid rgba(255,255,255,.35)' }}
+          >
+            Share my week
+          </motion.button>
+        )}
         <motion.button
           type="button"
           initial={{ opacity: 0, y: 10 }}

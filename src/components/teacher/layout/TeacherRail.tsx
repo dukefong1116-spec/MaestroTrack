@@ -64,9 +64,8 @@ export default function TeacherRail() {
         }}
       >
         <div className="mb-2.5 flex h-12 shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap pl-1">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.875rem]" style={{ background: 'linear-gradient(135deg, var(--clay-accent), var(--clay-accent-hover))' }}>
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></svg>
-          </span>
+          {/* The app's own icon. */}
+          <img src="/apple-touch-icon.png" alt="" className="h-10 w-10 shrink-0 rounded-[0.875rem]" draggable={false} />
           <span className="min-w-0" style={{ opacity: open ? 1 : 0, transition: reduce ? 'none' : 'opacity 120ms ease' }}>
             <span className="block text-sm font-bold" style={{ color: 'var(--clay-ink)' }}>Femata</span>
             <span className="block truncate text-xs" style={{ color: 'var(--clay-dim)' }}>

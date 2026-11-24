@@ -28,6 +28,13 @@ export interface ShareFields {
   /** Set only when the share is a badge rather than a session. */
   badgeId?: string
   badgeLabel?: string
+  /**
+   * The card's main line when it is not a number: "Moved up to Allegro",
+   * "Night Owl", a piece learned. Already worded, nothing private in it.
+   */
+  headline?: string
+  /** One more line under it: "#2 in Allegro", "Most practice after 9 pm". */
+  subline?: string
 }
 
 export interface ShareOptions {
@@ -84,6 +91,8 @@ export function plural(n: number, word: string): string {
 }
 
 export function buildShareText(f: ShareFields): string {
+  if (f.badgeLabel) return `I earned ${f.badgeLabel} on Femata 🏅`
+  if (f.headline) return `${f.headline}${f.subline ? ` — ${f.subline}` : ''} · on Femata 🎶`
   const bits = [`${plural(f.minutes, 'minute')} of practice`]
   if (f.pieceTitle) bits.push(`on ${f.pieceTitle}`)
   if (f.streakDays) bits.push(`· ${f.streakDays}-day streak`)

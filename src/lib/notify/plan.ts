@@ -122,6 +122,11 @@ export function planStudent(i: StudentPlanInput): LocalItem[] {
     const streakVars = today ? { streak: i.streak || undefined, next: i.streak + 1, left: Math.max(1, i.goalMinutes - i.todayMinutes) } : {}
     const daily = i.streak > 0 || !today ? 'streak-daily' : 'streak-start'
     drafts.push({ kind: daily, at: at(i.now, d, hour, minute), vars: { ...base, ...streakVars }, priority: 90 })
+    // A nudge at another time of day too — it moves around (late morning
+    // to mid-afternoon, a different hour each day) so it never feels like
+    // a second alarm, and keeps clear of the set time.
+    const nudgeHour = 11 + ((at(i.now, d, 12, 0) / DAY + 2) % 5 | 0)
+    if (Math.abs(nudgeHour - hour) >= 2) drafts.push({ kind: 'practice-nudge', at: at(i.now, d, nudgeHour, 15), vars: { ...base }, priority: 50 })
     // The evening one only when the daily one was well before it.
     if (hour <= 17) drafts.push({ kind: 'streak-evening', at: at(i.now, d, 19, 30), vars: { ...base, ...streakVars }, priority: 80 })
     // Two hours to midnight with nothing to catch a fall.

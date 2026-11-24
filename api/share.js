@@ -154,9 +154,14 @@ export default async function handler(req, res) {
   const who = name ? `${name} ` : ''
   const title = fields.badgeLabel
     ? `${who}earned ${fields.badgeLabel}`
-    : `${who}practised ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
+    : fields.headline
+      ? `${name ? `${name}: ` : ''}${fields.headline}`
+      : fields.streakDays && !minutes
+        ? `${who}is on a ${fields.streakDays}-day practice streak`
+        : `${who}practised ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
 
   const parts = []
+  if (fields.subline) parts.push(fields.subline)
   if (fields.pieceTitle) parts.push(fields.pieceTitle)
   if (fields.streakDays) parts.push(`${fields.streakDays}-day streak`)
   if (fields.dateLabel) parts.push(fields.dateLabel)

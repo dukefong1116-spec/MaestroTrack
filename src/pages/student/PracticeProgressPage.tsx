@@ -1,5 +1,6 @@
 import PracticeTabs from '@/components/practice/PracticeTabs'
 import ProgressPage from './ProgressPage'
+import MonthRecapCard from '@/components/share/MonthRecapCard'
 
 /**
  * Practice → Progress. The Progress page as it always was, under the
@@ -16,6 +17,8 @@ export default function PracticeProgressPage() {
           <h1 className="text-[27px] font-semibold leading-tight">Practice</h1>
         </div>
         <PracticeTabs />
+        {/* The month so far, with its practice style: made to be shared. */}
+        <MonthRecapCard />
       </div>
       <ProgressPage embedded />
     </div>

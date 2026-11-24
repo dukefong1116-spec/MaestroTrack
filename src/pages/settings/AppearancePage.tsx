@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Sun, Moon, Monitor, Zap, Vibrate } from 'lucide-react'
+import { Sun, Moon, Zap, Vibrate } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
-import { getInstrumentTheme } from '@/lib/utils/instruments'
-import { ACCENTS, SCALES, type AccentName, type ThemeChoice } from '@/lib/utils/prefs'
+import { SCALES, type ThemeChoice } from '@/lib/utils/prefs'
 import { Panel, Block, Legend, ToggleRow, SettingsScreen } from '@/components/ui/Panel'
 import { haptic, setHapticsEnabled } from '@/lib/haptics'
-import { cn } from '@/lib/utils/cn'
-import type { InstrumentType } from '@/types'
 
 const THEMES: { id: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { id: 'light', label: 'Light', icon: Sun },
   { id: 'dark', label: 'Dark', icon: Moon },
-  { id: 'system', label: 'System', icon: Monitor },
 ]
 
 export default function AppearancePage() {
@@ -26,11 +22,6 @@ export default function AppearancePage() {
     return () => window.removeEventListener('femata:prefs-failed', on)
   }, [])
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
-  const instrument = profile?.instrument as InstrumentType | undefined
-  // Raw, not getTheme: this swatch is a preview of what 'match my
-  // instrument' would look like, so running it through the override made
-  // it show the accent already chosen — the option misrepresenting itself.
-  const instrumentTheme = getInstrumentTheme(instrument)
 
   return (
     <SettingsScreen title="Appearance" back={back}>
@@ -41,7 +32,7 @@ export default function AppearancePage() {
       )}
       <Panel>
         <Block first>
-          <Legend title="Theme" hint="System follows whatever your phone or computer is set to." />
+          <Legend title="Theme" />
           <div className="grid grid-cols-3 gap-2">
             {THEMES.map(({ id, label, icon: Icon }) => {
               const on = prefs.theme === id
@@ -63,39 +54,6 @@ export default function AppearancePage() {
                 </button>
               )
             })}
-          </div>
-        </Block>
-
-        <Block>
-          <Legend
-            title="Accent"
-            hint="App colour is the default. Match my instrument gives your rings and charts your instrument's colour. Anything else replaces both."
-          />
-          <div className="flex flex-wrap gap-2.5">
-            <Swatch
-              name="theme"
-              label="App colour"
-              colour="var(--clay-accent)"
-              selected={prefs.accent === 'theme'}
-              onPick={() => void set({ accent: 'theme' })}
-            />
-            <Swatch
-              name="instrument"
-              label={`Match my ${instrumentTheme.label.toLowerCase()}`}
-              colour={instrumentTheme.primary}
-              selected={prefs.accent === 'instrument'}
-              onPick={() => void set({ accent: 'instrument' })}
-            />
-            {(Object.keys(ACCENTS) as Exclude<AccentName, 'instrument' | 'theme'>[]).map((name) => (
-              <Swatch
-                key={name}
-                name={name}
-                label={ACCENTS[name].label}
-                colour={ACCENTS[name].accent}
-                selected={prefs.accent === name}
-                onPick={() => void set({ accent: name })}
-              />
-            ))}
           </div>
         </Block>
 
@@ -144,36 +102,5 @@ export default function AppearancePage() {
         />
       </Panel>
     </SettingsScreen>
-  )
-}
-
-function Swatch({
-  name, label, colour, selected, onPick,
-}: {
-  name: string
-  label: string
-  colour: string
-  selected: boolean
-  onPick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      aria-pressed={selected}
-      aria-label={label}
-      title={label}
-      data-accent={name}
-      className={cn(
-        'h-11 w-11 rounded-full transition-transform active:scale-90',
-        selected && 'ring-2 ring-offset-2'
-      )}
-      style={{
-        background: colour,
-        // Tailwind's ring colours are its own palette; these are the app's.
-        ['--tw-ring-color' as string]: 'var(--clay-ink)',
-        ['--tw-ring-offset-color' as string]: 'var(--clay-surface)',
-      }}
-    />
   )
 }

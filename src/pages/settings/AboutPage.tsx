@@ -4,8 +4,6 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
-import { recentOpenTimes, type OpenTime } from '@/lib/utils/openTimes'
-import licenses from '@/generated/licenses.json'
 
 const SUPPORT_EMAIL = 'support@maestrotrack.app'
 
@@ -62,25 +60,15 @@ function NotWrittenYet({ what }: { what: string }) {
   )
 }
 
-/** "Today 0.4s · sign-in 0.9s · profile 1.2s · live 1.6s" */
-function openLine(t: OpenTime): string {
-  const part = (label: string, ms?: number) => (ms === undefined ? null : `${label} ${(ms / 1000).toFixed(1)}s`)
-  return [part('Today', t.shown), part('sign-in', t.auth), part('profile', t.profile), part('live', t.live)]
-    .filter(Boolean).join(' · ')
-}
-
 export default function AboutPage() {
   const { profile } = useAuth()
   const back = profile?.role === 'teacher' ? '/teacher/settings' : '/student/settings'
   const isTeacher = profile?.role === 'teacher'
-  // Read once: how quickly Today appeared on this device, latest first.
-  const [opens] = useState(recentOpenTimes)
 
   // The first-run tour again, from the top — skippable this time, since
   // they asked for it rather than being new.
   const { replay } = useTour()
 
-  const [showLicenses, setShowLicenses] = useState(false)
 
   return (
     <SettingsScreen title="Support & Legal" back={back}>
@@ -129,55 +117,9 @@ export default function AboutPage() {
         )}
 
         <Block>
-          <Legend title="This build" />
+          <Legend title="About" />
         </Block>
         <FactRow label="Version" value={__APP_VERSION__} />
-        <FactRow label="Built" value={__BUILD_DATE__} />
-        {opens.map((t, i) => (
-          <FactRow
-            key={t.at}
-            label={i === 0 ? 'Latest open' : `${i + 1} opens ago`}
-            value={openLine(t)}
-          />
-        ))}
-
-        <button
-          type="button"
-          onClick={() => setShowLicenses((o) => !o)}
-          aria-expanded={showLicenses}
-          className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-transform active:scale-[.99] sm:px-6"
-          style={{ borderTop: '1px solid var(--clay-line)' }}
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>
-              Open-source licenses
-            </span>
-            <span className="block text-xs" style={{ color: 'var(--clay-dim)' }}>
-              {licenses.length} packages this app is built on
-            </span>
-          </span>
-          <ChevronDown
-            size={18}
-            className="shrink-0 transition-transform"
-            style={{ color: 'var(--clay-faint)', transform: showLicenses ? 'rotate(180deg)' : 'none' }}
-          />
-        </button>
-        {showLicenses && (
-          <div style={{ borderTop: '1px solid var(--clay-line)' }}>
-            {licenses.map((l) => (
-              <div
-                key={l.name}
-                className="flex items-baseline justify-between gap-4 px-5 py-2.5 sm:px-6"
-                style={{ borderTop: '1px solid var(--clay-line)' }}
-              >
-                <span className="min-w-0 truncate text-[13px]" style={{ color: 'var(--clay-ink)' }}>
-                  {l.name} <span style={{ color: 'var(--clay-faint)' }}>{l.version}</span>
-                </span>
-                <span className="shrink-0 text-xs" style={{ color: 'var(--clay-dim)' }}>{l.license}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </Panel>
     </SettingsScreen>
   )

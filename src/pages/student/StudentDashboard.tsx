@@ -16,6 +16,8 @@ import NudgeList from '@/components/common/NudgeList'
 import { usePracticeNudges } from '@/hooks/usePracticeNudges'
 import FreezeMoment from '@/components/celebration/FreezeMoment'
 import MasteryMoment from '@/components/celebration/MasteryMoment'
+import { openShare } from '@/stores/shareStore'
+import { pieceShare } from '@/lib/share/moments'
 import { useGamification } from '@/hooks/useGamification'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
 import Avatar from '@/components/profile/Avatar'
@@ -383,6 +385,11 @@ export default function StudentDashboard() {
         open={!!game.pendingMastery}
         onConfirm={game.confirmMastery}
         onDismiss={game.dismissMastery}
+        onConfirmShare={() => {
+          const title = game.pendingMastery?.piece.title
+          game.confirmMastery()
+          if (title) openShare(pieceShare(title, 'learned', profile?.displayName))
+        }}
       />
     </div>
   )
