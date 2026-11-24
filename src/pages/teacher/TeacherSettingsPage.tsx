@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bell, ChevronRight, Palette, ShieldCheck, LifeBuoy, Tags, UserPlus, BookOpen, Sparkles } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,6 +44,13 @@ function NavRow({ icon, label, to, value }: { icon: ReactNode; label: string; to
 
 export default function TeacherSettingsPage() {
   const { profile, user } = useAuth()
+  // On an iPad or computer, Settings opens straight to a page with the list
+  // beside it (SettingsScreen); this overview is the phone's.
+  const goWide = useNavigate()
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) goWide('/teacher/settings/profile', { replace: true })
+  }, [goWide])
+
   const settings = useStudioSettings()
   const [inviting, setInviting] = useState(false)
   const navigate = useNavigate()

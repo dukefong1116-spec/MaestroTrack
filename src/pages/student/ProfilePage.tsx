@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Camera, Check, Mail, KeyRound } from 'lucide-react'
+import { SettingsScreen } from '@/components/ui/Panel'
+import { ChevronRight, Camera, Check, Mail, KeyRound } from 'lucide-react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,7 +16,6 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import type { InstrumentType, UserProfile } from '@/types'
-import { useStepBack } from '@/hooks/useStepBack'
 
 const schema = z.object({
   displayName: z.string().min(2, 'Use at least two characters.'),
@@ -83,7 +83,6 @@ function Note({ tone, children }: { tone: 'ok' | 'bad'; children: React.ReactNod
 
 export default function ProfilePage() {
   const { profile, user } = useAuth()
-  const stepBack = useStepBack('/student/settings')
   const { setProfile } = useAuthStore()
 
   const [saving, setSaving] = useState(false)
@@ -214,24 +213,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6 flex items-center gap-3 lg:mb-8">
-        <Link
-          to="/student/settings"
-          onClick={stepBack}
-          aria-label="Back to Settings"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
-          style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
-        >
-          <ChevronLeft size={20} />
-        </Link>
-        <h1
-          className="text-[22px] font-bold leading-tight lg:text-[26px]"
-          style={{ color: 'var(--clay-ink)', fontFamily: 'var(--clay-font)' }}
-        >
-          Edit Profile
-        </h1>
-      </div>
+    <SettingsScreen title="Edit Profile" back="/student/settings">
 
       <div
         className="overflow-hidden"
@@ -412,7 +394,7 @@ export default function ProfilePage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </SettingsScreen>
   )
 }
 

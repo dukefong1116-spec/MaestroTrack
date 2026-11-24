@@ -188,7 +188,7 @@ export function SettingsScreen({
           to={back}
           onClick={stepBack}
           aria-label="Back"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90"
+          className="flex h-10 w-10 shrink-0 lg:hidden items-center justify-center rounded-full transition-transform active:scale-90"
           style={{ background: 'var(--clay-surface)', boxShadow: 'var(--clay-raised)', color: 'var(--clay-ink)' }}
         >
           <ChevronLeft size={20} />

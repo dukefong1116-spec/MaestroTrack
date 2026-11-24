@@ -887,13 +887,13 @@ export default function SessionPage() {
       {/* Femata keeps you company: focused while the clock runs, dozing
           while it is paused. Drag it out of the way of anything. */}
       {!inTour && <FemataBuddy mood={timerRunning ? 'focused' : 'sleepy'} spot="session" size={64} bottom="calc(112px + env(safe-area-inset-bottom))" />}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto lg:flex lg:flex-col">
       {/* One column on a phone. On an iPad or computer, two: pieces, the
           clock and the category on the left; the tools and thoughts on the
           right. The wrappers vanish on a phone (display: contents), and the
           order numbers keep its single column exactly as it was. */}
-      <div className="mx-auto flex w-full max-w-md flex-col px-5 pb-4 pt-3 lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-x-8">
-        <div className="order-0 lg:col-span-2">
+      <div className="mx-auto flex w-full max-w-md flex-col px-5 pb-4 pt-3 lg:grid lg:flex-1 lg:max-w-5xl lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr_auto] lg:items-stretch lg:gap-x-8">
+        <div className="order-0 lg:order-0 lg:col-span-2">
         {/* header */}
         <div className="mb-3 flex items-center justify-between gap-3">
           {inTour ? <span className="h-10 w-10 shrink-0" aria-hidden /> : (
@@ -929,12 +929,11 @@ export default function SessionPage() {
         </div>
 
         </div>
-      <div className="contents lg:flex lg:flex-col">
-        <div className="order-1">
+        <div className="order-1 lg:order-1 lg:col-span-2">
         {/* Pieces: tap any you are working on. More than one shares the
             session's minutes evenly. A row of chips rather than a dropdown,
             because a dropdown picks one. */}
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 lg:justify-center-safe" style={{ scrollbarWidth: 'none' }}>
           {activePieces.length > 0 && (
             <div className="flex shrink-0 gap-2" data-coach="session-pieces">
               {activePieces.map((p) => {
@@ -970,7 +969,8 @@ export default function SessionPage() {
         </div>
 
         </div>
-        <div className="order-3">
+      <div className="contents lg:order-2 lg:flex lg:flex-col lg:justify-center">
+        <div className="order-3 lg:origin-center lg:scale-125">
         {/*
           Pendulum + dial. The arm is anchored below the dial and runs taller
           than it, so the top third — and the weight — stays visible above the
@@ -1023,38 +1023,8 @@ export default function SessionPage() {
           <DailyToday liveMinutes={Math.floor(elapsedSec / 60)} liveByCategory={liveSplit} livePieceIds={pieceIds} compact />
         </div>
         </div>
-        <div className="order-7">
-        {/* category */}
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }} data-coach="session-categories">
-          {CATEGORIES.map((c) => {
-            const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
-            return (
-              <button
-                key={c}
-                onClick={() => pickCategory(c)}
-                aria-pressed={category === c}
-                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
-                style={{
-                  borderRadius: 999,
-                  background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
-                  color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
-                  boxShadow: category === c ? 'none' : 'var(--clay-raised)',
-                }}
-              >
-                {c}
-                {/* The split as it forms: every category with a minute in it
-                    says how many, so moving on is visibly not losing time. */}
-                {spent > 0 && (
-                  <span className="tabular-nums" style={{ opacity: 0.75 }}>{spent}m</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        </div>
       </div>
-      <div className="contents lg:flex lg:flex-col lg:pt-1">
+      <div className="contents lg:order-3 lg:flex lg:min-h-[min(56vh,480px)] lg:flex-col lg:pt-1">
         <div className="order-4">
         {/* tool dock */}
         <div className="mb-3 grid grid-cols-3 gap-3" data-coach="session-tools">
@@ -1142,8 +1112,9 @@ export default function SessionPage() {
                     className="py-3 text-[13px] font-semibold"
                     style={{
                       ...surface,
-                      background: metroOn ? 'var(--clay-accent)' : 'var(--clay-ink)',
-                      color: metroOn ? 'var(--clay-on-accent)' : 'var(--clay-page)',
+                      // Start in the app's blue; Stop in the deeper blue.
+                      background: metroOn ? 'var(--clay-accent-ink)' : 'var(--clay-accent)',
+                      color: metroOn ? 'var(--clay-page)' : 'var(--clay-on-accent)',
                       boxShadow: 'none',
                     }}
                   >
@@ -1330,9 +1301,11 @@ export default function SessionPage() {
           )}
         </AnimatePresence>
         </div>
-        <div className="order-2 lg:order-9">
+        {/* On a wide screen the notes fill whatever the right column has
+            left — more lines with the tools closed, fewer with one open. */}
+        <div className="order-2 lg:order-9 lg:flex lg:flex-1 lg:flex-col">
         {/* thoughts */}
-        <div className="mb-3 px-4 py-3" style={{ ...surface, boxShadow: 'none' }}>
+        <div className="mb-3 px-4 py-3 lg:flex lg:flex-1 lg:flex-col" style={{ ...surface, boxShadow: 'none' }}>
           <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[.12em]" style={{ color: 'var(--clay-dim)' }}>
             Thoughts
           </p>
@@ -1341,7 +1314,7 @@ export default function SessionPage() {
             onChange={(e) => setThoughts(e.target.value)}
             rows={2}
             placeholder="what's working? what isn't?"
-            className="w-full resize-none bg-transparent outline-none"
+            className="w-full resize-none bg-transparent outline-none lg:min-h-[78px] lg:flex-1"
             style={{
               fontFamily: 'var(--clay-hand)',
               fontSize: 19,
@@ -1354,11 +1327,41 @@ export default function SessionPage() {
         </div>
         </div>
       </div>
+        <div className="order-7 lg:order-4 lg:col-span-2">
+        {/* category */}
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 lg:justify-center-safe" style={{ scrollbarWidth: 'none' }} data-coach="session-categories">
+          {CATEGORIES.map((c) => {
+            const spent = Math.floor((liveSecByCategory[c] ?? 0) / 60)
+            return (
+              <button
+                key={c}
+                onClick={() => pickCategory(c)}
+                aria-pressed={category === c}
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3.5 py-2 text-[12px] font-semibold transition-transform active:scale-95"
+                style={{
+                  borderRadius: 999,
+                  background: category === c ? 'var(--clay-accent-soft)' : 'var(--clay-surface)',
+                  color: category === c ? 'var(--clay-accent-ink)' : 'var(--clay-dim)',
+                  boxShadow: category === c ? 'none' : 'var(--clay-raised)',
+                }}
+              >
+                {c}
+                {/* The split as it forms: every category with a minute in it
+                    says how many, so moving on is visibly not losing time. */}
+                {spent > 0 && (
+                  <span className="tabular-nums" style={{ opacity: 0.75 }}>{spent}m</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        </div>
       </div>
       </div>
 
       {/* Finish, always on screen. */}
-      <div className="mx-auto w-full max-w-md shrink-0 px-5 pt-2 lg:max-w-5xl" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+      <div className="mx-auto w-full max-w-md shrink-0 px-5 pt-2 lg:max-w-3xl" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
         {saveError && (
           <p className="mb-3 rounded-2xl px-4 py-3 text-[13px] leading-relaxed" style={{ background: 'var(--clay-danger-bg)', color: 'var(--clay-danger)' }}>
             {saveError}

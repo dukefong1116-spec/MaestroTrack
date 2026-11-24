@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Bell, Palette, ShieldCheck, LifeBuoy, GraduationCap, Pencil, BookOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useStepBack } from '@/hooks/useStepBack'
 import { useAuth } from '@/hooks/useAuth'
 import { subscribeMyStudioRequest } from '@/lib/firebase/requests'
@@ -14,6 +14,13 @@ import type { InstrumentType } from '@/types'
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
+  // On an iPad or computer, Settings opens straight to a page with the list
+  // beside it (SettingsScreen); this overview is the phone's.
+  const goWide = useNavigate()
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) goWide('/student/settings/profile', { replace: true })
+  }, [goWide])
+
   const stepBack = useStepBack('/student')
   // Only enough to label the row — the joining itself lives on its own
   // screen now.
