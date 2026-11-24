@@ -1,4 +1,3 @@
-import { publicOrigin } from '@/lib/native'
 import {
   collection, deleteDoc, doc, getDocs, orderBy, query, setDoc, where,
 } from 'firebase/firestore'
@@ -53,8 +52,11 @@ export function newSlug(): string {
 }
 
 /** Where the published page lives. */
+/** Femata's own address on every link, wherever it was shared from. */
+const SHARE_ORIGIN = 'https://app.femataus.com'
+
 export function shareUrl(slug: string): string {
-  return `${publicOrigin()}/s/${slug}`
+  return `${SHARE_ORIGIN}/s/${slug}`
 }
 
 export function sharePath(ownerId: string, slug: string): string {
