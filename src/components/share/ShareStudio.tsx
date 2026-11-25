@@ -99,7 +99,9 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
     if (linkFor.current?.key === key) return linkFor.current.url
     setBusy(true)
     try {
-      const { url } = await createShare(user.uid, request.kind, fields)
+      // The tall card in the colours chosen, for the page the link opens.
+      const full = await renderMomentCard({ kind: request.kind, fields, format: 'story', theme: themes[Math.min(pick, themes.length - 1)], art }).catch(() => undefined)
+      const { url } = await createShare(user.uid, request.kind, fields, full)
       linkFor.current = { key, url }
       return url
     } catch {

@@ -63,6 +63,11 @@ export function sharePath(ownerId: string, slug: string): string {
   return `shares/${ownerId}/${slug}.png`
 }
 
+/** The tall (9:16) card for the same share. */
+export function fullPath(ownerId: string, slug: string): string {
+  return `shares/${ownerId}/${slug}-full.png`
+}
+
 /**
  * Publishes `fields` and returns the link.
  *
@@ -85,7 +90,9 @@ export function sharePath(ownerId: string, slug: string): string {
 export async function createShare(
   ownerId: string,
   kind: ShareKind,
-  fields: ShareFields
+  fields: ShareFields,
+  /** The tall card, shown full-screen when the link is opened on a phone. */
+  full?: Blob,
 ): Promise<{ slug: string; url: string }> {
   const slug = newSlug()
 
@@ -96,6 +103,8 @@ export async function createShare(
     const target = ref(storage, sharePath(ownerId, slug))
     await uploadBytes(target, blob, { contentType: 'image/png' })
     image = await getDownloadURL(target)
+    // Beside it, under the same slug: the page shows this one on a phone.
+    if (full) await uploadBytes(ref(storage, fullPath(ownerId, slug)), full, { contentType: 'image/png' }).catch(() => {})
   } catch (err) {
     // A link with no picture still works — it unfurls with the title and
     // description, which is more than the image route gave a desktop. So
@@ -141,6 +150,7 @@ export async function deleteShare(ownerId: string, slug: string): Promise<void> 
   try {
     const { storage, ref, deleteObject } = await loadStorage()
     await deleteObject(ref(storage, sharePath(ownerId, slug)))
+    await deleteObject(ref(storage, fullPath(ownerId, slug))).catch(() => {})
   } catch {
     // Already gone, or never uploaded. Either way the link is dead.
   }
