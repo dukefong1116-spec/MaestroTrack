@@ -110,6 +110,18 @@ export interface RenderInput {
   art?: HTMLImageElement | null
 }
 
+/** The app's own icon, from the app itself (same origin, so drawable). */
+let icon: Promise<HTMLImageElement | null> | null = null
+function appIcon(): Promise<HTMLImageElement | null> {
+  icon ??= new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => resolve(null)
+    img.src = '/apple-touch-icon.png'
+  })
+  return icon
+}
+
 export async function renderMomentCard({ kind, fields, format, theme, art }: RenderInput): Promise<Blob> {
   try { await document.fonts.ready } catch { /* draw anyway */ }
   const [W, H] = SIZE[format]
@@ -120,8 +132,9 @@ export async function renderMomentCard({ kind, fields, format, theme, art }: Ren
   if (!ctx) throw new Error('Canvas is unavailable on this device')
   const words = wordsFor(kind, fields)
 
+  const logo = await appIcon()
   if (format === 'sticker') drawSticker(ctx, W, H, words, art)
-  else drawCard(ctx, W, H, format, THEMES[theme], words, art, fields)
+  else drawCard(ctx, W, H, format, THEMES[theme], words, art, fields, logo)
 
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not build the image'))), 'image/png')
@@ -133,89 +146,120 @@ export async function renderMomentCard({ kind, fields, format, theme, art }: Ren
 function drawCard(
   ctx: CanvasRenderingContext2D, W: number, H: number, format: CardFormat,
   p: Palette, w: CardWords, art: HTMLImageElement | null | undefined, f: ShareFields,
+  logo: HTMLImageElement | null,
 ) {
-  const g = ctx.createLinearGradient(0, 0, W * 0.35, H)
+  const story = format === 'story'
+  const cx = W / 2
+
+  // Ground: the colour, a glow where Femata stands, and a stave behind.
+  const g = ctx.createLinearGradient(0, 0, W * 0.4, H)
   g.addColorStop(0, p.top)
   g.addColorStop(1, p.bottom)
   ctx.fillStyle = g
   ctx.fillRect(0, 0, W, H)
 
-  // Soft circles and faint stave lines: the app's own backdrop.
-  ctx.globalAlpha = 0.12
-  disc(ctx, W * 0.92, H * 0.08, W * 0.36, '#FFFFFF')
-  disc(ctx, W * 0.04, H * 0.92, W * 0.3, '#FFFFFF')
-  ctx.globalAlpha = 0.07
-  ctx.strokeStyle = p.ink
-  ctx.lineWidth = 3
-  for (let i = 0; i < 5; i++) {
-    const y = H * 0.5 + (i - 2) * 46
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
-  }
-  ctx.globalAlpha = 1
-
-  const story = format === 'story'
-  // The safe area: stories lose ~250px top and bottom to the platform.
-  const top = story ? 300 : 110
-  const bottom = story ? H - 440 : H - 200
-  const cx = W / 2
-
-  // Lay out top to bottom, then centre the block in the safe area. When it
-  // all does not fit (a week's chart as well as Femata and the number),
-  // Femata gets smaller first, then the number — never into the footer.
-  let artH = art ? (story ? 470 : 360) : 0
+  // Layout, top to bottom, sized to fit the shape.
+  const head = story ? 170 : 92
+  const footH = story ? 260 : 170
+  const pillY = head + (story ? 150 : 112)
   const isNumber = /^\d+$/.test(w.hero)
-  let heroSize = isNumber ? (story ? 300 : 250) : fit(ctx, w.hero, W - 160, story ? 120 : 104, '800')
-  const heroLines = isNumber ? [w.hero] : wrap(ctx, w.hero, W - 160, heroSize, '800').slice(0, 3)
-  const measure = () =>
-    56 /* kicker */ + 40 +
-    (art ? artH + 36 : 0) +
-    heroLines.length * heroSize * 0.98 +
-    (w.unit ? 70 : 0) +
-    (w.line ? 64 : 0) +
-    (w.chips.length ? 120 : 0) +
-    (w.week ? 260 : 0)
-  const room = bottom - top
-  if (measure() > room && art) artH = Math.max(170, artH - (measure() - room))
-  if (measure() > room && isNumber) heroSize = Math.max(150, heroSize - (measure() - room))
-  const block = measure()
-  let y = Math.max(top, top + (room - block) / 2)
+  let artH = art ? (story ? 600 : 400) : 0
+  let heroSize = isNumber ? (story ? 330 : 250) : fit(ctx, w.hero, W - 140, story ? 128 : 104, '900')
+  const heroLines = isNumber ? [w.hero] : wrap(ctx, w.hero, W - 140, heroSize, '900').slice(0, 3)
+  const below = () =>
+    heroLines.length * heroSize * 0.98 + (w.unit ? 72 : 0) + (w.line ? 60 : 0) +
+    (w.chips.length ? 118 : 0) + (w.week ? 250 : 0)
+  const room = H - footH - (pillY + 70)
+  const need = () => (art ? artH + 30 : 0) + below()
+  if (need() > room && art) artH = Math.max(220, artH - (need() - room))
+  if (need() > room && isNumber) heroSize = Math.max(170, heroSize - (need() - room))
+  let y = pillY + 70 + Math.max(0, (room - need()) / 2)
 
-  text(ctx, w.kicker.toUpperCase(), cx, y + 40, 38, '800', p.soft, 'center', 6)
-  y += 96
+  if (art) {
+    const glow = ctx.createRadialGradient(cx, y + artH / 2, 0, cx, y + artH / 2, artH * 0.75)
+    glow.addColorStop(0, 'rgba(255,255,255,.34)')
+    glow.addColorStop(1, 'rgba(255,255,255,0)')
+    ctx.fillStyle = glow
+    ctx.fillRect(0, y - artH * 0.3, W, artH * 1.6)
+  }
+  ctx.save()
+  ctx.globalAlpha = 0.09
+  ctx.strokeStyle = p.ink
+  ctx.lineWidth = 4
+  const staffMid = art ? y + artH * 0.55 : H * 0.45
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath(); ctx.moveTo(0, staffMid + i * 42); ctx.lineTo(W, staffMid + i * 42); ctx.stroke()
+  }
+  ctx.restore()
+
+  // Header: the real app icon and the name.
+  const iconS = story ? 96 : 76
+  if (logo) {
+    ctx.save()
+    round(ctx, 72, head - iconS / 2, iconS, iconS, iconS * 0.23)
+    ctx.clip()
+    ctx.drawImage(logo, 72, head - iconS / 2, iconS, iconS)
+    ctx.restore()
+  }
+  text(ctx, 'Femata', 72 + (logo ? iconS + 24 : 0), head + (story ? 18 : 14), story ? 54 : 44, '800', p.ink)
+  if (f.dateLabel && story) text(ctx, f.dateLabel, W - 72, head + 14, 32, '600', p.soft, 'right')
+
+  // The moment, in a pill.
+  ctx.font = `800 ${story ? 36 : 30}px ${SANS}`
+  const kick = w.kicker.toUpperCase()
+  const kw = [...kick].reduce((a, ch) => a + ctx.measureText(ch).width + 5, 0) + 70
+  ctx.fillStyle = p.chip
+  round(ctx, cx - kw / 2, pillY - (story ? 46 : 40), kw, story ? 72 : 62, 36)
+  ctx.fill()
+  text(ctx, kick, cx, pillY + (story ? 3 : 2), story ? 36 : 30, '800', p.chipInk, 'center', 5)
 
   if (art) {
     const aw = artH * (art.naturalWidth && art.naturalHeight ? art.naturalWidth / art.naturalHeight : 7 / 6)
     ctx.save()
-    ctx.shadowColor = 'rgba(0,0,0,.18)'
-    ctx.shadowBlur = 40
-    ctx.shadowOffsetY = 18
+    ctx.shadowColor = 'rgba(0,0,0,.22)'
+    ctx.shadowBlur = 50
+    ctx.shadowOffsetY = 24
     ctx.drawImage(art, cx - aw / 2, y, aw, artH)
     ctx.restore()
-    y += artH + 36
+    y += artH + 30
   }
 
   for (const line of heroLines) {
-    y += heroSize * 0.82
-    text(ctx, line, cx, y, heroSize, '800', p.ink, 'center')
-    y += heroSize * 0.16
+    y += heroSize * 0.84
+    ctx.save()
+    ctx.shadowColor = 'rgba(0,0,0,.12)'
+    ctx.shadowBlur = 18
+    ctx.shadowOffsetY = 6
+    text(ctx, line, cx, y, heroSize, '900', p.ink, 'center')
+    ctx.restore()
+    y += heroSize * 0.14
   }
-  if (w.unit) { y += 56; text(ctx, w.unit, cx, y, 50, '700', p.soft, 'center') }
-  if (w.line) { y += 64; text(ctx, w.line, cx, y, 38, '500', p.soft, 'center') }
+  if (w.unit) { y += 58; text(ctx, w.unit, cx, y, story ? 54 : 46, '800', p.soft, 'center') }
+  if (w.line) { y += 60; text(ctx, w.line, cx, y, story ? 38 : 34, '600', p.soft, 'center') }
+  if (w.chips.length) { y += 44; chipsRow(ctx, w.chips.slice(0, 3), cx, y, W - 140, p); y += 74 }
+  if (w.week) { y += 40; weekBars(ctx, cx, y + 190, w.week, p, w.days); y += 210 }
 
-  if (w.chips.length) {
-    y += 50
-    chipsRow(ctx, w.chips.slice(0, 3), cx, y, W - 140, p)
-    y += 70
+  // Footer: who, and where to find Femata.
+  const fy = H - footH + (story ? 70 : 40)
+  if (f.name) {
+    const r = story ? 40 : 34
+    const label = f.name
+    ctx.font = `800 ${story ? 44 : 38}px ${SANS}`
+    const nw = ctx.measureText(label).width
+    const total = r * 2 + 20 + nw
+    const x0 = cx - total / 2
+    disc(ctx, x0 + r, fy, r, p.chip)
+    text(ctx, label.trim().charAt(0).toUpperCase(), x0 + r, fy + r * 0.38, r * 1.05, '800', p.chipInk, 'center')
+    text(ctx, label, x0 + r * 2 + 20, fy + (story ? 15 : 13), story ? 44 : 38, '800', p.ink, 'left')
   }
-  if (w.week) {
-    y += 40
-    weekBars(ctx, cx, y + 170, w.week, p, w.days)
-    y += 200
-  }
-
-  // The footer: who, and where to find Femata.
-  const fy = story ? H - 340 : H - 118
-  wordmark(ctx, cx, fy, p, f.name)
+  const sy = fy + (story ? 100 : 78)
+  ctx.font = `700 ${story ? 32 : 28}px ${SANS}`
+  const site = `Practise on Femata · ${SITE}`
+  const sw = ctx.measureText(site).width + 64
+  ctx.fillStyle = p.chip
+  round(ctx, cx - sw / 2, sy - (story ? 44 : 38), sw, story ? 66 : 58, 33)
+  ctx.fill()
+  text(ctx, site, cx, sy, story ? 32 : 28, '700', p.chipInk, 'center')
 }
 
 /* ── sticker ──────────────────────────────────────────────────────── */
@@ -347,23 +391,3 @@ function weekBars(ctx: CanvasRenderingContext2D, cx: number, baseline: number, w
   })
 }
 
-/** The Femata mark, the name (if shown), and the site. */
-function wordmark(ctx: CanvasRenderingContext2D, cx: number, y: number, p: Palette, name?: string) {
-  const label = name ? `${name} · Femata` : 'Femata'
-  ctx.font = `800 40px ${SANS}`
-  const tw = ctx.measureText(label).width
-  const tile = 64
-  const total = tile + 20 + tw
-  const x = cx - total / 2
-  ctx.fillStyle = '#3DB5F5'
-  round(ctx, x, y - tile + 12, tile, tile, 20)
-  ctx.fill()
-  // A little note in the tile: the app icon's own mark.
-  ctx.fillStyle = '#FFFFFF'
-  disc(ctx, x + 26, y - 6, 10, '#FFFFFF')
-  ctx.fillRect(x + 34, y - 40, 6, 36)
-  round(ctx, x + 34, y - 42, 20, 10, 5)
-  ctx.fill()
-  text(ctx, label, x + tile + 20, y, 40, '800', p.ink, 'left')
-  text(ctx, SITE, cx, y + 52, 30, '600', p.soft, 'center')
-}

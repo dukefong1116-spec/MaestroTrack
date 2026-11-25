@@ -460,7 +460,15 @@ export default function SessionPage() {
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 4096
       src.connect(analyser)
+      // Safari (and so the iPhone app) only runs audio that reaches the
+      // speakers: through a silent gain, so the analyser is actually fed.
+      const mute = ctx.createGain()
+      mute.gain.value = 0
+      analyser.connect(mute)
+      mute.connect(ctx.destination)
       tunerNodesRef.current = { src, analyser }
+      // Opening the mic can suspend the context on a phone; wake it.
+      if (ctx.state !== 'running') await ctx.resume().catch(() => {})
 
       const buf = new Float32Array(analyser.fftSize)
       const loop = () => {

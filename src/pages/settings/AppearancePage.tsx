@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Sun, Moon, Zap, Vibrate } from 'lucide-react'
+import { Sun, Moon, Monitor, Zap, Vibrate } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { usePrefs } from '@/hooks/usePrefs'
 import { SCALES, type ThemeChoice } from '@/lib/utils/prefs'
@@ -9,6 +9,7 @@ import { haptic, setHapticsEnabled } from '@/lib/haptics'
 const THEMES: { id: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { id: 'light', label: 'Light', icon: Sun },
   { id: 'dark', label: 'Dark', icon: Moon },
+  { id: 'system', label: 'System', icon: Monitor },
 ]
 
 export default function AppearancePage() {
@@ -32,7 +33,7 @@ export default function AppearancePage() {
       )}
       <Panel>
         <Block first>
-          <Legend title="Theme" />
+          <Legend title="Theme" hint="System follows whatever your phone or computer is set to." />
           <div className="grid grid-cols-3 gap-2">
             {THEMES.map(({ id, label, icon: Icon }) => {
               const on = prefs.theme === id

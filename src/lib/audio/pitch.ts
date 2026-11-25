@@ -33,11 +33,16 @@ export function rms(buf: Float32Array): number {
 export function detectPitch(buf: Float32Array, sampleRate: number): number | null {
   const SIZE = buf.length
 
-  // Noise gate — below this it's room tone, not a note.
-  if (rms(buf) < 0.012) return null
+  // Noise gate — below this it's room tone, not a note. (A phone's mic,
+  // with its own processing off, hears a played note well above this.)
+  if (rms(buf) < 0.006) return null
 
-  // Trim leading/trailing near-silence so the correlation isn't diluted.
-  const threshold = 0.2
+  // Trim leading/trailing near-silence so the correlation isn't diluted —
+  // relative to this buffer's own peak. A fixed 0.2 trimmed away every
+  // note played at a normal distance from a phone, so nothing was read.
+  let peak = 0
+  for (let i = 0; i < SIZE; i++) peak = Math.max(peak, Math.abs(buf[i]))
+  const threshold = 0.2 * peak
   let start = 0
   let end = SIZE - 1
   while (start < SIZE / 2 && Math.abs(buf[start]) < threshold) start++
@@ -47,9 +52,12 @@ export function detectPitch(buf: Float32Array, sampleRate: number): number | nul
   const n = trimmed.length
   if (n < 512) return null
 
-  // Raw autocorrelation.
-  const c = new Float32Array(n).fill(0)
-  for (let lag = 0; lag < n; lag++) {
+  // Raw autocorrelation, over the lags an instrument can produce (down to
+  // ~40 Hz, below a double bass's low E): checking every lag up to the
+  // buffer's length made each frame millions of multiplications.
+  const maxLag = Math.min(n, Math.ceil(sampleRate / 40) + 2)
+  const c = new Float32Array(maxLag).fill(0)
+  for (let lag = 0; lag < maxLag; lag++) {
     let sum = 0
     for (let i = 0; i < n - lag; i++) sum += trimmed[i] * trimmed[i + lag]
     c[lag] = sum
@@ -57,11 +65,11 @@ export function detectPitch(buf: Float32Array, sampleRate: number): number | nul
 
   // Skip the zero-lag peak, then find the first real maximum after it.
   let d = 0
-  while (d < n - 1 && c[d] > c[d + 1]) d++
+  while (d < maxLag - 1 && c[d] > c[d + 1]) d++
 
   let maxVal = -1
   let maxPos = -1
-  for (let i = d; i < n; i++) {
+  for (let i = d; i < maxLag; i++) {
     if (c[i] > maxVal) {
       maxVal = c[i]
       maxPos = i

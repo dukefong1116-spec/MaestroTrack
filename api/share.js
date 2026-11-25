@@ -179,9 +179,7 @@ export default async function handler(req, res) {
   const description = parts.join(' · ') || 'Practice, tracked.'
 
   const owner = plain(doc.fields.ownerId)
-  const out = req.query?.view === 'profile'
-    ? await profilePage(owner, slug, name)
-    : await cardPage({ owner, slug, title, description, image, name })
+  const out = await cardPage({ owner, slug, title, description, image, name })
 
   res
     .status(out.status)
@@ -229,73 +227,5 @@ async function cardPage({ owner, slug, title, description, image, name }) {
     status: 200, title: `${title} — Femata`, description, image, css: CARD_CSS, bare: true,
     body: `${body}
 <a class="x" href="/s/${esc(slug)}/profile" aria-label="${esc(name ? `See ${name}'s profile` : 'See their profile')}">✕</a>`,
-  })
-}
-
-/* ── The sharer's profile: what the league shows of them ───────────── */
-
-const TIERS = ['Pianissimo', 'Piano', 'Forte', 'Fortissimo']
-const cap = (s) => (typeof s === 'string' && s ? s[0].toUpperCase() + s.slice(1).replace(/[-_]/g, ' ') : '')
-
-const PROFILE_CSS = `
-  body.bare { display:block; padding:0 0 110px; background:#F5F7FB; }
-  .pf { max-width:560px; margin:0 auto; }
-  .ban { height:170px; background:linear-gradient(135deg,#8F86E6,#3C3489) center/cover; }
-  .back { position:absolute; top:max(14px, env(safe-area-inset-top)); left:14px; width:42px; height:42px;
-          border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4);
-          color:#fff; font-size:22px; text-decoration:none; }
-  .who { padding:0 20px; text-align:left; }
-  .av { width:96px; height:96px; margin-top:-48px; border-radius:50%; border:4px solid #F5F7FB; object-fit:cover;
-        display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:600; color:#fff; }
-  .who h1 { margin:10px 0 2px; font-size:26px; }
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:16px 20px; }
-  .stat { background:#fff; border-radius:14px; padding:12px 6px; text-align:center; }
-  .stat b { display:block; font-size:20px; color:#0E1626; }
-  .stat span { font-size:12px; color:#6B7280; }
-  h2 { margin:6px 20px 10px; font-size:14px; letter-spacing:.08em; color:#6B7280; text-align:left; }
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 20px; }
-  .grid a { display:block; aspect-ratio:1200/630; border-radius:10px; overflow:hidden; background:#E5E7EB; }
-  .grid img { width:100%; height:100%; object-fit:cover; display:block; }`
-
-const COLOURS = ['#F2405C', '#3DB5F5', '#8F86E6', '#1D9E75', '#E8A33D', '#D4537E', '#6B7A99', '#1F8A96']
-
-async function profilePage(owner, slug, fallbackName) {
-  let card = null
-  let shares = []
-  if (typeof owner === 'string') {
-    try {
-      const { db } = await import('./_lib/admin.js')
-      const store = db()
-      const [c, s] = await Promise.all([
-        store.doc(`leagueCards/${owner}`).get(),
-        store.collection('shares').where('ownerId', '==', owner).orderBy('createdAt', 'desc').limit(9).get(),
-      ])
-      card = c.exists ? c.data() : null
-      shares = s.docs.map((d) => ({ slug: d.id, image: ownImage(d.get('image'), owner) })).filter((x) => x.image)
-    } catch {
-      // Without the server's access the page still has the shared card's own name.
-    }
-  }
-  const name = card?.name || fallbackName || 'A Femata musician'
-  const banner = card?.bannerImage
-    ? `background-image:url('${esc(card.bannerImage)}')`
-    : card?.bannerColor ? `background:${esc(card.bannerColor)}` : ''
-  const avatar = card?.photo
-    ? `<img class="av" src="${esc(card.photo)}" alt="">`
-    : `<div class="av" style="background:${COLOURS[(card?.colour ?? 0) % COLOURS.length]}">${esc(name.trim().charAt(0).toUpperCase())}</div>`
-  const line = [cap(card?.instrument), cap(card?.level)].filter(Boolean).join(' · ')
-  const stats = card ? `<div class="stats">
-<div class="stat"><b>🔥 ${Number(card.streak ?? 0)}</b><span>day streak</span></div>
-<div class="stat"><b>${esc(TIERS[card.tier] ?? '—')}</b><span>league</span></div>
-<div class="stat"><b>${Array.isArray(card.badges) ? card.badges.length : 0}</b><span>badges</span></div>
-<div class="stat"><b>${Number(card.topFinishes ?? 0)}</b><span>top finishes</span></div>
-</div>` : ''
-  const grid = shares.length ? `<h2>SHARED</h2><div class="grid">${shares.map((x) => `<a href="/s/${esc(x.slug)}"><img src="${esc(x.image)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''
-  return page({
-    status: 200, title: `${name} on Femata`, description: line || 'Practising with Femata.', css: PROFILE_CSS, bare: true,
-    body: `<div class="pf"><div class="ban" style="${banner}"></div>
-<a class="back" href="/s/${esc(slug)}" aria-label="Back to the card">‹</a>
-<div class="who">${avatar}<h1>${esc(name)}</h1>${line ? `<p>${esc(line)}</p>` : ''}</div>
-${stats}${grid}</div>`,
   })
 }

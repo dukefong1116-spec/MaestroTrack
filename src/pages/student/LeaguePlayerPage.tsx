@@ -83,6 +83,21 @@ export default function LeaguePlayerPage() {
     )
   }
 
+  return <PlayerProfileView card={card} mine={mine} myDays={mine ? null : myDays} back={back} />
+}
+
+/**
+ * A player's profile as the league shows it: banner, photo, name, the week,
+ * streak, league and pinned badges. Also the public profile a share link
+ * leads to (PublicProfilePage), with the same card.
+ */
+export function PlayerProfileView({ card, mine = false, myDays = null, back }: {
+  card: LeagueCard
+  mine?: boolean
+  /** Your own week, drawn beside theirs; null to show theirs alone. */
+  myDays?: number[] | null
+  back?: React.ReactNode
+}) {
   const [bg, fg] = AVATAR_COLOURS[card.colour % AVATAR_COLOURS.length]
   const instrument = card.instrument
     ? INSTRUMENT_THEMES[card.instrument as InstrumentType]?.label ?? card.instrument
@@ -120,9 +135,9 @@ export default function LeaguePlayerPage() {
 
         <section className="mt-6">
           <h2 className="text-[11.5px] font-bold uppercase tracking-[.08em]" style={{ color: 'var(--clay-dim)' }}>This week's practice</h2>
-          <WeekChart theirs={card.days} yours={mine ? null : myDays} />
+          <WeekChart theirs={card.days} yours={myDays} />
           <Legend dot="var(--clay-accent)" label={first} minutes={sum(card.days)} />
-          {!mine && <Legend dot="var(--clay-faint)" label="You" minutes={sum(myDays)} />}
+          {myDays && <Legend dot="var(--clay-faint)" label="You" minutes={sum(myDays)} />}
         </section>
 
         <section className="mt-6 pt-5" style={{ borderTop: '1px solid var(--clay-line)' }}>

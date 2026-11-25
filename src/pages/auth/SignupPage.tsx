@@ -37,7 +37,7 @@ const teacherSchema = z.object({
   confirmPassword: z.string(),
 }).refine((d) => d.password === d.confirmPassword, { message: "The passwords don't match", path: ['confirmPassword'] })
 
-type Step = 'role' | 'info' | 'photo'
+type Step = 'age' | 'underage' | 'role' | 'info' | 'photo'
 
 /** The two doors in, and who each is for. */
 const ROLES: { role: UserRole; title: string; line: string }[] = [
@@ -48,13 +48,14 @@ const ROLES: { role: UserRole; title: string; line: string }[] = [
 export default function SignupPage() {
   const navigate = useNavigate()
   const [role, setRole] = useState<UserRole | null>(null)
-  const [step, setStep] = useState<Step>('role')
+  const [step, setStep] = useState<Step>('age')
   const [error, setError] = useState('')
   /** Where to go once the photo step is done — set when the account exists. */
   const [next, setNext] = useState('')
   const [account, setAccount] = useState<{ name: string; instrument?: InstrumentType } | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [legalAccepted, setLegalAccepted] = useState(false)
 
   /** The account exists now; ask for a face before letting them in. */
   function toPhoto(destination: string, name: string, instrument?: InstrumentType) {
@@ -92,11 +93,13 @@ export default function SignupPage() {
 
   async function onStudentSubmit(data: z.infer<typeof studentSchema>) {
     setError('')
+    if (!legalAccepted) { setError('Please agree to the Terms and acknowledge the Privacy Notice.'); return }
     try {
       const user = await signUp(data.email, data.password, data.displayName, 'student', {
         instrument: data.instrument,
         experienceLevel: data.experienceLevel,
         weeklyGoalMinutes: data.weeklyGoalMinutes,
+        legalAccepted,
       })
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
       // Came in through a teacher's link: send them back to finish it.
@@ -111,8 +114,9 @@ export default function SignupPage() {
 
   async function onTeacherSubmit(data: z.infer<typeof teacherSchema>) {
     setError('')
+    if (!legalAccepted) { setError('Please agree to the Terms and acknowledge the Privacy Notice.'); return }
     try {
-      const user = await signUp(data.email, data.password, data.displayName, 'teacher', { studioName: data.studioName, instrument: data.instrument })
+      const user = await signUp(data.email, data.password, data.displayName, 'teacher', { studioName: data.studioName, instrument: data.instrument, legalAccepted })
       localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
       toPhoto('/teacher', data.displayName, data.instrument)
     } catch (e: unknown) {
@@ -138,6 +142,24 @@ export default function SignupPage() {
           )}
 
           <AnimatePresence mode="wait">
+            {step === 'age' && (
+              <motion.div key="age" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <h2 className="text-xl font-semibold mb-3" style={{ color: 'var(--clay-ink)' }}>Before you join</h2>
+                <p className="mb-6 text-sm leading-relaxed" style={{ color: 'var(--clay-dim)' }}>Femata accounts are currently for people aged 13 and older. We are not accepting accounts for children under 13 yet.</p>
+                <Button type="button" className="w-full" size="lg" onClick={() => setStep('role')}>I am 13 or older</Button>
+                <button type="button" onClick={() => setStep('underage')} className="mt-4 w-full text-sm font-medium" style={{ color: 'var(--clay-dim)' }}>I am under 13</button>
+                <p className="text-center text-sm mt-6" style={{ color: 'var(--clay-dim)' }}>Already have an account?{' '}<Link to="/login" className="font-medium" style={{ color: 'var(--clay-accent)' }}>Sign In</Link></p>
+              </motion.div>
+            )}
+
+            {step === 'underage' && (
+              <motion.div key="underage" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <h2 className="text-xl font-semibold mb-3" style={{ color: 'var(--clay-ink)' }}>A parent or guardian can help</h2>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--clay-dim)' }}>Children under 13 cannot create a Femata account yet. We do not collect your name or email here. Please ask your parent or guardian to contact <a className="font-medium underline" style={{ color: 'var(--clay-accent)' }} href="mailto:hello@femataus.com">hello@femataus.com</a>.</p>
+                <button type="button" onClick={() => setStep('age')} className="mt-6 text-sm font-medium" style={{ color: 'var(--clay-accent)' }}>Back</button>
+              </motion.div>
+            )}
+
             {step === 'role' && (
               <motion.div key="role" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--clay-ink)' }}>I am a…</h2>
@@ -196,6 +218,7 @@ export default function SignupPage() {
                     {...studentForm.register('experienceLevel')}
                   />
                   <Input label="Weekly Goal (minutes)" type="number" placeholder="300" error={studentForm.formState.errors.weeklyGoalMinutes?.message} {...studentForm.register('weeklyGoalMinutes')} />
+                  <label className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: 'var(--clay-dim)' }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
                   <Button type="submit" className="w-full" size="lg" loading={studentForm.formState.isSubmitting}>Create Student Account</Button>
                 </form>
               </motion.div>
@@ -220,6 +243,7 @@ export default function SignupPage() {
                   <Input label="Email" type="email" placeholder="sarah@example.com" error={teacherForm.formState.errors.email?.message} {...teacherForm.register('email')} />
                   <Input label="Password" type="password" placeholder="••••••••" error={teacherForm.formState.errors.password?.message} {...teacherForm.register('password')} />
                   <Input label="Re-enter password" type="password" placeholder="••••••••" autoComplete="new-password" error={teacherForm.formState.errors.confirmPassword?.message} {...teacherForm.register('confirmPassword')} />
+                  <label className="flex items-start gap-2 text-xs leading-relaxed" style={{ color: 'var(--clay-dim)' }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
                   <Button type="submit" className="w-full" size="lg" loading={teacherForm.formState.isSubmitting}>Create Teacher Account</Button>
                 </form>
               </motion.div>

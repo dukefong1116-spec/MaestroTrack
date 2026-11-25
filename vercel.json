@@ -47,10 +47,6 @@
   ],
   "rewrites": [
     {
-      "source": "/s/:slug/profile",
-      "destination": "/api/share?slug=:slug&view=profile"
-    },
-    {
       "source": "/s/:slug",
       "destination": "/api/share?slug=:slug"
     },

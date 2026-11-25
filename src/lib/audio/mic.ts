@@ -93,6 +93,11 @@ function isLive(stream: MediaStream | null): stream is MediaStream {
  */
 export async function openMic(existing: MediaStream | null): Promise<MediaStream> {
   if (isLive(existing)) return existing
+  // Recording and playing together, through the silent switch.
+  try {
+    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+    if (session) session.type = 'play-and-record'
+  } catch { /* not supported here */ }
   return await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS)
 }
 

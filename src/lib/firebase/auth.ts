@@ -34,8 +34,11 @@ export async function signUp(
     /** More of the first-run setup's answers (instrumentName, instruments,
      *  practiceDaysPerWeek). */
     extra?: Pick<UserProfile, 'instrumentName' | 'instruments' | 'practiceDaysPerWeek'>
+    /** Required confirmation from every account-creation path. */
+    legalAccepted?: boolean
   } = {}
 ): Promise<User> {
+  if (options.legalAccepted !== true) throw new Error('Please agree to the Terms and acknowledge the Privacy Notice before creating an account.')
   const credential = await createUserWithEmailAndPassword(auth, email, password)
   await updateProfile(credential.user, { displayName })
 
@@ -43,6 +46,11 @@ export async function signUp(
     email,
     role,
     displayName,
+    legalAcceptance: {
+      termsVersion: 'prelaunch-2026-11-24',
+      privacyVersion: 'prelaunch-2026-11-24',
+      acceptedAt: new Date().toISOString(),
+    },
     instrument: options.instrument,
     experienceLevel: options.experienceLevel,
     weeklyGoalMinutes: options.weeklyGoalMinutes ?? 300,

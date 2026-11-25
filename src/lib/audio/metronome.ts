@@ -58,6 +58,12 @@ export class Metronome {
   }
 
   start(): void {
+    // Safari and the iPhone app: play through the silent switch, like a
+    // music player (where the browser supports saying so).
+    try {
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+      if (session && session.type !== 'play-and-record') session.type = 'playback'
+    } catch { /* not supported here */ }
     if (this.running) return
     // unlock() returns the context even mid-resume, so a first tap works.
     const ctx = unlock()

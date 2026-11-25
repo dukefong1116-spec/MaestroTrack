@@ -47,10 +47,12 @@ const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
  * screen now costs only the people who go there.
  */
 const SignupPage = lazy(() => import('@/pages/auth/SignupPage'))
+import AgeEligibilityGate from '@/pages/auth/AgeEligibilityGate'
 const StartPage = lazy(() => import('@/pages/onboarding/StartPage'))
 const StreakGoalHost = lazy(() => import('@/components/streak/StreakGoalHost'))
 const SetupPage = lazy(() => import('@/pages/onboarding/SetupPage'))
 const TeacherSetupPage = lazy(() => import('@/pages/onboarding/TeacherSetupPage'))
+const PublicProfilePage = lazy(() => import('@/pages/PublicProfilePage'))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const JoinPage = lazy(() => import('@/pages/auth/JoinPage'))
 
@@ -302,8 +304,10 @@ function AppRoutes() {
       {/* The front door when signed out, and the first-run setup behind
           Get started. /signup stays for teachers (and old links). */}
       <Route path="/start" element={<StartPage />} />
-      <Route path="/start/setup" element={<SetupPage />} />
-      <Route path="/start/studio" element={<TeacherSetupPage />} />
+      <Route path="/start/setup" element={<AgeEligibilityGate><SetupPage /></AgeEligibilityGate>} />
+      <Route path="/start/studio" element={<AgeEligibilityGate><TeacherSetupPage /></AgeEligibilityGate>} />
+      {/* A share link's sharer, open to anyone. */}
+      <Route path="/s/:slug/profile" element={<PublicProfilePage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       {/* A teacher's invitation. Public on purpose: the person it was sent

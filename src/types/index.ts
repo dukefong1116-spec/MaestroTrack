@@ -141,6 +141,8 @@ export interface StreakRuleEntry {
 export interface UserProfile {
   uid: string
   email: string
+  /** The document versions a person acknowledged when the account was created. */
+  legalAcceptance?: { termsVersion: string; privacyVersion: string; acceptedAt: string }
   role: UserRole
   displayName: string
   instrument?: InstrumentType

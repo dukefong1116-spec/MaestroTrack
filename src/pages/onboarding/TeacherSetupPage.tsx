@@ -250,8 +250,9 @@ function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string;
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [legalAccepted, setLegalAccepted] = useState(false)
   const mismatch = again.length > 0 && again !== password
-  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password
+  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password && legalAccepted
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -263,6 +264,7 @@ function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string;
       const user = await signUp(email.trim(), password, a.name.trim(), 'teacher', {
         studioName: studio,
         instrument: fields.instrument,
+        legalAccepted,
         extra: { instruments: fields.instruments, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
       })
       localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
@@ -306,6 +308,7 @@ function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string;
           className="w-full rounded-[16px] px-4 py-3.5 text-[16px] font-bold outline-none" style={{ ...input(!!again), ...(mismatch ? { borderColor: '#FF8FA3' } : {}) }} />
       </div>
       {mismatch && <p className="mt-2 text-[13px] font-bold" style={{ color: '#FF8FA3' }}>The passwords don't match yet.</p>}
+      <label className="mt-3 flex items-start gap-2 text-[12px] font-semibold leading-relaxed" style={{ color: STAGE.muted }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
       {error && <p className="mt-3 text-[13.5px] font-bold" style={{ color: '#FF8FA3' }}>{error}</p>}
       <p className="mt-3 text-[13px] font-semibold" style={{ color: STAGE.muted }}>
         Already have an account? <Link to="/login" className="font-extrabold" style={{ color: STAGE.sky }}>Log in</Link>

@@ -63,7 +63,10 @@ export default function SetupPage() {
 
   const go = (to: Step) => { setDir(ORDER.indexOf(to) >= ORDER.indexOf(step) ? 1 : -1); setStep(to) }
   const next = () => go(ORDER[ORDER.indexOf(step) + 1])
-  const back = step === 'instrument' ? () => navigate('/start') : accountMade ? undefined : () => go(ORDER[ORDER.indexOf(step) - 1])
+  const back = step === 'instrument' ? () => navigate('/start') : accountMade ? undefined
+    // With 0 days, "how long a day" was skipped, so back goes past it too.
+    : step === 'account' && a.days === 0 ? () => go('days')
+      : () => go(ORDER[ORDER.indexOf(step) - 1])
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length
 
   const picks = useMemo(() => {
@@ -135,7 +138,7 @@ export default function SetupPage() {
             <div className="flex min-h-0 flex-1 flex-col">
               <Ask mood="focused">How many days a week do you practise right now?</Ask>
               <div className="no-scrollbar -mx-1 flex min-h-0 flex-col gap-2 overflow-y-auto px-1 pb-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <Choice
                     key={n}
                     on={a.days === n}
@@ -148,11 +151,11 @@ export default function SetupPage() {
                       </span>
                     )}
                   >
-                    {n} day{n > 1 ? 's' : ''}
+                    {n === 0 ? 'Not yet — 0 days' : `${n} day${n > 1 ? 's' : ''}`}
                   </Choice>
                 ))}
               </div>
-              <div className="mt-auto pt-3"><BigButton disabled={!a.days} onClick={next}>CONTINUE</BigButton></div>
+              <div className="mt-auto pt-3"><BigButton disabled={a.days === null} onClick={() => (a.days === 0 ? go(user ? 'commit' : 'account') : next())}>CONTINUE</BigButton></div>
             </div>
           )}
           {step === 'minutes' && (
@@ -169,8 +172,10 @@ export default function SetupPage() {
             <div className="flex flex-1 flex-col items-center justify-center text-center">
               <h2 className="text-[26px] font-black">I'll use Femata to…</h2>
               <p className="mt-2 max-w-[300px] text-[16px] font-bold leading-snug" style={{ color: STAGE.muted }}>
-                practise <b style={{ color: STAGE.cream }}>{a.days ?? 5} day{(a.days ?? 5) > 1 ? 's' : ''} a week</b>,{' '}
-                <b style={{ color: STAGE.cream }}>{a.minutes} minutes a day</b>{mainLabel ? <>, on my {mainLabel.toLowerCase()}</> : null}
+                {a.days === 0
+                  ? <>start <b style={{ color: STAGE.cream }}>practising</b>{mainLabel ? <>, on my {mainLabel.toLowerCase()}</> : null}</>
+                  : <>practise <b style={{ color: STAGE.cream }}>{a.days ?? 5} day{(a.days ?? 5) > 1 ? 's' : ''} a week</b>,{' '}
+                    <b style={{ color: STAGE.cream }}>{a.minutes} minutes a day</b>{mainLabel ? <>, on my {mainLabel.toLowerCase()}</> : null}</>}
               </p>
               <div className="mb-5 mt-9">
                 <HoldToCommit onDone={() => setTimeout(() => go('welcome'), 150)}>
@@ -350,8 +355,9 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
   const [show, setShow] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [legalAccepted, setLegalAccepted] = useState(false)
   const mismatch = again.length > 0 && again !== password
-  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password
+  const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password && legalAccepted
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -368,6 +374,7 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
         // The app reads the day's goal as a seventh of the week's, so the
         // week's is seven of the minutes they chose.
         weeklyGoalMinutes: Math.max(30, a.minutes * 7),
+        legalAccepted,
         extra: { instruments: fields.instruments, practiceDaysPerWeek: days, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
       })
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
@@ -403,6 +410,7 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
           className="w-full rounded-[16px] px-4 py-3.5 text-[16px] font-bold outline-none" style={{ ...field(!!again), ...(mismatch ? { borderColor: '#FF8FA3' } : {}) }} />
       </div>
       {mismatch && <p className="mt-2 text-[13px] font-bold" style={{ color: '#FF8FA3' }}>The passwords don't match yet.</p>}
+      <label className="mt-3 flex items-start gap-2 text-[12px] font-semibold leading-relaxed" style={{ color: STAGE.muted }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
       {error && <p className="mt-3 text-[13.5px] font-bold" style={{ color: '#FF8FA3' }}>{error}</p>}
       <p className="mt-3 text-[13px] font-semibold" style={{ color: STAGE.muted }}>
         Already have an account? <Link to="/login" className="font-extrabold" style={{ color: STAGE.sky }}>Log in</Link>
