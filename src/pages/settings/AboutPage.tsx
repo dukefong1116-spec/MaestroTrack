@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
+import { FAQ, PRIVACY, TERMS } from '@/content/legal'
 
 const SUPPORT_EMAIL = 'help@femataus.com'
 
@@ -15,12 +16,10 @@ const SUPPORT_EMAIL = 'help@femataus.com'
  * from node_modules. Neither is typed by hand, because a hand-typed one is
  * wrong the first time something changes and nobody notices.
  *
- * The policy and terms are placeholders, and say so plainly. Writing
- * convincing-looking legal text that nobody has approved would be worse
- * than an obvious gap.
+ * The FAQ, policy and terms are in src/content/legal.ts.
  */
 
-function Placeholder({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -48,16 +47,38 @@ function Placeholder({ title, icon, children }: { title: string; icon: React.Rea
   )
 }
 
-function NotWrittenYet({ what }: { what: string }) {
-  return (
-    <div
-      className="rounded-[var(--clay-r-sm)] px-4 py-3.5 text-[13px] leading-relaxed"
-      style={{ background: 'var(--clay-warning-bg)', color: 'var(--clay-warning-fg)' }}
-    >
-      <strong>Placeholder — not a real {what}.</strong> Nothing here has been written or reviewed.
-      Replace this before anyone outside testing uses the app.
-    </div>
-  )
+/** **bold**, and the support address as a mail link. */
+function inline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*|help@femataus\.com)/g).map((part, i) => {
+    const bold = part.startsWith('**') && part.endsWith('**')
+    const t = bold ? part.slice(2, -2) : part
+    const body = t === SUPPORT_EMAIL
+      ? <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold underline" style={{ color: 'var(--clay-accent)' }}>{t}</a>
+      : t
+    return bold ? <strong key={i} style={{ color: 'var(--clay-ink)' }}>{body}</strong> : <span key={i}>{body}</span>
+  })
+}
+
+/** One of the documents in src/content/legal.ts, drawn from its light markup. */
+function Doc({ text }: { text: string }) {
+  const out: React.ReactNode[] = []
+  let bullets: string[] = []
+  const flush = () => {
+    if (!bullets.length) return
+    out.push(<ul key={`u${out.length}`} className="mt-1.5 list-disc space-y-1 pl-5">{bullets.map((b, i) => <li key={i}>{inline(b)}</li>)}</ul>)
+    bullets = []
+  }
+  for (const line of text.split('\n')) {
+    if (line.startsWith('- ')) { bullets.push(line.slice(2)); continue }
+    flush()
+    const k = `l${out.length}`
+    if (line.startsWith('# ')) out.push(<h3 key={k} className="mt-5 text-[15px] font-bold first:mt-0" style={{ color: 'var(--clay-ink)' }}>{line.slice(2)}</h3>)
+    else if (line.startsWith('## ')) out.push(<h4 key={k} className="mt-3 text-[13.5px] font-semibold" style={{ color: 'var(--clay-ink)' }}>{line.slice(3)}</h4>)
+    else if (line.startsWith('Q: ')) out.push(<p key={k} className="mt-3 font-semibold" style={{ color: 'var(--clay-ink)' }}>{line.slice(3)}</p>)
+    else out.push(<p key={k} className="mt-1.5">{inline(line)}</p>)
+  }
+  flush()
+  return <div className="text-[13.5px] leading-relaxed">{out}</div>
 }
 
 export default function AboutPage() {
@@ -83,25 +104,21 @@ export default function AboutPage() {
             <Mail size={16} /> {SUPPORT_EMAIL}
           </a>
           <p className="mt-2 text-xs" style={{ color: 'var(--clay-faint)' }}>
-            Opens your mail app. There is no contact form — that would need a server the app does not have.
+            Opens your mail app. Or use Send feedback in Settings.
           </p>
         </Block>
 
-        <Placeholder title="Frequently asked questions" icon={<HelpCircle size={19} />}>
-          <NotWrittenYet what="FAQ" />
-        </Placeholder>
+        <Section title="Frequently asked questions" icon={<HelpCircle size={19} />}>
+          <Doc text={FAQ} />
+        </Section>
 
-        <Placeholder title="Privacy policy" icon={<Shield size={19} />}>
-          <NotWrittenYet what="privacy policy" />
-          <p className="mt-3 text-[13px] leading-relaxed">
-            What the app actually does with your data is described, accurately, under
-            Privacy &amp; Security — that part is real and checkable against the database rules.
-          </p>
-        </Placeholder>
+        <Section title="Privacy policy" icon={<Shield size={19} />}>
+          <Doc text={PRIVACY} />
+        </Section>
 
-        <Placeholder title="Terms of service" icon={<FileText size={19} />}>
-          <NotWrittenYet what="terms of service" />
-        </Placeholder>
+        <Section title="Terms of service" icon={<FileText size={19} />}>
+          <Doc text={TERMS} />
+        </Section>
 
         {/* Students only, for now: the teacher tour comes later. */}
         {!isTeacher && (
