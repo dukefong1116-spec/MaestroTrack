@@ -8,7 +8,8 @@ import ImageCropper from '@/components/profile/ImageCropper'
 import { Ask, BigButton, Choice, HoldToCommit, STAGE, Stage, TopBar } from '@/components/onboarding/stage'
 import { InstrumentStep, WelcomeBurst, WidgetStep } from '@/pages/onboarding/SetupPage'
 import { instrumentFields } from '@/lib/onboarding/catalog'
-import { signUp } from '@/lib/firebase/auth'
+import { signUp, socialSignUp, type SocialProvider } from '@/lib/firebase/auth'
+import SocialButtons from '@/components/auth/SocialButtons'
 import { saveStudioSettings } from '@/lib/firebase/studio'
 import { checkAvatarFile, uploadAvatar } from '@/lib/firebase/avatar'
 import { createInvite, type NewInvite } from '@/lib/firebase/invites'
@@ -244,6 +245,7 @@ export default function TeacherSetupPage() {
 
 /* ── The account ──────────────────────────────────────────── */
 function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string; picks: string[]; onDone: () => void }) {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [again, setAgain] = useState('')
@@ -254,29 +256,46 @@ function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string;
   const mismatch = again.length > 0 && again !== password
   const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password && legalAccepted
 
+  /** The setup's answers, for whichever way the account is made. */
+  function newAccount() {
+    const fields = instrumentFields(picks)
+    return {
+      studioName: studio,
+      instrument: fields.instrument,
+      legalAccepted,
+      extra: { instruments: fields.instruments, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
+    }
+  }
+
+  async function opened(uid: string) {
+    localStorage.setItem(`maestro_role_${uid}`, 'teacher')
+    // The usual lesson and its price: the other lengths priced in
+    // proportion, so Billing has a price for whichever one a student has.
+    const price = Number(a.price)
+    await saveStudioSettings(uid, {
+      defaultLessonMinutes: a.minutes,
+      ...(price > 0 ? {
+        lessonTypes: DEFAULT_LESSON_TYPES.map((t) => ({ ...t, priceCents: Math.round((price * t.minutes) / a.minutes) * 100 })),
+      } : {}),
+    }).catch((err) => console.warn('[setup] could not save the lesson settings', err))
+  }
+
+  /** Google or Apple: one that already has an account just goes home. */
+  async function social(p: SocialProvider) {
+    const { user, existing } = await socialSignUp(p, a.name, 'teacher', newAccount())
+    if (existing) { navigate('/', { replace: true }); return }
+    await opened(user.uid)
+    onDone()
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!ok || busy) return
     setBusy(true)
     setError('')
     try {
-      const fields = instrumentFields(picks)
-      const user = await signUp(email.trim(), password, a.name.trim(), 'teacher', {
-        studioName: studio,
-        instrument: fields.instrument,
-        legalAccepted,
-        extra: { instruments: fields.instruments, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
-      })
-      localStorage.setItem(`maestro_role_${user.uid}`, 'teacher')
-      // The usual lesson and its price: the other lengths priced in
-      // proportion, so Billing has a price for whichever one a student has.
-      const price = Number(a.price)
-      await saveStudioSettings(user.uid, {
-        defaultLessonMinutes: a.minutes,
-        ...(price > 0 ? {
-          lessonTypes: DEFAULT_LESSON_TYPES.map((t) => ({ ...t, priceCents: Math.round((price * t.minutes) / a.minutes) * 100 })),
-        } : {}),
-      }).catch((err) => console.warn('[setup] could not save the lesson settings', err))
+      const user = await signUp(email.trim(), password, a.name.trim(), 'teacher', newAccount())
+      await opened(user.uid)
       onDone()
     } catch (err: unknown) {
       const ex = err as { code?: string; message?: string }
@@ -310,6 +329,7 @@ function AccountStep({ a, studio, picks, onDone }: { a: Answers; studio: string;
       {mismatch && <p className="mt-2 text-[13px] font-bold" style={{ color: '#FF8FA3' }}>The passwords don't match yet.</p>}
       <label className="mt-3 flex items-start gap-2 text-[12px] font-semibold leading-relaxed" style={{ color: STAGE.muted }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
       {error && <p className="mt-3 text-[13.5px] font-bold" style={{ color: '#FF8FA3' }}>{error}</p>}
+      <SocialButtons dark run={social} />
       <p className="mt-3 text-[13px] font-semibold" style={{ color: STAGE.muted }}>
         Already have an account? <Link to="/login" className="font-extrabold" style={{ color: STAGE.sky }}>Log in</Link>
       </p>

@@ -10,6 +10,7 @@ import Avatar from '@/components/profile/Avatar'
 import InviteSheet from '@/components/teacher/InviteSheet'
 import { StudioPage } from '@/components/teacher/studio/ui'
 import type { InstrumentType } from '@/types'
+import FeedbackRow from '@/components/settings/FeedbackRow'
 
 function Section({ title, hint, children, first, className }: { title: string; hint?: string; children: ReactNode; first?: boolean; className?: string }) {
   return (
@@ -93,6 +94,7 @@ export default function TeacherSettingsPage() {
         <button type="button" onClick={() => { replayTeacher(); navigate('/teacher') }} className={rowCls} style={rowStyle}>
           <RowBody icon={<Sparkles size={18} />} label="Replay the tutorial" value="Femata shows you around" />
         </button>
+        <FeedbackRow />
         <NavRow icon={<LifeBuoy size={18} />} label="Support & Legal" to="/teacher/settings/about" />
         <p className="pt-3 text-[12.5px]" style={{ color: 'var(--clay-dim)' }}>Signed in as {user?.email ?? '—'}</p>
       </Section>

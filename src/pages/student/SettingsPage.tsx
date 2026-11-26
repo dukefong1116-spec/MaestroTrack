@@ -11,6 +11,7 @@ import Banner from '@/components/profile/Banner'
 import BannerSheet from '@/components/profile/BannerSheet'
 import { Panel, NavRow, FactRow } from '@/components/ui/Panel'
 import type { InstrumentType } from '@/types'
+import FeedbackRow from '@/components/settings/FeedbackRow'
 
 export default function SettingsPage() {
   const { profile, user } = useAuth()
@@ -126,6 +127,7 @@ export default function SettingsPage() {
           )}
 
           <NavRow icon={<BookOpen size={19} />} label="Guide" value="How everything works" to="/student/settings/guide" />
+          <FeedbackRow />
           <NavRow icon={<LifeBuoy size={19} />} label="Support & Legal" to="/student/settings/about" />
 
           <FactRow label="Email" value={user?.email ?? '—'} />

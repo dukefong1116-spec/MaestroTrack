@@ -5,7 +5,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { signIn, getUserProfile } from '@/lib/firebase/auth'
+import { signIn, getUserProfile, socialSignIn } from '@/lib/firebase/auth'
+import SocialButtons from '@/components/auth/SocialButtons'
+import type { User } from 'firebase/auth'
 import Input from '@/components/ui/Input'
 import Femata from '@/components/femata/Femata'
 import Button from '@/components/ui/Button'
@@ -46,25 +48,7 @@ export default function LoginPage() {
     setError('')
     try {
       const user = await signIn(data.email, data.password, isNativeApp || remember)
-      let role: string | null = null
-      try {
-        const profile = await getUserProfile(user.uid)
-        role = profile?.role ?? null
-      } catch { /* offline — fall through */ }
-      if (!role) {
-        try {
-          const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
-          if (cached) role = JSON.parse(cached)?.role ?? null
-        } catch { /* ignore */ }
-      }
-      if (!role) role = localStorage.getItem(`maestro_role_${user.uid}`)
-      role = role ?? 'student'
-      localStorage.setItem(`maestro_role_${user.uid}`, role)
-      // Signed in from a teacher's invitation: finish that, not the
-      // usual landing page. Teachers are sent on as normal — a teaching
-      // account has no business claiming an invitation.
-      const invited = role === 'teacher' ? null : takePendingInvite()
-      navigate(invited ? `/join/${invited}` : role === 'teacher' ? '/teacher' : '/student')
+      await landOn(user)
     } catch (e: unknown) {
       const err = e as { code?: string; message?: string }
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
@@ -75,6 +59,29 @@ export default function LoginPage() {
         setError(err.message ?? 'Sign-in failed. Please try again.')
       }
     }
+  }
+
+  /** Signed in, by any method: on to the right home (or the invitation). */
+  async function landOn(user: User) {
+    let role: string | null = null
+    try {
+      const profile = await getUserProfile(user.uid)
+      role = profile?.role ?? null
+    } catch { /* offline — fall through */ }
+    if (!role) {
+      try {
+        const cached = localStorage.getItem(`maestro_profile_${user.uid}`)
+        if (cached) role = JSON.parse(cached)?.role ?? null
+      } catch { /* ignore */ }
+    }
+    if (!role) role = localStorage.getItem(`maestro_role_${user.uid}`)
+    role = role ?? 'student'
+    localStorage.setItem(`maestro_role_${user.uid}`, role)
+    // Signed in from a teacher's invitation: finish that, not the
+    // usual landing page. Teachers are sent on as normal — a teaching
+    // account has no business claiming an invitation.
+    const invited = role === 'teacher' ? null : takePendingInvite()
+    navigate(invited ? `/join/${invited}` : role === 'teacher' ? '/teacher' : '/student')
   }
 
   return (
@@ -131,6 +138,7 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
+          <SocialButtons run={async (p) => landOn(await socialSignIn(p))} />
 
           <p className="text-center text-sm mt-6" style={{ color: 'var(--clay-dim)' }}>
             New here?{' '}

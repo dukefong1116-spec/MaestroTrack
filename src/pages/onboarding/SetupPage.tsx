@@ -7,7 +7,8 @@ import Femata from '@/components/femata/Femata'
 import InstrumentIcon from '@/components/icons/InstrumentIcon'
 import { Ask, BigButton, Choice, HoldToCommit, STAGE, Stage, TopBar } from '@/components/onboarding/stage'
 import { EXPERIENCE, INSTRUMENT_GROUPS, MINUTES, MINUTE_LINES, instrumentFields } from '@/lib/onboarding/catalog'
-import { signUp } from '@/lib/firebase/auth'
+import { signUp, socialSignUp, type SocialProvider } from '@/lib/firebase/auth'
+import SocialButtons from '@/components/auth/SocialButtons'
 import { updateUserProfile } from '@/lib/firebase/teacher'
 import { takePendingInvite } from '@/lib/utils/pendingInvite'
 import { useAuth } from '@/hooks/useAuth'
@@ -349,6 +350,7 @@ function MinutePicker({ value, onChange }: { value: number; onChange: (m: number
 
 /* ── The account ──────────────────────────────────────────── */
 function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone: () => void }) {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [again, setAgain] = useState('')
@@ -359,24 +361,36 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
   const mismatch = again.length > 0 && again !== password
   const ok = /\S+@\S+\.\S+/.test(email) && password.length >= 8 && again === password && legalAccepted
 
+  /** The setup's answers, for whichever way the account is made. */
+  function newAccount() {
+    const fields = instrumentFields(picks)
+    return {
+      instrument: fields.instrument,
+      experienceLevel: a.level ?? 'beginner',
+      dailyGoalMinutes: a.minutes,
+      // The app reads the day's goal as a seventh of the week's, so the
+      // week's is seven of the minutes they chose.
+      weeklyGoalMinutes: Math.max(30, a.minutes * 7),
+      legalAccepted,
+      extra: { instruments: fields.instruments, practiceDaysPerWeek: a.days ?? 5, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
+    }
+  }
+
+  /** Google or Apple: one that already has an account just goes home. */
+  async function social(p: SocialProvider) {
+    const { user, existing } = await socialSignUp(p, a.name, 'student', newAccount())
+    if (existing) { navigate('/', { replace: true }); return }
+    localStorage.setItem(`maestro_role_${user.uid}`, 'student')
+    onDone()
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!ok || busy) return
     setBusy(true)
     setError('')
     try {
-      const fields = instrumentFields(picks)
-      const days = a.days ?? 5
-      const user = await signUp(email.trim(), password, a.name.trim(), 'student', {
-        instrument: fields.instrument,
-        experienceLevel: a.level ?? 'beginner',
-        dailyGoalMinutes: a.minutes,
-        // The app reads the day's goal as a seventh of the week's, so the
-        // week's is seven of the minutes they chose.
-        weeklyGoalMinutes: Math.max(30, a.minutes * 7),
-        legalAccepted,
-        extra: { instruments: fields.instruments, practiceDaysPerWeek: days, ...(fields.instrumentName ? { instrumentName: fields.instrumentName } : {}) },
-      })
+      const user = await signUp(email.trim(), password, a.name.trim(), 'student', newAccount())
       localStorage.setItem(`maestro_role_${user.uid}`, 'student')
       onDone()
     } catch (err: unknown) {
@@ -412,6 +426,7 @@ function AccountStep({ a, picks, onDone }: { a: Answers; picks: string[]; onDone
       {mismatch && <p className="mt-2 text-[13px] font-bold" style={{ color: '#FF8FA3' }}>The passwords don't match yet.</p>}
       <label className="mt-3 flex items-start gap-2 text-[12px] font-semibold leading-relaxed" style={{ color: STAGE.muted }}><input type="checkbox" checked={legalAccepted} onChange={(e) => setLegalAccepted(e.target.checked)} className="mt-0.5" /><span>I agree to the <a className="underline" href="https://femataus.com/terms" target="_blank" rel="noreferrer">Terms</a> and acknowledge the <a className="underline" href="https://femataus.com/privacy" target="_blank" rel="noreferrer">Privacy Notice</a>.</span></label>
       {error && <p className="mt-3 text-[13.5px] font-bold" style={{ color: '#FF8FA3' }}>{error}</p>}
+      <SocialButtons dark run={social} />
       <p className="mt-3 text-[13px] font-semibold" style={{ color: STAGE.muted }}>
         Already have an account? <Link to="/login" className="font-extrabold" style={{ color: STAGE.sky }}>Log in</Link>
       </p>

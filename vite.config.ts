@@ -36,6 +36,23 @@ function leagueApiUnderEmulator(): Plugin {
           next(e)
         }
       })
+      server.middlewares.use('/api/feedback', async (req, res, next) => {
+        try {
+          const mod = await server.ssrLoadModule('/api/feedback.js')
+          await mod.default(req, res)
+        } catch (e) {
+          next(e)
+        }
+      })
+      server.middlewares.use('/api/auth', async (req, res, next) => {
+        if ((req.url ?? '').split('?')[0].replace(/^\/+/, '') !== 'code') return next()
+        try {
+          const mod = await server.ssrLoadModule('/api/auth/code.js')
+          await mod.default(req, res)
+        } catch (e) {
+          next(e)
+        }
+      })
       server.middlewares.use('/api/league', async (req, res, next) => {
         const name = (req.url ?? '').split('?')[0].replace(/^\/+/, '')
         if (name !== 'ticket' && name !== 'sync') return next()

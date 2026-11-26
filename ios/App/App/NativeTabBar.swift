@@ -3,6 +3,8 @@ import Capacitor
 import CoreHaptics
 import Photos
 import MessageUI
+import AuthenticationServices
+import CryptoKit
 
 /// The app's main screen: Capacitor's web view, plus the native pieces the
 /// web app asks for. Registered in SceneDelegate in place of the plain
@@ -15,6 +17,7 @@ class MutifViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(FemataNotifyPlugin())
         bridge?.registerPluginInstance(FemataWidgetsPlugin())
         bridge?.registerPluginInstance(FemataSharePlugin())
+        bridge?.registerPluginInstance(FemataSignInPlugin())
         // Femata blue behind the page until it paints, so the launch screen
         // runs straight into the web one with no white flash. The page
         // paints its own background over it from then on.
@@ -523,5 +526,127 @@ public class FemataSharePlugin: CAPPlugin, CAPBridgedPlugin, MFMessageComposeVie
         controller.dismiss(animated: true)
         pending?.resolve(["sent": result == .sent])
         pending = nil
+    }
+}
+
+/// Google and Apple sign-in in the app, where Firebase's web pop-ups cannot
+/// open. Each hands back an ID token; the web side signs in to Firebase with
+/// it (src/lib/firebase/auth.ts). Apple needs the Sign in with Apple
+/// capability (paid Apple Developer Program); Google, the iOS client ID.
+public class FemataSignInPlugin: CAPPlugin, CAPBridgedPlugin, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding, ASWebAuthenticationPresentationContextProviding {
+    public let identifier = "FemataSignInPlugin"
+    public let jsName = "FemataSignIn"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "apple", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "google", returnType: CAPPluginReturnPromise),
+    ]
+    private var pending: CAPPluginCall?
+    private var session: ASWebAuthenticationSession?
+
+    private var window: UIWindow {
+        bridge?.viewController?.view.window ?? UIWindow()
+    }
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor { window }
+    public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor { window }
+
+    // MARK: Apple
+
+    @objc func apple(_ call: CAPPluginCall) {
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = call.getString("nonce")
+        pending = call
+        DispatchQueue.main.async {
+            let c = ASAuthorizationController(authorizationRequests: [request])
+            c.delegate = self
+            c.presentationContextProvider = self
+            c.performRequests()
+        }
+    }
+
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let cred = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let data = cred.identityToken, let token = String(data: data, encoding: .utf8) else {
+            pending?.reject("No token"); pending = nil; return
+        }
+        pending?.resolve(["idToken": token])
+        pending = nil
+    }
+
+    public func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let cancelled = (error as? ASAuthorizationError)?.code == .canceled
+        pending?.reject(cancelled ? "cancelled" : error.localizedDescription)
+        pending = nil
+    }
+
+    // MARK: Google (OAuth with PKCE in the system's sign-in sheet)
+
+    @objc func google(_ call: CAPPluginCall) {
+        guard let clientId = call.getString("clientId"), clientId.hasSuffix(".apps.googleusercontent.com") else {
+            call.reject("Google sign-in is not set up"); return
+        }
+        let scheme = clientId.split(separator: ".").reversed().joined(separator: ".")
+        let redirect = "\(scheme):/oauth2redirect"
+        let verifier = Self.random()
+        let challenge = Data(SHA256.hash(data: Data(verifier.utf8))).base64URL
+        let state = Self.random()
+        var url = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
+        url.queryItems = [
+            .init(name: "client_id", value: clientId), .init(name: "redirect_uri", value: redirect),
+            .init(name: "response_type", value: "code"), .init(name: "scope", value: "openid email profile"),
+            .init(name: "code_challenge", value: challenge), .init(name: "code_challenge_method", value: "S256"),
+            .init(name: "state", value: state), .init(name: "prompt", value: "select_account"),
+        ]
+        DispatchQueue.main.async {
+            let s = ASWebAuthenticationSession(url: url.url!, callbackURLScheme: scheme) { back, error in
+                self.session = nil
+                if let error = error {
+                    let cancelled = (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin
+                    call.reject(cancelled ? "cancelled" : error.localizedDescription); return
+                }
+                let items = URLComponents(url: back!, resolvingAgainstBaseURL: false)?.queryItems ?? []
+                guard items.first(where: { $0.name == "state" })?.value == state,
+                      let code = items.first(where: { $0.name == "code" })?.value else {
+                    call.reject("Sign-in did not finish"); return
+                }
+                Self.exchange(code: code, clientId: clientId, redirect: redirect, verifier: verifier, call: call)
+            }
+            s.presentationContextProvider = self
+            self.session = s
+            s.start()
+        }
+    }
+
+    private static func exchange(code: String, clientId: String, redirect: String, verifier: String, call: CAPPluginCall) {
+        var req = URLRequest(url: URL(string: "https://oauth2.googleapis.com/token")!)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        var body = URLComponents()
+        body.queryItems = [
+            .init(name: "code", value: code), .init(name: "client_id", value: clientId),
+            .init(name: "redirect_uri", value: redirect), .init(name: "code_verifier", value: verifier),
+            .init(name: "grant_type", value: "authorization_code"),
+        ]
+        req.httpBody = body.percentEncodedQuery?.data(using: .utf8)
+        URLSession.shared.dataTask(with: req) { data, _, _ in
+            guard let data = data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let token = json["id_token"] as? String else {
+                call.reject("Google did not return a sign-in"); return
+            }
+            call.resolve(["idToken": token])
+        }.resume()
+    }
+
+    private static func random() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return Data(bytes).base64URL
+    }
+}
+
+private extension Data {
+    var base64URL: String {
+        base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
     }
 }

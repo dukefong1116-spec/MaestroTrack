@@ -155,7 +155,7 @@ export default function SignupPage() {
             {step === 'underage' && (
               <motion.div key="underage" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <h2 className="text-xl font-semibold mb-3" style={{ color: 'var(--clay-ink)' }}>A parent or guardian can help</h2>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--clay-dim)' }}>Children under 13 cannot create a Femata account yet. We do not collect your name or email here. Please ask your parent or guardian to contact <a className="font-medium underline" style={{ color: 'var(--clay-accent)' }} href="mailto:hello@femataus.com">hello@femataus.com</a>.</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--clay-dim)' }}>Children under 13 cannot create a Femata account yet. We do not collect your name or email here. Please ask your parent or guardian to contact <a className="font-medium underline" style={{ color: 'var(--clay-accent)' }} href="mailto:help@femataus.com">help@femataus.com</a>.</p>
                 <button type="button" onClick={() => setStep('age')} className="mt-6 text-sm font-medium" style={{ color: 'var(--clay-accent)' }}>Back</button>
               </motion.div>
             )}

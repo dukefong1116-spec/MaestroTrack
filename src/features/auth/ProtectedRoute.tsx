@@ -1,7 +1,8 @@
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import type { UserRole } from '@/types'
+import EmailCodeScreen, { needsEmailCode } from './EmailCodeScreen'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -10,6 +11,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const { user, profile, loading, provisional } = useAuth()
+  const [confirmed, setConfirmed] = useState(false)
 
   if (loading) return <AppSkeleton />
 
@@ -21,6 +23,9 @@ export default function ProtectedRoute({ children, role }: ProtectedRouteProps) 
   if (role && effectiveRole && effectiveRole !== role) {
     return <Navigate to={effectiveRole === 'teacher' ? '/teacher' : '/student'} replace />
   }
+
+  // A new email account confirms its address with a code before anything else.
+  if (!confirmed && needsEmailCode(user, profile)) return <EmailCodeScreen user={user!} onDone={() => setConfirmed(true)} />
 
   return <>{children}</>
 }

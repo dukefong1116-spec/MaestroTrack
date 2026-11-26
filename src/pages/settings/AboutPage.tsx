@@ -5,7 +5,7 @@ import { useTour } from '@/hooks/useTour'
 import Button from '@/components/ui/Button'
 import { Panel, Block, Legend, FactRow, SettingsScreen } from '@/components/ui/Panel'
 
-const SUPPORT_EMAIL = 'support@maestrotrack.app'
+const SUPPORT_EMAIL = 'help@femataus.com'
 
 /**
  * Help, the legal pages, and what this build actually is.

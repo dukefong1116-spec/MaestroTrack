@@ -61,24 +61,30 @@ const rowBase =
 
 /** A row that goes somewhere. */
 export function NavRow({
-  icon, label, value, to, first,
+  icon, label, value, to, onClick, first,
 }: {
   icon?: ReactNode
   label: string
   value?: string
-  to: string
+  /** Where it goes — or, instead, what it opens (onClick). */
+  to?: string
+  onClick?: () => void
   first?: boolean
 }) {
-  return (
-    <Link to={to} className={rowBase} style={first ? undefined : { borderTop: '1px solid var(--clay-line)' }}>
+  const style = first ? undefined : { borderTop: '1px solid var(--clay-line)' }
+  const body = (
+    <>
       {icon && <span className="flex shrink-0" style={{ color: 'var(--clay-dim)' }}>{icon}</span>}
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold" style={{ color: 'var(--clay-ink)' }}>{label}</span>
         {value && <span className="block truncate text-xs" style={{ color: 'var(--clay-dim)' }}>{value}</span>}
       </span>
       <ChevronRight size={18} className="shrink-0" style={{ color: 'var(--clay-faint)' }} />
-    </Link>
+    </>
   )
+  return to !== undefined
+    ? <Link to={to} className={rowBase} style={style}>{body}</Link>
+    : <button type="button" onClick={onClick} className={`${rowBase} w-full text-left`} style={style}>{body}</button>
 }
 
 /** A row that flips something. */

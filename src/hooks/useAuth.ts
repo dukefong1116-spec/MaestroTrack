@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile } from '@/lib/firebase/auth'
+import { onAuthChange, getUserProfile, saveRebuiltProfile, subscribeUserProfile, accountInFlight } from '@/lib/firebase/auth'
+import { auth } from '@/lib/firebase/config'
 import { useAuthStore } from '@/stores/authStore'
 import { markOpen } from '@/lib/utils/openTimes'
 import { clearSnapshots } from '@/lib/cache/snapshot'
@@ -73,6 +74,15 @@ export function useAuthInit() {
         try {
           let profile = await getUserProfile(user.uid)
           console.log('[Auth] Firestore profile:', profile)
+          // An account being made this moment (sign-up, Google or Apple):
+          // its profile is on its way, so wait for it instead of rebuilding
+          // a default one over it — or for the sign-in to be undone.
+          const making = accountInFlight()
+          if (!profile && making) {
+            await making.catch(() => {})
+            if (currentGeneration !== generation || auth.currentUser?.uid !== user.uid) return
+            profile = await getUserProfile(user.uid)
+          }
           if (!profile) {
             // No Firestore doc — reconstruct from localStorage cache and write it
             console.warn('[Auth] No Firestore doc for uid:', user.uid, '— creating from cache')
