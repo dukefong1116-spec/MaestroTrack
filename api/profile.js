@@ -35,7 +35,9 @@ export default async function handler(req, res) {
     const [user, card, shares] = await Promise.all([
       store.doc(`users/${owner}`).get(),
       store.doc(`leagueCards/${owner}`).get(),
-      store.collection('shares').where('ownerId', '==', owner).orderBy('createdAt', 'desc').limit(12).get(),
+      // Equality only, sorted here: a sorted query needs an index this
+      // project does not have, and failed — every profile was "not available".
+      store.collection('shares').where('ownerId', '==', owner).limit(200).get(),
     ])
     const p = user.exists ? user.data() : {}
     const c = card.exists ? card.data() : {}
@@ -61,12 +63,15 @@ export default async function handler(req, res) {
         updatedAt: '',
       },
       shares: shares.docs
+        .sort((a, b) => String(b.get('createdAt') ?? '').localeCompare(String(a.get('createdAt') ?? '')))
         .map((d) => ({ slug: d.id, image: ownImage(d.get('image'), owner) }))
-        .filter((s) => s.image),
+        .filter((s) => s.image)
+        .slice(0, 12),
     }
     res.setHeader('cache-control', 'public, s-maxage=300, stale-while-revalidate=3600')
     return res.status(200).send(JSON.stringify(body))
-  } catch {
+  } catch (e) {
+    console.error('[profile]', e)
     return res.status(500).send('{"error":"unavailable"}')
   }
 }

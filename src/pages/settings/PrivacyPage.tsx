@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { Check, Download, Eye, EyeOff, Link2, Trophy, UserRound } from 'lucide-react'
+import { Eye, EyeOff, Link2, Trophy, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { buildDataExport, downloadJson } from '@/lib/firebase/exportData'
-import { authErrorMessage } from '@/lib/firebase/account'
 import { sendVerificationEmail } from '@/lib/firebase/auth'
 import { Panel, Block, Legend, FactRow, NavRow, SettingsScreen, ToggleRow } from '@/components/ui/Panel'
 import { updateUserProfile } from '@/lib/firebase/teacher'
@@ -38,28 +36,11 @@ export default function PrivacyPage() {
   const isTeacher = profile?.role === 'teacher'
   const back = isTeacher ? '/teacher/settings' : '/student/settings'
 
-  const [busy, setBusy] = useState(false)
-  const [done, setDone] = useState('')
-  const [error, setError] = useState('')
   const [verify, setVerify] = useState<'idle' | 'busy' | 'sent' | 'failed'>('idle')
 
   async function onVerify() {
     setVerify('busy')
     try { await sendVerificationEmail(); setVerify('sent') } catch { setVerify('failed') }
-  }
-
-  async function onExport() {
-    setBusy(true); setDone(''); setError('')
-    try {
-      const result = await buildDataExport()
-      downloadJson(result)
-      const rows = Object.values(result.counts).reduce((a, b) => a + b, 0)
-      setDone(`${result.filename} — ${rows} record${rows === 1 ? '' : 's'}.`)
-    } catch (e) {
-      setError(authErrorMessage(e))
-    } finally {
-      setBusy(false)
-    }
   }
 
   const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : '—')
@@ -141,24 +122,6 @@ export default function PrivacyPage() {
             )}
           </>
         )}
-
-        <Block>
-          <Legend
-            title="Your data"
-            hint="Everything on your account as one JSON file — profile, sessions, pieces, performances, assignments."
-          />
-          <Button variant="outline" onClick={onExport} loading={busy}>
-            <Download size={16} /> Download my data
-          </Button>
-          {done && (
-            <p className="mt-3 text-[13px] font-medium" style={{ color: 'var(--clay-success-fg)' }}>
-              <Check size={13} className="mr-1 inline" />{done}
-            </p>
-          )}
-          {error && (
-            <p className="mt-3 text-[13px] font-medium" style={{ color: 'var(--clay-danger)' }}>{error}</p>
-          )}
-        </Block>
 
         <NavRow
           icon={<Link2 size={18} />}

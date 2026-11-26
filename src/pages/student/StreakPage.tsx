@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Snowflake, Music, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Snowflake, Music, RotateCcw, Share2 } from 'lucide-react'
+import { openShare } from '@/stores/shareStore'
+import { streakShare } from '@/lib/share/moments'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
 import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import StreakRulesEditor from '@/components/streak/StreakRulesEditor'
@@ -109,6 +111,14 @@ export default function StreakPage() {
               <span className="mt-2 rounded-full px-3 py-1 text-[11.5px] font-semibold" style={{ background: 'var(--clay-bg-deep)', color: 'var(--clay-ink)' }}>
                 {look.name} flame
               </span>
+            )}
+            {/* Just the number: no minutes, no practice details. */}
+            {live.current > 0 && (
+              <button type="button" onClick={() => openShare(streakShare(live.current, 0, profile?.displayName))}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-bold"
+                style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
+                <Share2 size={15} aria-hidden="true" /> Share my streak
+              </button>
             )}
             <p className="mt-3 max-w-xs text-[13.5px]" style={{ color: state === 'frozen' ? ICE : 'var(--clay-dim)' }}>{sub}</p>
           </div>

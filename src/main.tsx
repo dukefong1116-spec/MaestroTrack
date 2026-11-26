@@ -5,9 +5,14 @@ import App from './App.tsx'
 import { openingPageReady } from '@/lib/openingPage'
 import AppErrorBoundary from '@/components/common/AppErrorBoundary'
 import { reloadForUpdate } from '@/lib/utils/reloadForUpdate'
-import { lockNativeZoom } from '@/lib/native'
+import { isNativeApp, lockNativeZoom } from '@/lib/native'
+import { inject } from '@vercel/analytics'
 
 lockNativeZoom()
+
+// Vercel Analytics (page views, no cookies). The website only: the iPhone
+// app runs from its own address, where Vercel's script is not served.
+if (!isNativeApp) inject()
 
 // A page's file from before a deploy failed to load: reload to get the
 // new one, before React ever sees the failure. See AppErrorBoundary.

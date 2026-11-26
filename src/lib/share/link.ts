@@ -1,5 +1,5 @@
 import {
-  collection, deleteDoc, doc, getDocs, orderBy, query, setDoc, where,
+  collection, deleteDoc, doc, getDocs, query, setDoc, where,
 } from 'firebase/firestore'
 import { db, loadStorage } from '@/lib/firebase/config'
 import { renderOgCard } from './card'
@@ -130,9 +130,10 @@ export async function listMyShares(ownerId: string): Promise<ShareRecord[]> {
   const snap = await getDocs(query(
     collection(db, COL),
     where('ownerId', '==', ownerId),
-    orderBy('createdAt', 'desc')
   ))
+  // Sorted here: a sorted query needs an index this project does not have.
   return snap.docs.map((d) => ({ slug: d.id, ...d.data() } as ShareRecord))
+    .sort((a, b) => String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')))
 }
 
 /**
