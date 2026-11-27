@@ -423,7 +423,7 @@ struct PracticeLiveActivity: Widget {
                     Image(face(s)).resizable().scaledToFit().frame(width: 46).padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Clock(state: s, size: 24).frame(width: 78, alignment: .trailing).padding(.trailing, 4)
+                    Clock(state: s, size: 24).frame(width: 96, alignment: .trailing).padding(.trailing, 4)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -442,7 +442,7 @@ struct PracticeLiveActivity: Widget {
             } compactLeading: {
                 Image(face(s)).resizable().scaledToFit().frame(width: 24)
             } compactTrailing: {
-                Clock(state: s, size: 13).frame(maxWidth: 52)
+                Clock(state: s, size: 13).frame(maxWidth: 62)
             } minimal: {
                 Image(face(s)).resizable().scaledToFit().frame(width: 20)
             }
@@ -473,10 +473,13 @@ struct Clock: View {
             } else if let paused = state.pausedElapsed {
                 Text(clockText(paused)).foregroundStyle(Color(red: 1, green: 0.79, blue: 0.24))
             } else {
-                // An hour's range and no hours shown, so the clock is sized
-                // for "mm:ss" rather than "h:mm:ss" and never cut off.
-                Text(timerInterval: state.startedAt...state.startedAt.addingTimeInterval(3599), countsDown: false, showsHours: false)
+                // Up to 9:59:59: "mm:ss" under an hour (showsHours false),
+                // then "h:mm:ss" — never wider than 7 characters. An hour's
+                // range stopped the clock at 59:59.
+                Text(timerInterval: state.startedAt...state.startedAt.addingTimeInterval(10 * 3600 - 1), countsDown: false, showsHours: false)
                     .foregroundStyle(sky)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
         }
         .font(.system(size: size, weight: .black, design: .rounded))

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { FemataMood } from '@/components/femata/Femata'
 import type { ShareFields, ShareOptions } from '@/lib/share/fields'
 import type { ShareKind } from '@/lib/share/link'
+import type { RedditStreak } from '@/lib/share/story'
 
 /**
  * What to share, and how: asked for from anywhere (a celebration, the
@@ -22,6 +23,8 @@ export interface ShareRequest {
   badgeId?: string
   /** Femata's face to start with. */
   mood?: FemataMood
+  /** Offers the Reddit picture (a streak, from the streak page). */
+  reddit?: RedditStreak
 }
 
 export const useShareStore = create<{ request: ShareRequest | null }>(() => ({ request: null }))

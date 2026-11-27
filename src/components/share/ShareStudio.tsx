@@ -64,7 +64,7 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
   useEffect(() => {
     let live = true
     const made: string[] = []
-    void Promise.all(themes.map((theme) => renderMomentCard({ kind: request.kind, fields, format, theme, art })))
+    void Promise.all(themes.map((theme) => renderMomentCard({ kind: request.kind, fields, format, theme, art, reddit: request.reddit })))
       .then((blobs) => {
         if (!live) return
         const next = blobs.map((blob) => { const url = URL.createObjectURL(blob); made.push(url); return { blob, url } })
@@ -113,9 +113,14 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
   }
   const sent = (o: string) => { if (o === 'shared') flash('Shared'); else if (o === 'copied') flash('Link copied') }
 
+  const formats = request.reddit ? [...FORMATS, { id: 'reddit' as const, label: 'Reddit' }] : FORMATS
+  const reddit = format === 'reddit'
+  // A title to post it with: the picture carries no words to copy.
+  const redditTitle = `Day ${fields.streakDays ?? 0} of practising ${request.reddit?.instrument ?? 'music'} every day`
+
   const dests: { id: string; label: string; icon: React.ReactNode; bg: string; fg: string; run: () => void; hide?: boolean }[] = [
     {
-      id: 'messages', label: 'Messages', icon: <MessageCircle size={22} />, bg: '#34C759', fg: '#fff', hide: !messages,
+      id: 'messages', label: 'Messages', icon: <MessageCircle size={22} />, bg: '#34C759', fg: '#fff', hide: !messages || reddit,
       run: () => void link().then((url) => { if (url) void sendMessage(`${text}\n${url}`).then((ok) => { if (ok) flash('Sent') }) }),
     },
     {
@@ -125,7 +130,12 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
         void saveToPhotos(current).then((r) => flash(r === 'saved' ? 'Saved to Photos' : r === 'downloaded' ? 'Saved' : r === 'denied' ? 'Allow Photos in Settings to save' : 'Could not save'))
       },
     },
-    format === 'sticker'
+    reddit
+      ? {
+        id: 'title', label: 'Copy title', icon: <Copy size={21} />, bg: 'var(--clay-bg)', fg: 'var(--clay-ink)',
+        run: () => void copyText(redditTitle).then((ok) => flash(ok ? 'Title copied' : 'Could not copy')),
+      }
+      : format === 'sticker'
       ? {
         id: 'copy', label: 'Copy sticker', icon: <Copy size={21} />, bg: 'var(--clay-bg)', fg: 'var(--clay-ink)', hide: !canCopyImage(),
         run: () => { if (current) void copyImage(current).then((ok) => flash(ok ? 'Copied — paste it on your story' : 'Could not copy')) },
@@ -135,12 +145,12 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
         run: () => void link().then((url) => { if (url) void copyText(`${text}\n${url}`).then((ok) => flash(ok ? 'Link copied' : 'Could not copy')) }),
       },
     {
-      id: 'more', label: 'More', icon: <Share2 size={21} />, bg: 'var(--clay-accent)', fg: 'var(--clay-on-accent)', hide: !user,
+      id: 'more', label: 'More', icon: <Share2 size={21} />, bg: 'var(--clay-accent)', fg: 'var(--clay-on-accent)', hide: !user || reddit,
       run: () => void link().then((url) => { if (url) void shareLink(url, text).then(sent) }),
     },
   ]
 
-  const ratio = format === 'story' ? '9 / 16' : format === 'post' ? '4 / 5' : '1080 / 760'
+  const ratio = format === 'story' ? '9 / 16' : format === 'post' || format === 'reddit' ? '4 / 5' : '1080 / 760'
 
   return (
     <motion.div
@@ -194,8 +204,8 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
         )}
 
         {/* The shape. */}
-        <div className="mt-3 grid grid-cols-3 rounded-full p-1" style={{ background: 'rgba(118,118,128,.14)' }} role="group" aria-label="Shape">
-          {FORMATS.map((f) => (
+        <div className={`mt-3 grid ${formats.length > 3 ? 'grid-cols-4' : 'grid-cols-3'} rounded-full p-1`} style={{ background: 'rgba(118,118,128,.14)' }} role="group" aria-label="Shape">
+          {formats.map((f) => (
             <button key={f.id} type="button" aria-pressed={format === f.id} onClick={() => { setFormat(f.id); setPick(0); strip.current?.scrollTo({ left: 0 }); haptic('select') }}
               className="rounded-full py-1.5 text-[13px] font-semibold transition-colors"
               style={format === f.id ? { background: 'var(--clay-surface)', color: 'var(--clay-ink)', boxShadow: '0 1px 2px rgba(20,30,60,.1)' } : { color: 'var(--clay-dim)' }}>
@@ -206,7 +216,7 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
 
         {/* What is on it. */}
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {request.toggles.name && <Chip on={options.includeName} onClick={() => toggle('includeName')}>My name</Chip>}
+          {request.toggles.name && !reddit && <Chip on={options.includeName} onClick={() => toggle('includeName')}>My name</Chip>}
           {request.toggles.streak && <Chip on={options.includeStreak} onClick={() => toggle('includeStreak')}>Streak</Chip>}
           {request.toggles.piece && <Chip on={options.includePiece} onClick={() => toggle('includePiece')}>Piece</Chip>}
         </div>
@@ -233,8 +243,10 @@ export default function ShareStudio({ request, onClose }: { request: ShareReques
           ))}
         </div>
         <p className="mt-3 text-center text-[11px] leading-snug" style={{ color: 'var(--clay-faint)' }}>
-          {format === 'sticker' ? 'Copy or save the sticker, then add it over your own photo in your story.' : 'Sent as a link that opens into this card. Instagram, WhatsApp and more are under More.'}
-          {' '}Links are public to anyone who gets them; remove them in Settings › Privacy.
+          {reddit
+            ? `Save the picture and post it as an image post, with a title like "${redditTitle}". No link, on the picture or in the post: Reddit treats posts with links as ads.`
+            : <>{format === 'sticker' ? 'Copy or save the sticker, then add it over your own photo in your story.' : 'Sent as a link that opens into this card. Instagram, WhatsApp and more are under More.'}
+              {' '}Links are public to anyone who gets them; remove them in Settings › Privacy.</>}
         </p>
 
         <AnimatePresence>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Snowflake, Music, RotateCcw, Share2 } from 'lucide-react'
 import { openShare } from '@/stores/shareStore'
 import { streakShare } from '@/lib/share/moments'
+import { INSTRUMENT_THEMES } from '@/lib/utils/instruments'
 import { Panel, Block, Legend } from '@/components/ui/Panel'
 import StreakFlame, { type FlameState } from '@/components/icons/StreakFlame'
 import StreakRulesEditor from '@/components/streak/StreakRulesEditor'
@@ -51,6 +52,20 @@ export default function StreakPage() {
   const ruleState = useMemo(() => currentRules(profile?.streakRules, today), [profile?.streakRules, today])
   const chosen = ruleState.next ?? ruleState.now
 
+  /** The last 35 days, for the Reddit picture: practised, kept (lesson day, freeze) or not. */
+  const redditStreak = () => {
+    const calendar: number[] = []
+    for (let i = 34; i >= 0; i--) {
+      const d = new Date(`${today}T12:00:00`)
+      d.setDate(d.getDate() - i)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const day = byDate.get(key)
+      const practised = day && (day.status === 'done' || (day.status === 'today' && live.todayLit) || day.minutes > 0)
+      calendar.push(practised ? 1 : day && (day.status === 'lesson' || day.status === 'frozen' || day.status === 'repaired') ? 2 : 0)
+    }
+    const instrument = (profile?.instrumentName || (profile?.instrument ? INSTRUMENT_THEMES[profile.instrument]?.label : '') || '').toLowerCase()
+    return { calendar, ...(instrument ? { instrument } : {}) }
+  }
   const state: FlameState = live.todayLit ? 'lit' : live.flameFrozen ? 'frozen' : 'unlit'
   const look = lookFor(Math.max(1, live.current))
   const min = live.todayRule.min
@@ -114,7 +129,7 @@ export default function StreakPage() {
             )}
             {/* Just the number: no minutes, no practice details. */}
             {live.current > 0 && (
-              <button type="button" onClick={() => openShare(streakShare(live.current, 0, profile?.displayName))}
+              <button type="button" onClick={() => openShare(streakShare(live.current, 0, profile?.displayName, redditStreak()))}
                 className="mt-3 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-bold"
                 style={{ background: 'var(--clay-accent)', color: 'var(--clay-on-accent)' }}>
                 <Share2 size={15} aria-hidden="true" /> Share my streak

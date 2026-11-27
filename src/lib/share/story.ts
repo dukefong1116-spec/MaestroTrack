@@ -18,7 +18,7 @@ import type { ShareKind } from './link'
  * app's own artwork (passed in, already an image).
  */
 
-export type CardFormat = 'story' | 'post' | 'sticker'
+export type CardFormat = 'story' | 'post' | 'sticker' | 'reddit'
 export type CardTheme = 'sunset' | 'sky' | 'night' | 'mint' | 'violet'
 
 export const FORMATS: { id: CardFormat; label: string }[] = [
@@ -27,7 +27,7 @@ export const FORMATS: { id: CardFormat; label: string }[] = [
   { id: 'sticker', label: 'Sticker' },
 ]
 
-const SIZE: Record<CardFormat, [number, number]> = { story: [1080, 1920], post: [1080, 1350], sticker: [1080, 760] }
+const SIZE: Record<CardFormat, [number, number]> = { story: [1080, 1920], post: [1080, 1350], sticker: [1080, 760], reddit: [1080, 1350] }
 
 interface Palette { top: string; bottom: string; ink: string; soft: string; chip: string; chipInk: string; bar: string; barOff: string }
 export const THEMES: Record<CardTheme, Palette & { label: string }> = {
@@ -108,6 +108,20 @@ export interface RenderInput {
   theme: CardTheme
   /** The picture in the middle: Femata, or a badge's own art. */
   art?: HTMLImageElement | null
+  /** The Reddit picture's calendar (see RedditStreak). */
+  reddit?: RedditStreak
+}
+
+/**
+ * The streak as a progress picture for Reddit: no link and no web address
+ * on it (a post with either reads as an ad), just the work, and a small
+ * Femata mark. Never stored or sent anywhere but the person's own photos.
+ */
+export interface RedditStreak {
+  /** The last 35 days, oldest first, today last: 0 missed, 1 practised, 2 kept (lesson day or freeze). */
+  calendar: number[]
+  /** "cello", already in words; omitted when unknown. */
+  instrument?: string
 }
 
 /** The app's own icon, from the app itself (same origin, so drawable). */
@@ -122,7 +136,7 @@ function appIcon(): Promise<HTMLImageElement | null> {
   return icon
 }
 
-export async function renderMomentCard({ kind, fields, format, theme, art }: RenderInput): Promise<Blob> {
+export async function renderMomentCard({ kind, fields, format, theme, art, reddit }: RenderInput): Promise<Blob> {
   try { await document.fonts.ready } catch { /* draw anyway */ }
   const [W, H] = SIZE[format]
   const canvas = document.createElement('canvas')
@@ -134,6 +148,7 @@ export async function renderMomentCard({ kind, fields, format, theme, art }: Ren
 
   const logo = await appIcon()
   if (format === 'sticker') drawSticker(ctx, W, H, words, art)
+  else if (format === 'reddit') drawReddit(ctx, W, H, THEMES[theme], fields, reddit, art, logo)
   else drawCard(ctx, W, H, format, THEMES[theme], words, art, fields, logo)
 
   return await new Promise<Blob>((resolve, reject) => {
@@ -293,6 +308,87 @@ function drawSticker(ctx: CanvasRenderingContext2D, W: number, H: number, w: Car
 }
 
 /* ── shared bits ──────────────────────────────────────────────────── */
+
+/* ── Reddit: the streak as a progress picture ─────────────────────── */
+
+function drawReddit(
+  ctx: CanvasRenderingContext2D, W: number, H: number, p: Palette, f: ShareFields,
+  r: RedditStreak | undefined, art: HTMLImageElement | null | undefined, logo: HTMLImageElement | null,
+) {
+  const cx = W / 2
+  const g = ctx.createLinearGradient(0, 0, W * 0.3, H)
+  g.addColorStop(0, p.top)
+  g.addColorStop(1, p.bottom)
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, W, H)
+
+  // The number, and what it counts.
+  const days = f.streakDays ?? 0
+  text(ctx, 'DAILY PRACTICE', cx, 150, 34, '800', p.soft, 'center', 7)
+  ctx.save()
+  ctx.shadowColor = 'rgba(0,0,0,.14)'
+  ctx.shadowBlur = 24
+  ctx.shadowOffsetY = 8
+  text(ctx, `Day ${days}`, cx, 380, fit(ctx, `Day ${days}`, W - 160, 230, '900'), '900', p.ink, 'center')
+  ctx.restore()
+  const what = r?.instrument ? `of practising ${r.instrument} every day` : 'of practising every day'
+  text(ctx, what, cx, 460, Math.min(48, fit(ctx, what, W - 160, 48, '700')), '700', p.soft, 'center')
+
+  // Five weeks, today last.
+  const cal = (r?.calendar ?? []).slice(-35)
+  while (cal.length < 35) cal.unshift(0)
+  const px = 90, py = 530, pw = W - 180
+  const cell = (pw - 80) / 7
+  const sq = cell - 20
+  const sh = Math.round(sq * 0.8)
+  const step = sh + 16
+  const ph = 104 + 5 * step + 66
+  ctx.fillStyle = p.chip
+  round(ctx, px, py, pw, ph, 44)
+  ctx.fill()
+  const today = new Date()
+  for (let c = 0; c < 7; c++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - 34 + c)
+    const letter = 'SMTWTFS'[d.getDay()]
+    text(ctx, letter, px + 40 + c * cell + cell / 2, py + 72, 30, '800', p.soft, 'center')
+  }
+  cal.forEach((v, i) => {
+    const x = px + 40 + (i % 7) * cell + 10
+    const y = py + 100 + Math.floor(i / 7) * step
+    ctx.fillStyle = v === 1 ? p.bar : p.barOff
+    round(ctx, x, y, sq, sh, 20)
+    ctx.fill()
+    if (v === 1) {
+      ctx.font = `${Math.round(sh * 0.58)}px ${SANS}`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('🔥', x + sq / 2, y + sh / 2 + 2)
+      ctx.textBaseline = 'alphabetic'
+    } else if (v === 2) {
+      disc(ctx, x + sq / 2, y + sh / 2, 9, p.bar)
+    }
+    if (i === 34) {
+      ctx.strokeStyle = p.ink
+      ctx.lineWidth = 5
+      round(ctx, x - 5, y - 5, sq + 10, sh + 10, 24)
+      ctx.stroke()
+    }
+  })
+  const done = cal.filter((v) => v === 1).length
+  text(ctx, `${done} of the last 35 days`, cx, py + ph - 30, 32, '700', p.soft, 'center')
+
+  // Femata, small, and the name only: no address anywhere.
+  if (art) ctx.drawImage(art, W - 220, H - 176, 150, 150)
+  if (logo) {
+    ctx.save()
+    round(ctx, 70, H - 128, 64, 64, 16)
+    ctx.clip()
+    ctx.drawImage(logo, 70, H - 128, 64, 64)
+    ctx.restore()
+  }
+  text(ctx, 'Femata', 152, H - 84, 34, '800', p.ink)
+}
 
 function disc(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, fill: string) {
   ctx.fillStyle = fill

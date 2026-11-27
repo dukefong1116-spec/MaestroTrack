@@ -1,5 +1,6 @@
 import type { ShareRequest } from '@/stores/shareStore'
 import type { ShareOptions } from './fields'
+import type { RedditStreak } from '@/lib/share/story'
 
 /**
  * The share requests for each moment, in one place, so every entry point
@@ -16,9 +17,10 @@ export function isStreakMilestone(days: number): boolean {
   return [3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 250, 300, 365].includes(days) || (days > 365 && days % 100 === 0)
 }
 
-export function streakShare(days: number, minutesToday: number, name?: string): ShareRequest {
+export function streakShare(days: number, minutesToday: number, name?: string, reddit?: RedditStreak): ShareRequest {
   return {
     kind: 'streak',
+    ...(reddit ? { reddit } : {}),
     title: 'Share your streak',
     toggles: { name: true },
     mood: 'celebrate',
